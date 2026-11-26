@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Unified My Work Client Projection Contract
- * VERSION: v1.4.1-READINESS-VERSION-SKEW-FAIL-SAFE
+ * VERSION: v1.5.0-SOURCE-OWNED-TASK-NAVIGATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Validates the existing EOS My Work read shape consistently across
  *          Daily Attention, Headquarters, and My Work without creating authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/unifiedMyWorkProjection.js
  * COLLABORATION / OWNERSHIP: Python EOS owns visibility, records and commands;
  *                            authenticated client views consume this validator.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.5.0-SOURCE-OWNED-TASK-NAVIGATION introduces one pure, fail-closed destination resolver for EOS-admitted work identities: CRM and other admitted sources retain their My Work task shell, while Projects uses its authorized Projects task locator; no source service or IAM authority is transferred.
  * CHANGELOG: v1.4.1-READINESS-VERSION-SKEW-FAIL-SAFE accepts
  *            a wholly absent optional readiness extension from older EOS
  *            without asserting READY; partially present or inconsistent
@@ -219,13 +220,64 @@ export function assertUnifiedMyWorkProjection(payload, expectedScope = {}) {
  * @param {string} source EOS source identifier.
  * @returns {string|null} Known source label or null for an unknown identifier.
  */
+/**
+ * One navigation contract for an already admitted EOS work projection.
+ * A locator is navigation-only, never a grant of Projects/CRM authority.
+ * Source services independently reauthorize the destination.
+ */
+export function resolveUnifiedWorkDestination(item) {
+  if (!item || typeof item !== 'object'
+    || typeof item.source !== 'string' || !Object.hasOwn(SOURCES, item.source)
+    || typeof item.work_item_id !== 'string' || !item.work_item_id.trim()
+    || item.source_key !== item.source + ':' + item.work_item_id) {
+    throw new Error('MY_WORK_NAVIGATION_SOURCE_INVALID');
+  }
+  if (item.source === 'PROJECTS') {
+    if (typeof item.project_id !== 'string'
+      || !/^prj-[a-f0-9]{48}$/.test(item.project_id)
+      || !/^ptk-[a-f0-9]{48}$/.test(item.work_item_id)) {
+      throw new Error('MY_WORK_PROJECT_DESTINATION_INVALID');
+    }
+    return { kind: 'PROJECTS_TASK', locator: {
+      workspace: 'PROJECTS', project_id: item.project_id,
+      task_id: item.work_item_id, participant_view: true,
+    } };
+  }
+  return { kind: 'MY_WORK_TASK',
+    href: '/headquarters?section=my-work&work=' + encodeURIComponent(item.source_key) };
+}
+
+/**
+ * Canonical cross-workspace navigation for Daily Attention and Calendar.
+ * The destination performs fresh authorization; this builds no grant.
+ */
+export function resolveUnifiedWorkRoute(item) {
+  // Paginated Attention source keys can omit the source-owned project locator.
+  // Only the current authenticated EOS My Work read may resolve that identity.
+  if (item?.source === 'PROJECTS' && !item.project_id
+    && /^ptk-[0-9a-f]{48}$/.test(item.work_item_id || '')
+    && item.source_key === 'PROJECTS:' + item.work_item_id) {
+    return { pathname: '/my-work', search: '',
+      state: { focusWorkItem: item.source_key } };
+  }
+  const destination = resolveUnifiedWorkDestination(item);
+  if (destination.kind === 'PROJECTS_TASK') {
+    const query = new URLSearchParams({
+      section: 'projects', project: destination.locator.project_id,
+      task: destination.locator.task_id,
+    });
+    return { pathname: '/headquarters', search: '?' + query.toString(), state: null };
+  }
+  return { pathname: '/my-work', search: '', state: { focusWorkItem: item.source_key } };
+}
+
 export function unifiedMyWorkSourceLabel(source) {
   return Object.hasOwn(SOURCES, source) ? SOURCES[source] : null;
 }
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.js
- * VERSION: v1.4.1-READINESS-VERSION-SKEW-FAIL-SAFE
+ * VERSION: v1.5.0-SOURCE-OWNED-TASK-NAVIGATION
  * AUTHORITY BOUNDARY: Client projection validation and source labels only.
  * TENANT POSTURE: Exact supplied scope is checked; server authorization remains canonical.
  * FAIL-CLOSED POSTURE: Malformed scope, counts, rows or source metadata are rejected.

@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
+ * VERSION: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -10,7 +10,7 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Client routing consumes only bounded server
  *                             projections. Authentication tokens, tenant
@@ -24,6 +24,8 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN routes Daily Attention and calendar selections through the canonical EOS work destination contract. Projects opens its exact project/task view, other admitted sources retain source-owned My Work, forged source identities fail closed; no task command or privilege change.
+ * CHANGELOG: v20.14.0-PERSISTENT-HEADQUARTERS-NAVIGATION excludes ephemeral location.key from the stable, identity-bound Headquarters controller key so same-session in-app work navigation no longer forces its subtree to remount. Existing route hooks update the destination; auth/tenant/legal admission gates and EOS work reads remain authoritative.
  * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays EOS-issued Founder title independently from tenant_owner capacity; it never changes workspace authorization.
  * CHANGELOG: v20.10.2-GLOBAL-SEARCH-FOCUS-RETURN returns keyboard focus to the element that opened global search after Escape, dismissal, or navigation. Search routing, auth, and authority are unchanged.
  * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays email only from AuthProvider.workspaceEmail, which is populated solely by the current EOS workspace bootstrap; existing auth.user.email compatibility remains outside personal identity chrome.
@@ -131,6 +133,7 @@ import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
+import { resolveUnifiedWorkRoute } from './services/unifiedMyWorkProjection.js';
 import api from './services/api';
 import {
   currentUnifiedMyWorkScope,
@@ -280,6 +283,12 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   // revisions partition this optional badge. It is active-work evidence, never
   // an unread-notification count or browser permission authority.
   const currentWorkScope = currentUnifiedMyWorkScope(auth, sessionUser?.tenantId);
+  useEffect(() => {
+    if (location.state?.reopenDailyAttention !== true || !currentWorkScope) return;
+    setNotificationsOpen(true);
+    navigate({ pathname: location.pathname, search: location.search },
+      { replace: true, state: null });
+  }, [location.pathname, location.search, location.state, currentWorkScope, navigate]);
   const isPlatformOwnerWorkspace = Boolean(currentWorkScope && isWilsyPlatformTenant(sessionUser?.tenantId));
 
   useEffect(() => {
@@ -446,8 +455,21 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
             onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
             onClose={() => setNotificationsOpen(false)}
             onOpenWork={(item) => {
+              if (!item) {
+                setNotificationsOpen(false);
+                navigate('/my-work');
+                return;
+              }
+              // All Daily Attention and calendar selections use the same
+              // source-owned destination contract as My Work and Headquarters.
+              // A projection row never grants command authority at the target.
+              let destination;
+              try { destination = resolveUnifiedWorkRoute(item); }
+              catch { return; } // Invalid or foreign source locator fails closed.
               setNotificationsOpen(false);
-              navigate('/my-work', { state: item?.source_key ? { focusWorkItem: item.source_key } : null });
+              navigate({ pathname: destination.pathname, search: destination.search },
+                { state: { ...(destination.state || {}),
+                  attentionReturn: { pathname: location.pathname, search: location.search } } });
             }}
             onOpenWorkforce={() => {
               setNotificationsOpen(false);
@@ -693,7 +715,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<Navigate to="/" replace />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole, location.key].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
+          ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -1058,7 +1080,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
+ * VERSION: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

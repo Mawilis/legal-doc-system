@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Unified My Work Projection Contract Tests
- * VERSION: v1.4.1-MIXED-EOS-READINESS-CERT
+ * VERSION: v1.5.0-SOURCE-TASK-DESTINATION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Verifies one shared fail-closed client contract for EOS aggregate
  *          scope, source coverage, row identity and summary reconciliation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/unifiedMyWorkProjection.test.js
  * COLLABORATION / OWNERSHIP: unifiedMyWorkProjection.js and EOS /api/my-work.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.5.0-SOURCE-TASK-DESTINATION-CERT proves identical source-local IDs in CRM and Projects never cross-route: CRM opens the current source-owned My Work task shell, Projects returns its existing separately authorized task locator; malformed source keys fail closed.
  * CHANGELOG: v1.4.1-MIXED-EOS-READINESS-CERT confirms
  *            absent legacy readiness keeps the queue available with unknown
  *            readiness, while incomplete/forged evidence is rejected.
@@ -34,6 +35,8 @@ import { describe, expect, it } from 'vitest';
 import {
   assertUnifiedMyWorkProjection,
   unifiedMyWorkSourceLabel,
+  resolveUnifiedWorkDestination,
+  resolveUnifiedWorkRoute,
 } from '../../services/unifiedMyWorkProjection.js';
 
 const valid = () => ({
@@ -206,6 +209,68 @@ describe('unified My Work projection contract', () => {
     expect(() => assertUnifiedMyWorkProjection(fabricatedInstant)).toThrow('ATTENTION_ITEM_INVALID');
   });
 
+  it('routes each verified work identity to its owning task experience without crossing source authority', () => {
+    const crm = resolveUnifiedWorkDestination({
+      source: 'CRM', source_key: 'CRM:same-local-id', work_item_id: 'same-local-id',
+    });
+    expect(crm).toEqual({ kind: 'MY_WORK_TASK',
+      href: '/headquarters?section=my-work&work=CRM%3Asame-local-id' });
+    const id = 'ptk-' + 'b'.repeat(48);
+    const project = 'prj-' + 'a'.repeat(48);
+    const projects = resolveUnifiedWorkDestination({
+      source: 'PROJECTS', source_key: 'PROJECTS:' + id,
+      work_item_id: id, project_id: project,
+    });
+    expect(projects).toEqual({ kind: 'PROJECTS_TASK', locator: {
+      workspace: 'PROJECTS', project_id: project,
+      task_id: id, participant_view: true,
+    } });
+    expect(() => resolveUnifiedWorkDestination({
+      source: 'CRM', source_key: 'PROJECTS:same-local-id', work_item_id: 'same-local-id',
+    })).toThrow('MY_WORK_NAVIGATION_SOURCE_INVALID');
+    expect(() => resolveUnifiedWorkDestination({
+      source: 'PROJECTS', source_key: 'PROJECTS:' + id,
+      work_item_id: id, project_id: 'foreign-project',
+    })).toThrow('MY_WORK_PROJECT_DESTINATION_INVALID');
+  });
+
+  it('routes Calendar and Daily Attention directly to canonical task destinations without fallback', () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const projects = resolveUnifiedWorkRoute({
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      project_id: projectId, work_item_id: taskId,
+    });
+    expect(projects).toEqual({
+      pathname: '/headquarters',
+      search: '?section=projects&project=' + projectId + '&task=' + taskId,
+      state: null,
+    });
+    const keyOnly = resolveUnifiedWorkRoute({
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId,
+    });
+    expect(keyOnly).toEqual({
+      pathname: '/my-work', search: '',
+      state: { focusWorkItem: 'PROJECTS:' + taskId },
+    });
+    const crm = resolveUnifiedWorkRoute({
+      source: 'CRM', source_key: 'CRM:CRM-7', work_item_id: 'CRM-7',
+    });
+    expect(crm).toEqual({
+      pathname: '/my-work', search: '',
+      state: { focusWorkItem: 'CRM:CRM-7' },
+    });
+    expect(() => resolveUnifiedWorkRoute({
+      source: 'PROJECTS', project_id: projectId,
+      source_key: 'CRM:' + taskId, work_item_id: taskId,
+    })).toThrow('MY_WORK_NAVIGATION_SOURCE_INVALID');
+    expect(() => resolveUnifiedWorkRoute({
+      source: 'PROJECTS', project_id: 'not-admitted',
+      source_key: 'PROJECTS:' + taskId, work_item_id: taskId,
+    })).toThrow('MY_WORK_PROJECT_DESTINATION_INVALID');
+  });
+
   it('returns a known source label without labelling unknown sources', () => {
     expect(unifiedMyWorkSourceLabel('LEGAL')).toBe('Legal');
     expect(unifiedMyWorkSourceLabel('HR')).toBe('HR & Hiring');
@@ -215,7 +280,7 @@ describe('unified My Work projection contract', () => {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.test.js
- * VERSION: v1.4.1-MIXED-EOS-READINESS-CERT
+ * VERSION: v1.5.0-SOURCE-TASK-DESTINATION-CERT
  * AUTHORITY BOUNDARY: Deterministic projection contract evidence only.
  * TENANT POSTURE: Synthetic exact-scope and mismatch tests.
  * FAIL-CLOSED POSTURE: Unknown or divergent source metadata is rejected.

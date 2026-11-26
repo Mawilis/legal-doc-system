@@ -1,11 +1,25 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION
+ * VERSION: v1.10.0-CANONICAL-ROUTER-AND-REVISION-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.10.0-CANONICAL-ROUTER-AND-REVISION-CERT verifies
+ *          current EOS Dock task identity/revision before a Router-owned
+ *          canonical Projects handoff, and fails closed after revision drift.
+ * CHANGELOG: v1.9.3-ALIGNED-EVIDENCE-COLUMNS-CERT validates all five evidence values share the same responsive fixed-start grid column, left alignment and narrow stacking without changing source-evidence assertions.
+ * CHANGELOG: v1.9.2-STRICT-SOURCE-RECORD-CERT uses fully scoped synthetic event records to require EOS event authorship/time validation and rejects mismatched source items as unverified.
+ * CHANGELOG: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT requires task's original acceptance text and lifecycle to remain visible while activity and attachment presence are not falsely treated as completion.
+ * CHANGELOG: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT verifies bounded independent task event, comment, attachment and approval counts with missing evidence named explicitly, no false completion, no cross-tenant read acceptance, and unchanged source-backed navigation.
+ * CHANGELOG: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT certifies the compact embedded view uses independently read EOS revision/blocker state, routes to existing task Activity/Evidence/Approvals callbacks, and exposes no model/command controls.
+ * CHANGELOG: v1.7.0-IN-MODAL-READONLY-CERT checks a sourced task brief remains available in the modal-safe read-only projection without exposing transition, draft or attachment execution affordances.
+ * CHANGELOG: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT checks client-side Open yields task focus through one callback, retaining no reload and no write.
+ * CHANGELOG: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT certifies CRM Open changes React Router location without document reload or task mutation and retains a valid canonical href for direct navigation. Existing mock-only tests remain Router-independent.
+ * CHANGELOG: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT checks tenant-neutral sentence-case metadata and preserved full EOS rank explanation without changing task identity or action rights.
+ * CHANGELOG: v1.4.0-MW-T11-SCANNABLE-SOURCE-CERT certifies readable work title and quiet metadata, preserved EOS ordinal and full source explanation in the accessible row, unchanged canonical selection, and no exposed opaque task ID.
+ * CHANGELOG: v1.3.0-MW-T11-RANKED-HANDOFF-CERT checks exact-source work ordering, task handoff proof and wrong-identity rejection without executing mutations.
  * CHANGELOG: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION certifies a lost-response accepted PDF attachment across unmount/remount with independent manifest reconciliation, no duplicate POST and no scan-clearance claim.
  * CHANGELOG: v1.1.0-REMOUNT-RECONCILIATION certifies a committed-but-lost HTTP response across unmount/remount with exactly one POST and independently verified receipt readback.
  * CHANGELOG: v1.0.0 covers action races, unknown outcomes, drafts and exact source isolation.
@@ -16,6 +30,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sha3_512 } from 'js-sha3';
@@ -70,7 +85,261 @@ beforeEach(() => {
   vi.spyOn(window, 'confirm').mockReturnValue(true);
 });
 
+function RouteLocationProbe() {
+  const location = useLocation();
+  return <output aria-label="Current client route">{location.pathname + location.search}</output>;
+}
+
 describe('permissioned operating work', () => {
+  it('reads independent EOS task evidence and recommends the actual missing source', async () => {
+    const taskBase = '/projects/' + PROJECT + '/tasks/' + TASK;
+    const pages = {
+      events: { schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1', items: [{
+        schema: 'wilsy.project.task.event.v1', tenant_id: TENANT, project_id: PROJECT,
+        task_id: TASK, revision: 1, event_type: 'PROJECT_TASK_CREATED', status_after: 'TODO',
+        actor_principal_id: PERSON, occurred_at: '2026-11-26T08:00:00Z',
+      }] },
+      comments: { schema: 'WILSY-PROJECT-COMMENT-LIST/V1', items: [{
+        schema: 'wilsy.project.comment.v1', tenant_id: TENANT, project_id: PROJECT,
+        task_id: TASK, comment_id: 'pcm-' + 'c'.repeat(48),
+        author_principal_id: PERSON, body: 'Engineering activity recorded',
+        mentions: [], fingerprint: 'a'.repeat(128),
+      }] },
+      attachments: { schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1', items: [] },
+      approvals: { schema: 'WILSY-PROJECT-APPROVAL-LIST/V1', items: [] },
+    };
+    get.mockImplementation(async path => {
+      if (path === '/wilsy-ai/dock/context') return { data: structuredClone(source) };
+      const kind = Object.keys(pages).find(k => path === taskBase + '/' + k + '?limit=50&offset=0');
+      if (!kind) throw refusal(503);
+      return { data: { ...pages[kind], tenant_id: TENANT, principal_id: PERSON,
+        project_id: PROJECT, task_id: TASK, limit: 50, offset: 0,
+        has_more: false, next_offset: null } };
+    });
+    const evidence = vi.fn();
+    mount({ readOnly: true, embedded: true, onReviewEvidence: evidence });
+    const assessment = await screen.findByRole('region', { name: 'WILSY AI task assessment' });
+    await waitFor(() => expect(assessment).toHaveTextContent('1 updates recorded'));
+    expect(assessment).toHaveTextContent('1 events recorded');
+    expect(assessment).toHaveTextContent('Acceptance definition: Align the Dock with authorized work.');
+    expect(assessment).toHaveTextContent('to do · revision 1');
+    expect(assessment).toHaveTextContent('0 attachments recorded');
+    expect(assessment).toHaveTextContent('0 decisions recorded');
+    const rows = [...screen.getByRole('list', { name: 'Verified completion evidence' }).children];
+    expect(rows).toHaveLength(5);
+    for (const row of rows) {
+      expect(row).toHaveClass('grid', 'grid-cols-1',
+        'sm:grid-cols-[minmax(0,1fr)_minmax(0,42%)]');
+      expect(row.children).toHaveLength(2);
+      expect(row.children[1]).toHaveClass('min-w-0', 'text-left');
+    }
+    expect(assessment).toHaveTextContent('do not prove the task');
+    fireEvent.click(screen.getByRole('button', { name: /Next: Review the missing supporting evidence/i }));
+    expect(evidence).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('does not treat cross-tenant approval evidence as verified or permit closing', async () => {
+    get.mockImplementation(async path => {
+      if (path === '/wilsy-ai/dock/context') return { data: structuredClone(source) };
+      if (path.endsWith('/approvals?limit=50&offset=0')) return { data: {
+        schema: 'WILSY-PROJECT-APPROVAL-LIST/V1', tenant_id: 'OTHER_TENANT',
+        principal_id: PERSON, project_id: PROJECT, task_id: TASK,
+        limit: 50, offset: 0, has_more: false, next_offset: null, items: [],
+      } };
+      throw refusal(503);
+    });
+    mount({ readOnly: true, embedded: true });
+    const assessment = await screen.findByRole('region', { name: 'WILSY AI task assessment' });
+    await waitFor(() => expect(assessment).toHaveTextContent('Reviewer decisions'));
+    await waitFor(() => expect(assessment).toHaveTextContent('decisions not verified'));
+    expect(assessment).not.toHaveTextContent('0 decisions recorded');
+    expect(screen.queryByRole('button', { name: /Complete task/ })).not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('explains verified task attention and opens the canonical task work views without an AI command', async () => {
+    const activity = vi.fn(); const evidence = vi.fn(); const approvals = vi.fn();
+    mount({ readOnly: true, embedded: true,
+      onReviewActivity: activity, onReviewEvidence: evidence,
+      onReviewApprovals: approvals });
+    expect(await screen.findByText('Task source verified')).toBeVisible();
+    const assessment = screen.getByRole('region', { name: 'WILSY AI task assessment' });
+    expect(assessment).toHaveTextContent('EOS · Revision 1');
+    expect(assessment).toHaveTextContent('Completion evidence');
+    expect(assessment).toHaveTextContent('not verified');
+    expect(assessment).not.toHaveTextContent('EOS action order');
+    expect(assessment).not.toHaveTextContent('Draft alignment plan');
+    fireEvent.click(screen.getByRole('button', { name: 'Activity' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Evidence' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approvals' }));
+    expect(activity).toHaveBeenCalledTimes(1);
+    expect(evidence).toHaveBeenCalledTimes(1);
+    expect(approvals).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('fails closed in embedded mode when the EOS task source is unavailable', async () => {
+    get.mockRejectedValue(refusal(503));
+    mount({ readOnly: true, embedded: true });
+    expect(await screen.findByRole('button', { name: 'Retry verification' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Activity' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Task source verified')).not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('presents source-verified task intelligence inside a modal without any mutation affordance', async () => {
+    mount({ readOnly: true });
+    expect(await screen.findByRole('status', { name: 'EOS-confirmed work handoff' })).toBeVisible();
+    expect(screen.getByText(/Read-only EOS task inspection/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Draft alignment plan' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Start work/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Accept and attach PDF' })).not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('opens CRM work within React Router without restarting application bootstrap', async () => {
+    const crmId = 'owk_' + 'a'.repeat(32);
+    get.mockImplementation(async path => {
+      if (path !== '/my-work') throw refusal(503);
+      return { data: {
+        schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+        tenant_id: TENANT, principal_id: PERSON,
+        as_of: '2026-11-26T08:00:00Z',
+        items: [{ source: 'CRM', source_key: 'CRM:' + crmId,
+          work_item_id: crmId, title: 'Open authorized CRM work',
+          status: 'IN_PROGRESS', priority: 'HIGH',
+          due_at: null, due_date: null, is_overdue: false,
+          action_authority: 'SOURCE_SERVICE_ONLY', completion_route: null }],
+        summary: { active_count: 1, overdue_count: 0, source_counts: { CRM: 1 } },
+        sources_included: ['CRM'],
+        authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
+      } };
+    });
+    const navigated = vi.fn();
+    render(<MemoryRouter initialEntries={['/headquarters?section=my-work']}>
+      <OperatingWork tenantId={TENANT} principalId={PERSON} scope={scope()}
+        locator={{ workspace: 'HEADQUARTERS' }}
+        onRecord={record} onSelectWork={selected} onNavigateWork={navigated} />
+      <RouteLocationProbe />
+    </MemoryRouter>);
+    const action = await screen.findByRole('link', { name: /Open authorized CRM work/ });
+    expect(action).toHaveAttribute('href',
+      '/headquarters?section=my-work&work=' + encodeURIComponent('CRM:' + crmId));
+    fireEvent.click(action);
+    expect(screen.getByLabelText('Current client route')).toHaveTextContent(
+      '/headquarters?section=my-work&work=' + encodeURIComponent('CRM:' + crmId));
+    expect(navigated).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('preserves EOS queue order and confirms only its ranking evidence', async () => {
+    const second = 'ptk-' + 'c'.repeat(48);
+    const row = (taskId, title, priority, dueDate, overdue) => ({
+      tenant_id: TENANT, source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId, project_id: PROJECT, owner_principal_id: PERSON,
+      title, description: '', status: 'OPEN', kind: 'TASK', priority,
+      due_at: null, due_date: dueDate, is_overdue: overdue,
+      action_authority: 'SOURCE_SERVICE_ONLY', completion_route: null,
+    });
+    get.mockImplementation(async path => {
+      if (path !== '/my-work') throw refusal(503);
+      return { data: { schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+        tenant_id: TENANT, principal_id: PERSON, as_of: '2026-11-26T08:00:00Z',
+        items: [row(TASK, 'First source item', 'NORMAL', '2026-12-12', false),
+          row(second, 'Second source item', 'HIGH', '2026-11-26', true)],
+        summary: { active_count: 2, overdue_count: 1, source_counts: { PROJECTS: 2 } },
+        sources_included: ['PROJECTS'],
+        authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
+      } };
+    });
+    mount({ locator: { workspace: 'HEADQUARTERS' } });
+    const first = await screen.findByRole('button', { name: /First source item/ });
+    const secondRow = screen.getByRole('button', { name: /Second source item/ });
+    expect(first).toHaveTextContent('01');
+    expect(first).toHaveTextContent('Projects · normal · Due 2026-12-12');
+    expect(first).toHaveAttribute('title', expect.stringContaining(
+      'Position 1 in the current EOS-authorized My Work response'));
+    expect(secondRow).toHaveTextContent('02');
+    expect(secondRow).toHaveTextContent('Projects · high · Overdue');
+    expect(secondRow).toHaveAttribute('title', expect.stringContaining(
+      'Position 2 in the current EOS-authorized My Work response'));
+    expect(secondRow).toHaveTextContent('Inspect');
+    expect(first).toHaveAttribute('title', expect.stringContaining('PROJECTS source, normal priority'));
+    expect(secondRow).toHaveAttribute('title', expect.stringContaining('PROJECTS source, high priority'));
+    expect(first).not.toHaveTextContent('PRIORITY');
+    expect(first).not.toHaveTextContent('EOS order');
+    expect(first).not.toHaveTextContent(TASK);
+    fireEvent.click(secondRow);
+    expect(selected).toHaveBeenCalledWith({ workspace: 'PROJECTS',
+      project_id: PROJECT, task_id: second, participant_view: true });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('confirms a handoff only after exact EOS task source verification', async () => {
+    mount();
+    const status = await screen.findByRole('status', { name: 'EOS-confirmed work handoff' });
+    expect(status).toHaveTextContent('Projects source verified · revision 1');
+    expect(screen.getByRole('link', { name: 'Open full task' }))
+      .toHaveAttribute('href', expect.stringContaining('task=' + TASK));
+    expect(post).not.toHaveBeenCalled();
+  });
+
+
+  it('navigates a verified task into canonical Projects using SPA routing without posting', async () => {
+    const navigate = vi.fn();
+    const focus = { workspace: 'PROJECTS', project_id: PROJECT,
+      task_id: TASK, participant_view: false, task_revision: 1 };
+    render(<MemoryRouter initialEntries={['/headquarters?section=projects']}>
+      <OperatingWork tenantId={TENANT} principalId={PERSON} scope={scope()}
+        locator={focus} onRecord={record} onSelectWork={selected}
+        onNavigateWork={navigate}/>
+      <RouteLocationProbe />
+    </MemoryRouter>);
+    const proof = await screen.findByRole('status', {name: 'EOS-confirmed work handoff'});
+    expect(proof).toHaveTextContent('Projects source verified · revision 1');
+    const link = screen.getByRole('link', {name: 'Open full task'});
+    expect(link).toHaveAttribute('href',
+      '/headquarters?section=projects&project=' + PROJECT + '&task=' + TASK);
+    fireEvent.click(link);
+    expect(screen.getByLabelText('Current client route')).toHaveTextContent(
+      '/headquarters?section=projects&project=' + PROJECT + '&task=' + TASK);
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('refuses a stale revision, then re-verifies the current source before restoring handoff', async () => {
+    source = dockEnvelope({revision: 2, status: 'IN_PROGRESS'});
+    const focus = {workspace: 'PROJECTS', project_id: PROJECT,
+      task_id: TASK, task_revision: 1, participant_view: false};
+    const view = mount({locator: focus});
+    await screen.findByRole('button', {name: 'Retry authorized work'});
+    expect(screen.queryByRole('status', {name: 'EOS-confirmed work handoff'}))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('link', {name: 'Open full task'}))
+      .not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+    view.rerender(<OperatingWork tenantId={TENANT} principalId={PERSON}
+      scope={scope()} locator={{...focus, task_revision: 2}}
+      onRecord={record} onSelectWork={selected}/>);
+    expect(await screen.findByRole('status', {name: 'EOS-confirmed work handoff'}))
+      .toHaveTextContent('Projects source verified · revision 2');
+    expect(screen.getByRole('link', {name: 'Open full task'}))
+      .toHaveAttribute('href', expect.stringContaining('task=' + TASK));
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('rejects a task identity mismatch with no handoff or write', async () => {
+    source.source.task_id = 'ptk-' + 'd'.repeat(48);
+    mount();
+    await screen.findByRole('button', { name: 'Retry authorized work' });
+    expect(screen.queryByRole('status', { name: 'EOS-confirmed work handoff' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open full task' }))
+      .not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('renders a compact brief and four permitted source actions without a model call', async () => {
     mount();
     expect(await screen.findByRole('button', { name: 'Draft alignment plan' })).toBeVisible();
@@ -233,7 +502,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION
+// VERSION: v1.10.0-CANONICAL-ROUTER-AND-REVISION-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source

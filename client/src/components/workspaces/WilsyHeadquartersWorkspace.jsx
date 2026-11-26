@@ -5,14 +5,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS
+ * VERSION: v4.19.2-HQ-HOME-ROUTE-RESET
+ * CHANGELOG: v4.19.2-HQ-HOME-ROUTE-RESET restores Headquarters Home and releases stale Projects/task focus when the canonical logo navigates to /headquarters. No EOS/IAM change.
+ * CHANGELOG: v4.19.1-HQ-EXACT-TASK-NAVIGATION prevents a verified Headquarters task from switching to My assigned projects, clearing inherited assigned-view routing while retaining canonical project/task identifiers.
  * CHANGELOG: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS Delegates the Strategy-origin return into the canonical Projects context rather than leaving a detached Headquarters link; no changes to EOS authority.
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * CHANGELOG: v4.18.1-STRATEGY-RETURN-URL-PRIORITY mounts the Strategy return from exact URL provenance independently of asynchronous workspace section loading; no authority changes.
  * CHANGELOG: v4.18.0-STRATEGY-RETURN-ROUTE retains exact Strategy origin for handoffs and returns directly to the existing governed M04 workspace without a new project workflow or IAM grant.
  * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS preserves independently authorized assigned-task navigation from the Dock.
@@ -499,8 +501,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
       setSection(requested);
       setShowMyWork(false);
     } else if (!requested) {
-      setSection((current) =>
-        current === 'hr-workspace' || current === 'operations' ? 'overview' : current);
+      // The canonical /headquarters route is Home, never the previously
+      // mounted task or Projects section. React Router retains this component
+      // across same-session URL changes; explicitly release its UI-only focus.
+      setSection('overview');
+      setShowMyWork(false);
+      setMyWorkFocusItem(null);
+      setProjectDeliveryFocus(null);
+      setProjectTaskFocus(null);
+      setAttentionProjectFocus(null);
+      setCalendarOpen(false);
     }
   }, [location.search]);
   const [workforce, setWorkforce] = useState(null);
@@ -884,8 +894,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const pendingApprovalCount = currentRequisitions
     ? currentRequisitions.items.filter((item) => item.status === 'SUBMITTED').length
     : null;
-  const datedWork = (currentSnapshot?.items || []).filter((item) => item.due_at)
-    .sort((left, right) => Date.parse(left.due_at) - Date.parse(right.due_at));
+  // Projects delivers a date-only deadline rather than a due_at instant.
+  // Include it in the preview without assigning an invented time of day.
+  const workDeadline = (item) => item.source === 'PROJECTS' && item.due_date
+    ? item.due_date : item.due_at;
+  const datedWork = (currentSnapshot?.items || []).filter((item) => Boolean(workDeadline(item)))
+    .sort((left, right) => Date.parse(workDeadline(left)) - Date.parse(workDeadline(right)));
   const openMyWork = (item = null) => {
     const sourceKey = typeof item?.source_key === 'string' && item.source_key.trim()
       ? item.source_key
@@ -897,13 +911,15 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const openGovernedWork = (item) => {
     if (!item || typeof item.source_key !== 'string') return;
     if (item.source === 'PROJECTS'
-      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')) {
-      setAttentionProjectFocus(item.project_id);
+      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')
+      && /^ptk-[0-9a-f]{48}$/.test(item.work_item_id || '')
+      && item.source_key === 'PROJECTS:' + item.work_item_id) {
+      // A task locator MUST NOT set the assigned-projects view flag.
+      // That flag selects an entirely different workspace and hides task details.
+      setAttentionProjectFocus(null);
       setProjectDeliveryFocus(item.project_id);
-      const verifiedTaskId = item.task_id || item.work_item_id;
-      setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(verifiedTaskId || '')
-        ? verifiedTaskId : null);
-      navigateSection('projects', { projectId: item.project_id, taskId: verifiedTaskId });
+      setProjectTaskFocus(item.work_item_id);
+      navigateSection('projects', { projectId: item.project_id, taskId: item.work_item_id });
       return;
     }
     openMyWork(item);
@@ -911,6 +927,8 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const updateWorkspaceUrl = (nextSection, documentKind = null, projectId = null, taskId = null, strategyReturn = false, resumeM04 = false) => {
     const params = new URLSearchParams(location.search);
     for (const key of ['section', 'document', 'project', 'task', 'returnTo', 'resumeM04']) params.delete(key);
+    // Assigned-projects is a separate portfolio view, never inherited by a task deep link.
+    if (nextSection === 'projects' && taskId) params.delete('view');
     if (linkedSections.has(nextSection)) params.set('section', nextSection);
     if (['STRATEGY', 'MISSION'].includes(documentKind)) params.set('document', documentKind);
     if (nextSection === 'projects' && strategyReturn) params.set('returnTo', 'STRATEGY');
@@ -1111,7 +1129,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                 <div className="hq-main-reporting" aria-label="Work calendar and reports">
                   <section className="hq-panel hq-calendar-panel" aria-labelledby="hq-calendar-title">
                     <div className="hq-panel-heading"><h2 id="hq-calendar-title"><CalendarDays size={17}/> Work calendar</h2><button type="button" onClick={() => setCalendarOpen(true)} aria-label="Open Headquarters work calendar">View calendar <ArrowUpRight size={12}/></button></div>
-                    <div className="hq-agenda">{currentSnapshot ? datedWork.length ? datedWork.slice(0,3).map((item) => <button type="button" key={item.source_key} onClick={() => openGovernedWork(item)}><span className="hq-agenda-icon"><CalendarDays size={18}/></span><span><small>{formatHeadquartersDeadline(item.due_at)}</small><strong>{item.title}</strong></span></button>) : <p className="hq-muted">No dated work in the included sources.</p> : <p className="hq-muted">Calendar awaits a verified work projection.</p>}</div>
+                    <div className="hq-agenda">{currentSnapshot ? datedWork.length ? datedWork.slice(0,3).map((item) => <button type="button" key={item.source_key} onClick={() => openGovernedWork(item)}><span className="hq-agenda-icon"><CalendarDays size={18}/></span><span><small>{item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}</small><strong>{item.title}</strong></span></button>) : <p className="hq-muted">No dated work in the included sources.</p> : <p className="hq-muted">Calendar awaits a verified work projection.</p>}</div>
                     
                   </section>
                   <section className="hq-panel hq-reports" aria-labelledby="hq-reports-title">
@@ -1220,6 +1238,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
             <>
               <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}
                 strategyOrigin={new URLSearchParams(location.search).get('returnTo') === 'STRATEGY'}
+                onReturnToAttention={location.state?.attentionReturn
+                  && typeof location.state.attentionReturn.pathname === 'string'
+                  && location.state.attentionReturn.pathname.startsWith('/')
+                  && !location.state.attentionReturn.pathname.startsWith('//')
+                  && typeof location.state.attentionReturn.search === 'string'
+                    ? () => navigate({
+                        pathname: location.state.attentionReturn.pathname,
+                        search: location.state.attentionReturn.search,
+                      }, { state: { reopenDailyAttention: true } })
+                    : null}
                 onReturnToStrategy={() => {
                   setSection('overview'); setShowMyWork(false);
                   setProjectTaskFocus(null); setProjectDeliveryFocus(null);
@@ -1739,7 +1767,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS
+ * VERSION: v4.19.2-HQ-HOME-ROUTE-RESET
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.

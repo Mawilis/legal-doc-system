@@ -1,7 +1,7 @@
 """WILSY AI authenticated reasoning HTTP boundary.
 
 TITLE: WILSY AI C1B Authenticated Reasoning Router
-VERSION: v2.3.0-DOCK-OPERATING-CONTRACT
+VERSION: v2.5.0-MW-T11-ACTIVE-SOURCE-GRAPH
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Exposes one tenant-authorized reasoning command while composing the
          published entitlement, capacity, admission, and C1B evidence owners.
@@ -9,7 +9,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/wi
 COLLABORATION / OWNERSHIP: HTTP owns request validation and Mongo transaction
                             lifecycle; C1B owns claim/execute/finalize;
                             P4/P6A/P6B/P6C registries remain canonical.
-CERTIFICATION / UPDATE DATE: 2026-11-20
+CERTIFICATION / UPDATE DATE: 2026-11-26
+CHANGELOG: v2.5.0-MW-T11-ACTIVE-SOURCE-GRAPH returns verified predecessors in the active nonbillable reasoning/context selected-task source and the bounded consented reasoning prompt; no client-submitted graph or duplicate authority.
+CHANGELOG: v2.4.0-MW-T11-VERIFIED-DEPENDENCY-EXPLANATIONS reads bounded same-project predecessor states in the existing authorized Mongo snapshot; explains real unfinished work in the nonbillable Dock task brief. No changed IAM, task lifecycle or model admission.
 CHANGELOG: v2.3.0-DOCK-OPERATING-CONTRACT adds narrow permissioned task briefs,
            shared source eligibility and encrypted historical work locators.
 CHANGELOG: v2.3.0-DOCK-OPERATING-CONTRACT adds audited CAS deletion per
@@ -295,6 +297,31 @@ def _read_project_context(
                     "assignee_name": " ".join(part for part in names.get(
                         value.get("assignee_principal_id"), {}).values() if part) or None}
 
+        def selected_task_view(task: Any) -> dict[str, Any]:
+            """Return exact-source predecessors for one selected authorized task.
+
+            All reads are in the existing Projects transaction. Source failures
+            deny the response; browser identifiers never grant authorization.
+            """
+            view = task_view(task)
+            dependencies = task.depends_on
+            if len(dependencies) > 25 or len(set(dependencies)) != len(dependencies):
+                raise HTTPException(status_code=503, detail="WILSY_AI_TASK_GRAPH_INVALID")
+            verified = []
+            for dependency_id in dependencies:
+                predecessor = store.get(
+                    tenant_id=context.tenant_id, project_id=project_id,
+                    task_id=dependency_id, session=session,
+                )
+                if predecessor.task_id != dependency_id or predecessor.project_id != project_id:
+                    raise HTTPException(status_code=503, detail="WILSY_AI_TASK_GRAPH_INVALID")
+                verified.append({
+                    "task_id": predecessor.task_id, "title": predecessor.title,
+                    "status": predecessor.status, "revision": predecessor.revision,
+                })
+            view["predecessors"] = verified
+            return view
+
         value = project.to_dict()
         public = {key: value[key] for key in (
             "project_id", "name", "summary", "status", "revision", "fingerprint",
@@ -302,7 +329,7 @@ def _read_project_context(
         ) if key in value}
         return {
             "project": public, "tasks": [task_view(row) for row in rows],
-            "tasks_has_more": more, "selected_task": task_view(selected) if selected else None,
+            "tasks_has_more": more, "selected_task": selected_task_view(selected) if selected else None,
             "participants": participants, "participants_has_more": participant_more,
             "participant_directory": "NOT_AUTHORIZED" if locator.participant_view else "VERIFIED_PAGE",
             "current_person_name": " ".join(value for value in names.get(
@@ -369,7 +396,7 @@ def _project_grounded_prompt(prompt: str, source: dict[str, Any]) -> str:
     selected_task_evidence = (
         {k: selected_task[k] for k in (
             "task_id", "title", "description", "status", "due_at",
-            "revision", "acceptance_criteria",
+            "revision", "acceptance_criteria", "predecessors",
         ) if k in selected_task}
         if selected_task is not None else None
     )
@@ -904,8 +931,32 @@ def _read_dock_task(
         blockers = []
         if task.status == "BLOCKED":
             blockers.append("Task is marked blocked in Projects.")
-        if eligibility.get("DONE") == "PROJECT_TASK_DEPENDENCY_BLOCKED":
-            blockers.append("A recorded predecessor is not complete.")
+        # MW-T11: independently explain exact-source predecessor state within
+        # this same authorized Projects transaction. This is not model inference.
+        pending_predecessors: list[str] = []
+        if len(task.depends_on) > 25 or len(set(task.depends_on)) != len(task.depends_on):
+            raise HTTPException(status_code=503, detail="WILSY_DOCK_DEPENDENCY_SOURCE_INVALID")
+        for predecessor_id in task.depends_on:
+            predecessor = store.get(
+                tenant_id=context.tenant_id, project_id=project_id,
+                task_id=predecessor_id, session=session,
+            )
+            if predecessor.task_id != predecessor_id or predecessor.project_id != project_id:
+                raise HTTPException(status_code=503, detail="WILSY_DOCK_DEPENDENCY_SOURCE_INVALID")
+            if predecessor.status != "DONE":
+                pending_predecessors.append(
+                    "Predecessor: " + predecessor.title[:100]
+                    + " (" + predecessor.status.replace("_", " ").lower() + ")."
+                )
+        if pending_predecessors:
+            blockers.extend(pending_predecessors[:22])
+            if len(pending_predecessors) > 22:
+                blockers.append(
+                    str(len(pending_predecessors) - 22)
+                    + " additional unfinished predecessors; open Projects for the full graph."
+                )
+        elif eligibility.get("DONE") == "PROJECT_TASK_DEPENDENCY_BLOCKED":
+            blockers.append("EOS reports an unresolved dependency; open Projects to inspect the graph.")
         if eligibility.get("DONE") == "PROJECT_TASK_CHILDREN_INCOMPLETE":
             blockers.append("Recorded child work is not complete.")
         # No owner names, approval states or deadlines are guessed. These exact
@@ -1405,7 +1456,7 @@ __all__ = [
 ]
 
 # ARTIFACT: wilsy_ai_reasoning_router.py
-# VERSION: v2.3.0-DOCK-OPERATING-CONTRACT
+# VERSION: v2.5.0-MW-T11-ACTIVE-SOURCE-GRAPH
 # AUTHORITY BOUNDARY: authenticated reasoning evidence and usage admission only
 # TENANT POSTURE: RequireTenantAuthorization supplies tenant and principal
 # FAIL-CLOSED POSTURE: bounded keys, server-owned identities, replay-safe transactions

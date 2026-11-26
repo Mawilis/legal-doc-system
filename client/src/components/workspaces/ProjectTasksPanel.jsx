@@ -1,13 +1,20 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.69.1-SINGLE-TASK-MODAL-EXIT
+ * VERSION: v1.75.1-IMMUTABLE-COMPLETION-ORDER
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTasksPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.75.1-IMMUTABLE-COMPLETION-ORDER preserves server-derived chronological sorting across the displayed verified completed batch instead of accidentally re-sorting by due date.
+ * CHANGELOG: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH loads a separate IAM-gated EOS completed query with source-side title and contributor filtering, immutable completion chronology, safe paging and exact reply envelope verification. Active/All keep their canonical existing source list and task mutation boundaries.
+ * CHANGELOG: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS adds accessible Active/Completed/All view controls over the current source-verified task page; terminal Done and Cancelled leave the default action list without deletion, selection resets across views, and existing EOS pagination and details remain authoritative.
+ * CHANGELOG: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS publishes an untrusted exact-task locator only for a single checkbox selection in the current EOS-verified Projects page, without opening a drawer, granting IAM authority, or guessing among multiple selected rows.
+ * CHANGELOG: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE admits only explicit same-tenant/principal/project task-open requests against uniquely matched EOS-verified items and opens the existing canonical task drawer without granting context or IAM authority.
+ * CHANGELOG: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS replaces dark duplicate task transcript with a compact source-verified assessment using the same canonical EOS brief and task-owned Activity/Evidence/Approvals navigation; no new workflow or model entitlement. Modal context and keyboard safety remain unchanged.
+ * CHANGELOG: v1.70.0-IN-TASK-INTELLIGENCE-VIEW offers a source-authorized WILSY AI task brief inside the current task modal, with a deliberate transition to full Dock conversation and exact task locator. Keeps the external floating Dock hidden while modal is active; source/IAM remain EOS owned.
  * CHANGELOG: v1.69.1-SINGLE-TASK-MODAL-EXIT keeps the
  *          parent's accessible Back to Work action as the sole modal exit
  *          for discussion, aligning with existing Files and Approvals
@@ -349,6 +356,8 @@
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  */
+import UnifiedTaskReadiness from './UnifiedTaskReadiness.jsx';
+import UnifiedTaskHeader from './UnifiedTaskHeader.jsx';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
 import api from '../../services/api.js';
@@ -359,6 +368,7 @@ import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 import ProjectWorkPurposePanel from './ProjectWorkPurposePanel.jsx';
 import ProjectParticipantsPanel, { validOptions, optionName } from './ProjectParticipantsPanel.jsx';
+import WilsyDockOperatingWork from '../intelligence/WilsyDockOperatingWork.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
 const RESULT_SCHEMA = 'WILSY-PROJECT-TASK-RESULT/V1';
@@ -634,6 +644,7 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
 export default function ProjectTasksPanel({
   projectId, tenantId, principalId, tenantHeaders, discussionOnly = false,
   onFocusedTaskChange = null, onOpenProjectPeople = null, focusTaskId = null,
+  onReturnToAttention = null,
 }) {
   const [items, setItems] = useState([]);
   const handledExternalTaskFocus = useRef(null);
@@ -648,6 +659,10 @@ export default function ProjectTasksPanel({
   const [state, setState] = useState('LOADING');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [completedSearchInput, setCompletedSearchInput] = useState('');
+  const [completedOrder, setCompletedOrder] = useState('NEWEST');
+  const [completedAssignee, setCompletedAssignee] = useState('');
+  const completedSource = useRef({ view: 'ACTIVE', search: '', order: 'NEWEST', assignee: '' });
   const [draft, setDraft] = useState({ ...EMPTY });
   const [creating, setCreating] = useState(false);
   const [workType, setWorkType] = useState('TASK');
@@ -657,9 +672,13 @@ export default function ProjectTasksPanel({
   const [selectedWorkIds, setSelectedWorkIds] = useState([]);
   const [bulkAssignment, setBulkAssignment] = useState(null);
   const [bulkProgress, setBulkProgress] = useState(null);
+  // Checkbox selection is a non-authoritative navigation hint for the Dock.
+  // Only a single task in the current source-verified page may supply it.
+  const selectedDockHintRef = useRef(null);
   const bulkLock = useRef(false);
   const [workDensity, setWorkDensity] = useState('compact');
   const [workStatus, setWorkStatus] = useState('ALL');
+  const [workLifecycleView, setWorkLifecycleView] = useState('ACTIVE');
   const [workKind, setWorkKind] = useState('ALL');
   const [workGroup, setWorkGroup] = useState('HIERARCHY');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
@@ -669,6 +688,7 @@ export default function ProjectTasksPanel({
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
   const [drawerTaskId, setDrawerTaskId] = useState(null);
+  const [taskIntelligenceOpen, setTaskIntelligenceOpen] = useState(false);
   const [dependencyOriginId, setDependencyOriginId] = useState(null);
   const createFormRef = useRef(null);
   useEffect(() => {
@@ -758,7 +778,14 @@ export default function ProjectTasksPanel({
       // contend with the work-list transaction merely to populate assignees.
       let taskResponse;
       try {
-        taskResponse = await api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers });
+        const completed = completedSource.current;
+        const endpoint = completed.view === 'COMPLETED'
+          ? root + '/tasks/completed?limit=50&offset=' + nextOffset
+            + '&search=' + encodeURIComponent(completed.search)
+            + '&order=' + completed.order
+            + (completed.assignee ? '&assignee_principal_id=' + encodeURIComponent(completed.assignee) : '')
+          : root + '/tasks?limit=50&offset=' + nextOffset;
+        taskResponse = await api.get(endpoint, { headers });
       } catch (cause) {
         const sourceFailure = cause instanceof Error ? cause : new Error('PROJECT_TASK_READ_UNAVAILABLE');
         if (sourceFailure !== cause && cause?.response) sourceFailure.response = cause.response;
@@ -769,6 +796,22 @@ export default function ProjectTasksPanel({
       let verified;
       try {
         verified = validList(taskResponse?.data, tenantId, principalId, projectId, nextOffset);
+        if (completedSource.current.view === 'COMPLETED') {
+          const source = taskResponse?.data;
+          const filters = completedSource.current;
+          if (source.view !== 'COMPLETED' || source.search !== filters.search
+            || source.order !== filters.order
+            || source.assignee_principal_id !== (filters.assignee || null)
+            || source.items.some(item => item.status !== 'DONE'
+              || typeof item.completed_by_principal_id !== 'string'
+              || !item.completed_by_principal_id
+              || typeof item.completed_at !== 'string'
+              || !Number.isFinite(Date.parse(item.completed_at))
+              || item.updated_by_principal_id !== item.completed_by_principal_id
+              || item.updated_at !== item.completed_at)) {
+            throw new Error('PROJECT_TASK_COMPLETION_SOURCE_INVALID');
+          }
+        }
       } catch {
         const invalid = new Error('PROJECT_TASK_SOURCE_INVALID');
         invalid.sourceName = 'Project task list';
@@ -917,6 +960,11 @@ export default function ProjectTasksPanel({
     setActionCapabilities(null);
     setOffset(0);
     setHasMore(false);
+    completedSource.current = { view: 'ACTIVE', search: '', order: 'NEWEST', assignee: '' };
+    setWorkLifecycleView('ACTIVE');
+    setCompletedSearchInput('');
+    setCompletedOrder('NEWEST');
+    setCompletedAssignee('');
     setCreating(false);
     setWorkType('TASK');
     setWorkQuery('');
@@ -1114,7 +1162,10 @@ export default function ProjectTasksPanel({
     const result = items.filter(item => {
       const kind = item.kind === 'MILESTONE' ? 'MILESTONE'
         : item.parent_task_id ? 'SUBTASK' : 'TASK';
-      return (!workMineOnly || item.assignee_principal_id === principalId)
+      return (workLifecycleView === 'ALL'
+          || (workLifecycleView === 'COMPLETED' && item.status === 'DONE')
+          || (workLifecycleView === 'ACTIVE' && !['DONE', 'CANCELLED'].includes(item.status)))
+        && (!workMineOnly || item.assignee_principal_id === principalId)
         && (workAttention === 'ALL'
           || (workAttention === 'UNASSIGNED' && !item.assignee_principal_id
             && !['DONE', 'CANCELLED'].includes(item.status))
@@ -1126,6 +1177,11 @@ export default function ProjectTasksPanel({
           .some(value => String(value || '').toLocaleLowerCase().includes(term)));
     });
     result.sort((a, b) => {
+      if (workLifecycleView === 'COMPLETED') {
+        const chronology = (a.completed_at || '').localeCompare(b.completed_at || '');
+        return (completedSource.current.order === 'NEWEST' ? -chronology : chronology)
+          || a.task_id.localeCompare(b.task_id);
+      }
       const dueOrder = (a.due_date === null) - (b.due_date === null)
         || (a.due_date || '').localeCompare(b.due_date || '');
       const titleOrder = a.title.localeCompare(b.title);
@@ -1135,7 +1191,7 @@ export default function ProjectTasksPanel({
         || a.task_id.localeCompare(b.task_id);
     });
     return result;
-  }, [items, workQuery, workMineOnly, workAttention, principalId, workStatus, workKind, workOrder]);
+  }, [items, workLifecycleView, workQuery, workMineOnly, workAttention, principalId, workStatus, workKind, workOrder]);
   // Presentation-only paging. Never fabricate EOS totals or silently search
   // records outside the currently authenticated, verified 50-item batch.
   const workViewCount = Math.max(1, Math.ceil(workRows.length / workViewSize));
@@ -1143,7 +1199,7 @@ export default function ProjectTasksPanel({
   const workViewStart = workViewIndex * workViewSize;
   const visibleWorkRows = workRows.slice(workViewStart, workViewStart + workViewSize);
   useEffect(() => { setWorkViewPage(0); }, [
-    offset, workQuery, workMineOnly, workAttention, workStatus, workKind, workOrder, workViewSize,
+    offset, workLifecycleView, workQuery, workMineOnly, workAttention, workStatus, workKind, workOrder, workViewSize,
   ]);
   const overdueOnPage = items.filter(item => item.due_date && item.due_date < todayISO
     && !['DONE', 'CANCELLED'].includes(item.status)).length;
@@ -1383,16 +1439,80 @@ export default function ProjectTasksPanel({
       }
     }
   };
+  useEffect(() => {
+    if (discussionOnly || !tenantId || !principalId || !/^prj-[a-f0-9]{48}$/.test(projectId || '')) return;
+    const matching = state === 'READY' && selectedWorkIds.length === 1
+      ? items.filter(item => item.task_id === selectedWorkIds[0]
+        && TASK_ID.test(item.task_id || '')
+        && Number.isSafeInteger(item.revision) && item.revision > 0) : [];
+    const task = matching.length === 1 ? matching[0] : null;
+    const hintKey = task ? [tenantId, principalId, projectId,
+      task.task_id, task.revision].join(':') : '';
+    if (selectedDockHintRef.current === hintKey) return;
+    selectedDockHintRef.current = hintKey;
+    window.dispatchEvent(new CustomEvent('wilsy:ai-task-selection', {
+      detail: { tenantId, principalId,
+        locator: task ? { workspace: 'PROJECTS', project_id: projectId,
+          task_id: task.task_id, task_revision: task.revision,
+          participant_view: Boolean(selfIsContributor) } : null },
+    }));
+  }, [discussionOnly, tenantId, principalId, projectId, state, selectedWorkIds,
+    items, selfIsContributor]);
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
+  useEffect(() => {
+    // A Dock button may request navigation into this already-mounted Projects
+    // panel. Only this EOS-validated exact project page may resolve that hint.
+    // The request itself grants no task, tenant or model authority.
+    const onDockOpenTask = event => {
+      const detail = event?.detail;
+      if (!detail || state !== 'READY' || busy || discussionOnly
+        || detail.tenantId !== tenantId || detail.principalId !== principalId
+        || (detail.projectId && detail.projectId !== projectId)
+        || !/^MW-T\d{1,3}$/.test(detail.taskCode || '')) return;
+      const matching = items.filter(item => TASK_ID.test(item.task_id || '')
+        && Number.isSafeInteger(item.revision) && item.revision > 0
+        && (item.title === detail.taskCode
+          || item.title.startsWith(detail.taskCode + ' — ')
+          || item.title.startsWith(detail.taskCode + ' - ')));
+      if (matching.length !== 1) return;
+      detail.accepted = true;
+      setDrawerTaskId(matching[0].task_id);
+      recordWorkVisit(matching[0]);
+    };
+    window.addEventListener('wilsy:projects-open-task-request', onDockOpenTask);
+    return () => window.removeEventListener('wilsy:projects-open-task-request', onDockOpenTask);
+  }, [state, busy, discussionOnly, tenantId, principalId, projectId, items]);
   const closeDrawer = () => {
+    setTaskIntelligenceOpen(false);
     setDrawerTaskId(null);
     drawerReturnFocus.current?.focus?.();
+  };
+  const openTaskIntelligenceConversation = () => {
+    if (!drawerTask || state !== 'READY'
+      || !TASK_ID.test(drawerTask.task_id)
+      || !Number.isSafeInteger(drawerTask.revision)
+      || drawerTask.revision < 1 || !principalId || !tenantId) return;
+    const locator = {
+      workspace: 'PROJECTS', project_id: projectId,
+      task_id: drawerTask.task_id, task_revision: drawerTask.revision,
+      participant_view: Boolean(selfIsContributor),
+    };
+    closeDrawer();
+    // Only task coordinates leave the modal. These browser events confer no
+    // membership, context truth, entitlement or model execution authority.
+    window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId, principalId, locator },
+    }));
+    window.dispatchEvent(new CustomEvent('wilsy:ai-request-open', {
+      detail: { tenantId, principalId },
+    }));
   };
   useEffect(() => {
     if (!drawerTaskId) return undefined;
     const keyDown = event => {
       if (event.key === 'Escape') {
         event.preventDefault();
+        setTaskIntelligenceOpen(false);
         setDrawerTaskId(null);
         drawerReturnFocus.current?.focus?.();
       }
@@ -1686,6 +1806,74 @@ export default function ProjectTasksPanel({
           Often opened this session: {frequentWork.map(item => item.title).join(' · ')}
         </span>}
       </div>}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2" aria-label="Project work lifecycle views">
+        <div role="group" aria-label="Work lifecycle view" className="inline-flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          {[
+            ['ACTIVE', 'Active work'],
+            ['COMPLETED', 'Completed'],
+            ['ALL', 'All work'],
+          ].map(([value, title]) => <button key={value} type="button"
+            aria-pressed={workLifecycleView === value}
+            className={'min-h-10 rounded-md px-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+              + (workLifecycleView === value
+                ? 'bg-blue-700 text-white'
+                : 'bg-transparent text-slate-800 hover:bg-slate-200')}
+            onClick={() => {
+              completedSource.current = { ...completedSource.current, view: value };
+              setWorkLifecycleView(value);
+              setWorkStatus('ALL');
+              setWorkAttention('ALL');
+              setSelectedWorkIds([]);
+              void load(0);
+            }}>{title}</button>)}
+        </div>
+        <span role="status" className="text-xs text-slate-600">
+          {workRows.length} matching · EOS-verified batch {Math.floor(offset / 50) + 1}
+          {hasMore ? ' · More EOS pages available' : ''}
+        </span>
+      </div>
+      {workLifecycleView === 'COMPLETED' && <form className="mt-3 flex flex-wrap items-end gap-2"
+        aria-label="Search completed project work" onSubmit={event => {
+          event.preventDefault();
+          completedSource.current = { view: 'COMPLETED', search: completedSearchInput.trim(),
+            order: completedOrder, assignee: completedAssignee };
+          setSelectedWorkIds([]);
+          void load(0);
+        }}>
+        <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-xs font-semibold text-slate-800">
+          Search completed work across EOS pages
+          <input type="search" maxLength={120} value={completedSearchInput}
+            onChange={event => setCompletedSearchInput(event.target.value)}
+            placeholder="Task title" className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"/>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-slate-800">
+          Completion date
+          <select aria-label="Sort completion date" value={completedOrder}
+            onChange={event => setCompletedOrder(event.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="NEWEST">Newest first</option>
+            <option value="OLDEST">Oldest first</option>
+          </select>
+        </label>
+        <label className="flex min-w-[165px] flex-col gap-1 text-xs font-semibold text-slate-800">
+          Completed task contributor
+          <select aria-label="Filter completed contributor" value={completedAssignee}
+            onChange={event => setCompletedAssignee(event.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="">All contributors</option>
+            {participants.filter(person => person.role === 'CONTRIBUTOR').map(person =>
+              <option key={person.principal_id} value={person.principal_id}>
+                {[person.first_name, person.last_name].filter(Boolean).join(' ') || 'Verified contributor'}
+              </option>)}
+          </select>
+        </label>
+        <button type="submit" className="wp-button wp-button-primary">Search EOS</button>
+      </form>}
+      <p className="mt-1 text-xs text-slate-600">
+        {workLifecycleView === 'COMPLETED'
+          ? 'Completed results are filtered and paginated by Python EOS across this project. Completion dates and actors are checked against immutable task events.'
+          : 'Active and all-work controls apply to this verified page; use EOS batch navigation for additional records.'}
+      </p>
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
           Work filters, grouping and sorting · {workRows.length} match on this verified EOS batch
@@ -2292,17 +2480,22 @@ export default function ProjectTasksPanel({
         <aside role="dialog" aria-modal="true"
           aria-label={'Work details: ' + drawerTask.title} ref={drawerRef}
           className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
-          <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
-                {drawerTask.kind === 'MILESTONE' ? 'Milestone'
-                  : drawerTask.parent_task_id ? 'Subtask' : 'Task'} · Project work
-              </p>
-              <button type="button" onClick={closeDrawer}
-                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
-                aria-label="Close work details">Close</button>
-            </div>
-            {selectedReviewTasks.length > 1 && selectedReviewIndex !== -1 && <nav
+          <UnifiedTaskHeader
+            kind={drawerTask.kind === 'MILESTONE' ? 'Milestone' : drawerTask.parent_task_id ? 'Subtask' : 'Task'}
+            source="Project" title={drawerTask.title} status={label(drawerTask.status)}
+            due={drawerTask.due_date ? (drawerTask.due_date < todayISO && !['DONE', 'CANCELLED'].includes(drawerTask.status)
+              ? 'Overdue · ' : 'Due ') + drawerTask.due_date : 'No due date'}
+            owner={drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}
+            onClose={typeof onReturnToAttention === 'function' && focusTaskId === drawerTask.task_id
+              ? onReturnToAttention : closeDrawer}
+            closeLabel={typeof onReturnToAttention === 'function' && focusTaskId === drawerTask.task_id
+              ? 'Back to Daily attention' : 'Close work details'}
+            primaryControl={<button type="button" onClick={() => setTaskIntelligenceOpen(value => !value)}
+          aria-pressed={taskIntelligenceOpen}
+          className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+          {taskIntelligenceOpen ? 'Task details' : 'WILSY AI'}
+        </button>}
+            reviewNavigation={selectedReviewTasks.length > 1 && selectedReviewIndex !== -1 && <nav
               aria-label="Selected work review navigation" className="mt-3 flex flex-wrap items-center gap-2">
               <span className="mr-auto text-xs font-semibold text-slate-700">
                 Reviewing {selectedReviewIndex + 1} of {selectedReviewTasks.length} selected tasks
@@ -2318,25 +2511,7 @@ export default function ProjectTasksPanel({
                 Next task
               </button>
             </nav>}
-            <h3 className="mt-3 break-words text-2xl font-bold leading-tight text-slate-950">{drawerTask.title}</h3>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-              <span className="rounded-md bg-slate-100 px-3 py-1.5 font-bold text-slate-900">
-                {label(drawerTask.status)}
-              </span>
-              {drawerTask.due_date && drawerTask.status !== 'DONE' && drawerTask.status !== 'CANCELLED'
-                && drawerTask.due_date < todayISO
-                ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 font-semibold text-rose-900">
-                  Overdue · {drawerTask.due_date}
-                </span>
-                : <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">
-                  {drawerTask.due_date ? 'Due ' + drawerTask.due_date : 'No due date'}
-                </span>}
-              <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">
-                {drawerTask.assignee_principal_id
-                  ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}
-              </span>
-            </div>
-            <nav className="mt-3 flex flex-wrap gap-2" aria-label="Task execution actions">
+            actions={<>
               {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
                 <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
@@ -2355,58 +2530,50 @@ export default function ProjectTasksPanel({
                 onClick={() => { const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id); }}>
                 Approvals
               </button>
-            </nav>
-          </header>
+            </>}
+          />
           <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
-            {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section
-              className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4"
-              aria-label="Source-verified task execution readiness">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <h4 className="text-base font-bold text-blue-950">Execution readiness</h4>
-                  <p className="mt-1 text-sm text-blue-900">
-                    Current EOS task facts. Evidence, approvals and production release remain independently governed.
-                  </p>
+            {taskIntelligenceOpen ? <section aria-label="WILSY AI task intelligence"
+              className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-4 sm:px-5">
+              <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-semibold text-slate-900">WILSY AI · Task intelligence</h4>
+                  <p className="text-xs text-slate-500">Current authorized source · No model required</p>
                 </div>
-                <span className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-950">
-                  Revision {drawerTask.revision}
-                </span>
-              </div>
-              <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Accountable contributor</dt>
-                  <dd className="mt-1 font-bold text-slate-950">
-                    {drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Assignment required'}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Delivery deadline</dt>
-                  <dd className="mt-1 font-bold text-slate-950">
-                    {drawerTask.due_date
-                      ? drawerTask.due_date < todayISO ? 'Overdue · ' + drawerTask.due_date : drawerTask.due_date
-                      : 'Due date required'}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Source lifecycle</dt>
-                  <dd className="mt-1 font-bold text-slate-950">{label(drawerTask.status)}</dd>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Predecessor gate · current verified page</dt>
-                  <dd className="mt-1 font-bold text-slate-950">
-                    {drawerTask.depends_on.some(id => !items.some(item => item.task_id === id))
+                <button type="button" className="min-h-10 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-blue-800 hover:bg-slate-50"
+                  onClick={openTaskIntelligenceConversation}>Continue in conversation</button>
+              </header>
+              <WilsyDockOperatingWork
+                tenantId={tenantId} principalId={principalId} scope={scope}
+                locator={{ workspace: 'PROJECTS', project_id: projectId,
+                  task_id: drawerTask.task_id, task_revision: drawerTask.revision,
+                  participant_view: Boolean(selfIsContributor) }}
+                providerReady={false} usageConsent={false} readOnly embedded
+                onReviewActivity={() => { const id = drawerTask.task_id; closeDrawer(); setDiscussionTaskId(id); }}
+                onReviewEvidence={() => { const id = drawerTask.task_id; closeDrawer(); setAttachmentTaskId(id); }}
+                onReviewApprovals={() => { const id = drawerTask.task_id; closeDrawer(); setApprovalTaskId(id); }}
+                onVerified={() => { void load(offset); }} onRecord={() => {}} />
+            </section> : <>
+            {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
+              <UnifiedTaskReadiness revision={drawerTask.revision}
+                description="Current EOS task facts. Evidence, approvals and production release remain independently governed."
+                facts={[
+                  { label: 'Accountable contributor', value: drawerTask.assignee_principal_id
+                    ? contributorName(drawerTask.assignee_principal_id) : 'Assignment required' },
+                  { label: 'Delivery deadline', value: drawerTask.due_date
+                    ? drawerTask.due_date < todayISO ? 'Overdue · ' + drawerTask.due_date : drawerTask.due_date
+                    : 'Due date required' },
+                  { label: 'Source lifecycle', value: label(drawerTask.status) },
+                  { label: 'Predecessor gate · current verified page',
+                    value: drawerTask.depends_on.some(id => !items.some(item => item.task_id === id))
                       ? 'Some predecessors outside verified page'
                       : drawerTask.depends_on.filter(id => items.some(item =>
                         item.task_id === id && item.status !== 'DONE')).length > 0
-                        ? 'Waiting on '
-                          + drawerTask.depends_on.filter(id => items.some(item =>
-                            item.task_id === id && item.status !== 'DONE')).length
-                          + ' predecessor(s)'
-                        : 'No unfinished predecessors visible on this page'}
-                  </dd>
-                </div>
-              </dl>
-              <div className="mt-3 flex flex-wrap gap-2" aria-label="Task execution evidence actions">
+                        ? 'Waiting on ' + drawerTask.depends_on.filter(id => items.some(item =>
+                          item.task_id === id && item.status !== 'DONE')).length + ' predecessor(s)'
+                        : 'No unfinished predecessors visible on this page' },
+                ]}
+                actions={<>
                 {(actionCapabilities?.canEdit || actionCapabilities?.canAssign) && <button type="button"
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-4 py-2 text-sm font-bold text-white hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                   onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
@@ -2426,15 +2593,9 @@ export default function ProjectTasksPanel({
                   onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
                   Record activity
                 </button>
-              </div>
-              {!actionCapabilities && <p role="status" className="mt-2 text-xs text-blue-900">
-                Checking EOS task-edit authority…
-              </p>}
-              <p className="mt-3 text-xs leading-relaxed text-blue-950">
-                Task status does not certify deployment readiness, rollback capability, evidence clearance
-                or strategic outcome attainment. Review the independently authorized source records before completion.
-              </p>
-            </section>}
+              </>}
+                footnote="Task status does not certify deployment readiness, rollback capability, evidence clearance or strategic outcome attainment. Review independently authorized source records before completion."
+              />}
             {drawerTask.kind === 'TASK'
               && /(?:^|—\\s*)certify production readiness and rollback$/i.test(drawerTask.title.trim())
               && <ProjectReadinessRollback
@@ -2508,6 +2669,7 @@ export default function ProjectTasksPanel({
                     </li>)}
                 </ul>}
             </section>
+            </>}
           </div>
         </aside>
       </div>}
@@ -2530,7 +2692,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.69.1-SINGLE-TASK-MODAL-EXIT
+// VERSION: v1.75.1-IMMUTABLE-COMPLETION-ORDER
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible

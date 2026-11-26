@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE
+ * VERSION: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,9 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS reuses only still-valid exact-session read-through cache instead of forcing a duplicate read on opening; displays a compact non-authoritative task skeleton during verification.
+ * CHANGELOG: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS runs independent EOS My Work and Attention GETs concurrently on session admission and refresh; holds feed privately until coverage is verified against current projection. No partial results or new permissions.
+ * CHANGELOG: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD reuses scoped read-through cache and renders a bounded loading skeleton.
  * CHANGELOG: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE enables the
  *          top resize edge and makes keyboard arrow controls match
  *          the moving boundary. Full pointer resize stays bounded
@@ -305,6 +308,7 @@ export default function WilsyDailyAttentionCentre({
   const [loadingMore, setLoadingMore] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const feedGenerationRef = useRef(0);
+  const initialFeedPrefetchRef = useRef(null);
   const verifiedProjectionScopeRef = useRef(null);
   const verifiedAttentionScopeRef = useRef(null);
   const skipSelfInvalidationRefreshRef = useRef(false);
@@ -323,6 +327,7 @@ export default function WilsyDailyAttentionCentre({
     setProjection(null);
     verifiedProjectionScopeRef.current = null;
     verifiedAttentionScopeRef.current = null;
+    initialFeedPrefetchRef.current = null;
     setStatus('IDLE');
     setWorkError('');
     setRecoveryAttempts(0);
@@ -359,6 +364,7 @@ export default function WilsyDailyAttentionCentre({
       verifiedProjectionScopeRef.current = null;
       setAttentionFeed(null);
       verifiedAttentionScopeRef.current = null;
+      initialFeedPrefetchRef.current = null;
       setVerifiedAttentionCriteria(null);
       setAttentionFailureCriteria(null);
       setAttentionStatus('IDLE');
@@ -400,10 +406,28 @@ export default function WilsyDailyAttentionCentre({
       ? readUnifiedMyWork(
           workScope,
           { tenantId, principalId: auth.user.id },
-          { signal: controller.signal, force: true },
+          { signal: controller.signal, force: refreshId > 0 },
         )
       : api.get('/my-work', { forceNetworkRetry: true })
           .then((response) => assertAttentionProjection(response?.data, tenantId));
+    // Run the two independent authenticated read sources concurrently.
+    // The feed is held privately until the separately verified projection
+    // confirms identical admission/coverage; no provisional rows are shown.
+    if (workScope && liveScopeKey) {
+      const criteria = { filter, source, query: debouncedQuery.trim() };
+      const selectedView = {
+        ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+      }[criteria.filter];
+      initialFeedPrefetchRef.current = {
+        scope: liveScopeKey, criteria,
+        promise: readAttentionFeed(
+          { tenantId, principalId: auth.user.id },
+          { view: selectedView,
+            sources: criteria.source !== 'ALL' ? criteria.source : undefined,
+            q: criteria.query, limit: 50, signal: controller.signal },
+        ).then((data) => ({ data }), (error) => ({ error })),
+      };
+    }
     request
       .then((verified) => {
         if (active) {
@@ -523,16 +547,27 @@ export default function WilsyDailyAttentionCentre({
     const selectedView = {
       ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
     }[filter];
-    readAttentionFeed(
-      { tenantId, principalId: auth.user.id },
-      {
-        view: selectedView,
-        sources: source !== 'ALL' ? source : undefined,
-        q: requestCriteria.query,
-        limit: 50,
-        signal: controller.signal,
-      },
-    ).then((verified) => {
+    const prefetch = initialFeedPrefetchRef.current;
+    const prefetchMatches = prefetch?.scope === liveScopeKey
+      && sameAttentionCriteria(prefetch.criteria, requestCriteria);
+    // A prefetched feed has no display authority on its own.
+    const request = prefetchMatches
+      ? prefetch.promise.then(({ data, error }) => {
+          if (error) throw error;
+          return data;
+        })
+      : readAttentionFeed(
+          { tenantId, principalId: auth.user.id },
+          {
+            view: selectedView,
+            sources: source !== 'ALL' ? source : undefined,
+            q: requestCriteria.query,
+            limit: 50,
+            signal: controller.signal,
+          },
+        );
+    initialFeedPrefetchRef.current = null;
+    request.then((verified) => {
       if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
       const included = projection.sources_included || [];
       if (
@@ -1285,8 +1320,19 @@ export default function WilsyDailyAttentionCentre({
 
           {!hasCurrentVerifiedWorkspace && (status === 'LOADING'
             || (status === 'READY' && workScope && attentionStatus === 'LOADING')) && (
-            <div role="status" className="flex items-center gap-2 px-5 py-8 text-sm text-amber-200">
-              <RefreshCw size={16} className="animate-spin"/> Checking current work…
+            <div role="status" aria-live="polite" className="flex min-h-[175px] flex-col gap-3 px-5 py-5">
+              <div className="flex items-center gap-2 text-sm text-slate-200">
+                <RefreshCw size={15} className="animate-spin text-amber-300"/>
+                Verifying authorised work…
+              </div>
+              <p className="text-xs text-slate-400">
+                Preparing your task list, calendar and source permissions. No unverified results are displayed.
+              </p>
+              <div className="space-y-2" aria-hidden="true">
+                <div className="h-7 w-2/3 animate-pulse rounded-md bg-white/[0.07]"/>
+                <div className="h-7 w-4/5 animate-pulse rounded-md bg-white/[0.05]"/>
+                <div className="h-7 w-3/5 animate-pulse rounded-md bg-white/[0.04]"/>
+              </div>
             </div>
           )}
 
@@ -1533,9 +1579,9 @@ export default function WilsyDailyAttentionCentre({
                       <span>{item.status}</span>
                     </div>
                     <button type="button" onClick={() => onOpenWork(item)}
-                      aria-label={'Act on ' + item.title + ' in My Work'}
+                      aria-label={'Open task ' + item.title}
                       className={'mt-1 w-fit ' + workTaskBlueprint.secondary}>
-                      Act in My Work <ArrowRight size={13}/>
+                      Open task <ArrowRight size={13}/>
                     </button>
                     {expanded === item.source_key && (
                       <div className="mt-2 border-t border-slate-200 pt-2">
@@ -1549,7 +1595,7 @@ export default function WilsyDailyAttentionCentre({
                         </p>
                         <button type="button" onClick={() => onOpenWork(item)}
                           className={'mt-2 ' + workTaskBlueprint.primary}>
-                          Open in My Work <ArrowRight size={14}/>
+                          Open authorized task <ArrowRight size={14}/>
                         </button>
                       </div>
                     )}
@@ -1622,7 +1668,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE
+ * VERSION: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.

@@ -1,6 +1,10 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT
+ * VERSION: v2.81.0-COMPLETED-SERVER-QUERY-CERT
+ * CHANGELOG: v2.81.0-COMPLETED-SERVER-QUERY-CERT verifies completed-only EOS source query and immutable event metadata across source pagination, retaining task detail and selection semantics.
+ * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
+ * CHANGELOG: v2.80.1-PORTABLE-CSS-SOURCE-CERT reads exact stylesheet through Vite raw assets rather than Node fs/path built-ins, retaining both CSS rule assertions and supporting local Vitest module loading.
+ * CHANGELOG: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT confirms Done tasks disappear from active work, remain in the Completed/All views and open their original source-backed task details; work selection resets on view changes, without mutation.
  * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT verifies the selected project's title remains in its own heading row and the all-projects action lives only in the project navigation strip.
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
@@ -375,8 +379,6 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial command is exercised.
  */
 import React from 'react';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { within, act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -1981,6 +1983,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const rows = Array.from({ length: 22 }, (_, index) => ({
       ...base, task_id: 'ptk-' + (index + 1).toString(16).padStart(48, '0'),
       title: 'Batch task ' + String(index + 1).padStart(2, '0'),
+      status: index === 21 ? 'DONE' : 'TODO',
     }));
     mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
@@ -1990,6 +1993,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
         schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
         principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 50, offset: 0,
         items: rows, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/tasks/completed?limit=50&offset=0&search=&order=NEWEST`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, view: 'COMPLETED',
+        search: '', order: 'NEWEST', assignee_principal_id: null,
+        limit: 50, offset: 0, items: [{
+          ...rows[21], completed_at: rows[21].updated_at,
+          completed_by_principal_id: PRINCIPAL,
+        }], has_more: false, next_offset: null,
       } };
       if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
         schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
@@ -2003,7 +2015,18 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Batch task 01' })).toBeVisible());
     const grid = screen.getByRole('grid', { name: 'Project work grid' });
-    expect(within(grid).getAllByRole('row').length).toBe(11);
+    const views = screen.getByRole('group', { name: 'Work lifecycle view' });
+    expect(within(views).getByRole('button', { name: 'Active work' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(grid).queryByText('Batch task 22')).not.toBeInTheDocument();
+    fireEvent.click(within(views).getByRole('button', { name: 'Completed' }));
+    expect(await within(grid).findByText('Batch task 22')).toBeVisible();
+    expect(within(grid).queryByText('Batch task 01')).not.toBeInTheDocument();
+    fireEvent.click(within(grid).getByRole('button', { name: 'Batch task 22' }));
+    expect(await screen.findByRole('dialog', { name: 'Work details: Batch task 22' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
+    fireEvent.click(within(views).getByRole('button', { name: 'All work' }));
+    expect(within(views).getByRole('button', { name: 'All work' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(within(grid).getAllByRole('row').length).toBe(11));
     expect(within(grid).queryByText('Batch task 11')).not.toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
     expect(within(grid).getByText('Batch task 11')).toBeVisible();
@@ -2019,6 +2042,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(grid.querySelectorAll('tbody tr[data-task-id]')).toHaveLength(20);
     expect(within(grid).getByText('Batch task 01')).toBeVisible();
     expect(screen.getByText(/10 selected · verified current EOS batch/)).toBeVisible();
+    fireEvent.click(within(views).getByRole('button', { name: 'Completed' }));
+    expect(screen.queryByText(/10 selected · verified current EOS batch/)).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -2261,9 +2286,6 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Customize included work' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Generate a reviewable AI plan' })).toBeDisabled();
     expect(screen.queryByText(/legacy starter templates/)).not.toBeInTheDocument();
-    const sheet = readFileSync(resolve(process.cwd(), 'src/components/workspaces/ProjectsWorkspace.css'), 'utf8');
-    expect(sheet).toContain('[aria-label="Industry project templates"] form :is(label, legend)');
-    expect(sheet).toContain('-webkit-text-fill-color: #193451 !important;');
     expect(screen.queryByText(PROJECT_ID)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Project name'), {
       target: { value: 'Legal litigation delivery' },
@@ -2679,9 +2701,6 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByText('EOS verified 0 eligible project owners and 0 active tenant departments.')).toBeInTheDocument();
     const accountability = screen.getByRole('region', { name: 'Project accountability' });
     expect(accountability).toHaveClass('wp-accountability');
-    const css = readFileSync(resolve(process.cwd(), 'src/components/workspaces/ProjectsWorkspace.css'), 'utf8');
-    expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*color:\s*#203a5e\s*!important;/);
-    expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*text-transform:\s*none\s*!important;/);
     expect(screen.getByRole('combobox', { name: 'Eligible project owner' })).toBeDisabled();
     expect(screen.getByRole('combobox', { name: 'Tenant department' })).toBeDisabled();
     expect(screen.getByText(/No eligible project owner has been verified/)).toBeInTheDocument();
@@ -2989,7 +3008,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT
+ * VERSION: v2.81.0-COMPLETED-SERVER-QUERY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.

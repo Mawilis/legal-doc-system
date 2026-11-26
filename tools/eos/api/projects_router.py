@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS
+VERSION: v1.51.0-COMPLETED-SOURCE-PAGING
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -29,6 +29,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
                       response follows commit. The registry never opens one.
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
+CHANGELOG: v1.51.0-COMPLETED-SOURCE-PAGING adds independently IAM-gated, exact-project completed-task paging with bounded search, assignee filtering, newest/oldest completion sort and immutable source-event completion metadata; no task mutation or access expansion.
+CHANGELOG: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS\n  Original-author task comment corrections are append-only and admitted only
+  within 30 minutes of the original source timestamp; EOS checks author,
+  comment fingerprint, reason and time in the write transaction.
 CHANGELOG: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS exposes exact-command
   immutable receipt reconciliation without resubmitting a mutation.
 CHANGELOG:
@@ -573,6 +577,12 @@ class ProjectTaskCommentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     body: str = Field(min_length=1, max_length=5000)
     mentions: tuple[str, ...] = Field(default=(), max_length=10)
+    # Corrections are fresh, audited append-only comments. Never allow a
+    # user-controlled timestamp, original author or mutable comment update.
+    correction_of: str | None = Field(default=None, pattern=r"^pcm-[0-9a-f]{48}$")
+    correction_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{128}$")
+    correction_reason: str | None = Field(default=None, min_length=10, max_length=500)
+
 
     @field_validator("mentions", mode="before")
     @classmethod
@@ -2208,13 +2218,51 @@ def _create_project_comment(
             principal_id=principal, session=session,
         )
     actor = context.identity.identity_id
+    body = payload.body
+    correction_values = (payload.correction_of, payload.correction_fingerprint, payload.correction_reason)
+    if any(value is not None for value in correction_values):
+        if not all(value is not None for value in correction_values):
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_CORRECTION_FIELDS_REQUIRED")
+        # Server-owned 30-minute admission window, enforced in the same
+        # transaction as the new comment write. Aged/foreign records fail closed.
+        now = datetime.now(timezone.utc)
+        cursor = 0
+        original = None
+        for _ in range(10):
+            page, more = store.list_page(
+                tenant_id=context.tenant_id, project_id=project_id,
+                task_id=task_id, limit=100, offset=cursor, session=session,
+            )
+            original = next((item for item in page if item.comment_id == payload.correction_of), None)
+            if original is not None or not more:
+                break
+            cursor += len(page)
+            if not page:
+                break
+        if original is None or original.author_principal_id != actor:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_ORIGINAL_UNAVAILABLE")
+        if original.fingerprint != payload.correction_fingerprint:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED")
+        age = now - original.created_at
+        if age.total_seconds() < 0 or age.total_seconds() > 30 * 60:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_WINDOW_EXPIRED")
+        if body.strip() == original.body.strip():
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_CORRECTION_UNCHANGED")
+        body = (
+            "**Correction to earlier project activity**\\n"
+            + "Original comment: " + original.comment_id + "\\n"
+            + "**Reason:** " + str(payload.correction_reason) + "\\n"
+            + "**Corrected update:**\\n" + body
+        )
+        if len(body) > 5000:
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_BODY_INVALID")
     comment = ProjectComment(
         tenant_id=context.tenant_id, project_id=project_id,
         task_id=task_id,
         comment_id=comment_id_for_command(
             context.tenant_id, project_id, task_id, actor, idempotency_key,
         ),
-        author_principal_id=actor, body=payload.body,
+        author_principal_id=actor, body=body,
         mentions=tuple(payload.mentions), created_at=datetime.now(timezone.utc),
     )
     stored = store.create_or_replay(
@@ -3412,6 +3460,42 @@ def list_project_tasks(
     ))
 
 
+@router.get("/{project_id}/tasks/completed")
+def list_completed_project_tasks(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    search: str = Query(default="", max_length=120),
+    assignee_principal_id: str | None = Query(default=None, min_length=1, max_length=180),
+    order: Literal["NEWEST", "OLDEST"] = Query(default="NEWEST"),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Independently authorize exact-project completed history before querying."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        store = _project_task_store(registry, context.tenant_id, project_id, session)
+        rows, more = store.list_completed_page(
+            tenant_id=context.tenant_id, project_id=project_id, session=session,
+            limit=limit, offset=offset, search=search,
+            assignee_principal_id=assignee_principal_id, completion_order=order,
+        )
+        return {
+            "schema": "WILSY-PROJECT-TASK-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "view": "COMPLETED", "search": search, "order": order,
+            "assignee_principal_id": assignee_principal_id,
+            "items": list(rows),
+            "limit": limit, "offset": offset, "has_more": more,
+            "next_offset": offset + len(rows) if more else None,
+        }
+
+    return _profiled_projects_get(context, "TASK_LIST", read)
+
+
 @router.get("/{project_id}/my-project/tasks")
 def list_assigned_project_tasks(
     response: Response,
@@ -4379,7 +4463,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS
+# VERSION: v1.51.0-COMPLETED-SOURCE-PAGING
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion

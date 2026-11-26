@@ -1,13 +1,17 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.18.0-INPLACE-WORK-FOCUS-CERT
+ * VERSION: v1.22.0-ATTENTION-TASK-ORIGIN-RETURN-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.22.0-ATTENTION-TASK-ORIGIN-RETURN-CERT ensures CRM work opened from Daily attention closes back to its originating route and reopens Daily attention, never dropping into an unrelated work list.
+ * CHANGELOG: v1.21.0-CANONICAL-PROJECT-SOURCE-ROUTING-CERT proves exact source-verified Projects work opens the canonical Projects route and does not mutate work or open the incomplete My Work details.
+ * CHANGELOG: v1.20.0-UNIFIED-MODAL-SOURCE-CAPABILITY-CERT verifies the shared Projects/My Work task-modal header, CRM capability gating, and canonical command reconciliation behind independently admitted source actions.
+ * CHANGELOG: v1.19.0-SOURCE-NEUTRAL-TASK-DETAIL-CERT certifies the task-first details view with CRM actions and audit under an explicit source tab. Existing CRM update, cancel, status/revision readback regressions continue through the same authorized source-specific controls.
  * CHANGELOG: v1.18.0-INPLACE-WORK-FOCUS-CERT verifies the approved
  *            Projects-style in-place record region and Back-to-work focus
  *            restoration without requiring the retired floating dialog.
@@ -75,7 +79,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import MyWorkWorkspace from '../../components/workspaces/MyWorkWorkspace.jsx';
 import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
@@ -117,9 +121,12 @@ const payload = {
 const renderWorkspace = (props = {}) => render(
   <MemoryRouter><MyWorkWorkspace {...props} /></MemoryRouter>,
 );
-const openRow = async (title) => {
+const openRow = async (title, sourceActions = false) => {
   const row = await screen.findByRole('button', { name: new RegExp(title) });
   fireEvent.click(row);
+  if (sourceActions) {
+    fireEvent.click(await screen.findByRole('button', { name: 'Authorized CRM source actions & history' }));
+  }
   return row;
 };
 
@@ -131,6 +138,83 @@ beforeEach(() => {
     data: { work_item_id: decodeURIComponent(path.split('/').at(-2)), status: 'COMPLETED' },
   }));
   completeLegalWorkItem.mockResolvedValue({ work_item_id: 'legal-1', completion_event_id: 'event-1' });
+});
+
+function RouteProbe() {
+  const location = useLocation();
+  return <output data-testid="current-work-route">{location.pathname + location.search}</output>;
+}
+
+describe('attention-origin task return', () => {
+  it('returns CRM task closure to its original Daily attention route instead of the My Work queue', async () => {
+    const crm = {
+      source: 'CRM', source_key: 'CRM:crm-7', work_item_id: 'crm-7',
+      title: 'Follow up with customer', description: 'Read-only CRM work',
+      status: 'OPEN', priority: 'NORMAL', kind: 'TASK', due_at: null, is_overdue: false,
+    };
+    api.get.mockResolvedValue({ data: {
+      ...payload, items: [crm], sources_included: ['CRM'],
+      summary: { active_count: 1, overdue_count: 0, source_counts: { CRM: 1 } },
+    } });
+    const ReturnProbe = () => {
+      const route = useLocation();
+      return <output data-testid="attention-return-route">
+        {route.pathname + route.search + '|' + String(route.state?.reopenDailyAttention === true)}
+      </output>;
+    };
+    render(<AuthContext.Provider value={{ user: { id: 'principal-a', tenantId: 'tenant-a' }, sessionGeneration: 30 }}>
+      <MemoryRouter initialEntries={[{
+        pathname: '/my-work',
+        state: { focusWorkItem: 'CRM:crm-7',
+          attentionReturn: { pathname: '/headquarters', search: '?section=overview' } },
+      }]}>
+        <MyWorkWorkspace/>
+        <ReturnProbe/>
+      </MemoryRouter>
+    </AuthContext.Provider>);
+    expect(await screen.findByRole('dialog', { name: 'Work details: Follow up with customer' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Daily attention' }));
+    await waitFor(() => expect(screen.getByTestId('attention-return-route')).toHaveTextContent(
+      '/headquarters?section=overview|true'));
+    expect(screen.queryByRole('dialog', { name: 'Work details: Follow up with customer' })).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+});
+
+describe('canonical source-owned project task routing', () => {
+  it('opens an EOS-admitted Projects task in the Projects workspace instead of the incomplete My Work drawer', async () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const item = {
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId, work_item_id: taskId,
+      project_id: projectId, owner_principal_id: 'principal-a', title: 'Verify engineering milestone',
+      description: 'Evidence belongs to Projects', kind: 'TASK',
+      status: 'IN_PROGRESS', priority: 'NORMAL', is_overdue: false,
+      due_at: null, due_date: '2026-11-27', action_authority: 'SOURCE_SERVICE_ONLY',
+      completion_route: null, dependency_total: 0, dependency_remaining: 0,
+      dependency_readiness: 'READY',
+    };
+    api.get.mockResolvedValue({ data: {
+      ...payload, items: [item], sources_included: ['PROJECTS'],
+      summary: { active_count: 1, overdue_count: 0, source_counts: { PROJECTS: 1 } },
+    } });
+    render(<AuthContext.Provider value={{ user: { id: 'principal-a', tenantId: 'tenant-a' }, sessionGeneration: 12 }}>
+      <MemoryRouter initialEntries={['/headquarters?section=my-work']}>
+        <MyWorkWorkspace />
+        <RouteProbe />
+      </MemoryRouter>
+    </AuthContext.Provider>);
+    fireEvent.click(await screen.findByRole('button', { name: /Verify engineering milestone/ }));
+    await waitFor(() => expect(screen.getByTestId('current-work-route').textContent).toContain('section=projects'));
+    const query = new URLSearchParams(screen.getByTestId('current-work-route').textContent.split('?')[1]);
+    expect(query.get('project')).toBe(projectId);
+    expect(query.get('task')).toBe(taskId);
+    expect(query.get('work')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /Verify engineering milestone/ })).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
 });
 
 describe('authenticated My Work execution queue', () => {
@@ -194,13 +278,21 @@ describe('authenticated My Work execution queue', () => {
         <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
       </AuthContext.Provider>,
     );
-    await openRow('Prepare CRM launch plan');
+    readAttentionSourceActions.mockResolvedValue({
+      sourceActions: { CRM: ['UPDATE', 'COMPLETE'] }, unavailableSources: [],
+    });
+    const crmRow = await screen.findByRole('button', { name: /Prepare CRM launch plan/ });
+    fireEvent.click(crmRow);
+    expect(screen.getByRole('dialog', { name: 'Work details: Prepare CRM launch plan' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Verified CRM source record' })).toBeNull();
+    expect(await screen.findByText(/Current task source independently verified by EOS/)).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'Authorized CRM source actions & history' }));
     expect(await screen.findByText('Persisted source record verified for this tenant')).toBeTruthy();
-    const focus = screen.getByRole('region', { name: 'Prepare CRM launch plan' });
+    const focus = screen.getByRole('dialog', { name: 'Work details: Prepare CRM launch plan' });
     expect(focus).toBeTruthy();
     expect(focus.closest('.wilsy-source-task-focus')).toBeTruthy();
     expect(document.querySelector('main')?.hidden).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Work details: Prepare CRM launch plan' })).toBeTruthy();
     expect(screen.queryByRole('separator', { name: 'Resize work details' })).toBeNull();
     expect(screen.getByText('Principal recorded; human-readable name unavailable from this source')).toBeTruthy();
     expect(api.get).toHaveBeenCalledWith(
@@ -271,7 +363,7 @@ describe('authenticated My Work execution queue', () => {
         <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
       </AuthContext.Provider>,
     );
-    await openRow('Original CRM task');
+    await openRow('Original CRM task', true);
     await screen.findByText('Persisted source record verified for this tenant');
     fireEvent.click(await screen.findByRole('button', { name: 'Edit CRM task' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit CRM title' }), {
@@ -353,7 +445,7 @@ describe('authenticated My Work execution queue', () => {
         <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
       </AuthContext.Provider>,
     );
-    await openRow('Withdrawn CRM follow-up');
+    await openRow('Withdrawn CRM follow-up', true);
     await screen.findByText('Persisted source record verified for this tenant');
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel task' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'CRM cancellation reason' }), {
@@ -428,7 +520,7 @@ describe('authenticated My Work execution queue', () => {
         <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
       </AuthContext.Provider>,
     );
-    await openRow('Production follow-up');
+    await openRow('Production follow-up', true);
     await screen.findByText('Persisted source record verified for this tenant');
     const select = await screen.findByRole('combobox', { name: 'CRM work status' });
     fireEvent.change(select, { target: { value: 'IN_PROGRESS' } });
@@ -497,7 +589,7 @@ describe('authenticated My Work execution queue', () => {
         <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
       </AuthContext.Provider>,
     );
-    await openRow('Draft candidate task');
+    await openRow('Draft candidate task', true);
     await screen.findByText('Persisted source record verified for this tenant');
     fireEvent.change(await screen.findByRole('combobox', { name: 'CRM work status' }), {
       target: { value: 'DRAFT' },
@@ -545,9 +637,9 @@ describe('authenticated My Work execution queue', () => {
       </AuthContext.Provider>,
     );
     await openRow('Read-only CRM task');
-    await screen.findByText('Persisted source record verified for this tenant');
-    await waitFor(() => expect(screen.getByText('EOS edit permission not admitted')).toBeTruthy());
-    expect(screen.getByRole('button', { name: 'Recheck actions' })).toBeTruthy();
+    expect(await screen.findByText(/Current task source independently verified by EOS/)).toBeTruthy();
+    await waitFor(() => expect(readAttentionSourceActions).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: 'Authorized CRM source actions & history' })).toBeNull();
     expect(screen.queryByRole('combobox', { name: 'CRM work status' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit CRM task' })).toBeNull();
     expect(api.patch).not.toHaveBeenCalled();
@@ -671,13 +763,13 @@ describe('authenticated My Work execution queue', () => {
   it('opens a source-backed detail drawer and restores focus to the selected row on close', async () => {
     renderWorkspace();
     const row = await openRow('Prepare daily operations report');
-    expect(screen.getByRole('region', { name: 'Prepare daily operations report' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Work details: Prepare daily operations report' })).toBeTruthy();
     expect(screen.getByText('Review the verified operating figures.')).toBeTruthy();
     expect(screen.getByLabelText('Completion note')).toBeTruthy();
     expect(row.isConnected).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Back to work' }));
     await waitFor(() => expect(document.activeElement).toBe(row));
-    expect(screen.queryByRole('region', { name: 'Prepare daily operations report' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Work details: Prepare daily operations report' })).toBeNull();
   });
 
   it('protects a dirty completion note when Escape requests close', async () => {
@@ -691,7 +783,7 @@ describe('authenticated My Work execution queue', () => {
     expect(screen.getByLabelText('Completion note').value).toBe('Draft note retained until explicit discard.');
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Discard and close' }));
-    await waitFor(() => expect(screen.queryByRole('region', { name: 'Prepare daily operations report' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Work details: Prepare daily operations report' })).toBeNull());
   });
 
   it('submits one source command, confirms the receipt, refreshes and reflects authoritative readback', async () => {
@@ -736,7 +828,7 @@ describe('authenticated My Work execution queue', () => {
     fireEvent.change(screen.getByLabelText('Completion note'), { target: { value: 'Source reports completed.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete through Operations' }));
     expect((await screen.findAllByText(/WORK_ITEM_COMPLETION_NOT_REFLECTED/)).length).toBeGreaterThan(0);
-    expect(screen.getByRole('region', { name: 'Prepare daily operations report' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Work details: Prepare daily operations report' })).toBeTruthy();
     expect(screen.getAllByText('Prepare daily operations report').length).toBeGreaterThan(0);
   });
 
@@ -790,7 +882,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.18.0-INPLACE-WORK-FOCUS-CERT
+ * VERSION: v1.22.0-ATTENTION-TASK-ORIGIN-RETURN-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.

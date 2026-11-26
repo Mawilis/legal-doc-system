@@ -1,17 +1,40 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT
+ * VERSION: v1.66.0-SINGLE-SELECTED-EOS-HINT-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
  * SECURITY / PRIVACY POSTURE: Synthetic fixtures, no secrets or real customer records
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.66.0-SINGLE-SELECTED-EOS-HINT-CERT verifies one checkbox-selected task can drive a fresh exact-task EOS context without a task dialog, and ambiguity clears only the selection-owned locator without provider calls.
+ * CHANGELOG: v1.65.0-CANONICAL-TASK-OPEN-RECOVERY-CERT verifies explicit MW-T11 navigation requires synchronous acceptance by an EOS-current Projects panel; unaccepted requests remain blocked without provider calls or fabricated assistant answers.
+ * CHANGELOG: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT tests preservation of two genuinely populated EOS archives across Clear chat; empty threads are intentionally excluded by the history renderer.
+ * CHANGELOG: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT respects the history list's nonempty-message filter and waits for tab transition before invoking the new conversation control, while still asserting no EOS deletion.
+ * CHANGELOG: v1.64.1-STALE-CHAT-RECOVERY-CERT verifies an empty thread's stale task refusal and draft can be cleared in place without adding a thread or modifying EOS history.
+ * CHANGELOG: v1.64.0-CHAT-ACTIONS-AND-LOCAL-TIME-CERT verifies New conversation from chat, Clear chat preserves the EOS archive without history mutation, and source timestamps are human-readable while original UTC evidence is retained.
+ * CHANGELOG: v1.63.2-PROGRESSIVE-FOOTER-TIMING-CERT waits for the genuine visible source footer to emerge from the existing 90-step progressive renderer rather than timing out on its immediate screen-reader copy; preserves semantic footer assertions.
+ * CHANGELOG: v1.63.1-VISIBLE-FOOTER-ASSERTION-CERT distinguishes rendered source footers from the intentional screen-reader-only progressive-animation transcript copies using CSS module class evidence and bounded async assertions.
+ * CHANGELOG: v1.63.0-LIVE-COMMENT-READBACK-CERT requires clean compact discussion summary, hidden internal source reference, explicit full-source readback and independently reauthorized comments GET without a provider call.
+ * CHANGELOG: v1.62.2-CSS-MODULE-ASSERTION-CERT checks CSS-module-generated class strings with regex matching instead of passing regex matchers into jest-dom toHaveClass; the semantic rendering assertions remain intact.
+ * CHANGELOG: v1.62.1-FOCUSED-SELECTOR-CERT disambiguates a focused deadline fact from the earlier retained full briefing in the same transcript.
+ * CHANGELOG: v1.62.0-ANSWER-AWARE-RENDERER-CERT verifies focused source fact layout and standalone provenance footers without modifying session history, EOS admission, or preserved long briefing facts.
+ * CHANGELOG: v1.61.0-FOCUSED-TASK-ANSWERS-CERT verifies five narrow task question answers from independently re-read EOS sources without repeated full-briefing output or provider usage; retains cross-task isolation and full Brief output.
+ * CHANGELOG: v1.60.1-SELECTED-TASK-PRONOUN-CERT verifies currently selected EOS task follow-up after new-thread reset and an explicit, nonbillable missing-task refusal without source guessing.
+ * CHANGELOG: v1.60.0-SOURCE-FOLLOWUP-CONTINUITY-CERT proves context-bound natural deadline and approvals follow-ups reread EOS without provider POST; mismatched task references cannot borrow prior task evidence.
+ * CHANGELOG: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT repairs the negative-test context fixture to meet unchanged no-model/no-financial-execution source admission, then proves foreign discussion is independently requested and rejected without a partial briefing.
+ * CHANGELOG: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT tests the authorized nonbillable consolidated task, event, comment, evidence and approval readback and foreign-source denial without a fabricated assistant turn.
+ * CHANGELOG: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT accepts actionable nonempty Send while retaining the explicit fail-closed no-provider, no-entitlement, no-consent, and exact replay blocks. No backend authority, consent or model grants are inferred.
+ * CHANGELOG: v1.57.0-MODAL-TASK-CONVERSATION-CERT checks same-principal/task-modal launch opens the real Dock, while a foreign tenant cannot open it or trigger a write.
+ * CHANGELOG: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT begins in Conversation after a Projects task automatically opens its work surface, explicitly enters Work and requires independent EOS recheck on return. Only test navigation is corrected; no production or source assertion is weakened.
+ * CHANGELOG: v1.56.0-PROJECT-TO-WORK-TAB-CERT certifies a selected Projects task cannot trap the Dock Work tab on the task-specific view: one click reads the current authorized My Work queue and Back to chat restores the previous untrusted locator for fresh EOS reauthorization.
+ * CHANGELOG: v1.55.0-VISIBLE-SAFETY-ADMISSION-CERT preserves the disabled Send control for nonadmitted model requests while asserting visible provider/entitlement reasons without posting or weakening existing safety tests.
+ * CHANGELOG: v1.54.0-EXPLICIT-ADMISSION-REFUSAL-CERT requires interactive Send and visible fail-closed reason for unavailable providers and missing AI entitlement, without a POST or invented response; replay hold stays non-resubmittable.
  * CHANGELOG: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT verifies conversational task inspection sends without credits when a project is verified and fails closed without project authority; EOS GETs remain required.
  * CHANGELOG: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT proves consented, EOS-verified active paid-model greetings route through canonical reasoning instead of silently returning built-in courtesy; isolated fallback stays nonmetered.
  * CHANGELOG: v1.51.0-PERSONAL-COURTESY-CERT certifies authenticated name-aware casual exchanges and continuity language without claiming model inference or crossing EOS authority.
@@ -166,7 +189,7 @@ import React from 'react';
 import dockSource from '../../../src/components/intelligence/WilsyOSIntelligenceDock.jsx?raw';
 import mainSource from '../../../src/main.jsx?raw';
 import appSource from '../../../src/App.jsx?raw';
-import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { vi } from 'vitest';
 import api from '../../../src/services/api.js';
 
@@ -338,6 +361,22 @@ describe('WilsyOSIntelligenceDock', () => {
     render(<WilsyOSIntelligenceDock />);
     expect(screen.getByTitle('Open Wilsy OS Intelligence Dock')).toBeInTheDocument();
     expect(screen.queryByText('WILSY OS Intelligence Dock')).not.toBeInTheDocument();
+  });
+
+  it('opens task-modal AI conversation only for current tenant and principal', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'named-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    expect(screen.getByTitle('Open Wilsy OS Intelligence Dock')).toBeInTheDocument();
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-request-open', {
+      detail: { tenantId: 'FOREIGN_TENANT', principalId: 'named-person' },
+    })));
+    expect(screen.getByTitle('Open Wilsy OS Intelligence Dock')).toBeInTheDocument();
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-request-open', {
+      detail: { tenantId: 'TEST_TENANT', principalId: 'named-person' },
+    })));
+    expect(await screen.findByText('WILSY OS Intelligence Dock')).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
   it('opens the dock when launcher is clicked', async () => {
@@ -761,7 +800,7 @@ describe('WilsyOSIntelligenceDock', () => {
       'How many HR and CRM tasks should we delete?',
     ]) {
       fireEvent.change(composer, { target: { value: question } });
-      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(screen.getByLabelText('Send')).toBeEnabled();
     }
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(mockApiPost).not.toHaveBeenCalled();
@@ -905,7 +944,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'How many projects are active and delete their invoices?' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
@@ -955,7 +994,7 @@ describe('WilsyOSIntelligenceDock', () => {
     const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
     for (const question of ['How may are active?', 'How many active employees?', 'How many projects should we delete?']) {
       fireEvent.change(composer, { target: { value: question } });
-      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(screen.getByLabelText('Send')).toBeEnabled();
       expect(mockApiPost).not.toHaveBeenCalled();
     }
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
@@ -1011,7 +1050,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'What time is my meeting tomorrow?' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.queryByText('WILSY OS · Device time')).not.toBeInTheDocument();
   });
@@ -1032,7 +1071,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'Explain the procurement risks for a new supplier' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.click(screen.getByLabelText('Send'));
     await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
@@ -1227,6 +1266,42 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
     expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('opens the authorized My Work queue from a focused Projects task and restores navigation on return', async () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'named-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: 'named-person',
+        locator: { workspace: 'PROJECTS', project_id: projectId, task_id: taskId } },
+    })));
+    expect(await screen.findByRole('region', { name: 'Live EOS task' })).toBeInTheDocument();
+    // A selected task automatically opens the operating surface, where the
+    // tab is Back to chat. Return to Conversation before entering Work.
+    expect(screen.getByRole('button', { name: 'Back to chat' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
+    expect(screen.getByRole('button', { name: 'Work', exact: true })).toBeVisible();
+    const before = mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length;
+    fireEvent.click(screen.getByRole('button', { name: 'Work', exact: true }));
+    expect(await screen.findByRole('region', { name: 'Needs your attention' })).toBeVisible();
+    await waitFor(() => expect(mockApiGet.mock.calls.filter(([path]) =>
+      path === '/my-work').length).toBeGreaterThan(before));
+    expect(mockApiGet.mock.calls.some(([path, options]) =>
+      path === '/my-work' && options?.headers?.['X-Tenant-ID'] === 'TEST_TENANT')).toBe(true);
+    expect(mockApiPost).not.toHaveBeenCalled();
+    const priorReads = mockApiGet.mock.calls.filter(([path, options]) =>
+      path === '/wilsy-ai/reasoning/context'
+      && options?.params?.project_id === projectId
+      && options?.params?.task_id === taskId).length;
+    fireEvent.click(screen.getByRole('button', { name: 'Back to chat' }));
+    await waitFor(() => expect(mockApiGet.mock.calls.filter(([path, options]) =>
+      path === '/wilsy-ai/reasoning/context'
+      && options?.params?.project_id === projectId
+      && options?.params?.task_id === taskId).length).toBeGreaterThan(priorReads));
   });
 
   it('keeps the transcript clear until work is explicitly requested', async () => {
@@ -1498,7 +1573,10 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'Ask about my project' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/Confirm the WILSY AI usage terms/);
     expect(mockApiPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     expect(screen.getByLabelText('Send')).toBeEnabled();
@@ -1777,9 +1855,14 @@ describe('WilsyOSIntelligenceDock', () => {
       .toHaveTextContent('AI provider unavailable'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
-      target: { value: 'What is my current work?' },
+      target: { value: 'Provide a strategic analysis of responsible AI systems.' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    expect(await screen.findByRole('status', { name: 'WILSY AI admission status' }))
+      .toHaveTextContent('AI provider is not configured');
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/EOS AI provider is not configured/);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1807,9 +1890,14 @@ describe('WilsyOSIntelligenceDock', () => {
       .toHaveTextContent('AI reasoning not activated'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
-      target: { value: 'Which task is overdue?' },
+      target: { value: 'Provide a strategic analysis of responsible AI systems.' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    expect(await screen.findByRole('status', { name: 'WILSY AI admission status' }))
+      .toHaveTextContent('AI reasoning is not activated');
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/AI reasoning is not yet activated/);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1948,6 +2036,221 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => expect(mockPersistTurn).toHaveBeenCalledTimes(2));
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(await screen.findByText(/MW-T11 · EOS lifecycle activity/)).toBeVisible();
+  });
+
+  it('briefs verified MW-T11 lifecycle, due date, discussion and evidence without provider calls', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    const principal = 'briefing-person';
+    const base = '/projects/' + project + '/tasks/' + task;
+    const page = (schema, items) => ({
+      schema, tenant_id: 'TEST_TENANT', principal_id: principal,
+      project_id: project, task_id: task, limit: 50, offset: 0,
+      has_more: false, next_offset: null, items,
+    });
+    mockApiGet.mockImplementation((url, options = {}) => {
+      if (url === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        locator: options.params, context_fingerprint: 'f'.repeat(128),
+        observed_at: '2026-11-26T09:00:00Z',
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, provider_binding: 'UNAVAILABLE', financial_execution: false },
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+        work: { project: { project_id: project, revision: 3, name: 'Foundation' },
+          selected_task: { task_id: task, title: 'MW-T11 — Align Intelligence Dock',
+            status: 'IN_PROGRESS', revision: 4, assignee_name: 'Verified Contributor',
+            depends_on: [], predecessors: [] } },
+      } });
+      if (url === '/projects/' + project + '/tasks?limit=50&offset=0') {
+        return Promise.resolve({ data: {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: 'TEST_TENANT',
+          principal_id: principal, project_id: project,
+          limit: 50, offset: 0, has_more: false, next_offset: null,
+          items: [{ schema: 'wilsy.project.task.v1', tenant_id: 'TEST_TENANT',
+            project_id: project, task_id: task, revision: 4,
+            title: 'MW-T11 — Align Intelligence Dock', status: 'IN_PROGRESS',
+            due_date: '2026-11-27', fingerprint: 'a'.repeat(128) }],
+        } });
+      }
+      if (url === base + '/events?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-TASK-EVENT-LIST/V1', [{
+          schema: 'wilsy.project.task.event.v1', tenant_id: 'TEST_TENANT',
+          project_id: project, task_id: task, revision: 4,
+          actor_principal_id: principal, event_type: 'PROJECT_TASK_REVISED',
+          status_after: 'IN_PROGRESS', occurred_at: '2026-11-26T09:07:54Z',
+        }],
+      ) });
+      if (url === base + '/comments?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-COMMENT-LIST/V1', [{
+          schema: 'wilsy.project.comment.v1', tenant_id: 'TEST_TENANT',
+          project_id: project, task_id: task, comment_id: 'pcm-' + 'c'.repeat(48),
+          author_principal_id: principal, created_at: '2026-11-26T14:52:28Z',
+          body: 'MW-T11 — Live Browser Acceptance: Unified Task Navigation',
+          mentions: [], fingerprint: 'd'.repeat(128),
+        }],
+      ) });
+      if (url === base + '/attachments?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-ATTACHMENT-LIST/V1', [],
+      ) });
+      if (url === base + '/approvals?limit=50&offset=0') return Promise.resolve({ data: page(
+        'WILSY-PROJECT-APPROVAL-LIST/V1', [],
+      ) });
+      return Promise.reject(rejectedResponse(503, 'unexpected task briefing source'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: project, project_revision: 3,
+          task_id: task, task_revision: 4 } },
+    })));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
+      .toHaveTextContent('MW-T11'));
+    requestReadOnlySource('Brief MW-T11');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.includes('EOS source briefing · MW-T11'))).toBe(true));
+    const briefing = mockPersistTurn.mock.calls.find(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.includes('EOS source briefing · MW-T11'))[0].message.content;
+    expect(briefing).toContain('Accountable contributor: Verified Contributor');
+    expect(briefing).toContain('Deadline: 2026-11-27');
+    expect(briefing).toContain('No recorded predecessors');
+    expect(briefing).toContain('Live Browser Acceptance: Unified Task Navigation');
+    expect(briefing).toContain('Source comment reference: pcm-');
+    expect(briefing).not.toContain('**');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Read full update' }))
+      .toBeEnabled());
+    expect(screen.queryByText(/Source comment reference:/)).not.toBeInTheDocument();
+    const readsBefore = mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0')).length;
+    fireEvent.click(screen.getByRole('button', { name: 'Read full update' }));
+    await waitFor(() => expect(screen.getByText(/Full EOS project update · source readback/))
+      .toBeVisible());
+    expect(screen.getAllByText(/Live Browser Acceptance: Unified Task Navigation/).length)
+      .toBeGreaterThan(0);
+    expect(mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0')).length).toBe(readsBefore + 1);
+    expect(briefing).toContain('Approval decisions: 0 verified records');
+    expect(briefing).toContain('do not independently certify acceptance');
+    // Full assessment keeps its source-owned structured facts and a separate
+    // disclaimer instead of treating every post-title line as a fact row.
+    await waitFor(() => expect(screen.getByText(/EOS source briefing · MW-T11/)).toBeVisible());
+    // The full briefing reveals in ~90 paced increments (19ms each).
+    // Assert the visible footer after the real progressive animation reaches it,
+    // not the immediately available screen-reader-only full transcript.
+    await waitFor(() => expect(screen.getAllByText(/Source records and discussion do not independently certify/)
+      .some(node => /verifiedSourceFooter/.test(node.className))).toBe(true), { timeout: 3500 });
+    // Each follow-up must reread EOS and answer the requested dimension,
+    // never repeat the entire long-form briefing.
+    requestReadOnlySource('What is its deadline?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content === 'EOS source answer · MW-T11\nDeadline: 2026-11-27\nPython EOS · Source verified, read-only. No model invoked.')).toBe(true));
+    await waitFor(() => expect(screen.getByText('EOS source answer · MW-T11')).toBeVisible());
+    expect(screen.getAllByText('Deadline').at(-1).closest('p').className)
+      .toMatch(/verifiedFocusedFact/);
+    await waitFor(() => expect(screen.getAllByText('Python EOS · Source verified, read-only. No model invoked.')
+      .some(node => /verifiedSourceFooter/.test(node.className))).toBe(true), { timeout: 3500 });
+    requestReadOnlySource('And the approvals?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nApproval decisions: 0 verified records'))).toBe(true));
+    requestReadOnlySource('Who is responsible for this task?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nAccountable contributor: Verified Contributor'))).toBe(true));
+    requestReadOnlySource('What about the attachments?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nAttachments: 0 verified records'))).toBe(true));
+    requestReadOnlySource('What is the latest update on MW-T11?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nLatest recorded discussion')
+      && payload.message.content.includes('Live Browser Acceptance'))).toBe(true));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    // A new conversation retains the independently selected EOS task.
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ New conversation' }));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
+      .toHaveTextContent('MW-T11'));
+    requestReadOnlySource('What is its deadline?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nDeadline: 2026-11-27')))
+      .toHaveLength(2));
+    expect(mockApiPost).not.toHaveBeenCalled();
+    // A reference to a different task never borrows the current task context.
+    const previousReads = mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0')).length;
+    requestReadOnlySource('What is the deadline for MW-T12?');
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/AI reasoning is not yet activated|AI provider is not configured/));
+    expect(mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0'))).toHaveLength(previousReads);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('reports missing verified task focus for an unbound pronoun without calling a provider', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'unbound-task-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    requestReadOnlySource('What is its deadline?');
+    expect(await screen.findByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent('cannot identify a currently verified task');
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toHaveValue('What is its deadline?');
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+      payload?.message?.role === 'assistant')).toHaveLength(0);
+  });
+
+  it('fails closed on a foreign MW-T11 discussion page without producing a partial briefing', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    const principal = 'briefing-person';
+    mockApiGet.mockImplementation((url, options = {}) => {
+      if (url === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1', tenant_id: 'TEST_TENANT',
+        principal_id: principal, locator: options.params,
+        context_fingerprint: 'f'.repeat(128), observed_at: '2026-11-26T09:00:00Z',
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false, provider_binding: 'UNAVAILABLE' },
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+        work: { project: { project_id: project, revision: 3 },
+          selected_task: { task_id: task, title: 'MW-T11 — Align Intelligence Dock',
+            status: 'IN_PROGRESS', revision: 4, depends_on: [], predecessors: [] } },
+      } });
+      if (url.endsWith('/comments?limit=50&offset=0')) return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: 'FOREIGN_TENANT',
+        principal_id: principal, project_id: project, task_id: task,
+        limit: 50, offset: 0, has_more: false, next_offset: null, items: [],
+      } });
+      return Promise.reject(rejectedResponse(503, 'unavailable'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal,
+        locator: { workspace: 'PROJECTS', project_id: project, project_revision: 3,
+          task_id: task, task_revision: 4 } },
+    })));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
+      .toHaveTextContent('MW-T11'));
+    requestReadOnlySource('Brief MW-T11');
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0'))).toBe(true));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/could not verify all current task/));
+    expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+      payload?.message?.role === 'assistant')).toHaveLength(0);
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
   it('does not allow a natural task-inspection phrase to bypass missing EOS project authority', async () => {
@@ -2206,6 +2509,172 @@ describe('WilsyOSIntelligenceDock', () => {
       payload?.message?.role === 'assistant')).toHaveLength(0);
   });
 
+  it('exposes New conversation in chat and distinguishes Clear chat from saved history deletion', async () => {
+    mockThreads = [
+      { id: 'thread1', title: 'Previous saved work', workspace: 'Projects',
+        storagePosture: 'EOS_ENCRYPTED_HISTORY',
+        messages: [{ role: 'assistant', content: 'Prior source reply', timestamp: '2026-11-26T09:00:00Z' }] },
+      { id: 'thread2', title: 'Another archive entry', workspace: 'Projects',
+        storagePosture: 'EOS_ENCRYPTED_HISTORY',
+        messages: [{ role: 'assistant', content: 'Second saved source reply',
+          timestamp: '2026-11-26T09:01:00Z' }] },
+    ];
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'test-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const controls = screen.getByRole('group', { name: 'Conversation actions' });
+    expect(within(controls).getByRole('button', { name: 'New conversation' })).toBeEnabled();
+    await waitFor(() => expect(within(controls).getByRole('button', { name: 'Clear chat' }))
+      .toBeEnabled());
+    fireEvent.click(within(controls).getByRole('button', { name: 'Clear chat' }));
+    await waitFor(() => expect(mockCreateThread).toHaveBeenCalledTimes(1));
+    expect(mockClearThreads).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toHaveValue('');
+    expect(screen.queryByText('Prior source reply')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    expect(screen.getByText('Previous saved work')).toBeVisible();
+    expect(screen.getByText('Another archive entry')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
+    const chatActions = await screen.findByRole('group', { name: 'Conversation actions' });
+    fireEvent.click(within(chatActions).getByRole('button', { name: 'New conversation' }));
+    await waitFor(() => expect(mockCreateThread).toHaveBeenCalledTimes(2));
+    expect(mockClearThreads).not.toHaveBeenCalled();
+  });
+
+  it('uses a single checked Projects task as an EOS-reverified hint without opening details', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    const principal = 'selection-principal';
+    mockApiGet.mockImplementation((url, options = {}) => {
+      if (url === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        locator: options.params, context_fingerprint: 'f'.repeat(128),
+        observed_at: '2026-11-26T09:00:00Z',
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false,
+          provider_binding: 'UNAVAILABLE' },
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+        work: { project: { project_id: project, revision: 3 },
+          selected_task: { task_id: task, revision: 4,
+            title: 'MW-T11 — Align Intelligence Dock', status: 'IN_PROGRESS',
+            depends_on: [], predecessors: [] } },
+      } });
+      return Promise.reject(rejectedResponse(503, 'no additional source'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const hint = { tenantId: 'TEST_TENANT', principalId: principal,
+      locator: { workspace: 'PROJECTS', project_id: project,
+        task_id: task, task_revision: 4, participant_view: false } };
+    await act(async () => window.dispatchEvent(
+      new CustomEvent('wilsy:ai-task-selection', { detail: hint })));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
+      .toHaveTextContent('MW-T11'));
+    expect(screen.getByRole('group', { name: 'Conversation actions' }))
+      .toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /task workspace/i }))
+      .not.toBeInTheDocument();
+    // A second checkbox creates an ambiguous batch selection; only the
+    // hint owned by this selection bridge is removed, without EOS mutation.
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-task-selection', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal, locator: null },
+    })));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Live EOS task' }))
+      .not.toBeInTheDocument());
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('offers direct canonical Projects task recovery and minimizes only after verified panel accepts', async () => {
+    const handler = event => {
+      expect(event.detail.tenantId).toBe('TEST_TENANT');
+      expect(event.detail.principalId).toBe('task-recovery-principal');
+      expect(event.detail.taskCode).toBe('MW-T11');
+      event.detail.accepted = true; // Simulates exact EOS-current Projects panel.
+    };
+    window.addEventListener('wilsy:projects-open-task-request', handler);
+    try {
+      render(<WilsyOSIntelligenceDock authUser={{ id: 'task-recovery-principal',
+        tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+      fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+      requestReadOnlySource('Brief MW-T11');
+      const open = await screen.findByRole('button', { name: 'Open MW-T11 task' });
+      expect(open).toBeEnabled();
+      fireEvent.click(open);
+      await waitFor(() => expect(screen.getByTitle('Open Wilsy OS Intelligence Dock'))
+        .toBeInTheDocument());
+      expect(mockApiPost).not.toHaveBeenCalled();
+      expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+        payload?.message?.role === 'assistant')).toHaveLength(0);
+    } finally {
+      window.removeEventListener('wilsy:projects-open-task-request', handler);
+    }
+  });
+
+  it('refuses task recovery when no exact verified Projects panel accepts navigation', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'task-recovery-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    requestReadOnlySource('Brief MW-T11');
+    fireEvent.click(await screen.findByRole('button', { name: 'Open MW-T11 task' }));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent('not available in the currently verified Projects work page');
+    expect(screen.getByRole('region', { name: 'WILSY OS AI companion' }))
+      .toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('clears an unsent question and stale task refusal without deleting archived history', async () => {
+    mockThreads = [{ id: 'thread1', title: 'Existing archive',
+      storagePosture: 'EOS_ENCRYPTED_HISTORY', messages: [] }];
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'test-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    requestReadOnlySource('Brief MW-T11');
+    await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/checked table row only selects it for batch actions/i));
+    const actions = screen.getByRole('group', { name: 'Conversation actions' });
+    expect(within(actions).getByRole('button', { name: 'Clear chat' })).toBeEnabled();
+    fireEvent.click(within(actions).getByRole('button', { name: 'Clear chat' }));
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toHaveValue('');
+    expect(screen.queryByRole('status', { name: 'WILSY OS request status' }))
+      .not.toBeInTheDocument();
+    expect(mockCreateThread).not.toHaveBeenCalled();
+    expect(mockClearThreads).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    // The archive hides empty threads by contract; its in-memory EOS record
+    // remains available and no delete/clear mutation was issued.
+    expect(mockThreads.some(thread => thread.id === 'thread1'
+      && thread.title === 'Existing archive')).toBe(true);
+    expect(screen.getByText('No conversations yet.')).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('formats EOS event time locally in view without modifying archived source text', async () => {
+    const original = '2026-11-26T09:07:54.344000+00:00';
+    const originalContent = 'EOS source briefing · MW-T11 — Verified work'
+      + '\nLatest event: project task revised · ' + original
+      + '\nPython EOS · Source verified, read-only. No model invoked.';
+    mockThreads = [{ id: 'thread1', title: 'Archived source response', workspace: 'Projects',
+      messages: [{ role: 'assistant', content: originalContent,
+        meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' },
+        timestamp: '2026-11-26T09:08:00Z' }] }];
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'test-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const local = new Intl.DateTimeFormat(undefined, {
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+    }).format(new Date(original));
+    await waitFor(() => expect(screen.getByText('Latest event').closest('p').textContent)
+      .toContain(local));
+    expect(screen.queryByText(original, { exact: false })).not.toBeInTheDocument();
+    expect(mockThreads[0].messages[0].content).toContain(original);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('creates a new thread when "New thread" is clicked', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
@@ -2430,7 +2899,7 @@ describe('WilsyOSIntelligenceDock', () => {
       'Show my tasks then delete them',
     ]) {
       fireEvent.change(input, { target: { value: text } });
-      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(screen.getByLabelText('Send')).toBeEnabled();
     }
     expect(screen.queryByLabelText('Your source request')).not.toBeInTheDocument();
     expect(mockApiPost).not.toHaveBeenCalled();
@@ -2591,7 +3060,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT
+ * VERSION: v1.66.0-SINGLE-SELECTED-EOS-HINT-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards

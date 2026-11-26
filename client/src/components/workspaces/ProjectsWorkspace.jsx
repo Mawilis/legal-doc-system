@@ -703,7 +703,8 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
  * @param {Object} props Authenticated scope and optional project navigation hints.
  * @returns {React.ReactElement} Governed project registry and work surface.
  */
-export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusTaskId = null, focusAssignedProjectId = null, strategyOrigin = false, onReturnToStrategy = null }) {
+export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusTaskId = null, focusAssignedProjectId = null, strategyOrigin = false, onReturnToStrategy = null,
+  onReturnToAttention = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
   const [sourceState, setSourceState] = useState('LOADING');
@@ -1965,6 +1966,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
               discussionOnly={projectView === 'discussions'}
               focusTaskId={focusProjectId === detail.project.project_id ? focusTaskId : null}
               onFocusedTaskChange={handleFocusedTaskChange}
+              onReturnToAttention={onReturnToAttention}
               onOpenProjectPeople={() => setProjectView('people')}/>}
             {projectView === 'notes' && <ProjectNotesPanel key={detail.project.project_id + ':' + sessionScope} projectId={detail.project.project_id}
               tenantId={tenantId} principalId={principalId} tenantHeaders={tenantHeaders}/>}

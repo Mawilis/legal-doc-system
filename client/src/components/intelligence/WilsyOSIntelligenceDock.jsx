@@ -1,19 +1,43 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION
+ * VERSION: v4.81.0-CHECKBOX-SELECTED-TASK-SOURCE-CONTEXT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * COMPLIANCE: AGENTS.md; exact-scope fail-closed source evidence.
  * SECURITY / PRIVACY POSTURE: Session-person label never displays account email;
  * no model calls arise from read-only context inspection.
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.81.0-CHECKBOX-SELECTED-TASK-SOURCE-CONTEXT accepts a single checked Projects task only as an untrusted locator hint, keeps the conversation open, and requires the same independent Python EOS exact-task context verification before briefing; multi-selection removes only its own hint.
+ * CHANGELOG: v4.80.0-EXACT-PROJECT-TASK-RECOVERY-ACTION replaces the dead-end task-focus refusal with an explicit same-tenant/principal exact-project task navigation request that only a currently verified Projects panel can accept; the Dock minimizes on acceptance and EOS rechecks task facts separately.
+ * CHANGELOG: v4.79.1-CHAT-ERROR-DRAFT-RESET makes Clear chat recover from stale request status and unsent drafts without creating or deleting encrypted history, resets stale errors on history navigation, and explains table checkbox versus verified task focus.
+ * CHANGELOG: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME adds chat-native New conversation and Clear chat actions (preserving EOS archive), displays source event times in local readable format without modifying stored evidence, and resets drafts safely when starting fresh.
+ * CHANGELOG: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS binds expanded comment text to its verified task/context scope so focus changes cannot display previous task content under a new source.
+ * CHANGELOG: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE hides internal comment references from rendered and screen-reader transcripts and rejects delayed full-comment responses after task scope changes.
+ * CHANGELOG: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE summarizes EOS discussion cleanly and supports an explicit full-update read via fresh exact-task EOS readback; message archives retain only bounded comment references and no historical transcript is treated as current source.
+ * CHANGELOG: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER distinguishes short EOS answers, governed full briefings, semantic fact rows and independent source footers while keeping saved-transcript provenance and source admission unchanged.
+ * CHANGELOG: v4.76.1-FOCUSED-TURN-CHAIN treats the prior exact-task source answer as a verified conversational anchor for compact follow-ups, without extending scope to a different task.
+ * CHANGELOG: v4.76.0-FOCUSED-SOURCE-CONVERSATION responds concisely to exact selected-task deadline, owner, approvals, attachments and latest-update questions from freshly validated EOS sources; general Brief keeps full assessment.
+ * CHANGELOG: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY retains the LIVE TASK strip in a fresh conversation when independent EOS context still verifies the exact selected Projects task; never treats the new thread's absent locator as a source failure.
+ * CHANGELOG: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY resolves narrow pronouns from the currently independently verified selected EOS task; otherwise presents explicit missing-task guidance before provider admission.
+ * CHANGELOG: v4.75.1-EXACT-ANSWER-CONTINUITY binds pronoun follow-ups to the latest source-verified assistant reply naming the current EOS task; unlocated existing threads cannot silently borrow a different task's facts.
+ * CHANGELOG: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS resolves bounded selected-task questions and verified same-thread pronouns into the already-governed nonbillable multi-source briefing, without widening provider, task or tenant authority.
+ * CHANGELOG: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION fixes escaped regex/newline syntax in the exact-task read-only briefing path before testing.
+ * CHANGELOG: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING adds an explicit nonbillable selected-task briefing with independently validated Projects task-list, events, discussions, attachments and approval reads, reconciles civil deadlines and distinguishes evidence from certification.
+ * CHANGELOG: v4.73.1-REPLAY-LOCK-PRESERVED keeps exact uncertain-reconciliation replay disabled while still allowing other nonempty submissions to receive explicit, fail-closed admission feedback without model execution.
+ * CHANGELOG: v4.73.0-VISIBLE-SEND-ADMISSION permits nonempty Send to reach the existing fail-closed admission handler, returning visible provider, entitlement, consent and replay refusals without issuing prohibited model requests.
+ * CHANGELOG: v4.72.0-MODAL-TO-TASK-CONVERSATION admits an explicit same-tenant/principal task-modal request to open the existing Dock after leaving the modal, with a separately verified task locator; no global modal overlay, model/permission bypass, or source-derived UI assertions.
+ * CHANGELOG: v4.71.0-SPA-WORK-FOCUS minimizes the Dock when the operator follows an internal EOS work link, leaving destination reauthorization intact.
+ * CHANGELOG: v4.70.0-WORK-TAB-CANONICAL-QUEUE makes the Work tab load the authenticated EOS My Work queue even when an exact Projects task is currently focused, restores the prior navigation locator when returning to chat, and never treats that locator as task authority.
+ * CHANGELOG: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK restores the established disabled Send safety boundary for unavailable AI admission and uncertain replay, while clearly showing the reason directly beside a nonempty prompt; no unauthorized model request or silent dead end.
+ * CHANGELOG: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS keeps nonempty conversational submissions interactive so missing consent, provider or entitlement yields the existing explicit status message rather than a disabled silent send control; source-only inspection remains nonbillable and no IAM or financial gate is weakened.
+ * CHANGELOG: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION replaces generic dependency counts with strictly validated EOS predecessor state in the existing task-source conversation; no paid model, fabricated action, or decorative panel.
  * CHANGELOG: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION admits natural forms such as Let’s inspect MW-T12 into the same verified, read-only task inspection path without provider credits, broad intent guessing or client authorization.
  * CHANGELOG: v4.65.0-CONSENTED-MODEL-CONVERSATION permits ordinary conversation to use the actual EOS-governed provider when a current verified allowance and explicit model consent exist; free courtesy never impersonates a generative response.
  * CHANGELOG: v4.64.0-PERSONAL-CONTEXT-COURTESY makes nonmetered courtesy time-appropriate, authenticated-name-aware and respectful of continuing conversation, with no generic task-only pitch or claim of model inference.
@@ -261,6 +285,7 @@ import {
   Minus,
   RotateCcw,
   X,
+  Plus, Eraser,
 } from 'lucide-react';
 import api from '../../services/api.js'; // Sovereign HTTP client – forensic seals, tenant headers, auto refresh
 import { assertUnifiedMyWorkProjection, unifiedMyWorkSourceLabel } from '../../services/unifiedMyWorkProjection.js';
@@ -362,6 +387,158 @@ function parseWilsyTaskActivityInspection(value) {
   return match ? match[1].toUpperCase() : null;
 }
 
+/**
+ * @description Resolve only narrow, read-only conversational follow-ups to the
+ * currently EOS-verified selected task. Pronouns require a preceding source-
+ * verified assistant turn in the same task-linked thread. No broad guessing,
+ * commands, provider inference or alternate task reference is admitted.
+ * @authority This returns only an intent hint; the briefing handler rechecks
+ * tenant, principal, project, task revision and all EOS source pages.
+ */
+/** Detect narrow ambiguous task references before metered AI admission. */
+function isWilsyUnboundTaskFollowup(value) {
+  const text = String(value || '').trim();
+  const hasPronoun = /\b(?:it|its|that|those|them|this task|the current task)\b/i.test(text);
+  const isQuestion = /^(?:(?:please|and|also)\s+)?(?:what(?:'s| is| are| was)?|who(?:'s| is)?|when(?: is| was)?|show|tell|explain|review|check|any|are there|does|has|how many)\b/i.test(text);
+  const isFact = /\b(?:deadline|due|date|owner|assigned|contributor|status|progress|dependenc(?:y|ies)|predecessor|blocker|activity|events?|comments?|updates?|discussion|attachments?|files?|evidence|approvals?|decisions?|revision)\b/i.test(text);
+  return hasPronoun && isQuestion && isFact && !/MW-T\d{1,3}/i.test(text)
+    && !/\b(?:approve|reject|delete|edit|assign|change|complete|pay|send|upload|create)\b/i.test(text);
+}
+
+function parseWilsySelectedTaskFollowup(value, selectedTask, thread, locator) {
+  const text = String(value || '').trim();
+  const code = /^((?:MW-T)\d{1,3})\s+[—-]\s+/i.exec(selectedTask?.title || '')?.[1]?.toUpperCase();
+  if (!code || !/^ptk-[a-f0-9]{48}$/.test(selectedTask?.task_id || '')
+    || selectedTask.task_id !== locator?.task_id || locator?.workspace !== 'PROJECTS'
+    || !/^prj-[a-f0-9]{48}$/.test(locator?.project_id || '')) return null;
+  const explicitOtherCodes = text.match(/MW-T\d{1,3}/gi) || [];
+  if (explicitOtherCodes.some(value => value.toUpperCase() !== code)) return null;
+  const referencesSelected = new RegExp('\\b' + code + '\\b', 'i').test(text)
+    || /\b(?:this|the current|selected) task\b/i.test(text);
+  const lastAssistant = Array.isArray(thread?.messages)
+    ? [...thread.messages].reverse().find(message => message?.role === 'assistant')
+    : null;
+  const sourceText = typeof lastAssistant?.content === 'string' ? lastAssistant.content : '';
+  const sourceIdentifiesTask = sourceText.startsWith('EOS source briefing · ' + selectedTask.title)
+    || sourceText.startsWith('EOS source answer · ' + code + '\n')
+    || sourceText.startsWith('EOS source verified: ' + selectedTask.title)
+    || sourceText.startsWith(code + ' · EOS lifecycle activity');
+  const priorVerified = lastAssistant?.meta?.source === 'PYTHON_EOS'
+    && lastAssistant.meta.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && sourceIdentifiesTask
+    && (!thread?.workLocator?.task_id
+      || (thread.workLocator.project_id === locator.project_id
+        && thread.workLocator.task_id === locator.task_id));
+  // The currently verified exact selected task is itself a referent; a
+  // historical assistant reply is not required when EOS has reauthorized it.
+  // A stale thread mentioning a different task must not override this focus.
+  const otherThreadTask = lastAssistant?.meta?.source === 'PYTHON_EOS'
+    && lastAssistant.meta.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && !sourceIdentifiesTask;
+  const pronounReference = !otherThreadTask
+    && /\b(?:it|its|that|those|them)\b/i.test(text);
+  const anchoredIntent = /^(?:(?:please|and|also)\s+)?(?:what(?:'s| is| are| was)?|who(?:'s| is)?|when(?: is| was)?|show|tell|summari[sz]e|brief|review|check|explain|any|are there|does|has|how many)\b/i.test(text);
+  const relatedFact = /\b(?:status|progress|owner|responsible|assigned|contributor|deadline|due|date|predecessor|dependenc(?:y|ies)|blocker|activity|event|comment|update|discussion|attachment|file|evidence|approval|decision|revision|changed|recorded|summary|brief|readiness)\b/i.test(text);
+  const compactFollowup = priorVerified && /^(?:and|what about|how about)\s+(?:the\s+)?(?:deadline|owner|dependencies|activity|comments|updates|attachments|evidence|approvals|decisions)[?.!]?$/i.test(text);
+  return ((anchoredIntent && relatedFact && (referencesSelected || pronounReference))
+    || compactFollowup) ? code : null;
+}
+
+/**
+ * A narrow, non-generative response selector. The source batch is always
+ * independently re-verified before formatting any of these fields.
+ * Unrecognized or compound questions retain the complete briefing.
+ */
+function classifyWilsyFocusedTaskQuestion(value) {
+  const question = String(value || '').trim().toLowerCase();
+  if (/\b(?:deadline|due(?: date)?|when is it due)\b/.test(question)) return 'DEADLINE';
+  if (/\b(?:who is responsible|who owns|assigned to|accountable contributor|who is assigned|owner)\b/.test(question)) return 'OWNER';
+  if (/\b(?:approvals?|reviewer decisions?)\b/.test(question)) return 'APPROVALS';
+  if (/\b(?:attachments?|files?|scan.clean|upload(?:ed|s)?)\b/.test(question)) return 'ATTACHMENTS';
+  if (/\b(?:latest|recent|last|newest)\b/.test(question)
+    && /\b(?:update|comment|activity|discussion|change)\b/.test(question)) return 'LATEST_UPDATE';
+  return 'BRIEFING';
+}
+
+/** Bounded display-only comment summary; never rewrite the EOS original. */
+function summarizeWilsySourceComment(value) {
+  const lines = String(value || '').split(/\r?\n/).map(part => part.trim())
+    .filter(Boolean);
+  const first = lines[0] || '';
+  const withoutMarkup = first.replace(/\*\*/g, '').replace(/^#{1,6}\s+/, '')
+    .replace(/^[-*]\s+/, '');
+  return withoutMarkup.length > 180 ? withoutMarkup.slice(0, 177) + '…' : withoutMarkup;
+}
+
+/**
+ * Live-source disclosure for one exact comment. History and browser UI never
+ * authorize the read: a fresh, complete EOS task/evidence batch is required.
+ */
+function WilsyVerifiedCommentDisclosure({ message, workspaceContext, workLocator, tenantId, principalId }) {
+  const [state, setState] = useState({ status: 'IDLE', text: '' });
+  const currentScope = [
+    tenantId, principalId, workLocator?.project_id, workLocator?.task_id,
+    workLocator?.task_revision, workspaceContext?.state,
+    workspaceContext?.data?.context_fingerprint,
+  ].join(':');
+  const currentScopeRef = useRef(currentScope);
+  currentScopeRef.current = currentScope;
+  const stamp = String(message?.content || '').match(
+    /^Source comment reference: (pcm-[a-f0-9]{48}) · ([a-f0-9]{128})$/m);
+  const task = workspaceContext?.state === 'READY'
+    ? workspaceContext.data?.work?.selected_task : null;
+  const scoped = message?.meta?.source === 'PYTHON_EOS'
+    && message.meta.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && stamp && task && workLocator?.workspace === 'PROJECTS'
+    && workspaceContext.data?.tenant_id === tenantId
+    && workspaceContext.data?.principal_id === principalId
+    && workspaceContext.data?.locator?.workspace === 'PROJECTS'
+    && workspaceContext.data?.locator?.project_id === workLocator.project_id
+    && workspaceContext.data?.locator?.task_id === workLocator.task_id
+    && task.task_id === workLocator.task_id
+    && (!workLocator.task_revision || task.revision === workLocator.task_revision);
+  if (!stamp || message?.role !== 'assistant') return null;
+  const show = async () => {
+    if (!scoped || state.status === 'LOADING') return;
+    const capturedScope = currentScopeRef.current;
+    setState({ status: 'LOADING', text: '', scope: capturedScope });
+    try {
+      const { evidence } = await readWilsyTaskBriefing(
+        workLocator.project_id, task, tenantId, principalId,
+        Boolean(workLocator.participant_view));
+      const comment = evidence.comments.items.find(item => item.comment_id === stamp[1]);
+      if (!comment || comment.fingerprint !== stamp[2]
+        || !scoped || currentScopeRef.current !== capturedScope
+        || comment.body.length > 5000) {
+        throw new Error('SOURCE_COMMENT_CHANGED');
+      }
+      setState({ status: 'READY', text: comment.body, scope: capturedScope });
+    } catch {
+      if (currentScopeRef.current === capturedScope) {
+        setState({ status: 'ERROR', text: '', scope: capturedScope });
+      }
+    }
+  };
+  const visibleState = state.scope === currentScope ? state : { status: 'IDLE', text: '' };
+  return <div className={styles.verifiedCommentDisclosure}>
+    {scoped && visibleState.status !== 'READY' && <button type="button"
+      className={styles.conversationInlineAction} onClick={show}
+      disabled={visibleState.status === 'LOADING'}>
+      {visibleState.status === 'LOADING' ? 'Verifying EOS comment…' : 'Read full update'}
+    </button>}
+    {!scoped && <p>Reopen the exact task to verify this recorded comment.</p>}
+    {visibleState.status === 'ERROR' && <p role="status">
+      The original update could not be reverified. Refresh the task before retrying.
+    </p>}
+    {visibleState.status === 'READY' && scoped && <details open>
+      <summary>Full EOS project update · source readback</summary>
+      <div className={styles.verifiedCommentFull}>
+        {visibleState.text.replace(/\*\*/g, '')}
+      </div>
+    </details>}
+  </div>;
+}
+
 /** Independently read one current EOS lifecycle event page, never cached chat. */
 async function readWilsyTaskActivity(projectId, taskId, tenantId, principalId, participantView) {
   const base = '/projects/' + encodeURIComponent(projectId)
@@ -393,6 +570,134 @@ async function readWilsyTaskActivity(projectId, taskId, tenantId, principalId, p
     }
   }
   return data;
+}
+
+/**
+ * @description Read a bounded, exact-task EOS evidence batch for a nonbillable
+ * task briefing. Every list is independently authorized, source validated and
+ * required; an unavailable or truncated response never becomes an empty fact.
+ * The Projects task list supplies civil due_date independently of AI context.
+ */
+async function readWilsyTaskBriefing(projectId, task, tenantId, principalId, participantView) {
+  const taskId = task?.task_id;
+  if (!/^prj-[a-f0-9]{48}$/.test(projectId || '')
+    || !/^ptk-[a-f0-9]{48}$/.test(taskId || '')
+    || !tenantId || !principalId || !Number.isSafeInteger(task.revision)
+    || task.revision < 1) throw new Error('TASK_BRIEFING_SCOPE_INVALID');
+  const base = '/projects/' + encodeURIComponent(projectId)
+    + (participantView ? '/my-project/tasks/' : '/tasks/') + encodeURIComponent(taskId);
+  const specs = [
+    ['events', 'WILSY-PROJECT-TASK-EVENT-LIST/V1', 'wilsy.project.task.event.v1'],
+    ['comments', 'WILSY-PROJECT-COMMENT-LIST/V1', 'wilsy.project.comment.v1'],
+    ['attachments', 'WILSY-PROJECT-ATTACHMENT-LIST/V1', 'wilsy.project.attachment.v1'],
+    ['approvals', 'WILSY-PROJECT-APPROVAL-LIST/V1', 'wilsy.project.approval.v1'],
+  ];
+  const pages = await Promise.all(specs.map(async ([endpoint, schema, itemSchema]) => {
+    const response = await api.get(base + '/' + endpoint + '?limit=50&offset=0', {
+      headers: { 'X-Tenant-ID': tenantId }, timeout: 15000, forceNetworkRetry: true,
+    });
+    const page = response?.data;
+    if (page?.schema !== schema || page.tenant_id !== tenantId
+      || page.principal_id !== principalId || page.project_id !== projectId
+      || page.task_id !== taskId || page.limit !== 50 || page.offset !== 0
+      || typeof page.has_more !== 'boolean' || !Array.isArray(page.items)
+      || page.items.length > 50
+      || page.next_offset !== (page.has_more ? page.items.length : null)
+      || (page.has_more && page.items.length === 0)
+      || !page.items.every(item => item?.schema === itemSchema
+        && item.tenant_id === tenantId && item.project_id === projectId
+        && item.task_id === taskId)) throw new Error('TASK_BRIEFING_SOURCE_INVALID');
+    const fingerprint = value => /^[a-f0-9]{128}$/.test(value || '');
+    const identifiers = [];
+    for (const item of page.items) {
+      let id;
+      if (endpoint === 'events') {
+        id = String(item.revision);
+        if (!Number.isSafeInteger(item.revision) || item.revision < 1
+          || !item.actor_principal_id || !Number.isFinite(Date.parse(item.occurred_at))
+          || !['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED'].includes(item.event_type)
+          || !['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status_after)) {
+          throw new Error('TASK_BRIEFING_EVENT_INVALID');
+        }
+      } else if (endpoint === 'comments') {
+        id = item.comment_id;
+        if (!/^pcm-[a-f0-9]{48}$/.test(id || '') || !item.author_principal_id
+          || typeof item.body !== 'string' || !item.body.trim()
+          || !Number.isFinite(Date.parse(item.created_at))
+          || !Array.isArray(item.mentions) || item.mentions.length > 10
+          || !item.mentions.every(value => typeof value === 'string' && !!value)
+          || !fingerprint(item.fingerprint)) throw new Error('TASK_BRIEFING_COMMENT_INVALID');
+      } else if (endpoint === 'attachments') {
+        id = item.attachment_id;
+        if (!/^pat-[a-f0-9]{48}$/.test(id || '') || item.state !== 'QUARANTINED'
+          || item.revision !== 1 || !item.filename || !item.uploader_principal_id
+          || !['application/pdf', 'image/png', 'image/jpeg'].includes(item.media_type)
+          || !Number.isSafeInteger(item.size_bytes) || item.size_bytes <= 0
+          || !fingerprint(item.content_sha3_512) || !fingerprint(item.fingerprint)
+          || !['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
+          || (item.scan_clearance_status === 'QUARANTINED'
+            ? item.scan_clearance_fingerprint !== null
+            : !fingerprint(item.scan_clearance_fingerprint))
+          || ['storage_receipt', 'download_url', 'presigned_url'].some(field => Object.hasOwn(item, field))) {
+          throw new Error('TASK_BRIEFING_ATTACHMENT_INVALID');
+        }
+      } else {
+        id = item.approval_id;
+        if (!/^par-[a-f0-9]{48}$/.test(id || '')
+          || !['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
+          || !item.requester_principal_id || !item.reviewer_principal_id
+          || item.requester_principal_id === item.reviewer_principal_id
+          || typeof item.rationale !== 'string' || !item.rationale
+          || item.revision !== (item.status === 'PENDING' ? 1 : 2)
+          || !fingerprint(item.fingerprint)) throw new Error('TASK_BRIEFING_APPROVAL_INVALID');
+      }
+      identifiers.push(id);
+    }
+    if (new Set(identifiers).size !== identifiers.length) {
+      throw new Error('TASK_BRIEFING_DUPLICATE_SOURCE');
+    }
+    return [endpoint, page];
+  }));
+  const evidence = Object.fromEntries(pages);
+  // Task list readback reconciles the civil deadline and assignment with the
+  // context source; a missing page is NOT a missing due date.
+  let offset = 0;
+  let exactTask = null;
+  const found = new Set();
+  for (let index = 0; index < 20; index += 1) {
+    const response = await api.get('/projects/' + encodeURIComponent(projectId)
+      + '/tasks?limit=50&offset=' + offset, {
+      headers: { 'X-Tenant-ID': tenantId }, timeout: 15000, forceNetworkRetry: true,
+    });
+    const page = response?.data;
+    if (page?.schema !== 'WILSY-PROJECT-TASK-LIST/V1'
+      || page.tenant_id !== tenantId || page.principal_id !== principalId
+      || page.project_id !== projectId || page.limit !== 50 || page.offset !== offset
+      || typeof page.has_more !== 'boolean' || !Array.isArray(page.items)
+      || page.items.length > 50 || (page.has_more && page.items.length === 0)
+      || page.next_offset !== (page.has_more ? offset + page.items.length : null)) {
+      throw new Error('TASK_BRIEFING_TASK_PAGE_INVALID');
+    }
+    for (const item of page.items) {
+      if (item?.schema !== 'wilsy.project.task.v1'
+        || item.tenant_id !== tenantId || item.project_id !== projectId
+        || !/^ptk-[a-f0-9]{48}$/.test(item.task_id || '')
+        || !Number.isSafeInteger(item.revision) || item.revision < 1
+        || !/^[a-f0-9]{128}$/.test(item.fingerprint || '')
+        || found.has(item.task_id)) throw new Error('TASK_BRIEFING_TASK_INVALID');
+      found.add(item.task_id);
+      if (item.task_id === taskId) exactTask = item;
+    }
+    if (!page.has_more) {
+      if (!exactTask || exactTask.revision !== task.revision
+        || exactTask.title !== task.title || exactTask.status !== task.status) {
+        throw new Error('TASK_BRIEFING_REVISION_CHANGED');
+      }
+      return { evidence, exactTask };
+    }
+    offset = page.next_offset;
+  }
+  throw new Error('TASK_BRIEFING_TASK_PAGINATION_INCOMPLETE');
 }
 
 /**
@@ -903,6 +1208,22 @@ function resolveWilsyLocalClock(value, now = new Date()) {
 }
 
 /**
+ * Show source event timestamps in the operator's device timezone. Never
+ * rewrite the stored UTC instant, source fingerprint, or original EOS record.
+ */
+function formatWilsyEOSDisplayLine(line) {
+  if (!/^(?:Latest event:|Latest lifecycle event:|Observed event time:|Latest recorded comment \(|Latest recorded discussion \()/.test(line)) return line;
+  return line.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/g, timestamp => {
+    const parsed = new Date(timestamp);
+    if (!Number.isFinite(parsed.getTime())) return timestamp;
+    return new Intl.DateTimeFormat(undefined, {
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+    }).format(parsed);
+  });
+}
+
+/**
  * @function WilsyProgressiveAssistantText
  * @description Animate only the newest committed response, not provider
  * execution, accounting or previous conversation history. The full text is
@@ -939,19 +1260,33 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
     return () => window.clearInterval(timer);
   }, [animate, fullText]);
 
-  const visibleText = fullText.slice(0, visibleCount);
-  const formatted = format === 'VERIFIED_TASK' && fullText.includes('\n')
-    ? <div className={styles.verifiedReply}>
+  const withoutInternalRef = text => text.replace(/^Source comment reference: [^\n]*(?:\n|$)/gm, '');
+  const visibleText = withoutInternalRef(fullText.slice(0, visibleCount))
+    .split('\n').map(formatWilsyEOSDisplayLine).join('\n');
+  const isVerified = format === 'VERIFIED_TASK' && fullText.includes('\n');
+  const isFocusedAnswer = /^EOS source answer · MW-T\d{1,3}\n/.test(fullText);
+  const sourceFooter = line => /^(?:Python EOS ·|Source records and discussion do not independently certify)/.test(line);
+  const factLabels = /^(?:Lifecycle|Revision|Deadline|Accountable contributor|Dependencies|Lifecycle events|Latest event|Latest recorded comment|Discussion comments|Attachments|Verified scan-clean attachments on this page|Scan-clean on this page|Approval decisions|Pending or rejected(?: decisions on this page| on this page)?|Latest recorded discussion|Latest lifecycle event): /;
+  const formatted = isVerified
+    ? <div className={isFocusedAnswer ? styles.verifiedFocusedReply : styles.verifiedReply}>
       {visibleText.split('\n').map((line, index) => {
-        if (!line) return null;
+        if (!line.trim()) return null;
         if (index === 0) {
-          return <p key={index} className={styles.verifiedReplyTitle}>{line}</p>;
+          return <p key={index} className={isFocusedAnswer
+            ? styles.verifiedFocusedTitle : styles.verifiedReplyTitle}>{line}</p>;
         }
-        if (index >= 1 && index <= 3) {
-          const split = line.indexOf(': ');
-          return <p key={index} className={styles.verifiedReplyFact}>
-            <span>{split >= 0 ? line.slice(0, split) : line}</span>
-            {split >= 0 && <strong>{line.slice(split + 2)}</strong>}
+        // Internal source locator is used only by the independently
+        // reauthorised Read full update action, never shown in the transcript.
+        if (/^Source comment reference: pcm-[a-f0-9]{48} · [a-f0-9]{128}$/.test(line)) return null;
+        if (sourceFooter(line)) {
+          return <p key={index} className={styles.verifiedSourceFooter}>{line}</p>;
+        }
+        const split = line.indexOf(': ');
+        if (split >= 0 && factLabels.test(line)) {
+          return <p key={index} className={isFocusedAnswer
+            ? styles.verifiedFocusedFact : styles.verifiedReplyFact}>
+            <span>{line.slice(0, split)}</span>
+            <strong>{line.slice(split + 2)}</strong>
           </p>;
         }
         return <p key={index} className={styles.verifiedReplyNote}>{line}</p>;
@@ -965,7 +1300,8 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
           <span aria-hidden="true" className={styles.replyCursor}>▍</span>
         )}
       </span>
-      {animate && <span className={styles.srOnly}>{fullText}</span>}
+      {animate && <span className={styles.srOnly}>{withoutInternalRef(fullText)
+        .split('\n').map(formatWilsyEOSDisplayLine).join('\n')}</span>}
     </>
   );
 }
@@ -1279,6 +1615,9 @@ export function WilsyOSIntelligenceDock({
   const [prompt, setPrompt] = useState('');
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
   const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
+  // Navigation-only locator. Restored context must be reauthorized by EOS.
+  const priorTaskLocatorRef = useRef(null);
+  const selectedTaskHintRef = useRef(null);
   const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
   const workspaceDetailsRef = useRef(null);
   const [headquartersWork, setHeadquartersWork] = useState(null);
@@ -1364,6 +1703,7 @@ export function WilsyOSIntelligenceDock({
     setErrorMessage('');
     setActiveTab('chat');
     setWorkSurfaceOpen(false);
+    priorTaskLocatorRef.current = null;
     setWorkLocator({ workspace: 'HEADQUARTERS' });
     setVerifiedWorkspaceContext(null);
     setHeadquartersWork(null);
@@ -1432,6 +1772,11 @@ export function WilsyOSIntelligenceDock({
         || (candidate.task_revision !== undefined && (!candidate.task_id
           || !Number.isSafeInteger(candidate.task_revision) || candidate.task_revision < 1))
         || (candidate.participant_view !== undefined && typeof candidate.participant_view !== 'boolean')) return;
+      if (event.type === 'wilsy:ai-task-selection') {
+        selectedTaskHintRef.current = JSON.stringify(candidate);
+      } else {
+        selectedTaskHintRef.current = null;
+      }
       setWorkLocator(previous => JSON.stringify(previous) === JSON.stringify(candidate) ? previous : { ...candidate });
       // The SOURCE transcript and the governed operating view are mutually
       // exclusive. After restoring an EOS task-linked conversation the launcher
@@ -1442,14 +1787,46 @@ export function WilsyOSIntelligenceDock({
         setConversationView('WELCOME');
         setLocalSourceQuery('');
         setFocusedWorkIndex(null);
-        setWorkSurfaceOpen(true);
+        setWorkSurfaceOpen(event.type !== 'wilsy:ai-task-selection');
       } else {
         setWorkSurfaceOpen(false);
       }
     };
+    const selectedTask = event => {
+      const detail = event?.detail;
+      const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+      if (!authUser?.id || detail?.tenantId !== exactTenant
+        || detail?.principalId !== authUser.id) return;
+      if (detail.locator) {
+        receive(event); // Reuse exact locator validation and independent EOS readback.
+        return;
+      }
+      if (!selectedTaskHintRef.current) return;
+      const previousHint = selectedTaskHintRef.current;
+      selectedTaskHintRef.current = null;
+      setWorkLocator(previous => JSON.stringify(previous) === previousHint
+        ? { workspace: 'HEADQUARTERS' } : previous);
+    };
+    const openFromTask = event => {
+      const detail = event.detail;
+      const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+      if (!authUser?.id || detail?.tenantId !== exactTenant
+        || detail?.principalId !== authUser.id) return;
+      // A same-scope request changes presentation only; the work locator and
+      // any current source content are independently rechecked by Python EOS.
+      setLauncherMinimized(false);
+      setIsOpen(true);
+      setConversationView('WELCOME');
+    };
     window.addEventListener('wilsy:ai-context-locator', receive);
+    window.addEventListener('wilsy:ai-task-selection', selectedTask);
+    window.addEventListener('wilsy:ai-request-open', openFromTask);
     window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
-    return () => window.removeEventListener('wilsy:ai-context-locator', receive);
+    return () => {
+      window.removeEventListener('wilsy:ai-context-locator', receive);
+      window.removeEventListener('wilsy:ai-task-selection', selectedTask);
+      window.removeEventListener('wilsy:ai-request-open', openFromTask);
+    };
   }, [dockScope]);
 
   useEffect(() => {
@@ -1745,6 +2122,7 @@ export function WilsyOSIntelligenceDock({
    * @institutional Allows operators to compartmentalize conversations by topic.
    */
   const handleNewThread = useCallback(async () => {
+    if (isSubmitting) return;
     const scopeAtStart = dockScopeRef.current;
     try {
       const fresh = await createWilsyAIConversationThread({
@@ -1757,13 +2135,38 @@ export function WilsyOSIntelligenceDock({
       setSessionThreadIds(previous => previous.includes(fresh.id) ? previous : [...previous, fresh.id]);
       setWorkSurfaceOpen(false);
       setConversationView('WELCOME');
+      setPrompt('');
+      setErrorMessage('');
+      setAnimatedAssistantKey(null);
       setActiveTab('chat');
     } catch (err) {
       if (scopeAtStart === dockScopeRef.current) {
         setErrorMessage(err?.message || 'Failed to create a new thread.');
       }
     }
-  }, []);
+  }, [isSubmitting]);
+
+  /**
+   * Clear the displayed conversation, never delete encrypted history.
+   * An empty chat with a stale request status/draft needs no archive write.
+   */
+  const handleClearChat = useCallback(async () => {
+    if (isSubmitting) return;
+    const displayed = conversationThreads.find(thread => thread.id === activeThreadId)
+      || conversationThreads[0];
+    if ((displayed?.messages?.length || 0) > 0) {
+      await handleNewThread();
+      return;
+    }
+    setPrompt('');
+    setErrorMessage('');
+    setLocalSourceQuery('');
+    setFocusedWorkIndex(null);
+    setAnimatedAssistantKey(null);
+    setConversationView('WELCOME');
+    setWorkSurfaceOpen(false);
+    setActiveTab('chat');
+  }, [activeThreadId, conversationThreads, handleNewThread, isSubmitting]);
 
   /**
    * @function handleRefresh
@@ -1905,10 +2308,33 @@ export function WilsyOSIntelligenceDock({
         const deadline = typeof dueValue === 'string'
           && /^\d{4}-\d{2}-\d{2}(?:$|T)/.test(dueValue)
           ? dueValue.slice(0, 10) : 'not supplied by EOS';
-        const dependencyLine = Array.isArray(task.depends_on)
-          && task.depends_on.every(id => /^ptk-[a-f0-9]{48}$/.test(id))
-          ? '\nDependencies: ' + task.depends_on.length + ' recorded (completion separately verified)'
-          : '';
+        // MW-T11: exact selected-task predecessor evidence comes from the
+        // existing EOS-authorized Projects snapshot, not the browser's graph.
+        const linked = task.depends_on;
+        const predecessors = task.predecessors;
+        const graphVerified = Array.isArray(linked) && linked.length <= 25
+          && linked.every(id => /^ptk-[a-f0-9]{48}$/.test(id))
+          && new Set(linked).size === linked.length
+          && Array.isArray(predecessors) && predecessors.length === linked.length
+          && predecessors.every((entry, index) => entry?.task_id === linked[index]
+            && typeof entry.title === 'string' && entry.title.trim().length > 0
+            && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(entry.status)
+            && Number.isSafeInteger(entry.revision) && entry.revision >= 1);
+        const unfinished = graphVerified
+          ? predecessors.filter(entry => entry.status !== 'DONE') : [];
+        const dependencyLine = !graphVerified
+          ? '\nDependencies: Current predecessor states not independently verified.'
+          : linked.length === 0
+            ? '\nDependencies: No recorded predecessors.'
+            : '\nDependencies: ' + (linked.length - unfinished.length) + '/'
+              + linked.length + ' predecessors done.'
+              + (unfinished.length
+                ? '\nWaiting for:\n' + unfinished.slice(0, 8).map(entry =>
+                    '• ' + entry.title.slice(0, 120) + ' — '
+                    + entry.status.replaceAll('_', ' ').toLowerCase()).join('\n')
+                  + (unfinished.length > 8
+                    ? '\n' + (unfinished.length - 8) + ' more unfinished; inspect the task in Projects.' : '')
+                : '\nAll recorded predecessors are done. Other completion gates remain independent.');
         const reply = 'EOS source verified: ' + task.title
           + '\nLifecycle: ' + verifiedStatus
           + '\nRevision: ' + task.revision
@@ -1947,6 +2373,10 @@ export function WilsyOSIntelligenceDock({
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting || sendLockRef.current) return;
       setWorkSurfaceOpen(false);
+      if (text.length > 12000) {
+        setErrorMessage('This prompt exceeds the EOS 12,000-character reasoning limit. Shorten it or inspect one authorized task at a time. No model was invoked.');
+        return;
+      }
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
       const localCourtesyReply = isLegalDockRole(authUser?.role)
@@ -1969,6 +2399,177 @@ export function WilsyOSIntelligenceDock({
         ? null : planWilsyFinancialSourceRead(text);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
+      const briefingCode = isLegalDockRole(authUser?.role) ? null
+        : (/^(?:brief|summari[sz]e|assess)\s+(MW-T\d{1,3})(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i
+          .exec(text)?.[1]?.toUpperCase()
+          || (visibleWorkspaceContext?.state === 'READY'
+            && parseWilsySelectedTaskFollowup(text,
+              visibleWorkspaceContext.data?.work?.selected_task, activeThread, workLocator))
+          || null);
+      if (!briefingCode && !isLegalDockRole(authUser?.role)
+        && isWilsyUnboundTaskFollowup(text)) {
+        setErrorMessage('I cannot identify a currently verified task for that follow-up. Open MW-T11 in Projects, then ask again. No AI provider was invoked.');
+        return;
+      }
+      if (briefingCode) {
+        const scopeAtStart = dockScopeRef.current;
+        const locatorAtStart = workLocatorKeyRef.current;
+        const tenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+        const principal = authUser?.id;
+        const project = workLocator.workspace === 'PROJECTS' ? workLocator.project_id : null;
+        const context = visibleWorkspaceContext?.data;
+        const task = context?.work?.selected_task;
+        if (visibleWorkspaceContext?.state !== 'READY' || !project
+          || context?.tenant_id !== tenant || context?.principal_id !== principal
+          || context?.locator?.workspace !== 'PROJECTS'
+          || context?.locator?.project_id !== project || context?.locator?.task_id !== workLocator.task_id
+          || !task || task.task_id !== workLocator.task_id
+          || (workLocator.task_revision && task.revision !== workLocator.task_revision)
+          || !(task.title?.startsWith(briefingCode + ' — ')
+            || task.title?.startsWith(briefingCode + ' - '))) {
+          setErrorMessage('MW-T11 is not verified as an open Projects task. A checked table row only selects it for batch actions. Open the task title or Details, wait for LIVE TASK verification, then request its EOS briefing.');
+          return;
+        }
+        sendLockRef.current = true;
+        setIsSubmitting(true);
+        setErrorMessage('');
+        try {
+          const { evidence, exactTask } = await readWilsyTaskBriefing(
+            project, task, tenant, principal, Boolean(workLocator.participant_view));
+          if (dockScopeRef.current !== scopeAtStart
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          const due = exactTask.due_date ?? exactTask.due_at ?? null;
+          const contextDue = task.due_at ?? task.due_date ?? null;
+          const normalizeDue = value => typeof value === 'string'
+            && /^\d{4}-\d{2}-\d{2}(?:$|T)/.test(value)
+            ? value.slice(0, 10) : null;
+          const authoritativeDue = normalizeDue(due);
+          const projectedDue = normalizeDue(contextDue);
+          const deadline = authoritativeDue && projectedDue && authoritativeDue !== projectedDue
+            ? 'Source projections disagree; verify in Projects.'
+            : authoritativeDue || projectedDue || 'No verified deadline in either source.';
+          const linked = task.depends_on;
+          const predecessors = task.predecessors;
+          const graphVerified = Array.isArray(linked) && linked.length <= 25
+            && linked.every(id => /^ptk-[a-f0-9]{48}$/.test(id))
+            && new Set(linked).size === linked.length
+            && Array.isArray(predecessors) && predecessors.length === linked.length
+            && predecessors.every((item, index) => item?.task_id === linked[index]
+              && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status)
+              && Number.isSafeInteger(item.revision) && item.revision >= 1);
+          const pending = graphVerified
+            ? predecessors.filter(item => item.status !== 'DONE') : [];
+          const latestComment = [...evidence.comments.items].sort(
+            (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+          const lastEvent = [...evidence.events.items].sort(
+            (a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))[0];
+          const latestUpdate = latestComment
+            ? '\nLatest recorded comment (' + latestComment.created_at + '): '
+              + summarizeWilsySourceComment(latestComment.body)
+              + '\nSource comment reference: ' + latestComment.comment_id
+              + ' · ' + latestComment.fingerprint
+            : '\nNo discussion comments on the verified first page.';
+          const pageLine = (name, page) => '\n' + name + ': '
+            + page.items.length + (page.has_more ? '+ on first page; more pages require inspection' : ' verified records');
+          const attachmentsClean = evidence.attachments.items.filter(
+            item => item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').length;
+          const approvalsPending = evidence.approvals.items.filter(
+            item => item.status === 'PENDING' || item.status === 'REJECTED').length;
+          const result = 'EOS source briefing · ' + task.title
+            + '\nLifecycle: ' + exactTask.status.replaceAll('_', ' ').toLowerCase()
+            + ' · revision ' + exactTask.revision
+            + '\nAccountable contributor: ' + (task.assignee_name || 'Name not verified by EOS')
+            + '\nDeadline: ' + deadline
+            + '\nDependencies: ' + (!graphVerified ? 'Current predecessor graph not verified'
+              : linked.length === 0 ? 'No recorded predecessors'
+                : pending.length + ' of ' + linked.length + ' unfinished'
+                  + (pending.length ? ' · ' + pending.slice(0, 5).map(item =>
+                    item.title + ' (' + item.status.toLowerCase() + ')').join('; ') : ''))
+            + pageLine('Lifecycle events', evidence.events)
+            + (lastEvent ? '\nLatest event: ' + lastEvent.event_type.replaceAll('_', ' ').toLowerCase()
+              + ' · ' + lastEvent.occurred_at : '')
+            + pageLine('Discussion comments', evidence.comments) + latestUpdate
+            + pageLine('Attachments', evidence.attachments)
+            + '\nVerified scan-clean attachments on this page: ' + attachmentsClean
+            + pageLine('Approval decisions', evidence.approvals)
+            + '\nPending or rejected decisions on this page: ' + approvalsPending
+            + '\nSource records and discussion do not independently certify acceptance,'
+            + ' production deployment, rollback, approval completion or strategic outcomes.'
+            + '\nPython EOS · Read-only, nonbillable. No model or task command invoked.';
+          const intent = classifyWilsyFocusedTaskQuestion(text);
+          const prefix = 'EOS source answer · ' + briefingCode + '\n';
+          const focused = intent === 'DEADLINE'
+            ? prefix + 'Deadline: ' + deadline
+            : intent === 'OWNER'
+              ? prefix + 'Accountable contributor: ' + (task.assignee_name || 'Name not verified by EOS')
+              : intent === 'APPROVALS'
+                ? prefix + 'Approval decisions: ' + evidence.approvals.items.length
+                  + (evidence.approvals.has_more ? '+ on this verified page; further decisions need inspection'
+                    : ' verified records')
+                  + '\nPending or rejected on this page: ' + approvalsPending
+                  + '\nAn empty approval page does not certify that an approval is complete.'
+                : intent === 'ATTACHMENTS'
+                  ? prefix + 'Attachments: ' + evidence.attachments.items.length
+                    + (evidence.attachments.has_more ? '+ on this verified page; further records need inspection'
+                      : ' verified records')
+                    + '\nScan-clean on this page: ' + attachmentsClean
+                    + '\nRecorded attachments are not proof of deployment or acceptance.'
+                  : intent === 'LATEST_UPDATE'
+                    ? prefix + (latestComment
+                      ? 'Latest recorded discussion (' + latestComment.created_at + '): '
+                        + summarizeWilsySourceComment(latestComment.body)
+                        + '\nSource comment reference: ' + latestComment.comment_id
+                        + ' · ' + latestComment.fingerprint
+                        + (evidence.comments.has_more ? '\nMore discussion pages require inspection.' : '')
+                      : 'No discussion comments on the verified first page.')
+                      + (lastEvent ? '\nLatest lifecycle event: '
+                        + lastEvent.event_type.replaceAll('_', ' ').toLowerCase()
+                        + ' · ' + lastEvent.occurred_at : '')
+                    : null;
+          const answer = focused === null ? result : focused
+            + '\nPython EOS · Source verified, read-only. No model invoked.';
+          let thread = activeThread;
+          if (!thread?.id) thread = await createWilsyAIConversationThread({
+            title: 'EOS briefing · ' + briefingCode, workspace: 'Projects',
+            workLocator: { ...workLocator },
+          });
+          if (dockScopeRef.current !== scopeAtStart
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          const requestTurn = await persistWilsyAIConversationTurn({
+            threadId: thread.id, workLocator: { ...workLocator },
+            message: { role: 'user', content: text },
+          });
+          const recorded = await persistWilsyAIConversationTurn({
+            threadId: requestTurn.id, workLocator: { ...workLocator },
+            message: { role: 'assistant', content: answer,
+              meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' } },
+          });
+          if (dockScopeRef.current !== scopeAtStart
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          setConversationThreads(previous => [
+            recorded, ...previous.filter(item => item.id !== recorded.id),
+          ]);
+          setActiveThreadId(recorded.id);
+          setAnimatedAssistantKey(recorded.id + ':' + recorded.messages?.at(-1)?.timestamp);
+          setConversationView('WELCOME');
+          setLocalSourceQuery('');
+          setPrompt('');
+        } catch (cause) {
+          if (dockScopeRef.current === scopeAtStart
+            && workLocatorKeyRef.current === locatorAtStart) {
+            setErrorMessage([401, 403].includes(cause?.response?.status)
+              ? 'EOS denied access to at least one task briefing source. No partial result was presented.'
+              : 'EOS could not verify all current task, discussion, evidence and approval sources. No briefing was invented.');
+          }
+        } finally {
+          if (dockScopeRef.current === scopeAtStart
+            && workLocatorKeyRef.current === locatorAtStart) {
+            setIsSubmitting(false);
+            sendLockRef.current = false;
+          }
+        }
+        return;
+      }
       const activityCode = isLegalDockRole(authUser?.role)
         ? null : parseWilsyTaskActivityInspection(text);
       if (activityCode) {
@@ -2689,7 +3290,12 @@ export function WilsyOSIntelligenceDock({
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt)
-    || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt));
+    || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt)
+    || /^(?:brief|summari[sz]e|assess)\s+MW-T\d{1,3}(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i.test(prompt.trim())
+    || (visibleWorkspaceContext?.state === 'READY'
+      && parseWilsySelectedTaskFollowup(prompt,
+        visibleWorkspaceContext.data?.work?.selected_task, activeThread, workLocator))
+    || isWilsyUnboundTaskFollowup(prompt));
   const localCourtesyIntent = Boolean((!consentedReasoningReady
     && resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser))
     || resolveWilsyLocalClock(prompt)
@@ -2794,7 +3400,14 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockNavBar} role="navigation" aria-label="Intelligence Dock navigation">
             <button type="button"
               className={`${styles.navTabButton} ${activeTab === 'chat' ? styles.activeTab : ''}`}
-              onClick={() => { setWorkSurfaceOpen(false); setActiveTab('chat'); }}>
+              onClick={() => {
+                if (workSurfaceOpen && priorTaskLocatorRef.current) {
+                  setWorkLocator(priorTaskLocatorRef.current);
+                  priorTaskLocatorRef.current = null;
+                }
+                setWorkSurfaceOpen(false);
+                setActiveTab('chat');
+              }}>
               <MessageSquareText size={15}/><span>Conversation</span>
             </button>
             <button type="button"
@@ -2805,7 +3418,23 @@ export function WilsyOSIntelligenceDock({
             {!isLegalDockRole(authUser?.role) && <button type="button"
               className={`${styles.navTabButton} ${activeTab === 'chat' && workSurfaceOpen ? styles.activeTab : ''}`}
               aria-pressed={activeTab === 'chat' && workSurfaceOpen}
-              onClick={() => { setActiveTab('chat'); setConversationView('WELCOME'); setWorkSurfaceOpen(value => !value); }}>
+              onClick={() => {
+                setActiveTab('chat');
+                setConversationView('WELCOME');
+                if (workSurfaceOpen) {
+                  if (priorTaskLocatorRef.current) {
+                    setWorkLocator(priorTaskLocatorRef.current);
+                    priorTaskLocatorRef.current = null;
+                  }
+                  setWorkSurfaceOpen(false);
+                } else {
+                  if (workLocator.workspace === 'PROJECTS') {
+                    priorTaskLocatorRef.current = { ...workLocator };
+                  }
+                  setWorkLocator({ workspace: 'HEADQUARTERS' });
+                  setWorkSurfaceOpen(true);
+                }
+              }}>
               <ListFilter size={15}/><span>{workSurfaceOpen ? 'Back to chat' : 'Work'}</span>
             </button>}
             {isLegalDockRole(authUser?.role) && (
@@ -2827,10 +3456,31 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockBody}>
             {activeTab === 'chat' && (
               <div className={styles.chatTabContent}>
+                {!workSurfaceOpen && <div className={styles.conversationCommandBar}
+                  role="group" aria-label="Conversation actions">
+                  <span className={styles.conversationCommandLabel}>Conversation</span>
+                  <div className={styles.conversationCommandActions}>
+                    <button type="button" className={styles.conversationCommandButton}
+                      onClick={handleNewThread} disabled={isSubmitting}>
+                      <Plus size={14} aria-hidden="true"/> New conversation
+                    </button>
+                    <button type="button" className={styles.conversationCommandButton}
+                      onClick={handleClearChat}
+                      disabled={isSubmitting || !(activeThread?.messages || []).length
+                        && !prompt.trim() && !errorMessage}
+                      title="Clear visible chat, draft and request status. Saved history is kept.">
+                      <Eraser size={14} aria-hidden="true"/> Clear chat
+                    </button>
+                  </div>
+                </div>}
                 {!isLegalDockRole(authUser?.role) && workLocator.workspace === 'PROJECTS'
                   && workLocator.task_id
                   && (workSurfaceOpen || conversationView === 'SOURCE'
-                    || activeThread?.workLocator?.task_id === workLocator.task_id) && (
+                    || activeThread?.workLocator?.task_id === workLocator.task_id
+                    || (visibleWorkspaceContext?.state === 'READY'
+                      && visibleWorkspaceContext.data?.locator?.workspace === 'PROJECTS'
+                      && visibleWorkspaceContext.data?.locator?.project_id === workLocator.project_id
+                      && visibleWorkspaceContext.data?.work?.selected_task?.task_id === workLocator.task_id)) && (
                   <div className={styles.liveTaskStrip} role="region" aria-label="Live EOS task">
                     <div className={styles.liveTaskFacts} aria-live="polite">
                       <span className={styles.liveTaskLabel}>LIVE TASK</span>
@@ -2883,7 +3533,13 @@ export function WilsyOSIntelligenceDock({
                         setContextRefresh(value => value + 1);
                       }}
                       onRecord={recordDockWork}
-                      onSelectWork={locator => { setWorkLocator(locator); setConversationView('WELCOME'); setWorkSurfaceOpen(true); }}/>
+                      onNavigateWork={() => { setIsOpen(false); setLauncherMinimized(true); }}
+                      onSelectWork={locator => {
+                        priorTaskLocatorRef.current = null;
+                        setWorkLocator(locator);
+                        setConversationView('WELCOME');
+                        setWorkSurfaceOpen(true);
+                      }}/>
                   )}
                   {conversationView === 'WELCOME' && isLegalDockRole(authUser?.role)
                     && (!activeThread?.messages || activeThread.messages.length === 0) && (
@@ -3182,6 +3838,14 @@ export function WilsyOSIntelligenceDock({
                             ))}
                           />
                         ) : msg.content}
+                        {msg.role === 'assistant' && <WilsyVerifiedCommentDisclosure
+                          key={msg.timestamp || idx}
+                          message={msg}
+                          workspaceContext={visibleWorkspaceContext}
+                          workLocator={workLocator}
+                          tenantId={activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId}
+                          principalId={authUser?.id}
+                        />}
                       </div>
                     </div>
                   ))}
@@ -3197,6 +3861,28 @@ export function WilsyOSIntelligenceDock({
                       <div className={styles.bubbleHeader}>WILSY OS · Request status</div>
                       <p style={{ margin: 0, color: '#f4d9cd', lineHeight: 1.65,
                         overflowWrap: 'anywhere' }}>{errorMessage}</p>
+                      {!isLegalDockRole(authUser?.role)
+                        && /^MW-T\d{1,3} is not verified as an open Projects task\./.test(errorMessage)
+                        && <button type="button" className={styles.conversationInlineAction}
+                          onClick={() => {
+                            const taskCode = /^MW-T\d{1,3}/.exec(errorMessage)?.[0];
+                            const tenantId = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+                            const principalId = authUser?.id;
+                            if (!taskCode || !tenantId || !principalId) return;
+                            const detail = { tenantId, principalId, taskCode,
+                              projectId: workLocator.workspace === 'PROJECTS'
+                                ? workLocator.project_id : undefined, accepted: false };
+                            window.dispatchEvent(new CustomEvent('wilsy:projects-open-task-request', { detail }));
+                            if (detail.accepted !== true) {
+                              setErrorMessage('The requested task is not available in the currently verified Projects work page. Open the correct project and refresh its work list; no task access was granted.');
+                              return;
+                            }
+                            setErrorMessage('');
+                            setIsOpen(false);
+                            setLauncherMinimized(true);
+                          }}>
+                          <span>Open {/^MW-T\d{1,3}/.exec(errorMessage)?.[0]} task</span>
+                        </button>}
                     </div>
                   )}
                   <div ref={messagesEndRef} />
@@ -3237,6 +3923,16 @@ export function WilsyOSIntelligenceDock({
                     </button>}
                   </details>
                 </div>}
+                {Boolean(prompt.trim()) && !readOnlySourceIntent && !localCourtesyIntent
+                  && !isLegalDockRole(authUser?.role) && !isSubmitting
+                  && (aiEntitlementNotProvisioned || aiProviderUnavailable || !reasoningUsageConsent)
+                  && <p role="status" aria-label="WILSY AI admission status" style={{
+                    margin: '0 14px 5px', color: '#f4d9cd', fontSize: 12, lineHeight: 1.5,
+                  }}>{aiEntitlementNotProvisioned
+                    ? 'AI reasoning is not activated for this tenant. Source-only EOS inspection remains available.'
+                    : aiProviderUnavailable
+                      ? 'AI provider is not configured. Source-only EOS inspection remains available.'
+                      : 'Confirm AI usage consent before requesting metered reasoning.'}</p>}
                 <div className={styles.chatInputArea} style={{ flexShrink: 0 }}>
                   <textarea
                     className={styles.promptInput}
@@ -3256,14 +3952,18 @@ export function WilsyOSIntelligenceDock({
                     type="button"
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
+                    // Always admit a nonempty attempt into the existing
+                    // fail-closed handler. Missing consent/provider/entitlement
+                    // and replay holds produce an explicit visible refusal,
+                    // never a disabled button or an unauthorized model call.
                     disabled={isSubmitting || !prompt.trim()
-                      || (!isLegalDockRole(authUser?.role)
-                        && !readOnlySourceIntent && !localCourtesyIntent
-                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable
-                          || (reasoningReplayRef.current.blocked === true
-                            && reasoningReplayRef.current.scope === dockScopeRef.current
-                            && reasoningReplayRef.current.text === prompt.trim()
-                            && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)))}
+                      || (reasoningReplayRef.current.blocked === true
+                        && reasoningReplayRef.current.scope === dockScopeRef.current
+                        && reasoningReplayRef.current.text === prompt.trim()
+                        && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)}
+                    title={!prompt.trim() ? 'Enter a question'
+                      : isSubmitting ? 'WILSY AI is processing a request'
+                        : 'Submit an EOS-admitted question'}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -3538,6 +4238,7 @@ export function WilsyOSIntelligenceDock({
                             aria-current={thread.id === activeThreadId ? 'true' : undefined}
                             onClick={() => {
                               setAnimatedAssistantKey(null); setActiveThreadId(thread.id);
+                              setErrorMessage(''); setPrompt('');
                               setSessionThreadIds(previous => previous.includes(thread.id)
                                 ? previous : [...previous, thread.id]);
                                setWorkSurfaceOpen(false);
@@ -3628,7 +4329,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION
+ * VERSION: v4.81.0-CHECKBOX-SELECTED-TASK-SOURCE-CONTEXT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
