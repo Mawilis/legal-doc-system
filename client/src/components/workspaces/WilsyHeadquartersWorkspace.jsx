@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.1-HQ-EXACT-TASK-NAVIGATION
+ * VERSION: v4.19.2-HQ-HOME-ROUTE-RESET
+ * CHANGELOG: v4.19.2-HQ-HOME-ROUTE-RESET restores Headquarters Home and releases stale Projects/task focus when the canonical logo navigates to /headquarters. No EOS/IAM change.
  * CHANGELOG: v4.19.1-HQ-EXACT-TASK-NAVIGATION prevents a verified Headquarters task from switching to My assigned projects, clearing inherited assigned-view routing while retaining canonical project/task identifiers.
  * CHANGELOG: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS Delegates the Strategy-origin return into the canonical Projects context rather than leaving a detached Headquarters link; no changes to EOS authority.
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
@@ -13,7 +14,7 @@
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * CHANGELOG: v4.18.1-STRATEGY-RETURN-URL-PRIORITY mounts the Strategy return from exact URL provenance independently of asynchronous workspace section loading; no authority changes.
  * CHANGELOG: v4.18.0-STRATEGY-RETURN-ROUTE retains exact Strategy origin for handoffs and returns directly to the existing governed M04 workspace without a new project workflow or IAM grant.
  * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS preserves independently authorized assigned-task navigation from the Dock.
@@ -500,8 +501,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
       setSection(requested);
       setShowMyWork(false);
     } else if (!requested) {
-      setSection((current) =>
-        current === 'hr-workspace' || current === 'operations' ? 'overview' : current);
+      // The canonical /headquarters route is Home, never the previously
+      // mounted task or Projects section. React Router retains this component
+      // across same-session URL changes; explicitly release its UI-only focus.
+      setSection('overview');
+      setShowMyWork(false);
+      setMyWorkFocusItem(null);
+      setProjectDeliveryFocus(null);
+      setProjectTaskFocus(null);
+      setAttentionProjectFocus(null);
+      setCalendarOpen(false);
     }
   }, [location.search]);
   const [workforce, setWorkforce] = useState(null);
@@ -1758,7 +1767,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.1-HQ-EXACT-TASK-NAVIGATION
+ * VERSION: v4.19.2-HQ-HOME-ROUTE-RESET
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
