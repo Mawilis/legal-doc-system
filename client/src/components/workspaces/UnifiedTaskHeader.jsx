@@ -5,9 +5,15 @@
  * EPITOME: One task-detail header used by Projects and My Work without changing
  *          EOS source ownership or granting any task action.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/UnifiedTaskHeader.jsx
+ * COLLABORATION / OWNERSHIP: ProjectTasksPanel, MyWorkWorkspace and Python EOS
+ *                              source-owned task service adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
- * SECURITY: Presentation only; no requests, persistence, IAM, source casting, or mutations.
- * TENANT: Caller must independently authorize record and its actions.
+ * CHANGELOG: v1.0.0-CANONICAL-SOURCE-NEUTRAL-TASK-PRESENTATION establishes one
+ *            responsive, accessible task header shared by Projects and My Work.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+ * SECURITY / PRIVACY POSTURE: Presentation-only, no network access or data persistence.
+ * TENANT BOUNDARY: Caller independently validates tenant/principal/source scope.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
  */
 import React from 'react';
 
