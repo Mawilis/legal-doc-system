@@ -1,11 +1,14 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.9.3-ALIGNED-EVIDENCE-COLUMNS-CERT
+ * VERSION: v1.10.0-CANONICAL-ROUTER-AND-REVISION-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.10.0-CANONICAL-ROUTER-AND-REVISION-CERT verifies
+ *          current EOS Dock task identity/revision before a Router-owned
+ *          canonical Projects handoff, and fails closed after revision drift.
  * CHANGELOG: v1.9.3-ALIGNED-EVIDENCE-COLUMNS-CERT validates all five evidence values share the same responsive fixed-start grid column, left alignment and narrow stacking without changing source-evidence assertions.
  * CHANGELOG: v1.9.2-STRICT-SOURCE-RECORD-CERT uses fully scoped synthetic event records to require EOS event authorship/time validation and rejects mismatched source items as unverified.
  * CHANGELOG: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT requires task's original acceptance text and lifecycle to remain visible while activity and attachment presence are not falsely treated as completion.
@@ -282,6 +285,50 @@ describe('permissioned operating work', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+
+  it('navigates a verified task into canonical Projects using SPA routing without posting', async () => {
+    const navigate = vi.fn();
+    const focus = { workspace: 'PROJECTS', project_id: PROJECT,
+      task_id: TASK, participant_view: false, task_revision: 1 };
+    render(<MemoryRouter initialEntries={['/headquarters?section=projects']}>
+      <OperatingWork tenantId={TENANT} principalId={PERSON} scope={scope()}
+        locator={focus} onRecord={record} onSelectWork={selected}
+        onNavigateWork={navigate}/>
+      <RouteLocationProbe />
+    </MemoryRouter>);
+    const proof = await screen.findByRole('status', {name: 'EOS-confirmed work handoff'});
+    expect(proof).toHaveTextContent('Projects source verified · revision 1');
+    const link = screen.getByRole('link', {name: 'Open full task'});
+    expect(link).toHaveAttribute('href',
+      '/headquarters?section=projects&project=' + PROJECT + '&task=' + TASK);
+    fireEvent.click(link);
+    expect(screen.getByLabelText('Current client route')).toHaveTextContent(
+      '/headquarters?section=projects&project=' + PROJECT + '&task=' + TASK);
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('refuses a stale revision, then re-verifies the current source before restoring handoff', async () => {
+    source = dockEnvelope({revision: 2, status: 'IN_PROGRESS'});
+    const focus = {workspace: 'PROJECTS', project_id: PROJECT,
+      task_id: TASK, task_revision: 1, participant_view: false};
+    const view = mount({locator: focus});
+    await screen.findByRole('button', {name: 'Retry authorized work'});
+    expect(screen.queryByRole('status', {name: 'EOS-confirmed work handoff'}))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('link', {name: 'Open full task'}))
+      .not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+    view.rerender(<OperatingWork tenantId={TENANT} principalId={PERSON}
+      scope={scope()} locator={{...focus, task_revision: 2}}
+      onRecord={record} onSelectWork={selected}/>);
+    expect(await screen.findByRole('status', {name: 'EOS-confirmed work handoff'}))
+      .toHaveTextContent('Projects source verified · revision 2');
+    expect(screen.getByRole('link', {name: 'Open full task'}))
+      .toHaveAttribute('href', expect.stringContaining('task=' + TASK));
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('rejects a task identity mismatch with no handoff or write', async () => {
     source.source.task_id = 'ptk-' + 'd'.repeat(48);
     mount();
@@ -455,7 +502,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.9.3-ALIGNED-EVIDENCE-COLUMNS-CERT
+// VERSION: v1.10.0-CANONICAL-ROUTER-AND-REVISION-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
