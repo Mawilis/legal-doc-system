@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE
+ * VERSION: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS publishes an untrusted exact-task locator only for a single checkbox selection in the current EOS-verified Projects page, without opening a drawer, granting IAM authority, or guessing among multiple selected rows.
  * CHANGELOG: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE admits only explicit same-tenant/principal/project task-open requests against uniquely matched EOS-verified items and opens the existing canonical task drawer without granting context or IAM authority.
  * CHANGELOG: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS replaces dark duplicate task transcript with a compact source-verified assessment using the same canonical EOS brief and task-owned Activity/Evidence/Approvals navigation; no new workflow or model entitlement. Modal context and keyboard safety remain unchanged.
  * CHANGELOG: v1.70.0-IN-TASK-INTELLIGENCE-VIEW offers a source-authorized WILSY AI task brief inside the current task modal, with a deliberate transition to full Dock conversation and exact task locator. Keeps the external floating Dock hidden while modal is active; source/IAM remain EOS owned.
@@ -664,6 +665,9 @@ export default function ProjectTasksPanel({
   const [selectedWorkIds, setSelectedWorkIds] = useState([]);
   const [bulkAssignment, setBulkAssignment] = useState(null);
   const [bulkProgress, setBulkProgress] = useState(null);
+  // Checkbox selection is a non-authoritative navigation hint for the Dock.
+  // Only a single task in the current source-verified page may supply it.
+  const selectedDockHintRef = useRef(null);
   const bulkLock = useRef(false);
   const [workDensity, setWorkDensity] = useState('compact');
   const [workStatus, setWorkStatus] = useState('ALL');
@@ -1391,6 +1395,25 @@ export default function ProjectTasksPanel({
       }
     }
   };
+  useEffect(() => {
+    if (discussionOnly || !tenantId || !principalId || !/^prj-[a-f0-9]{48}$/.test(projectId || '')) return;
+    const matching = state === 'READY' && selectedWorkIds.length === 1
+      ? items.filter(item => item.task_id === selectedWorkIds[0]
+        && TASK_ID.test(item.task_id || '')
+        && Number.isSafeInteger(item.revision) && item.revision > 0) : [];
+    const task = matching.length === 1 ? matching[0] : null;
+    const hintKey = task ? [tenantId, principalId, projectId,
+      task.task_id, task.revision].join(':') : '';
+    if (selectedDockHintRef.current === hintKey) return;
+    selectedDockHintRef.current = hintKey;
+    window.dispatchEvent(new CustomEvent('wilsy:ai-task-selection', {
+      detail: { tenantId, principalId,
+        locator: task ? { workspace: 'PROJECTS', project_id: projectId,
+          task_id: task.task_id, task_revision: task.revision,
+          participant_view: Boolean(selfIsContributor) } : null },
+    }));
+  }, [discussionOnly, tenantId, principalId, projectId, state, selectedWorkIds,
+    items, selfIsContributor]);
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
   useEffect(() => {
     // A Dock button may request navigation into this already-mounted Projects
@@ -2557,7 +2580,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE
+// VERSION: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
