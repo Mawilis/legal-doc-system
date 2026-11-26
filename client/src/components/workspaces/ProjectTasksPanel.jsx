@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH
+ * VERSION: v1.75.1-IMMUTABLE-COMPLETION-ORDER
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.75.1-IMMUTABLE-COMPLETION-ORDER preserves server-derived chronological sorting across the displayed verified completed batch instead of accidentally re-sorting by due date.
  * CHANGELOG: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH loads a separate IAM-gated EOS completed query with source-side title and contributor filtering, immutable completion chronology, safe paging and exact reply envelope verification. Active/All keep their canonical existing source list and task mutation boundaries.\n * CHANGELOG: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS adds accessible Active/Completed/All view controls over the current source-verified task page; terminal Done and Cancelled leave the default action list without deletion, selection resets across views, and existing EOS pagination and details remain authoritative.
  * CHANGELOG: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS publishes an untrusted exact-task locator only for a single checkbox selection in the current EOS-verified Projects page, without opening a drawer, granting IAM authority, or guessing among multiple selected rows.
  * CHANGELOG: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE admits only explicit same-tenant/principal/project task-open requests against uniquely matched EOS-verified items and opens the existing canonical task drawer without granting context or IAM authority.
@@ -1175,6 +1176,11 @@ export default function ProjectTasksPanel({
           .some(value => String(value || '').toLocaleLowerCase().includes(term)));
     });
     result.sort((a, b) => {
+      if (workLifecycleView === 'COMPLETED') {
+        const chronology = (a.completed_at || '').localeCompare(b.completed_at || '');
+        return (completedSource.current.order === 'NEWEST' ? -chronology : chronology)
+          || a.task_id.localeCompare(b.task_id);
+      }
       const dueOrder = (a.due_date === null) - (b.due_date === null)
         || (a.due_date || '').localeCompare(b.due_date || '');
       const titleOrder = a.title.localeCompare(b.title);
@@ -2685,7 +2691,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH
+// VERSION: v1.75.1-IMMUTABLE-COMPLETION-ORDER
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
