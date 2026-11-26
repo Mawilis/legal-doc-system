@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.1.0
+ * VERSION: v1.2.0-REHYDRATED-COMMAND-STATE
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.2.0-REHYDRATED-COMMAND-STATE makes pending-command restoration a React state change, preserving fail-closed receipt-only reconciliation across a full browser reload.
  * CHANGELOG: v1.1.0 replaces repeated Open work cards with full-row, source-aware navigation and an explicit complete-queue link.
  * CHANGELOG: v1.0.0 adds briefs, ranked actions, deterministic drafts and read-only reconciliation.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2; keyboard controls.
@@ -102,6 +103,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
   const [artifact, setArtifact] = useState(null);
   const [busy, setBusy] = useState(false);
   const [continuityBlocked, setContinuityBlocked] = useState(false);
+  const [pendingCommand, setPendingCommand] = useState(null);
   const [retry, setRetry] = useState(0);
   const current = useRef(identity);
   const generation = useRef(0);
@@ -117,6 +119,10 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
     try {
       const taskAttempt = restorePending('task', pendingKey, locator);
       if (taskAttempt) pendingCommands.set(pendingKey, taskAttempt);
+      else pendingCommands.delete(pendingKey);
+      // Storage restoration must notify React; a module Map alone cannot
+      // reliably expose the reconciliation action after a full page reload.
+      setPendingCommand(taskAttempt);
       const artifactAttempt = restorePending('artifact', pendingKey, locator);
       if (artifactAttempt && !pendingArtifacts.has(pendingKey)) {
         pendingArtifacts.set(pendingKey, { ...artifactAttempt, artifact: { type: 'ArtifactFrame', id: 'task-plan',
@@ -128,7 +134,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
       setContinuityBlocked(false);
       setNotice(previousAttempt ? 'Attachment outcome unverified. Reconcile the existing PDF.' : '');
     } catch {
-      setContinuityBlocked(true); setArtifact(null); accepted.current = null;
+      setContinuityBlocked(true); setPendingCommand(null); setArtifact(null); accepted.current = null;
       setNotice('Command continuity metadata is unavailable. Verify this task in Projects before another Dock write.');
     }
     lock.current = null; setBusy(false);
@@ -172,7 +178,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
   const envelope = ready && hasTask ? view.data : null;
   const brief = envelope?.components.find(item => item.type === 'TaskBrief');
   const actions = envelope?.components.find(item => item.type === 'ActionList')?.actions || [];
-  const pending = pendingCommands.get(pendingKey);
+  const pending = pendingCommand;
   const record = async (content, token) => {
     if (!isCurrent(token)) return;
     try {
@@ -227,6 +233,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
         }
         rememberPending('task', pendingKey, command);
         pendingCommands.set(pendingKey, command);
+        setPendingCommand(command);
         posted = true;
         await api.post(taskBase(command.source) + '/transition', {
           expected_revision: command.source.revision, status: command.target,
@@ -237,6 +244,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
       const fresh = await verifyCommand(command, token);
       pendingCommands.delete(pendingKey); forgetPending('task', pendingKey);
       if (!isCurrent(token)) return;
+      setPendingCommand(null);
       setView({ identity, state: 'READY', data: fresh });
       setNotice('EOS verified the command receipt and independently read the current task.');
       callbacks.current.onVerified?.(fresh.source);
@@ -244,6 +252,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
     } catch (error) {
       if (!commandAccepted && !reconcile && [400, 401, 403, 404, 409, 422].includes(error?.response?.status)) {
         pendingCommands.delete(pendingKey); forgetPending('task', pendingKey);
+        if (isCurrent(token)) setPendingCommand(null);
         if (isCurrent(token)) { setNotice(issue(error)); setRetry(value => value + 1); }
       } else if (isCurrent(token)) {
         setNotice(posted ? 'Command outcome unverified. Reconcile existing command; do not submit another.' : issue(error));
@@ -438,7 +447,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.1.0
+// VERSION: v1.2.0-REHYDRATED-COMMAND-STATE
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
