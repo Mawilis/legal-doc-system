@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.50.2-BROWSER-SAFE-RAW-CERT
+ * VERSION: v1.51.0-PERSONAL-COURTESY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.51.0-PERSONAL-COURTESY-CERT certifies authenticated name-aware casual exchanges and continuity language without claiming model inference or crossing EOS authority.
  * CHANGELOG: v1.50.2-BROWSER-SAFE-RAW-CERT retains source contract checks using Vite raw imports instead of a Node filesystem dependency under jsdom; no test assertions weakened.
  * CHANGELOG: v1.50.1-RETURN-TO-GREETING-CERT requires returning from opted-in Work to restore the personalized empty-conversation greeting.
  * CHANGELOG: v1.50.0-SESSION-AND-GREETING-CERT certifies EOS-saved threads also appear in the current-session filter after use, while unopened threads stay excluded, and authenticated greetings require no paid model.
@@ -413,9 +414,10 @@ describe('WilsyOSIntelligenceDock', () => {
   });
 
   it.each([
-    ['How is you day?', /How is your day going\?/],
-    ['How are you?', /How is your day going\?/],
-    ['Hello WILSY', /What would you like to work on\?/],
+    ['How is you day?', /How has your day been\?/],
+    ['How are you?', /How has your day been\?/],
+    ['Hello WILSY', /Hello, Wilson\. What’s on your mind today\?/],
+    ['Good morning', /Good morning, Wilson\. What’s on your mind today\?/],
     ['Thank you', /What would you like to do next\?/],
   ])('replies to a bounded courtesy %s without model admission or provider HTTP', async (promptText, reply) => {
     // Provider is deliberately unavailable: a built-in response cannot count as an API inference.
@@ -434,6 +436,33 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockExecuteLegalServices).not.toHaveBeenCalled();
     expect(screen.queryByRole('status', { name: 'WILSY OS request status' }))
       .not.toBeInTheDocument();
+  });
+
+  it('acknowledges continuation of an existing thread without inventing a source or model answer', async () => {
+    mockThreads = [{
+      id: 'ongoing-thread', title: 'Planning discussion',
+      storagePosture: 'EOS_ENCRYPTED_HISTORY', workspace: 'WILSY OS',
+      messages: [
+        { role: 'user', content: 'I want to explore a new business idea.' },
+        { role: 'assistant', content: 'What is the idea?' },
+      ],
+    }];
+    mockLoadThreads.mockResolvedValueOnce(mockThreads);
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'continuing-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+      firstName: 'Amina',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(screen.getByText('What is the idea?')).toBeVisible());
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Good evening' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(await screen.findByText(
+      'Good evening, Amina. Would you like to continue our conversation or explore something different?',
+    )).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+    expect(screen.getByText('WILSY OS · Built-in reply')).toBeVisible();
   });
 
   it('answers current device time without OpenAI credits or provider POST', async () => {
@@ -2500,7 +2529,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.50.2-BROWSER-SAFE-RAW-CERT
+ * VERSION: v1.51.0-PERSONAL-COURTESY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
