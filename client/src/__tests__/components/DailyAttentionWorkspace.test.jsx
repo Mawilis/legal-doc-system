@@ -381,11 +381,45 @@ describe('Daily Attention bounded inbox', () => {
       filter="ALL" setFilter={vi.fn()} source="ALL" setSource={vi.fn()}
       query="" setQuery={vi.fn()} onRefresh={vi.fn()} onOpenWork={onOpenWork}
       onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
-    fireEvent.click(screen.getByRole('button', { name: 'Open details for Attention item 0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open task Attention item 0' }));
     expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
       source_key: 'OPERATIONS:attention-0', source: 'OPERATIONS', work_item_id: 'attention-0',
     }));
     expect(screen.queryByRole('complementary', { name: 'Attention detail rail' })).toBeNull();
+  });
+
+  it('opens Projects directly using only the independently verified same-source project locator', () => {
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const feed = fixtureFeed(1);
+    feed.items[0] = {
+      ...feed.items[0], id: 'PROJECTS:' + taskId,
+      sourceModule: 'PROJECTS', sourceRecordId: taskId,
+      title: 'MW-T11', dueAt: null,
+    };
+    const verified = {
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId, project_id: projectId, due_date: '2026-11-27',
+    };
+    const onOpenWork = vi.fn();
+    const { rerender } = render(<DailyAttentionWorkspace feed={feed}
+      calendarItems={[verified]} filter="ALL" setFilter={vi.fn()}
+      source="ALL" setSource={vi.fn()} query="" setQuery={vi.fn()}
+      onRefresh={vi.fn()} onOpenWork={onOpenWork}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Open task MW-T11' }));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source_key: 'PROJECTS:' + taskId, project_id: projectId,
+      due_date: '2026-11-27',
+    }));
+    onOpenWork.mockClear();
+    rerender(<DailyAttentionWorkspace feed={feed}
+      calendarItems={[{ ...verified, source_key: 'PROJECTS:foreign', project_id: 'prj-' + 'c'.repeat(48) }]}
+      filter="ALL" setFilter={vi.fn()} source="ALL" setSource={vi.fn()}
+      query="" setQuery={vi.fn()} onRefresh={vi.fn()} onOpenWork={onOpenWork}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Open task MW-T11' }));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.not.objectContaining({ project_id: expect.anything() }));
   });
 
   it('gates completion on verified source action and opens the evidence form from the row', async () => {
