@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.0.0
+ * VERSION: v1.1.0-REMOUNT-RECONCILIATION
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.1.0-REMOUNT-RECONCILIATION certifies a committed-but-lost HTTP response across unmount/remount with exactly one POST and independently verified receipt readback.
  * CHANGELOG: v1.0.0 covers action races, unknown outcomes, drafts and exact source isolation.
  * COMPLIANCE: AGENTS.md; synthetic records; keyboard-accessible semantic controls.
  * SECURITY / PRIVACY POSTURE: No provider, secret or live record used.
@@ -110,6 +111,27 @@ describe('permissioned operating work', () => {
     await screen.findByText(/EOS verified the command receipt/);
     expect(post).toHaveBeenCalledTimes(1);
   });
+  it('rehydrates an uncertain committed command after unmount and reconciles without a second POST', async () => {
+    const stableScope = scope();
+    post.mockImplementation(async () => {
+      source = dockEnvelope({ revision: 2, status: 'IN_PROGRESS' });
+      throw new Error('synthetic lost HTTP response after source commit');
+    });
+    const first = mount({ scope: stableScope });
+    fireEvent.click(await screen.findByRole('button', { name: 'Start work' }));
+    await screen.findByText(/Command outcome unverified/);
+    expect(post).toHaveBeenCalledTimes(1);
+    // A complete component remount must recover the pending command through
+    // session continuity metadata, not just the previous component's Map.
+    first.unmount();
+    mount({ scope: stableScope });
+    const reconcile = await screen.findByRole('button', { name: 'Reconcile task command' });
+    expect(screen.queryByRole('button', { name: 'Start work' })).not.toBeInTheDocument();
+    fireEvent.click(reconcile);
+    await screen.findByText(/EOS verified the command receipt/);
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls.some(([path]) => path.endsWith('/transition-receipt'))).toBe(true);
+  });
   it('retains uncertainty when readback fails after an accepted POST, including permission revocation', async () => {
     failReceipt = true;
     mount(); fireEvent.click(await screen.findByRole('button', { name: 'Start work' }));
@@ -177,7 +199,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.0.0
+// VERSION: v1.1.0-REMOUNT-RECONCILIATION
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
