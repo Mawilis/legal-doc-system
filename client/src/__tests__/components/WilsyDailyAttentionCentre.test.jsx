@@ -518,7 +518,7 @@ describe('WILSY daily attention centre', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Review governed contract', exact: true }));
     const dialog = screen.getByRole('dialog', { name: 'Daily attention centre' });
     expect(within(dialog).getByText(/Verify source evidence/)).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Open in My Work' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Open authorized task' }));
     expect(onOpenWork).toHaveBeenCalledTimes(1);
     expect(api.get).toHaveBeenCalledTimes(1);
   });
@@ -634,7 +634,7 @@ describe('WILSY daily attention centre', () => {
     const { onOpenWork } = renderCentre();
     await screen.findByText('Review governed contract');
     fireEvent.click(screen.getByRole('button', {
-      name: 'Act on Review governed contract in My Work',
+      name: 'Open task Review governed contract',
     }));
     expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
       source_key: 'LEGAL:LEGAL-1',
