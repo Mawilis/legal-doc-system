@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router admits IAM, participant assignment,
          currentness, project existence and entitlement. EOS owns transactions.
 CERTIFICATION / UPDATE DATE: 2026-11-25
-CHANGELOG: v1.4.1-BSON-COMPLETION-PRECISION validates BSON millisecond-rounded event timestamps against exact task source instants without allowing a full-millisecond divergence; source task provides the unrounded timestamp after evidence confirmation.\nCHANGELOG: v1.4.0-VERIFIED-COMPLETED-PAGINATION filters DONE tasks before bounded pagination, supports title/contributor search and completion-time sorting, and validates each completion timestamp/actor against the immutable exact-revision transition event in the same read transaction.\nCHANGELOG: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY shares canonical completion gates with read-only Dock eligibility.
+CHANGELOG: v1.4.1-BSON-COMPLETION-PRECISION validates BSON millisecond-rounded event timestamps against exact task source instants without allowing a full-millisecond divergence; source task provides the unrounded timestamp after evidence confirmation.
+CHANGELOG: v1.4.0-VERIFIED-COMPLETED-PAGINATION filters DONE tasks before bounded pagination, supports title/contributor search and completion-time sorting, and validates each completion timestamp/actor against the immutable exact-revision transition event in the same read transaction.
+CHANGELOG: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY shares canonical completion gates with read-only Dock eligibility.
 CHANGELOG: v1.2.0-TASK-ACTIVITY-EVENT-READ reads bounded immutable lifecycle events in newest revision order with exact-tenant/project/task binding, source validation and privacy-preserving projection. No command or audit mutation.
 CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING adds guarded title, description,
 due date and assignee editing for active work, durable replay, CAS and
