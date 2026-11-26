@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.51.0-PERSONAL-COURTESY-CERT
+ * VERSION: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT proves consented, EOS-verified active paid-model greetings route through canonical reasoning instead of silently returning built-in courtesy; isolated fallback stays nonmetered.
  * CHANGELOG: v1.51.0-PERSONAL-COURTESY-CERT certifies authenticated name-aware casual exchanges and continuity language without claiming model inference or crossing EOS authority.
  * CHANGELOG: v1.50.2-BROWSER-SAFE-RAW-CERT retains source contract checks using Vite raw imports instead of a Node filesystem dependency under jsdom; no test assertions weakened.
  * CHANGELOG: v1.50.1-RETURN-TO-GREETING-CERT requires returning from opted-in Work to restore the personalized empty-conversation greeting.
@@ -463,6 +464,45 @@ describe('WilsyOSIntelligenceDock', () => {
     )).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.getByText('WILSY OS · Built-in reply')).toBeVisible();
+  });
+
+  it('uses the EOS provider for an ordinary greeting only after verified activation and explicit consent', async () => {
+    const principal = 'admitted-greeting-person';
+    mockApiGet.mockImplementation((path, options) => path === '/wilsy-ai/reasoning/context'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false,
+          provider_binding: 'CONFIGURED' },
+        context_fingerprint: 'a'.repeat(128),
+        observed_at: '2026-11-26T06:00:00+00:00', locator: options?.params,
+        allowance: { state: 'ACTIVE', available_request_units: 4,
+          daily_consumed_request_units: 0, held_request_units: 0 },
+        work: null,
+      } }) : Promise.reject(rejectedResponse(503, 'optional source unavailable')));
+    mockApiPost.mockResolvedValue({ data: {
+      response_text: 'Good morning. What is on your mind today?',
+      usage_observation_id: 'usage-greeting',
+    } });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER', firstName: 'Amina',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) =>
+      path === '/wilsy-ai/reasoning/context')).toBe(true));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: 'Good morning' },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(mockApiPost).toHaveBeenCalledWith(
+      '/wilsy-ai/reasoning',
+      expect.objectContaining({ prompt: expect.stringContaining('Good morning') }),
+      expect.objectContaining({ headers: expect.objectContaining({ 'X-Tenant-ID': 'TEST_TENANT' }) }),
+    ));
+    expect(await screen.findByText('Good morning. What is on your mind today?')).toBeVisible();
+    expect(screen.queryByText('WILSY OS · Built-in reply')).not.toBeInTheDocument();
   });
 
   it('answers current device time without OpenAI credits or provider POST', async () => {
@@ -2529,7 +2569,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.51.0-PERSONAL-COURTESY-CERT
+ * VERSION: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
