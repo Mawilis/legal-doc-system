@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.15.1-DOCK-EVIDENCE-HANDOFF
+ * VERSION: v1.15.2-DISPOSABLE-HISTORY-ENCRYPTION
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable Python EOS, frontend Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -14,6 +14,7 @@
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.15.2-DISPOSABLE-HISTORY-ENCRYPTION provides an ephemeral, independently generated 256-bit AEAD history key for the isolated certification EOS, without using Founder secrets.
  * CHANGELOG: v1.15.1-DOCK-EVIDENCE-HANDOFF sets a per-run synthetic evidence directory for the selected Dock browser suite, preserving explicit operator override and disposable fixture cleanup.
  * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an exact selected Dock suite with disposable task seeding and source verification.
  * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an explicit
@@ -137,6 +138,9 @@ const environment = {
   BROWSER_CERT_STATE: statePath,
   MONGODB_URI: mongoUri,
   WILSY_JWT_SECRET: secret,
+  // Disposable fixture history must have its own AEAD key. Never borrow an
+  // operator's real history key or expose this random value in test output.
+  WILSY_AI_HISTORY_KEY_B64: randomBytes(32).toString('base64'),
   WILSY_PLATFORM_WORKFORCE_SCOPE_ID: 'browser-cert-platform-workforce',
   ENV: 'development',
   WILSY_KENNEL_DB_TLS: '0',
@@ -825,7 +829,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.15.1-DOCK-EVIDENCE-HANDOFF
+// VERSION: v1.15.2-DISPOSABLE-HISTORY-ENCRYPTION
 // AUTHORITY BOUNDARY: runner-owned disposable certification services only
 // TENANT POSTURE: UUID-isolated fixture database; external tenants are untouched
 // FAIL-CLOSED POSTURE: phase, health, preflight, browser, or cleanup failure returns non-zero
