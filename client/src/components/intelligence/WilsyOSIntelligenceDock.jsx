@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.71.0-SPA-WORK-FOCUS
+ * VERSION: v4.72.0-MODAL-TO-TASK-CONVERSATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.72.0-MODAL-TO-TASK-CONVERSATION admits an explicit same-tenant/principal task-modal request to open the existing Dock after leaving the modal, with a separately verified task locator; no global modal overlay, model/permission bypass, or source-derived UI assertions.
  * CHANGELOG: v4.71.0-SPA-WORK-FOCUS minimizes the Dock when the operator follows an internal EOS work link, leaving destination reauthorization intact.
  * CHANGELOG: v4.70.0-WORK-TAB-CANONICAL-QUEUE makes the Work tab load the authenticated EOS My Work queue even when an exact Projects task is currently focused, restores the prior navigation locator when returning to chat, and never treats that locator as task authority.
  * CHANGELOG: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK restores the established disabled Send safety boundary for unavailable AI admission and uncertain replay, while clearly showing the reason directly beside a nonempty prompt; no unauthorized model request or silent dead end.
@@ -1455,9 +1456,24 @@ export function WilsyOSIntelligenceDock({
         setWorkSurfaceOpen(false);
       }
     };
+    const openFromTask = event => {
+      const detail = event.detail;
+      const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+      if (!authUser?.id || detail?.tenantId !== exactTenant
+        || detail?.principalId !== authUser.id) return;
+      // A same-scope request changes presentation only; the work locator and
+      // any current source content are independently rechecked by Python EOS.
+      setLauncherMinimized(false);
+      setIsOpen(true);
+      setConversationView('WELCOME');
+    };
     window.addEventListener('wilsy:ai-context-locator', receive);
+    window.addEventListener('wilsy:ai-request-open', openFromTask);
     window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
-    return () => window.removeEventListener('wilsy:ai-context-locator', receive);
+    return () => {
+      window.removeEventListener('wilsy:ai-context-locator', receive);
+      window.removeEventListener('wilsy:ai-request-open', openFromTask);
+    };
   }, [dockScope]);
 
   useEffect(() => {
@@ -3705,7 +3721,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.71.0-SPA-WORK-FOCUS
+ * VERSION: v4.72.0-MODAL-TO-TASK-CONVERSATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
