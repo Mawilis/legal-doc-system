@@ -351,6 +351,7 @@
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  */
+import UnifiedTaskReadiness from './UnifiedTaskReadiness.jsx';
 import UnifiedTaskHeader from './UnifiedTaskHeader.jsx';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
@@ -2390,55 +2391,26 @@ export default function ProjectTasksPanel({
                 onReviewApprovals={() => { const id = drawerTask.task_id; closeDrawer(); setApprovalTaskId(id); }}
                 onVerified={() => { void load(offset); }} onRecord={() => {}} />
             </section> : <>
-            {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section
-              className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4"
-              aria-label="Source-verified task execution readiness">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <h4 className="text-base font-bold text-blue-950">Execution readiness</h4>
-                  <p className="mt-1 text-sm text-blue-900">
-                    Current EOS task facts. Evidence, approvals and production release remain independently governed.
-                  </p>
-                </div>
-                <span className="rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-950">
-                  Revision {drawerTask.revision}
-                </span>
-              </div>
-              <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Accountable contributor</dt>
-                  <dd className="mt-1 font-bold text-slate-950">
-                    {drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Assignment required'}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Delivery deadline</dt>
-                  <dd className="mt-1 font-bold text-slate-950">
-                    {drawerTask.due_date
-                      ? drawerTask.due_date < todayISO ? 'Overdue · ' + drawerTask.due_date : drawerTask.due_date
-                      : 'Due date required'}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Source lifecycle</dt>
-                  <dd className="mt-1 font-bold text-slate-950">{label(drawerTask.status)}</dd>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                  <dt className="text-xs font-semibold text-slate-600">Predecessor gate · current verified page</dt>
-                  <dd className="mt-1 font-bold text-slate-950">
-                    {drawerTask.depends_on.some(id => !items.some(item => item.task_id === id))
+            {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
+              <UnifiedTaskReadiness revision={drawerTask.revision}
+                description="Current EOS task facts. Evidence, approvals and production release remain independently governed."
+                facts={[
+                  { label: 'Accountable contributor', value: drawerTask.assignee_principal_id
+                    ? contributorName(drawerTask.assignee_principal_id) : 'Assignment required' },
+                  { label: 'Delivery deadline', value: drawerTask.due_date
+                    ? drawerTask.due_date < todayISO ? 'Overdue · ' + drawerTask.due_date : drawerTask.due_date
+                    : 'Due date required' },
+                  { label: 'Source lifecycle', value: label(drawerTask.status) },
+                  { label: 'Predecessor gate · current verified page',
+                    value: drawerTask.depends_on.some(id => !items.some(item => item.task_id === id))
                       ? 'Some predecessors outside verified page'
                       : drawerTask.depends_on.filter(id => items.some(item =>
                         item.task_id === id && item.status !== 'DONE')).length > 0
-                        ? 'Waiting on '
-                          + drawerTask.depends_on.filter(id => items.some(item =>
-                            item.task_id === id && item.status !== 'DONE')).length
-                          + ' predecessor(s)'
-                        : 'No unfinished predecessors visible on this page'}
-                  </dd>
-                </div>
-              </dl>
-              <div className="mt-3 flex flex-wrap gap-2" aria-label="Task execution evidence actions">
+                        ? 'Waiting on ' + drawerTask.depends_on.filter(id => items.some(item =>
+                          item.task_id === id && item.status !== 'DONE')).length + ' predecessor(s)'
+                        : 'No unfinished predecessors visible on this page' },
+                ]}
+                actions={<>
                 {(actionCapabilities?.canEdit || actionCapabilities?.canAssign) && <button type="button"
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-4 py-2 text-sm font-bold text-white hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                   onClick={() => { const item = drawerTask; closeDrawer(); openTaskEditor(item, !actionCapabilities?.canEdit); }}>
@@ -2458,15 +2430,9 @@ export default function ProjectTasksPanel({
                   onClick={() => { const item = drawerTask; closeDrawer(); setDiscussionTaskId(item.task_id); }}>
                   Record activity
                 </button>
-              </div>
-              {!actionCapabilities && <p role="status" className="mt-2 text-xs text-blue-900">
-                Checking EOS task-edit authority…
-              </p>}
-              <p className="mt-3 text-xs leading-relaxed text-blue-950">
-                Task status does not certify deployment readiness, rollback capability, evidence clearance
-                or strategic outcome attainment. Review the independently authorized source records before completion.
-              </p>
-            </section>}
+              </>}
+                footnote="Task status does not certify deployment readiness, rollback capability, evidence clearance or strategic outcome attainment. Review independently authorized source records before completion."
+              />}
             {drawerTask.kind === 'TASK'
               && /(?:^|—\\s*)certify production readiness and rollback$/i.test(drawerTask.title.trim())
               && <ProjectReadinessRollback
