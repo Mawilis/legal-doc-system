@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.3.0-MW-T11-SOURCE-RANKED-HANDOFF
+ * VERSION: v1.4.0-MW-T11-SCANNABLE-SOURCE-WORK
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.4.0-MW-T11-SCANNABLE-SOURCE-WORK replaces repeated technical ranking prose with a quiet numeric EOS-order position and readable secondary source/priority/date, preserving full canonical ranking explanation in the row title and exact task selection semantics. No source rank recomputation, action authority or approval inference.
  * CHANGELOG: v1.3.0-MW-T11-SOURCE-RANKED-HANDOFF displays EOS's authorized source identity and returned work order with priority/deadline evidence, then confirms the selected Projects task binding before independent Projects reauthorization on navigation. Neither source ordering nor status is inferred.
  * CHANGELOG: v1.2.0-REHYDRATED-COMMAND-STATE makes pending-command restoration a React state change, preserving fail-closed receipt-only reconciliation across a full browser reload.
  * CHANGELOG: v1.1.0 replaces repeated Open work cards with full-row, source-aware navigation and an explicit complete-queue link.
@@ -30,14 +31,27 @@ const pendingCommands = new Map();
 const pendingArtifacts = new Map();
 const pendingProviderDrafts = new Map();
 
-// Read-only explanation of the order returned by the current EOS My Work
-// source. The Dock cannot change ranks, authorizations or lifecycle state.
+// Preserve the exact position supplied by EOS. Show only useful secondary
+// facts in the row; the accessible row title preserves the source explanation.
+// Never infer a date, overdue state, rank algorithm or executable authority.
 const rankedSourceReason = (item, rank) => {
-  const priority = typeof item.priority === 'string' ? item.priority.toLowerCase() : 'unverified';
-  const deadline = typeof item.due_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.due_date)
-    ? item.due_date : 'not supplied';
-  const overdue = item.is_overdue === true ? ' · overdue per EOS' : '';
-  return 'EOS order ' + rank + ' · priority ' + priority + ' · due ' + deadline + overdue;
+  const source = typeof item.source === 'string' ? item.source : 'Unknown source';
+  const priority = typeof item.priority === 'string'
+    ? item.priority.toLowerCase() : 'unverified';
+  const date = typeof item.due_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.due_date)
+    ? item.due_date
+    : typeof item.due_at === 'string' && Number.isFinite(Date.parse(item.due_at))
+      ? item.due_at.slice(0, 10) : null;
+  const status = item.is_overdue === true ? 'Overdue' : null;
+  return {
+    short: [source, priority + ' priority', status || (date ? 'Due ' + date : null)]
+      .filter(Boolean).join(' · '),
+    explanation: 'Position ' + rank + ' in the current EOS-authorized My Work response. '
+      + source + ' source, ' + priority + ' priority, '
+      + (date ? 'deadline ' + date : 'no deadline supplied')
+      + ', overdue ' + (item.is_overdue === true ? 'verified' : 'not indicated') + '. '
+      + 'WILSY OS does not independently rank these records.',
+  };
 };
 const continuityKey = (kind, key) => 'wilsy.dock.pending.v1:' + kind + ':' + sha3_512(key);
 const rememberPending = (kind, key, attempt) => {
@@ -405,21 +419,39 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
         : !hasTask ? <><h4>Needs your attention</h4>
           {view.data.items.length ? <ol className={styles.attentionRows}>{view.data.items.slice(0, 6).map((item, index) =>
             <li key={item.source_key}>
-              {item.source === 'PROJECTS'
-                ? <button type="button" className={styles.attentionItemAction}
-                  onClick={() => callbacks.current.onSelectWork?.({
-                    workspace: 'PROJECTS', project_id: item.project_id, task_id: item.work_item_id, participant_view: true,
-                  })}>
-                  <span className={styles.attentionItemText}><strong>{item.title}</strong>
-                    <small>{item.source} · {rankedSourceReason(item, index + 1)}</small>
-                  </span><span className={styles.attentionActionCue} aria-hidden="true">Verify</span>
-                </button>
-                : <a className={styles.attentionItemAction}
-                    href={"/headquarters?section=my-work&work=" + encodeURIComponent(item.source_key)}>
-                  <span className={styles.attentionItemText}><strong>{item.title}</strong>
-                    <small>{item.source} · {rankedSourceReason(item, index + 1)}</small>
-                  </span><span className={styles.attentionActionCue} aria-hidden="true">View</span>
-                </a>}
+              {(() => {
+                const reason = rankedSourceReason(item, index + 1);
+                const label = <>
+                  <span aria-hidden="true" style={{
+                    alignSelf: 'flex-start', paddingTop: 3, flex: '0 0 20px',
+                    color: '#91a9c1', fontSize: 11, fontVariantNumeric: 'tabular-nums',
+                  }}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className={styles.attentionItemText} style={{ flex: '1 1 auto' }}>
+                    <strong style={{ fontSize: 14, lineHeight: 1.4, color: '#f1f6ff',
+                      fontWeight: 600, overflowWrap: 'anywhere' }}>{item.title}</strong>
+                    <small style={{ marginTop: 4, color: '#abbfd3',
+                      fontSize: 12, lineHeight: 1.4, textTransform: 'none',
+                      letterSpacing: 'normal' }}>{reason.short}</small>
+                  </span>
+                  <span className={styles.attentionActionCue} aria-hidden="true" style={{
+                    flex: '0 0 auto', fontSize: 12, fontWeight: 500,
+                    color: '#b8d7f6',
+                  }}>{item.source === 'PROJECTS' ? 'Inspect' : 'Open'} <span aria-hidden="true">›</span></span>
+                </>;
+                const common = { className: styles.attentionItemAction,
+                  title: reason.explanation, 'aria-label': item.title + '. ' + reason.explanation,
+                  style: { gap: 10, alignItems: 'center', minHeight: 62,
+                    padding: '10px 4px', border: 0, background: 'transparent',
+                    width: '100%', textAlign: 'left' } };
+                return item.source === 'PROJECTS'
+                  ? <button type="button" {...common}
+                    onClick={() => callbacks.current.onSelectWork?.({
+                      workspace: 'PROJECTS', project_id: item.project_id,
+                      task_id: item.work_item_id, participant_view: true,
+                    })}>{label}</button>
+                  : <a {...common} href={'/headquarters?section=my-work&work='
+                    + encodeURIComponent(item.source_key)}>{label}</a>;
+              })()}
             </li>)}</ol>
             : <p>{view.data.sources_included.length ? 'No active work in the verified sources.' : 'No work sources were admitted for this session.'}</p>}
           <div className={styles.attentionFooterActions}>
@@ -469,7 +501,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.3.0-MW-T11-SOURCE-RANKED-HANDOFF
+// VERSION: v1.4.0-MW-T11-SCANNABLE-SOURCE-WORK
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
