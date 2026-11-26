@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME
+ * VERSION: v4.79.1-CHAT-ERROR-DRAFT-RESET
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.79.1-CHAT-ERROR-DRAFT-RESET makes Clear chat recover from stale request status and unsent drafts without creating or deleting encrypted history, resets stale errors on history navigation, and explains table checkbox versus verified task focus.
  * CHANGELOG: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME adds chat-native New conversation and Clear chat actions (preserving EOS archive), displays source event times in local readable format without modifying stored evidence, and resets drafts safely when starting fresh.
  * CHANGELOG: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS binds expanded comment text to its verified task/context scope so focus changes cannot display previous task content under a new source.
  * CHANGELOG: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE hides internal comment references from rendered and screen-reader transcripts and rejects delayed full-comment responses after task scope changes.
@@ -2121,6 +2122,26 @@ export function WilsyOSIntelligenceDock({
   }, [isSubmitting]);
 
   /**
+   * Clear the displayed conversation, never delete encrypted history.
+   * An empty chat with a stale request status/draft needs no archive write.
+   */
+  const handleClearChat = useCallback(async () => {
+    if (isSubmitting) return;
+    if ((conversationThreads.find(thread => thread.id === activeThreadId)?.messages?.length || 0) > 0) {
+      await handleNewThread();
+      return;
+    }
+    setPrompt('');
+    setErrorMessage('');
+    setLocalSourceQuery('');
+    setFocusedWorkIndex(null);
+    setAnimatedAssistantKey(null);
+    setConversationView('WELCOME');
+    setWorkSurfaceOpen(false);
+    setActiveTab('chat');
+  }, [activeThreadId, conversationThreads, handleNewThread, isSubmitting]);
+
+  /**
    * @function handleRefresh
    * @description Manually refreshes the conversation list and Kennel context.
    * @institutional Prevents stale data from persisting after external updates.
@@ -2379,7 +2400,7 @@ export function WilsyOSIntelligenceDock({
           || (workLocator.task_revision && task.revision !== workLocator.task_revision)
           || !(task.title?.startsWith(briefingCode + ' — ')
             || task.title?.startsWith(briefingCode + ' - '))) {
-          setErrorMessage('Open and verify the exact Projects task before requesting its EOS briefing.');
+          setErrorMessage('MW-T11 is not verified as an open Projects task. A checked table row only selects it for batch actions. Open the task title or Details, wait for LIVE TASK verification, then request its EOS briefing.');
           return;
         }
         sendLockRef.current = true;
@@ -3417,9 +3438,10 @@ export function WilsyOSIntelligenceDock({
                       <Plus size={14} aria-hidden="true"/> New conversation
                     </button>
                     <button type="button" className={styles.conversationCommandButton}
-                      onClick={handleNewThread}
-                      disabled={isSubmitting || !(activeThread?.messages || []).length}
-                      title="Clear this view and begin a new conversation. Saved history is kept.">
+                      onClick={handleClearChat}
+                      disabled={isSubmitting || !(activeThread?.messages || []).length
+                        && !prompt.trim() && !errorMessage}
+                      title="Clear visible chat, draft and request status. Saved history is kept.">
                       <Eraser size={14} aria-hidden="true"/> Clear chat
                     </button>
                   </div>
@@ -4167,6 +4189,7 @@ export function WilsyOSIntelligenceDock({
                             aria-current={thread.id === activeThreadId ? 'true' : undefined}
                             onClick={() => {
                               setAnimatedAssistantKey(null); setActiveThreadId(thread.id);
+                              setErrorMessage(''); setPrompt('');
                               setSessionThreadIds(previous => previous.includes(thread.id)
                                 ? previous : [...previous, thread.id]);
                                setWorkSurfaceOpen(false);
@@ -4257,7 +4280,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME
+ * VERSION: v4.79.1-CHAT-ERROR-DRAFT-RESET
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
