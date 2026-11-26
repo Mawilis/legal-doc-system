@@ -1,7 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.80.2-NODE-ISOLATED-CSS-CERT
- * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
+ * VERSION: v2.81.0-COMPLETED-SERVER-QUERY-CERT
+ * CHANGELOG: v2.81.0-COMPLETED-SERVER-QUERY-CERT verifies completed-only EOS source query and immutable event metadata across source pagination, retaining task detail and selection semantics.\n * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
  * CHANGELOG: v2.80.1-PORTABLE-CSS-SOURCE-CERT reads exact stylesheet through Vite raw assets rather than Node fs/path built-ins, retaining both CSS rule assertions and supporting local Vitest module loading.
  * CHANGELOG: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT confirms Done tasks disappear from active work, remain in the Completed/All views and open their original source-backed task details; work selection resets on view changes, without mutation.
  * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT verifies the selected project's title remains in its own heading row and the all-projects action lives only in the project navigation strip.
@@ -1993,6 +1993,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
         principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 50, offset: 0,
         items: rows, has_more: false, next_offset: null,
       } };
+      if (path === `/projects/${PROJECT_ID}/tasks/completed?limit=50&offset=0&search=&order=NEWEST`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, view: 'COMPLETED',
+        search: '', order: 'NEWEST', assignee_principal_id: null,
+        limit: 50, offset: 0, items: [{
+          ...rows[21], completed_at: rows[21].updated_at,
+          completed_by_principal_id: PRINCIPAL,
+        }], has_more: false, next_offset: null,
+      } };
       if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
         schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
         principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 100, offset: 0,
@@ -2009,14 +2018,14 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(views).getByRole('button', { name: 'Active work' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(grid).queryByText('Batch task 22')).not.toBeInTheDocument();
     fireEvent.click(within(views).getByRole('button', { name: 'Completed' }));
-    expect(within(grid).getByText('Batch task 22')).toBeVisible();
+    expect(await within(grid).findByText('Batch task 22')).toBeVisible();
     expect(within(grid).queryByText('Batch task 01')).not.toBeInTheDocument();
     fireEvent.click(within(grid).getByRole('button', { name: 'Batch task 22' }));
     expect(await screen.findByRole('dialog', { name: 'Work details: Batch task 22' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
     fireEvent.click(within(views).getByRole('button', { name: 'All work' }));
     expect(within(views).getByRole('button', { name: 'All work' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(grid).getAllByRole('row').length).toBe(11);
+    await waitFor(() => expect(within(grid).getAllByRole('row').length).toBe(11));
     expect(within(grid).queryByText('Batch task 11')).not.toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
     expect(within(grid).getByText('Batch task 11')).toBeVisible();
@@ -2998,7 +3007,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.80.2-NODE-ISOLATED-CSS-CERT
+ * VERSION: v2.81.0-COMPLETED-SERVER-QUERY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
