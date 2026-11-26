@@ -6,7 +6,8 @@ EPITOME: Validate task/subtask/milestone state, dependency syntax, fingerprints,
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_task_registry.py
 COLLABORATION / OWNERSHIP: ProjectTaskRegistry and Projects router.
 CERTIFICATION / UPDATE DATE: 2026-11-18
-CHANGELOG: v1.3.1-BATCHED-COMPLETION-QUERY-CERT checks batched exact-revision completion evidence projection, timestamp accuracy and negative source rejection without assuming one database query per task.\nCHANGELOG: v1.3.0-COMPLETED-SOURCE-PAGING-CERT verifies filtered completion pages and exact-revision immutable actor/time, negative spoofing and bounded inputs.
+CHANGELOG: v1.3.1-BATCHED-COMPLETION-QUERY-CERT checks batched exact-revision completion evidence projection, timestamp accuracy and negative source rejection without assuming one database query per task.
+CHANGELOG: v1.3.0-COMPLETED-SOURCE-PAGING-CERT verifies filtered completion pages and exact-revision immutable actor/time, negative spoofing and bounded inputs.
 CHANGELOG: v1.2.0-TASK-EVENT-READER-CERT certifies
 bounded immutable event reads, strict source scoping, ISO datetime projection,
 revision ordering and redaction of replay secrets.
