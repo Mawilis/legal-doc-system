@@ -2127,7 +2127,9 @@ export function WilsyOSIntelligenceDock({
    */
   const handleClearChat = useCallback(async () => {
     if (isSubmitting) return;
-    if ((conversationThreads.find(thread => thread.id === activeThreadId)?.messages?.length || 0) > 0) {
+    const displayed = conversationThreads.find(thread => thread.id === activeThreadId)
+      || conversationThreads[0];
+    if ((displayed?.messages?.length || 0) > 0) {
       await handleNewThread();
       return;
     }
