@@ -1,5 +1,5 @@
 """TITLE: MW-T12 ECS nonproduction runtime readiness and cost admission.
-VERSION: v1.6.0-SECURE-ECS-REVISION-ADMISSION
+VERSION: v1.7.0-REVIEWED-ATLAS-EGRESS-STATE
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inspect two digest-pinned registered Fargate tasks and their exact
          network, storage, identity and cost gates without launching compute.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Existing AWS MW-T12 ECR preflight, dormant task
          definitions, CloudFormation foundation and ECS read-only admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.7.0-REVIEWED-ATLAS-EGRESS-STATE accepts only the original
+           HTTPS-only group or exact three approved Atlas-node 27017 CIDRs,
+           with fresh DNS and independent group reread; rejects all other
+           egress and leaves ECS connectivity and release unverified.
 CHANGELOG: v1.6.0-SECURE-ECS-REVISION-ADMISSION independently checks
            dormant secure revision 3/4 contracts and scoped SSM/IAM policy,
            without confusing metadata presence with runtime secret delivery.
@@ -58,10 +62,11 @@ import re
 import sys
 from urllib.parse import parse_qsl, urlsplit
 
+from tools.eos.ops import mw_t12_atlas_egress_activation as atlas_egress
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.6.0-SECURE-ECS-REVISION-ADMISSION"
+VERSION = "v1.7.0-REVIEWED-ATLAS-EGRESS-STATE"
 REVISIONS = (1, 2)
 SECURE_REVISIONS = (3, 4)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
@@ -231,6 +236,57 @@ def verify_secure_task_revisions(profile: str, images: tuple[str, str]) -> None:
                 "SECURE_TASK_SPEC_OR_SECRET_DRIFT")
 
 
+def verify_owned_security_group_egress(
+    profile: str, group_id: str, rules: object,
+) -> str:
+    """Admit exactly the original HTTPS-only or reviewed Atlas-node SG state.
+
+    Enumerate every IPv4 destination (AWS may combine same-port permissions),
+    forbid IPv6, prefix lists, referenced groups, duplicates, extra ports,
+    and public Mongo egress. For the activated state independently reread the
+    owned group using the already-governed Atlas egress verifier and require
+    the exact three independently reviewed DNS endpoints. No AWS writes.
+    """
+    require(isinstance(rules, list) and bool(rules),
+            "SECURITY_GROUP_EGRESS_DRIFT")
+    observed: set[tuple[int, str]] = set()
+    count = 0
+    for permission in rules:
+        require(isinstance(permission, dict)
+                and permission.get("IpProtocol") == "tcp",
+                "SECURITY_GROUP_EGRESS_DRIFT")
+        port = permission.get("FromPort")
+        require(type(port) is int and port in {443, 27017}
+                and permission.get("ToPort") == port
+                and not permission.get("Ipv6Ranges")
+                and not permission.get("PrefixListIds")
+                and not permission.get("UserIdGroupPairs"),
+                "SECURITY_GROUP_EGRESS_DRIFT")
+        ranges = permission.get("IpRanges")
+        require(isinstance(ranges, list) and bool(ranges),
+                "SECURITY_GROUP_EGRESS_DRIFT")
+        for row in ranges:
+            require(isinstance(row, dict)
+                    and isinstance(row.get("CidrIp"), str),
+                    "SECURITY_GROUP_EGRESS_DRIFT")
+            count += 1
+            observed.add((port, row["CidrIp"]))
+    require(len(observed) == count and (443, "0.0.0.0/0") in observed,
+            "SECURITY_GROUP_EGRESS_DRIFT")
+    if observed == {(443, "0.0.0.0/0")}:
+        return "HTTPS_ONLY"
+    require(group_id == atlas_egress.SG_ID
+            and observed == {(443, "0.0.0.0/0")} | {
+                (27017, cidr) for cidr in atlas_egress.REVIEWED
+            }, "SECURITY_GROUP_EGRESS_DRIFT")
+    # Revalidate active Atlas node DNS and reread exact permissions instead
+    # of trusting an earlier group/CloudFormation snapshot.
+    require(atlas_egress.fresh_dns() == atlas_egress.REVIEWED,
+            "ATLAS_NODE_DNS_CHANGED_REVIEW_REQUIRED")
+    atlas_egress.verify_egress(profile)
+    return "REVIEWED_ATLAS_NODES"
+
+
 def check(profile: str) -> tuple[str, ...]:
     """Read exact budget, image, task, network and recovery prerequisites.
 
@@ -319,28 +375,16 @@ def check(profile: str) -> tuple[str, ...]:
     require(groups[0].get("IpPermissions") == [],
             "SECURITY_GROUP_UNEXPECTED_INGRESS")
     rules = groups[0].get("IpPermissionsEgress", [])
-    require(len(rules) == 1 and rules[0].get("IpProtocol") == "tcp"
-            and rules[0].get("FromPort") == 443
-            and rules[0].get("ToPort") == 443,
-            "SECURITY_GROUP_EGRESS_DRIFT")
-    network_configuration(profile)
-    # HTTPS-only egress is sufficient for ECR/CloudWatch control transport,
-    # but blocks ordinary Atlas MongoDB TLS connections on TCP port 27017.
-    # Do not add an unrestricted 27017 rule, weaken Atlas IP allowlists or
-    # count this as a database-connection certificate.
-    mongo_allowed = any(
-        isinstance(rule, dict)
-        and rule.get("IpProtocol") in {"tcp", "-1"}
-        and (
-            rule.get("IpProtocol") == "-1"
-            or (type(rule.get("FromPort")) is int
-                and type(rule.get("ToPort")) is int
-                and rule["FromPort"] <= 27017 <= rule["ToPort"])
-        )
-        for rule in rules
+    egress_mode = verify_owned_security_group_egress(
+        profile, matched[0], rules,
     )
-    if not mongo_allowed:
+    network_configuration(profile)
+    # Exact pre-reviewed Atlas node egress is a network configuration fact,
+    # not proof of task connectivity or Atlas source-IP admission.
+    if egress_mode == "HTTPS_ONLY":
         blockers.append("ATLAS_TCP_27017_TASK_EGRESS_DENIED")
+    else:
+        blockers.append("ATLAS_TCP_27017_LIVE_CONNECTIVITY_NOT_VERIFIED")
     blockers.append("ATLAS_STABLE_TASK_EGRESS_IP_NOT_CONFIGURED")
     blockers.append("ATLAS_TEST_CLUSTER_NETWORK_ALLOWLIST_NOT_CERTIFIED")
     blockers.append("INDEPENDENT_AUTHENTICATED_HTTP_READBACK_UNAVAILABLE")
@@ -455,7 +499,8 @@ def main(argv: list[str] | None = None) -> int:
         print("MW_T12_COMPUTE_LAUNCHED=FALSE")
         print("MW_T12_PRODUCTION_AUTHORIZED=FALSE")
         return 2
-    except (ReadinessError, registered.AdmissionError,
+    except (ReadinessError, atlas_egress.EgressAdmissionError,
+            registered.AdmissionError,
             published.PublicationError, KeyboardInterrupt) as error:
         code = ("OPERATOR_INTERRUPTED" if isinstance(error, KeyboardInterrupt)
                 else str(error))
@@ -470,7 +515,7 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_runtime_readiness.py
-# VERSION: v1.6.0-SECURE-ECS-REVISION-ADMISSION
+# VERSION: v1.7.0-REVIEWED-ATLAS-EGRESS-STATE
 # AUTHORITY BOUNDARY: ECS/AWS read-only; no compute or recovery claims.
 # TENANT POSTURE: No real tenant, IAM grant, source write or credential.
 # FAIL-CLOSED POSTURE: Missing registration or recovery evidence denies.
