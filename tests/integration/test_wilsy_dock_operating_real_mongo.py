@@ -1,11 +1,11 @@
 """TITLE: WILSY OS Dock Vertical Operating Source Certificate
-VERSION: v1.0.0
+VERSION: v1.1.0-MANIFEST-REOPEN-CERT
 AUTHORITY: Disposable MongoDB integration evidence; injected IAM is explicitly synthetic.
 EPITOME: Prove source lifecycle, receipts, encrypted continuity and quarantined plan manifests.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_wilsy_dock_operating_real_mongo.py
 COLLABORATION / OWNERSHIP: Canonical Projects, Dock HTTP and encrypted EOS archive.
 CERTIFICATION / UPDATE DATE: 2026-11-25
-CHANGELOG: v1.0.0 certifies the nonproduction vertical source journey and denial cases.
+CHANGELOG: v1.1.0-MANIFEST-REOPEN-CERT checks accepted attachment manifest survives an independent authenticated HTTP client reopen, with source hash unchanged and quarantine unpromoted.\nCHANGELOG: v1.0.0 certifies the nonproduction vertical source journey and denial cases.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID disposable database, synthetic identities, local fake object store.
 TENANT BOUNDARY: Exact source tenant/principal; no Founder or production records.
@@ -157,6 +157,18 @@ def test_dock_lifecycle_artifact_and_encrypted_reopen(journey) -> None:
     assert manifests[0]["attachment_id"] == attachment_id
     assert manifests[0]["content_sha3_512"] == sha3_512(content).hexdigest()
     assert manifests[0]["state"] == "QUARANTINED" and "storage_receipt" not in manifests[0]
+    # Reopen through a new authenticated HTTP client: the accepted PDF manifest
+    # must be durable in Mongo, not only in the uploader's in-memory state.
+    # This does not simulate an S3 outage or certify GuardDuty clearance.
+    with TestClient(j.app, headers={"X-Tenant-ID": j.tenant}) as reopened_client:
+        reopened = reopened_client.get(base + "/attachments")
+        assert reopened.status_code == 200, reopened.text
+        saved = reopened.json()["items"]
+        assert len(saved) == 1
+        assert saved[0]["attachment_id"] == attachment_id
+        assert saved[0]["content_sha3_512"] == sha3_512(content).hexdigest()
+        assert saved[0]["state"] == "QUARANTINED"
+        assert "storage_receipt" not in saved[0]
     thread = "session-" + str(uuid4())
     payload = dict(expected_revision=0, title="MW-T11 alignment", workspace="Projects",
         work_locator=args, messages=[dict(role="assistant", content="Plan attached; quarantine recorded.", timestamp=datetime.now(timezone.utc).isoformat())])
@@ -191,7 +203,7 @@ def test_completion_eligibility_and_foreign_receipt_isolation(journey) -> None:
 
 
 # ARTIFACT: test_wilsy_dock_operating_real_mongo.py
-# VERSION: v1.0.0
+# VERSION: v1.1.0-MANIFEST-REOPEN-CERT
 # AUTHORITY BOUNDARY: disposable source persistence; synthetic IAM and object transport
 # TENANT POSTURE: exact scoped source and encrypted owner readback
 # FAIL-CLOSED POSTURE: stale revisions, divergent keys and completion blockers denied
