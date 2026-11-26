@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.50.0-SESSION-AND-GREETING-CERT
+ * VERSION: v1.50.1-RETURN-TO-GREETING-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.50.1-RETURN-TO-GREETING-CERT requires returning from opted-in Work to restore the personalized empty-conversation greeting.
  * CHANGELOG: v1.50.0-SESSION-AND-GREETING-CERT certifies EOS-saved threads also appear in the current-session filter after use, while unopened threads stay excluded, and authenticated greetings require no paid model.
  * CHANGELOG: v1.49.0-RESTORED-TASK-MODE-CERT certifies that task selection exits SOURCE history inspection into governed operating mode with exact selected task ID and no unauthorized write.
  * CHANGELOG: v1.48.1-EMPTY-CONVERSATION-CERT additionally requires a genuine unboxed chat entry with no automatic attention panel.
@@ -1170,7 +1171,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(await screen.findByRole('region', { name: 'Needs your attention' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Back to chat' }));
     expect(screen.queryByRole('region', { name: 'Needs your attention' })).not.toBeInTheDocument();
-    expect(screen.queryByText(/^Good (morning|afternoon|evening), Nandi\.$/)).not.toBeInTheDocument();
+    expect(screen.getByText(/^Good (morning|afternoon|evening), Nandi\.$/)).toBeVisible();
   });
 
   it.each([
@@ -2500,7 +2501,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.50.0-SESSION-AND-GREETING-CERT
+ * VERSION: v1.50.1-RETURN-TO-GREETING-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
