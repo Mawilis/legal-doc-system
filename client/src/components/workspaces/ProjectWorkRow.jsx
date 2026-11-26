@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE
+ * VERSION: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,7 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
- * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.\n * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
+ * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.\n * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.\n * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
  *          selected task focus and titles with the same accessible
  *          task blueprint used by Calendar, My Work and Daily Attention.
  * CHANGELOG: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
@@ -207,8 +207,8 @@ export default function ProjectWorkRow({
                       day: 'numeric', month: 'short', year: 'numeric',
                       hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg',
                     }).format(new Date(item.completed_at))}
-                    {' · By ' + (item.completed_by_principal_id === item.assignee_principal_id
-                      && hasNamedContributor ? displayName : 'verified EOS actor')}
+                    {' · By ' + (typeof assigneeName === 'function'
+                      ? assigneeName(item.completed_by_principal_id) : 'verified EOS actor')}
                   </p>}
                 {density !== 'compact' && item.description && <p
                   className="mt-1 max-w-[44rem] truncate text-xs text-slate-600"
@@ -261,7 +261,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE
+// VERSION: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
