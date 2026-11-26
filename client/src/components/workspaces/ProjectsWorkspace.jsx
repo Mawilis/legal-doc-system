@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.46.0-ASSIGNED-TASK-FOCUS
+ * VERSION: v2.47.0-STRATEGY-IN-CONTEXT-RETURN
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
@@ -701,7 +701,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
  * @param {Object} props Authenticated scope and optional project navigation hints.
  * @returns {React.ReactElement} Governed project registry and work surface.
  */
-export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusTaskId = null, focusAssignedProjectId = null }) {
+export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusTaskId = null, focusAssignedProjectId = null, strategyOrigin = false, onReturnToStrategy = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
   const [sourceState, setSourceState] = useState('LOADING');
@@ -1539,6 +1539,20 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 
   return (
     <section className="wilsy-projects mx-auto w-full max-w-[1500px] px-3 pb-6 sm:px-5" data-projects-workspace data-source-state={sourceState}>
+      {strategyOrigin && typeof onReturnToStrategy === 'function' && (
+        <nav aria-label="Strategy project return" className="sticky top-0 z-30 mb-4 flex flex-wrap items-center justify-between gap-3 border-b-2 border-blue-400 bg-[#eff6ff] px-4 py-3 shadow-sm sm:px-5">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-800">
+              <span>Our Strategy</span><span aria-hidden="true" className="mx-2 text-slate-400">/</span><span>M04 · Governed execution</span>
+            </p>
+            <p className="mt-0.5 text-xs text-slate-600">You opened this project from Strategy. Return to the same execution workspace.</p>
+          </div>
+          <button type="button" aria-label="Back to Strategy execution" onClick={onReturnToStrategy}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-[#123c7b] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0a2d61] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+            <span aria-hidden="true" className="mr-2">←</span>Return to Strategy M04
+          </button>
+        </nav>
+      )}
       {!(selectedId && mode !== 'CREATE') && <header className="wp-toolbar mb-2 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-2 py-2">
         <h1 className="text-lg font-bold text-slate-950">Projects</h1>
         <div className="flex flex-wrap items-center gap-2"><div aria-live="polite" className="wp-kpi rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{countLabel}</div><button type="button" onClick={() => {
@@ -2042,7 +2056,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.46.0-ASSIGNED-TASK-FOCUS
+// VERSION: v2.47.0-STRATEGY-IN-CONTEXT-RETURN
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
