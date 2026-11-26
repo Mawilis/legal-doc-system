@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION
+ * VERSION: v1.17.1-CORRECTION-DRAFT-ISOLATION
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
  *          existing source-owned comment editor directly under the action
@@ -669,9 +670,13 @@ export default function ProjectTaskCommentsPanel({
         {state === 'READY' && <button type="button" className={ACTIVITY_ACTION_CLASS} aria-expanded={showComposer}
           aria-controls="task-comment-composer" onClick={() => {
             setShowTaskEvidence(false);
-            if (showComposer) {
+            if (showComposer && correction) {
+              // Never leak a copied correction into a later ordinary post.
+              setBody('');
+              setMentions([]);
               setCorrection(null);
               setCorrectionReason('');
+              command.current = { fingerprint: '', key: '' };
             }
             setShowComposer(current => !current);
           }}>
@@ -852,7 +857,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION
+// VERSION: v1.17.1-CORRECTION-DRAFT-ISOLATION
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
