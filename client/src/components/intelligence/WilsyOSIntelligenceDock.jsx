@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.61.4-CONTEXTUAL-TASK-CHROME
+ * VERSION: v4.61.5-RESTORED-TASK-OPERATING-ENTRY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.61.5-RESTORED-TASK-OPERATING-ENTRY enters the operating view on explicit task selection even after EOS history restored SOURCE mode; leaves unrelated Headquarters locators conversation-only.
  * CHANGELOG: v4.61.4-CONTEXTUAL-TASK-CHROME shows the live task strip only for an explicitly operated, inspected or thread-linked task; unrelated general conversations stay clean.
  * CHANGELOG: v4.61.3-INLINE-CONVERSATION-STATUS opens with a minimal general-purpose prompt and scrolls to the current error or last answer, without a persistent task panel.
  * CHANGELOG: v4.61.2-THREAD-FOCUS-CURRENTNESS clears transient work view for new and reset threads, without changing EOS history semantics.
@@ -1406,9 +1407,19 @@ export function WilsyOSIntelligenceDock({
           || !Number.isSafeInteger(candidate.task_revision) || candidate.task_revision < 1))
         || (candidate.participant_view !== undefined && typeof candidate.participant_view !== 'boolean')) return;
       setWorkLocator(previous => JSON.stringify(previous) === JSON.stringify(candidate) ? previous : { ...candidate });
-      // Explicit task selection enters the governed operating view; incidental
-      // Headquarters context does not display a persistent attention queue.
-      setWorkSurfaceOpen(Boolean(candidate.task_id));
+      // The SOURCE transcript and the governed operating view are mutually
+      // exclusive. After restoring an EOS task-linked conversation the launcher
+      // may be in SOURCE mode; explicitly selecting another task must enter
+      // WELCOME before the operating component can mount. A Headquarters
+      // locator alone must never open the attention queue.
+      if (candidate.task_id) {
+        setConversationView('WELCOME');
+        setLocalSourceQuery('');
+        setFocusedWorkIndex(null);
+        setWorkSurfaceOpen(true);
+      } else {
+        setWorkSurfaceOpen(false);
+      }
     };
     window.addEventListener('wilsy:ai-context-locator', receive);
     window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
@@ -3569,7 +3580,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.61.4-CONTEXTUAL-TASK-CHROME
+ * VERSION: v4.61.5-RESTORED-TASK-OPERATING-ENTRY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
