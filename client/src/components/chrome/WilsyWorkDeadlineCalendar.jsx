@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised Work Deadline Calendar
- * VERSION: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR
+ * VERSION: v1.6.0-CANONICAL-WORK-DEADLINE-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Project source-owned work deadlines with civil-date preservation,
  *          local instant display, accessible day/week/month navigation and
@@ -9,6 +9,7 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre validates EOS /my-work;
  *                            MyWorkWorkspace delegates commands to EOS sources.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.6.0-CANONICAL-WORK-DEADLINE-HANDOFF uses EOS Projects civil due_date throughout calendar counts and agendas, and opens the source-owned task without falsely promising completion in My Work.
  * CHANGELOG: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR adopts the
  *          established Projects light task surface for all authorised
  *          calendar entry points while preserving civil-date navigation,
@@ -148,6 +149,10 @@ const shiftedMonth = (date, delta) => {
   const last = civilDate(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   return civilDate(first.getFullYear(), first.getMonth(), Math.min(date.getDate(), last));
 };
+// Projects deadlines are civil dates. Other sources provide timestamp instants.
+// Do not infer one from the other or invent times.
+const sourceDeadline = (item) => item.source === 'PROJECTS' && item.due_date
+  ? item.due_date : item.due_at;
 const deadlineTime = (value) => {
   if (!value) return 'No due time';
   if (typeof value === 'string' && CIVIL_DATE.test(value)) return 'Date only · no due time';
@@ -204,15 +209,15 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
   const counts = useMemo(() => {
     const byDay = new Map();
     for (const item of items) {
-      const day = localWorkDay(item.due_at);
+      const day = localWorkDay(sourceDeadline(item));
       if (day) byDay.set(day, (byDay.get(day) || 0) + 1);
     }
     return byDay;
   }, [items]);
-  const undated = items.filter((item) => item.due_at === null || item.due_at === undefined);
+  const undated = items.filter((item) => sourceDeadline(item) === null || sourceDeadline(item) === undefined);
   const overdue = items.filter((item) => item.is_overdue === true);
   const agenda = selected === null ? undated : selected === 'OVERDUE' ? overdue
-    : items.filter((item) => localWorkDay(item.due_at) === selected);
+    : items.filter((item) => localWorkDay(sourceDeadline(item)) === selected);
 
   useLayoutEffect(() => {
     if (pendingFocus.current) {
@@ -365,7 +370,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
           </div>
           <h5 className="mt-1 text-sm font-semibold leading-5 text-slate-950">{item.title}</h5>
           {item.description && <p className="mt-1 break-words text-xs text-slate-600">{item.description}</p>}
-          <div className="mt-1 flex items-center gap-1 text-xs text-slate-600"><Clock3 size={12}/> {deadlineTime(item.due_at)}</div>
+          <div className="mt-1 flex items-center gap-1 text-xs text-slate-600"><Clock3 size={12}/> {deadlineTime(sourceDeadline(item))}</div>
           <button type="button" onClick={() => onOpenWork(item)}
             className={'mt-2 ' + workTaskBlueprint.primary}>
             Open authorized task <ArrowRight size={14}/>
@@ -378,7 +383,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
 
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.jsx
- * VERSION: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR
+ * VERSION: v1.6.0-CANONICAL-WORK-DEADLINE-HANDOFF
  * AUTHORITY BOUNDARY: Read-only dates; source services authorize commands.
  * TENANT POSTURE: Only exact-session validated EOS projection items are consumed.
  * FAIL-CLOSED POSTURE: Invalid dates reject; no invented events or shifts.
