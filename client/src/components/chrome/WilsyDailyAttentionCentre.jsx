@@ -402,6 +402,14 @@ export default function WilsyDailyAttentionCentre({
     // Authenticated production reads share the exact current session and
     // source validator with global chrome. Isolated presentational fixtures
     // without an AuthProvider retain their existing mocked read seam.
+    const request = workScope
+      ? readUnifiedMyWork(
+          workScope,
+          { tenantId, principalId: auth.user.id },
+          { signal: controller.signal },
+        )
+      : api.get('/my-work', { forceNetworkRetry: true })
+          .then((response) => assertAttentionProjection(response?.data, tenantId));
     // Run the two independent authenticated read sources concurrently.
     // The feed is held privately until the separately verified projection
     // confirms identical admission/coverage; no provisional rows are shown.
@@ -420,14 +428,6 @@ export default function WilsyDailyAttentionCentre({
         ).then((data) => ({ data }), (error) => ({ error })),
       };
     }
-    const request = workScope
-      ? readUnifiedMyWork(
-          workScope,
-          { tenantId, principalId: auth.user.id },
-          { signal: controller.signal },
-        )
-      : api.get('/my-work', { forceNetworkRetry: true })
-          .then((response) => assertAttentionProjection(response?.data, tenantId));
     request
       .then((verified) => {
         if (active) {
