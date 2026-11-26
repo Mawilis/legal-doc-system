@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.19.0-CANONICAL-SOURCE-TASK-OPEN
+ * VERSION: v3.19.1-SOURCE-CIVIL-DEADLINE-PRESENTATION
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,6 +10,7 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v3.19.1-SOURCE-CIVIL-DEADLINE-PRESENTATION shows independently verified Projects civil due dates in Attention rows instead of incorrectly claiming no deadline; exact source-key match only and no invented timestamp.
  * CHANGELOG: v3.19.0-CANONICAL-SOURCE-TASK-OPEN routes explicit Open task controls to the single source-owned task destination; legacy in-panel detail remains a read-only inspection path.
  * CHANGELOG: v3.18.1-BOUNDED-CALENDAR-REFRESH restores a working
  *          source revalidation control inside focused calendar mode,
@@ -386,6 +387,21 @@ export default function DailyAttentionWorkspace({
   }));
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
+  // The separately verified My Work projection retains Projects civil dates.
+  // Match only exact source identities; an Attention page alone has no authority
+  // to invent a due_at instant for a date-only Projects deadline.
+  const verifiedCalendarByKey = useMemo(() => new Map(
+    (Array.isArray(calendarItems) ? calendarItems : [])
+      .filter((row) => row && typeof row.source_key === 'string')
+      .map((row) => [row.source_key, row]),
+  ), [calendarItems]);
+  const displayedDeadline = (item) => {
+    const source = verifiedCalendarByKey.get(item.id);
+    if (source?.source === 'PROJECTS' && /^\\d{4}-\\d{2}-\\d{2}$/.test(source.due_date || '')) {
+      return 'Due ' + source.due_date + ' (calendar date)';
+    }
+    return dueLabel(item.dueAt);
+  };
   const selected = page.find((item) => item.id === selectedId) || null;
   useEffect(() => {
     if (typeof onSurfaceViewChange === 'function') {
@@ -1061,8 +1077,8 @@ export default function DailyAttentionWorkspace({
                     <span className={'hidden w-[112px] shrink-0 truncate text-right text-[10px] ' +
                       (selected ? '2xl:block ' : 'sm:block ') +
                       (item.isOverdue ? 'text-rose-800' : 'text-slate-600')}
-                      title={dueLabel(item.dueAt)}>
-                      {dueLabel(item.dueAt)}
+                      title={displayedDeadline(item)}>
+                      {displayedDeadline(item)}
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
                       {canCompleteItem(item) && <button type="button"
@@ -1192,7 +1208,7 @@ export default function DailyAttentionWorkspace({
           <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
             <div><dt className="text-slate-400">Reason prioritised</dt><dd>{selected.whyRanked}</dd></div>
             <div><dt className="text-slate-400">Priority score</dt><dd>{selected.urgencyScore}/100</dd></div>
-            <div><dt className="text-slate-400">Deadline</dt><dd>{dueLabel(selected.dueAt)}</dd></div>
+            <div><dt className="text-slate-400">Deadline</dt><dd>{displayedDeadline(selected)}</dd></div>
             <div><dt className="text-slate-400">Source status</dt><dd>{sourceStatus(selected)}</dd></div>
             <div><dt className="text-slate-400">SLA</dt><dd>{selected.slaBreachAt ? dueLabel(selected.slaBreachAt) : 'Not supplied by source'}</dd></div>
             <div><dt className="text-slate-400">Owner</dt>
@@ -1294,7 +1310,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.19.0-CANONICAL-SOURCE-TASK-OPEN
+// VERSION: v3.19.1-SOURCE-CIVIL-DEADLINE-PRESENTATION
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
