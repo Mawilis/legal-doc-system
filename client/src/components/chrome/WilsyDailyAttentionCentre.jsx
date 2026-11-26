@@ -1533,9 +1533,9 @@ export default function WilsyDailyAttentionCentre({
                       <span>{item.status}</span>
                     </div>
                     <button type="button" onClick={() => onOpenWork(item)}
-                      aria-label={'Act on ' + item.title + ' in My Work'}
+                      aria-label={'Open task ' + item.title}
                       className={'mt-1 w-fit ' + workTaskBlueprint.secondary}>
-                      Act in My Work <ArrowRight size={13}/>
+                      Open task <ArrowRight size={13}/>
                     </button>
                     {expanded === item.source_key && (
                       <div className="mt-2 border-t border-slate-200 pt-2">
@@ -1549,7 +1549,7 @@ export default function WilsyDailyAttentionCentre({
                         </p>
                         <button type="button" onClick={() => onOpenWork(item)}
                           className={'mt-2 ' + workTaskBlueprint.primary}>
-                          Open in My Work <ArrowRight size={14}/>
+                          Open authorized task <ArrowRight size={14}/>
                         </button>
                       </div>
                     )}
