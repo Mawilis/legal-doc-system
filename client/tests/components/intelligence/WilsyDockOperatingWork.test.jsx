@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT
+ * VERSION: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT verifies bounded independent task event, comment, attachment and approval counts with missing evidence named explicitly, no false completion, no cross-tenant read acceptance, and unchanged source-backed navigation.
  * CHANGELOG: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT certifies the compact embedded view uses independently read EOS revision/blocker state, routes to existing task Activity/Evidence/Approvals callbacks, and exposes no model/command controls.
  * CHANGELOG: v1.7.0-IN-MODAL-READONLY-CERT checks a sourced task brief remains available in the modal-safe read-only projection without exposing transition, draft or attachment execution affordances.
  * CHANGELOG: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT checks client-side Open yields task focus through one callback, retaining no reload and no write.
@@ -84,6 +85,62 @@ function RouteLocationProbe() {
 }
 
 describe('permissioned operating work', () => {
+  it('reads independent EOS task evidence and recommends the actual missing source', async () => {
+    const taskBase = '/projects/' + PROJECT + '/tasks/' + TASK;
+    const pages = {
+      events: { schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1', items: [{
+        schema: 'wilsy.project.task.event.v1', tenant_id: TENANT, project_id: PROJECT,
+        task_id: TASK, revision: 1, event_type: 'PROJECT_TASK_CREATED', status_after: 'TODO',
+      }] },
+      comments: { schema: 'WILSY-PROJECT-COMMENT-LIST/V1', items: [{
+        schema: 'wilsy.project.comment.v1', tenant_id: TENANT, project_id: PROJECT,
+        task_id: TASK, comment_id: 'pcm-' + 'c'.repeat(48),
+        author_principal_id: PERSON, body: 'Engineering activity recorded',
+        mentions: [], fingerprint: 'a'.repeat(128),
+      }] },
+      attachments: { schema: 'WILSY-PROJECT-ATTACHMENT-LIST/V1', items: [] },
+      approvals: { schema: 'WILSY-PROJECT-APPROVAL-LIST/V1', items: [] },
+    };
+    get.mockImplementation(async path => {
+      if (path === '/wilsy-ai/dock/context') return { data: structuredClone(source) };
+      const kind = Object.keys(pages).find(k => path === taskBase + '/' + k + '?limit=50&offset=0');
+      if (!kind) throw refusal(503);
+      return { data: { ...pages[kind], tenant_id: TENANT, principal_id: PERSON,
+        project_id: PROJECT, task_id: TASK, limit: 50, offset: 0,
+        has_more: false, next_offset: null } };
+    });
+    const evidence = vi.fn();
+    mount({ readOnly: true, embedded: true, onReviewEvidence: evidence });
+    const assessment = await screen.findByRole('region', { name: 'WILSY AI task assessment' });
+    await waitFor(() => expect(assessment).toHaveTextContent('1 updates recorded'));
+    expect(assessment).toHaveTextContent('1 events recorded');
+    expect(assessment).toHaveTextContent('0 attachments recorded');
+    expect(assessment).toHaveTextContent('0 decisions recorded');
+    expect(assessment).toHaveTextContent('do not prove the task');
+    fireEvent.click(screen.getByRole('button', { name: /Next: Review the missing supporting evidence/i }));
+    expect(evidence).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('does not treat cross-tenant approval evidence as verified or permit closing', async () => {
+    get.mockImplementation(async path => {
+      if (path === '/wilsy-ai/dock/context') return { data: structuredClone(source) };
+      if (path.endsWith('/approvals?limit=50&offset=0')) return { data: {
+        schema: 'WILSY-PROJECT-APPROVAL-LIST/V1', tenant_id: 'OTHER_TENANT',
+        principal_id: PERSON, project_id: PROJECT, task_id: TASK,
+        limit: 50, offset: 0, has_more: false, next_offset: null, items: [],
+      } };
+      throw refusal(503);
+    });
+    mount({ readOnly: true, embedded: true });
+    const assessment = await screen.findByRole('region', { name: 'WILSY AI task assessment' });
+    await waitFor(() => expect(assessment).toHaveTextContent('Reviewer decisions'));
+    await waitFor(() => expect(assessment).toHaveTextContent('decisions not verified'));
+    expect(assessment).not.toHaveTextContent('0 decisions recorded');
+    expect(screen.queryByRole('button', { name: /Complete task/ })).not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('explains verified task attention and opens the canonical task work views without an AI command', async () => {
     const activity = vi.fn(); const evidence = vi.fn(); const approvals = vi.fn();
     mount({ readOnly: true, embedded: true,
@@ -92,7 +149,8 @@ describe('permissioned operating work', () => {
     expect(await screen.findByText('Task source verified')).toBeVisible();
     const assessment = screen.getByRole('region', { name: 'WILSY AI task assessment' });
     expect(assessment).toHaveTextContent('EOS · Revision 1');
-    expect(assessment).toHaveTextContent('What needs attention');
+    expect(assessment).toHaveTextContent('Completion evidence');
+    expect(assessment).toHaveTextContent('not verified');
     expect(assessment).not.toHaveTextContent('EOS action order');
     expect(assessment).not.toHaveTextContent('Draft alignment plan');
     fireEvent.click(screen.getByRole('button', { name: 'Activity' }));
@@ -383,7 +441,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT
+// VERSION: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
