@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.76.0-FOCUSED-SOURCE-CONVERSATION
+ * VERSION: v4.76.1-FOCUSED-TURN-CHAIN
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.76.1-FOCUSED-TURN-CHAIN treats the prior exact-task source answer as a verified conversational anchor for compact follow-ups, without extending scope to a different task.
  * CHANGELOG: v4.76.0-FOCUSED-SOURCE-CONVERSATION responds concisely to exact selected-task deadline, owner, approvals, attachments and latest-update questions from freshly validated EOS sources; general Brief keeps full assessment.
  * CHANGELOG: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY retains the LIVE TASK strip in a fresh conversation when independent EOS context still verifies the exact selected Projects task; never treats the new thread's absent locator as a source failure.
  * CHANGELOG: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY resolves narrow pronouns from the currently independently verified selected EOS task; otherwise presents explicit missing-task guidance before provider admission.
@@ -410,6 +411,7 @@ function parseWilsySelectedTaskFollowup(value, selectedTask, thread, locator) {
     : null;
   const sourceText = typeof lastAssistant?.content === 'string' ? lastAssistant.content : '';
   const sourceIdentifiesTask = sourceText.startsWith('EOS source briefing · ' + selectedTask.title)
+    || sourceText.startsWith('EOS source answer · ' + code + '\n')
     || sourceText.startsWith('EOS source verified: ' + selectedTask.title)
     || sourceText.startsWith(code + ' · EOS lifecycle activity');
   const priorVerified = lastAssistant?.meta?.source === 'PYTHON_EOS'
@@ -4108,7 +4110,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.76.0-FOCUSED-SOURCE-CONVERSATION
+ * VERSION: v4.76.1-FOCUSED-TURN-CHAIN
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
