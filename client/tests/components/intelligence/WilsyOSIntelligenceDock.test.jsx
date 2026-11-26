@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.43.0-CHAT-FIRST-REGRESSION
+ * VERSION: v1.47.0-CHAT-FIRST-REGRESSION
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,7 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
- * CHANGELOG: v1.43.0-CHAT-FIRST-REGRESSION verifies opt-in task view, return to transcript and compact recent-conversation heading.
+ * CHANGELOG: v1.47.0-CHAT-FIRST-REGRESSION verifies opt-in task view, return to transcript and compact recent-conversation heading.
  * CHANGELOG: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT admits automatic authorized daily attention
  * and compact live-task entry while retaining source denials and no-model assertions.
  * CHANGELOG: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT asserts source details
@@ -2424,7 +2424,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.43.0-CHAT-FIRST-REGRESSION
+ * VERSION: v1.47.0-CHAT-FIRST-REGRESSION
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
