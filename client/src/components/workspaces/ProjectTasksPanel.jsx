@@ -2331,7 +2331,7 @@ export default function ProjectTasksPanel({
           className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
           {taskIntelligenceOpen ? 'Task details' : 'WILSY AI'}
         </button>}
-            reviewNavigation={{selectedReviewTasks.length > 1 && selectedReviewIndex !== -1 && <nav
+            reviewNavigation={selectedReviewTasks.length > 1 && selectedReviewIndex !== -1 && <nav
               aria-label="Selected work review navigation" className="mt-3 flex flex-wrap items-center gap-2">
               <span className="mr-auto text-xs font-semibold text-slate-700">
                 Reviewing {selectedReviewIndex + 1} of {selectedReviewTasks.length} selected tasks
@@ -2346,7 +2346,7 @@ export default function ProjectTasksPanel({
                 onClick={() => setDrawerTaskId(selectedReviewTasks[selectedReviewIndex + 1].task_id)}>
                 Next task
               </button>
-            </nav>}}
+            </nav>}
             actions={<>
               {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
                 <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
