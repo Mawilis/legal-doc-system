@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.60.1-SELECTED-TASK-PRONOUN-CERT
+ * VERSION: v1.61.0-FOCUSED-TASK-ANSWERS-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.61.0-FOCUSED-TASK-ANSWERS-CERT verifies five narrow task question answers from independently re-read EOS sources without repeated full-briefing output or provider usage; retains cross-task isolation and full Brief output.
  * CHANGELOG: v1.60.1-SELECTED-TASK-PRONOUN-CERT verifies currently selected EOS task follow-up after new-thread reset and an explicit, nonbillable missing-task refusal without source guessing.
  * CHANGELOG: v1.60.0-SOURCE-FOLLOWUP-CONTINUITY-CERT proves context-bound natural deadline and approvals follow-ups reread EOS without provider POST; mismatched task references cannot borrow prior task evidence.
  * CHANGELOG: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT repairs the negative-test context fixture to meet unchanged no-model/no-financial-execution source admission, then proves foreign discussion is independently requested and rejected without a partial briefing.
@@ -2109,21 +2110,31 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(briefing).toContain('Live Browser Acceptance: Unified Task Navigation');
     expect(briefing).toContain('Approval decisions: 0 verified records');
     expect(briefing).toContain('do not independently certify acceptance');
-    // Natural follow-ups stay tied to the latest EOS-verified task answer,
-    // and must reread current authorized sources rather than reuse its text.
+    // Each follow-up must reread EOS and answer the requested dimension,
+    // never repeat the entire long-form briefing.
     requestReadOnlySource('What is its deadline?');
-    await waitFor(() => expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
       payload?.message?.role === 'assistant'
-      && payload.message.content.startsWith('EOS source briefing · MW-T11')))
-      .toHaveLength(2));
+      && payload.message.content === 'EOS source answer · MW-T11\nDeadline: 2026-11-27\nPython EOS · Source verified, read-only. No model invoked.')).toBe(true));
     requestReadOnlySource('And the approvals?');
-    await waitFor(() => expect(mockPersistTurn.mock.calls.filter(([payload]) =>
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
       payload?.message?.role === 'assistant'
-      && payload.message.content.startsWith('EOS source briefing · MW-T11')))
-      .toHaveLength(3));
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nApproval decisions: 0 verified records'))).toBe(true));
+    requestReadOnlySource('Who is responsible for this task?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nAccountable contributor: Verified Contributor'))).toBe(true));
+    requestReadOnlySource('What about the attachments?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nAttachments: 0 verified records'))).toBe(true));
+    requestReadOnlySource('What is the latest update on MW-T11?');
+    await waitFor(() => expect(mockPersistTurn.mock.calls.some(([payload]) =>
+      payload?.message?.role === 'assistant'
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nLatest recorded discussion')
+      && payload.message.content.includes('Live Browser Acceptance'))).toBe(true));
     expect(mockApiPost).not.toHaveBeenCalled();
-    // A new conversation retains the independently selected EOS task, even
-    // though there is no prior verified assistant turn in the new thread.
+    // A new conversation retains the independently selected EOS task.
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
     fireEvent.click(screen.getByRole('button', { name: '+ New conversation' }));
     await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
@@ -2131,8 +2142,8 @@ describe('WilsyOSIntelligenceDock', () => {
     requestReadOnlySource('What is its deadline?');
     await waitFor(() => expect(mockPersistTurn.mock.calls.filter(([payload]) =>
       payload?.message?.role === 'assistant'
-      && payload.message.content.startsWith('EOS source briefing · MW-T11')))
-      .toHaveLength(4));
+      && payload.message.content.startsWith('EOS source answer · MW-T11\nDeadline: 2026-11-27')))
+      .toHaveLength(2));
     expect(mockApiPost).not.toHaveBeenCalled();
     // A reference to a different task never borrows the current task context.
     const previousReads = mockApiGet.mock.calls.filter(([url]) =>
@@ -2844,7 +2855,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.60.1-SELECTED-TASK-PRONOUN-CERT
+ * VERSION: v1.61.0-FOCUSED-TASK-ANSWERS-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
