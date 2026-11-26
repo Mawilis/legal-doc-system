@@ -639,6 +639,7 @@ function ProjectReadinessRollback({ task, tenantId, principalId, projectId, head
 export default function ProjectTasksPanel({
   projectId, tenantId, principalId, tenantHeaders, discussionOnly = false,
   onFocusedTaskChange = null, onOpenProjectPeople = null, focusTaskId = null,
+  onReturnToAttention = null,
 }) {
   const [items, setItems] = useState([]);
   const handledExternalTaskFocus = useRef(null);
@@ -2326,7 +2327,10 @@ export default function ProjectTasksPanel({
             due={drawerTask.due_date ? (drawerTask.due_date < todayISO && !['DONE', 'CANCELLED'].includes(drawerTask.status)
               ? 'Overdue · ' : 'Due ') + drawerTask.due_date : 'No due date'}
             owner={drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}
-            onClose={closeDrawer} closeLabel="Close work details"
+            onClose={typeof onReturnToAttention === 'function' && focusTaskId === drawerTask.task_id
+              ? onReturnToAttention : closeDrawer}
+            closeLabel={typeof onReturnToAttention === 'function' && focusTaskId === drawerTask.task_id
+              ? 'Back to Daily attention' : 'Close work details'}
             primaryControl={<button type="button" onClick={() => setTaskIntelligenceOpen(value => !value)}
           aria-pressed={taskIntelligenceOpen}
           className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
