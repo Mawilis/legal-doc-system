@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.61.1-EXPLICIT-WORK-LOCATOR
+ * VERSION: v4.61.2-THREAD-FOCUS-CURRENTNESS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.61.2-THREAD-FOCUS-CURRENTNESS clears transient work view for new and reset threads, without changing EOS history semantics.
  * CHANGELOG: v4.61.1-EXPLICIT-WORK-LOCATOR makes Conversation navigation leave the work view and an explicitly selected task enter it without requiring a redundant click.
  * CHANGELOG: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND defaults to transcript, opens EOS work on demand, restores chat after send/history selection and scrolls to latest assistant reply.
  * CHANGELOG: v4.60.0-PERMISSIONED-OPERATING-JOURNEY wires controlled briefs, actions,
@@ -1702,6 +1703,8 @@ export function WilsyOSIntelligenceDock({
       if (scopeAtStart !== dockScopeRef.current) return;
       setConversationThreads((prev) => [fresh, ...prev.filter((item) => item.id !== fresh.id)]);
       setActiveThreadId(fresh.id);
+      setWorkSurfaceOpen(false);
+      setConversationView('WELCOME');
       setActiveTab('chat');
     } catch (err) {
       if (scopeAtStart === dockScopeRef.current) {
@@ -3513,7 +3516,8 @@ export function WilsyOSIntelligenceDock({
                         title: 'New Sovereign Session', workspace: 'WILSY OS',
                       });
                       if (scope !== dockScopeRef.current) return;
-                      setConversationThreads([fresh]); setActiveThreadId(fresh.id); setActiveTab('chat');
+                      setConversationThreads([fresh]); setActiveThreadId(fresh.id);
+                      setWorkSurfaceOpen(false); setConversationView('WELCOME'); setActiveTab('chat');
                     } catch {
                       if (scope === dockScopeRef.current) setHistoryOperationError('Session reset could not be verified.');
                     }
@@ -3548,7 +3552,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.61.1-EXPLICIT-WORK-LOCATOR
+ * VERSION: v4.61.2-THREAD-FOCUS-CURRENTNESS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
