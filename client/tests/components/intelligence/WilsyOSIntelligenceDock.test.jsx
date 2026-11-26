@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.62.2-CSS-MODULE-ASSERTION-CERT
+ * VERSION: v1.63.0-LIVE-COMMENT-READBACK-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.63.0-LIVE-COMMENT-READBACK-CERT requires clean compact discussion summary, hidden internal source reference, explicit full-source readback and independently reauthorized comments GET without a provider call.
  * CHANGELOG: v1.62.2-CSS-MODULE-ASSERTION-CERT checks CSS-module-generated class strings with regex matching instead of passing regex matchers into jest-dom toHaveClass; the semantic rendering assertions remain intact.
  * CHANGELOG: v1.62.1-FOCUSED-SELECTOR-CERT disambiguates a focused deadline fact from the earlier retained full briefing in the same transcript.
  * CHANGELOG: v1.62.0-ANSWER-AWARE-RENDERER-CERT verifies focused source fact layout and standalone provenance footers without modifying session history, EOS admission, or preserved long briefing facts.
@@ -2111,6 +2112,20 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(briefing).toContain('Deadline: 2026-11-27');
     expect(briefing).toContain('No recorded predecessors');
     expect(briefing).toContain('Live Browser Acceptance: Unified Task Navigation');
+    expect(briefing).toContain('Source comment reference: pcm-');
+    expect(briefing).not.toContain('**');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Read full update' }))
+      .toBeEnabled());
+    expect(screen.queryByText(/Source comment reference:/)).not.toBeInTheDocument();
+    const readsBefore = mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0')).length;
+    fireEvent.click(screen.getByRole('button', { name: 'Read full update' }));
+    await waitFor(() => expect(screen.getByText(/Full EOS project update · source readback/))
+      .toBeVisible());
+    expect(screen.getAllByText(/Live Browser Acceptance: Unified Task Navigation/).length)
+      .toBeGreaterThan(0);
+    expect(mockApiGet.mock.calls.filter(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0')).length).toBe(readsBefore + 1);
     expect(briefing).toContain('Approval decisions: 0 verified records');
     expect(briefing).toContain('do not independently certify acceptance');
     // Full assessment keeps its source-owned structured facts and a separate
@@ -2868,7 +2883,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.62.2-CSS-MODULE-ASSERTION-CERT
+ * VERSION: v1.63.0-LIVE-COMMENT-READBACK-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
