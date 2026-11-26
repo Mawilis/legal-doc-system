@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.2.0-REHYDRATED-COMMAND-STATE
+ * VERSION: v1.3.0-MW-T11-SOURCE-RANKED-HANDOFF
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.3.0-MW-T11-SOURCE-RANKED-HANDOFF displays EOS's authorized source identity and returned work order with priority/deadline evidence, then confirms the selected Projects task binding before independent Projects reauthorization on navigation. Neither source ordering nor status is inferred.
  * CHANGELOG: v1.2.0-REHYDRATED-COMMAND-STATE makes pending-command restoration a React state change, preserving fail-closed receipt-only reconciliation across a full browser reload.
  * CHANGELOG: v1.1.0 replaces repeated Open work cards with full-row, source-aware navigation and an explicit complete-queue link.
  * CHANGELOG: v1.0.0 adds briefs, ranked actions, deterministic drafts and read-only reconciliation.
@@ -28,6 +29,16 @@ import styles from './WilsyOSIntelligenceDock.module.css';
 const pendingCommands = new Map();
 const pendingArtifacts = new Map();
 const pendingProviderDrafts = new Map();
+
+// Read-only explanation of the order returned by the current EOS My Work
+// source. The Dock cannot change ranks, authorizations or lifecycle state.
+const rankedSourceReason = (item, rank) => {
+  const priority = typeof item.priority === 'string' ? item.priority.toLowerCase() : 'unverified';
+  const deadline = typeof item.due_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.due_date)
+    ? item.due_date : 'not supplied';
+  const overdue = item.is_overdue === true ? ' · overdue per EOS' : '';
+  return 'EOS order ' + rank + ' · priority ' + priority + ' · due ' + deadline + overdue;
+};
 const continuityKey = (kind, key) => 'wilsy.dock.pending.v1:' + kind + ':' + sha3_512(key);
 const rememberPending = (kind, key, attempt) => {
   // This is only an unverified command locator, never transcript or source
@@ -179,6 +190,13 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
   const brief = envelope?.components.find(item => item.type === 'TaskBrief');
   const actions = envelope?.components.find(item => item.type === 'ActionList')?.actions || [];
   const pending = pendingCommand;
+  // Only a currently admitted EOS Dock source can confirm the selected work
+  // identity. The link itself remains an untrusted navigation hint and the
+  // Projects workspace independently checks IAM and durable task source.
+  const handoffConfirmed = Boolean(ready && hasTask && envelope
+    && envelope.source.project_id === locator.project_id
+    && envelope.source.task_id === locator.task_id
+    && (locator.task_revision === undefined || envelope.source.revision === locator.task_revision));
   const record = async (content, token) => {
     if (!isCurrent(token)) return;
     try {
@@ -385,7 +403,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
       : !ready ? <div><p role="status">{view.message || 'Authorized work is unavailable.'}</p>
         <button type="button" onClick={() => setRetry(value => value + 1)}>Retry authorized work</button></div>
         : !hasTask ? <><h4>Needs your attention</h4>
-          {view.data.items.length ? <ol className={styles.attentionRows}>{view.data.items.slice(0, 6).map(item =>
+          {view.data.items.length ? <ol className={styles.attentionRows}>{view.data.items.slice(0, 6).map((item, index) =>
             <li key={item.source_key}>
               {item.source === 'PROJECTS'
                 ? <button type="button" className={styles.attentionItemAction}
@@ -393,13 +411,13 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
                     workspace: 'PROJECTS', project_id: item.project_id, task_id: item.work_item_id, participant_view: true,
                   })}>
                   <span className={styles.attentionItemText}><strong>{item.title}</strong>
-                    <small>{item.source} · {item.priority.toLowerCase()}{item.due_date ? ` · Due ${item.due_date}` : ''}</small>
-                  </span><span className={styles.attentionActionCue} aria-hidden="true">View</span>
+                    <small>{item.source_key} · {rankedSourceReason(item, index + 1)}</small>
+                  </span><span className={styles.attentionActionCue} aria-hidden="true">Verify</span>
                 </button>
                 : <a className={styles.attentionItemAction}
                     href={"/headquarters?section=my-work&work=" + encodeURIComponent(item.source_key)}>
                   <span className={styles.attentionItemText}><strong>{item.title}</strong>
-                    <small>{item.source} · {item.priority.toLowerCase()}{item.due_date ? ` · Due ${item.due_date}` : ''}</small>
+                    <small>{item.source_key} · {rankedSourceReason(item, index + 1)}</small>
                   </span><span className={styles.attentionActionCue} aria-hidden="true">View</span>
                 </a>}
             </li>)}</ol>
@@ -409,11 +427,15 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
             <a href="/headquarters?section=my-work">View all in My Work</a>
           </div></>
           : brief && <>
+            {handoffConfirmed && <p role="status" aria-label="EOS-confirmed work handoff">
+              Projects source verified · revision {envelope.source.revision} · fingerprint checked.
+              The Projects workspace independently reauthorizes this record on arrival.
+            </p>}
             {!artifact ? <><p className={styles.taskPurpose}>{brief.purpose || 'Review the full task to confirm its intended outcome.'}</p>
               <p>{brief.established}{brief.deadline ? ` Due ${brief.deadline}.` : ''}</p>
               {!!brief.dependencies.length && <p>{brief.dependencies.length} recorded dependencies. Review current source evidence before completion.</p>}
               {!!brief.blockers.length && <ul>{brief.blockers.map(item => <li key={item}>{item}</li>)}</ul>}
-              <p className={styles.nextAction}>Next: {brief.next_action}</p>
+              <p className={styles.nextAction}>EOS action order: {actions.map(action => action.outcome).join(' · ')}. Each operation rechecks current source authority.</p>
               <div className={styles.operatingActions} aria-label="Suggested task actions">
                 {actions.map(action => action.kind === 'OPEN_TASK' || action.kind === 'REVIEW_EVIDENCE'
                   ? <a key={action.id} href={dockTaskPath(action.source, action.kind === 'REVIEW_EVIDENCE')}>{action.outcome}</a>
@@ -447,7 +469,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.2.0-REHYDRATED-COMMAND-STATE
+// VERSION: v1.3.0-MW-T11-SOURCE-RANKED-HANDOFF
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
