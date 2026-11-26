@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE
+ * VERSION: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,7 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD reuses only still-valid exact-session read-through cache instead of forcing a duplicate read on opening; displays a compact non-authoritative task skeleton during verification.
  * CHANGELOG: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE enables the
  *          top resize edge and makes keyboard arrow controls match
  *          the moving boundary. Full pointer resize stays bounded
@@ -400,7 +401,7 @@ export default function WilsyDailyAttentionCentre({
       ? readUnifiedMyWork(
           workScope,
           { tenantId, principalId: auth.user.id },
-          { signal: controller.signal, force: true },
+          { signal: controller.signal },
         )
       : api.get('/my-work', { forceNetworkRetry: true })
           .then((response) => assertAttentionProjection(response?.data, tenantId));
@@ -1285,8 +1286,19 @@ export default function WilsyDailyAttentionCentre({
 
           {!hasCurrentVerifiedWorkspace && (status === 'LOADING'
             || (status === 'READY' && workScope && attentionStatus === 'LOADING')) && (
-            <div role="status" className="flex items-center gap-2 px-5 py-8 text-sm text-amber-200">
-              <RefreshCw size={16} className="animate-spin"/> Checking current work…
+            <div role="status" aria-live="polite" className="flex min-h-[175px] flex-col gap-3 px-5 py-5">
+              <div className="flex items-center gap-2 text-sm text-slate-200">
+                <RefreshCw size={15} className="animate-spin text-amber-300"/>
+                Verifying authorised work…
+              </div>
+              <p className="text-xs text-slate-400">
+                Preparing your task list, calendar and source permissions. No unverified results are displayed.
+              </p>
+              <div className="space-y-2" aria-hidden="true">
+                <div className="h-7 w-2/3 animate-pulse rounded-md bg-white/[0.07]"/>
+                <div className="h-7 w-4/5 animate-pulse rounded-md bg-white/[0.05]"/>
+                <div className="h-7 w-3/5 animate-pulse rounded-md bg-white/[0.04]"/>
+              </div>
             </div>
           )}
 
@@ -1622,7 +1634,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE
+ * VERSION: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.
