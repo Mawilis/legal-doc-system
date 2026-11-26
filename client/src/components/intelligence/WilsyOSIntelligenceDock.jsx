@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY
+ * VERSION: v4.76.0-FOCUSED-SOURCE-CONVERSATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.76.0-FOCUSED-SOURCE-CONVERSATION responds concisely to exact selected-task deadline, owner, approvals, attachments and latest-update questions from freshly validated EOS sources; general Brief keeps full assessment.
  * CHANGELOG: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY retains the LIVE TASK strip in a fresh conversation when independent EOS context still verifies the exact selected Projects task; never treats the new thread's absent locator as a source failure.
  * CHANGELOG: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY resolves narrow pronouns from the currently independently verified selected EOS task; otherwise presents explicit missing-task guidance before provider admission.
  * CHANGELOG: v4.75.1-EXACT-ANSWER-CONTINUITY binds pronoun follow-ups to the latest source-verified assistant reply naming the current EOS task; unlocated existing threads cannot silently borrow a different task's facts.
@@ -430,6 +431,22 @@ function parseWilsySelectedTaskFollowup(value, selectedTask, thread, locator) {
   const compactFollowup = priorVerified && /^(?:and|what about|how about)\s+(?:the\s+)?(?:deadline|owner|dependencies|activity|comments|updates|attachments|evidence|approvals|decisions)[?.!]?$/i.test(text);
   return ((anchoredIntent && relatedFact && (referencesSelected || pronounReference))
     || compactFollowup) ? code : null;
+}
+
+/**
+ * A narrow, non-generative response selector. The source batch is always
+ * independently re-verified before formatting any of these fields.
+ * Unrecognized or compound questions retain the complete briefing.
+ */
+function classifyWilsyFocusedTaskQuestion(value) {
+  const question = String(value || '').trim().toLowerCase();
+  if (/\b(?:deadline|due(?: date)?|when is it due)\b/.test(question)) return 'DEADLINE';
+  if (/\b(?:who is responsible|who owns|assigned to|accountable contributor|who is assigned|owner)\b/.test(question)) return 'OWNER';
+  if (/\b(?:approvals?|reviewer decisions?)\b/.test(question)) return 'APPROVALS';
+  if (/\b(?:attachments?|files?|scan.clean|upload(?:ed|s)?)\b/.test(question)) return 'ATTACHMENTS';
+  if (/\b(?:latest|recent|last|newest)\b/.test(question)
+    && /\b(?:update|comment|activity|discussion|change)\b/.test(question)) return 'LATEST_UPDATE';
+  return 'BRIEFING';
 }
 
 /** Independently read one current EOS lifecycle event page, never cached chat. */
@@ -2307,6 +2324,37 @@ export function WilsyOSIntelligenceDock({
             + '\nSource records and discussion do not independently certify acceptance,'
             + ' production deployment, rollback, approval completion or strategic outcomes.'
             + '\nPython EOS · Read-only, nonbillable. No model or task command invoked.';
+          const intent = classifyWilsyFocusedTaskQuestion(text);
+          const prefix = 'EOS source answer · ' + briefingCode + '\n';
+          const focused = intent === 'DEADLINE'
+            ? prefix + 'Deadline: ' + deadline
+            : intent === 'OWNER'
+              ? prefix + 'Accountable contributor: ' + (task.assignee_name || 'Name not verified by EOS')
+              : intent === 'APPROVALS'
+                ? prefix + 'Approval decisions: ' + evidence.approvals.items.length
+                  + (evidence.approvals.has_more ? '+ on this verified page; further decisions need inspection'
+                    : ' verified records')
+                  + '\nPending or rejected on this page: ' + approvalsPending
+                  + '\nAn empty approval page does not certify that an approval is complete.'
+                : intent === 'ATTACHMENTS'
+                  ? prefix + 'Attachments: ' + evidence.attachments.items.length
+                    + (evidence.attachments.has_more ? '+ on this verified page; further records need inspection'
+                      : ' verified records')
+                    + '\nScan-clean on this page: ' + attachmentsClean
+                    + '\nRecorded attachments are not proof of deployment or acceptance.'
+                  : intent === 'LATEST_UPDATE'
+                    ? prefix + (latestComment
+                      ? 'Latest recorded discussion (' + latestComment.created_at + '): '
+                        + latestComment.body.split(/\r?\n/).map(line => line.trim())
+                          .find(line => line.length > 0)?.replace(/\*\*/g, '').slice(0, 220)
+                        + (evidence.comments.has_more ? '\nMore discussion pages require inspection.' : '')
+                      : 'No discussion comments on the verified first page.')
+                      + (lastEvent ? '\nLatest lifecycle event: '
+                        + lastEvent.event_type.replaceAll('_', ' ').toLowerCase()
+                        + ' · ' + lastEvent.occurred_at : '')
+                    : null;
+          const answer = focused === null ? result : focused
+            + '\nPython EOS · Source verified, read-only. No model invoked.';
           let thread = activeThread;
           if (!thread?.id) thread = await createWilsyAIConversationThread({
             title: 'EOS briefing · ' + briefingCode, workspace: 'Projects',
@@ -2320,7 +2368,7 @@ export function WilsyOSIntelligenceDock({
           });
           const recorded = await persistWilsyAIConversationTurn({
             threadId: requestTurn.id, workLocator: { ...workLocator },
-            message: { role: 'assistant', content: result,
+            message: { role: 'assistant', content: answer,
               meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' } },
           });
           if (dockScopeRef.current !== scopeAtStart
@@ -4060,7 +4108,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY
+ * VERSION: v4.76.0-FOCUSED-SOURCE-CONVERSATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
