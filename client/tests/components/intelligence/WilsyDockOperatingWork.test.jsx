@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT
+ * VERSION: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT requires task's original acceptance text and lifecycle to remain visible while activity and attachment presence are not falsely treated as completion.
  * CHANGELOG: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT verifies bounded independent task event, comment, attachment and approval counts with missing evidence named explicitly, no false completion, no cross-tenant read acceptance, and unchanged source-backed navigation.
  * CHANGELOG: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT certifies the compact embedded view uses independently read EOS revision/blocker state, routes to existing task Activity/Evidence/Approvals callbacks, and exposes no model/command controls.
  * CHANGELOG: v1.7.0-IN-MODAL-READONLY-CERT checks a sourced task brief remains available in the modal-safe read-only projection without exposing transition, draft or attachment execution affordances.
@@ -114,6 +115,8 @@ describe('permissioned operating work', () => {
     const assessment = await screen.findByRole('region', { name: 'WILSY AI task assessment' });
     await waitFor(() => expect(assessment).toHaveTextContent('1 updates recorded'));
     expect(assessment).toHaveTextContent('1 events recorded');
+    expect(assessment).toHaveTextContent('Acceptance definition: Align the Dock with authorized work.');
+    expect(assessment).toHaveTextContent('to do · revision 1');
     expect(assessment).toHaveTextContent('0 attachments recorded');
     expect(assessment).toHaveTextContent('0 decisions recorded');
     expect(assessment).toHaveTextContent('do not prove the task');
@@ -441,7 +444,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT
+// VERSION: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
