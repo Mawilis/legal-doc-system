@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS
+ * VERSION: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,7 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
- * CHANGELOG: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS adds accessible Active/Completed/All view controls over the current source-verified task page; terminal Done and Cancelled leave the default action list without deletion, selection resets across views, and existing EOS pagination and details remain authoritative.
+ * CHANGELOG: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH loads a separate IAM-gated EOS completed query with source-side title and contributor filtering, immutable completion chronology, safe paging and exact reply envelope verification. Active/All keep their canonical existing source list and task mutation boundaries.\n * CHANGELOG: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS adds accessible Active/Completed/All view controls over the current source-verified task page; terminal Done and Cancelled leave the default action list without deletion, selection resets across views, and existing EOS pagination and details remain authoritative.
  * CHANGELOG: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS publishes an untrusted exact-task locator only for a single checkbox selection in the current EOS-verified Projects page, without opening a drawer, granting IAM authority, or guessing among multiple selected rows.
  * CHANGELOG: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE admits only explicit same-tenant/principal/project task-open requests against uniquely matched EOS-verified items and opens the existing canonical task drawer without granting context or IAM authority.
  * CHANGELOG: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS replaces dark duplicate task transcript with a compact source-verified assessment using the same canonical EOS brief and task-owned Activity/Evidence/Approvals navigation; no new workflow or model entitlement. Modal context and keyboard safety remain unchanged.
@@ -657,6 +657,10 @@ export default function ProjectTasksPanel({
   const [state, setState] = useState('LOADING');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [completedSearchInput, setCompletedSearchInput] = useState('');
+  const [completedOrder, setCompletedOrder] = useState('NEWEST');
+  const [completedAssignee, setCompletedAssignee] = useState('');
+  const completedSource = useRef({ view: 'ACTIVE', search: '', order: 'NEWEST', assignee: '' });
   const [draft, setDraft] = useState({ ...EMPTY });
   const [creating, setCreating] = useState(false);
   const [workType, setWorkType] = useState('TASK');
@@ -772,7 +776,14 @@ export default function ProjectTasksPanel({
       // contend with the work-list transaction merely to populate assignees.
       let taskResponse;
       try {
-        taskResponse = await api.get(root + '/tasks?limit=50&offset=' + nextOffset, { headers });
+        const completed = completedSource.current;
+        const endpoint = completed.view === 'COMPLETED'
+          ? root + '/tasks/completed?limit=50&offset=' + nextOffset
+            + '&search=' + encodeURIComponent(completed.search)
+            + '&order=' + completed.order
+            + (completed.assignee ? '&assignee_principal_id=' + encodeURIComponent(completed.assignee) : '')
+          : root + '/tasks?limit=50&offset=' + nextOffset;
+        taskResponse = await api.get(endpoint, { headers });
       } catch (cause) {
         const sourceFailure = cause instanceof Error ? cause : new Error('PROJECT_TASK_READ_UNAVAILABLE');
         if (sourceFailure !== cause && cause?.response) sourceFailure.response = cause.response;
@@ -783,6 +794,22 @@ export default function ProjectTasksPanel({
       let verified;
       try {
         verified = validList(taskResponse?.data, tenantId, principalId, projectId, nextOffset);
+        if (completedSource.current.view === 'COMPLETED') {
+          const source = taskResponse?.data;
+          const filters = completedSource.current;
+          if (source.view !== 'COMPLETED' || source.search !== filters.search
+            || source.order !== filters.order
+            || source.assignee_principal_id !== (filters.assignee || null)
+            || source.items.some(item => item.status !== 'DONE'
+              || typeof item.completed_by_principal_id !== 'string'
+              || !item.completed_by_principal_id
+              || typeof item.completed_at !== 'string'
+              || !Number.isFinite(Date.parse(item.completed_at))
+              || item.updated_by_principal_id !== item.completed_by_principal_id
+              || item.updated_at !== item.completed_at)) {
+            throw new Error('PROJECT_TASK_COMPLETION_SOURCE_INVALID');
+          }
+        }
       } catch {
         const invalid = new Error('PROJECT_TASK_SOURCE_INVALID');
         invalid.sourceName = 'Project task list';
@@ -931,6 +958,11 @@ export default function ProjectTasksPanel({
     setActionCapabilities(null);
     setOffset(0);
     setHasMore(false);
+    completedSource.current = { view: 'ACTIVE', search: '', order: 'NEWEST', assignee: '' };
+    setWorkLifecycleView('ACTIVE');
+    setCompletedSearchInput('');
+    setCompletedOrder('NEWEST');
+    setCompletedAssignee('');
     setCreating(false);
     setWorkType('TASK');
     setWorkQuery('');
@@ -1780,10 +1812,12 @@ export default function ProjectTasksPanel({
                 ? 'bg-blue-700 text-white'
                 : 'bg-transparent text-slate-800 hover:bg-slate-200')}
             onClick={() => {
+              completedSource.current = { ...completedSource.current, view: value };
               setWorkLifecycleView(value);
               setWorkStatus('ALL');
               setWorkAttention('ALL');
               setSelectedWorkIds([]);
+              void load(0);
             }}>{title}</button>)}
         </div>
         <span role="status" className="text-xs text-slate-600">
@@ -1791,9 +1825,47 @@ export default function ProjectTasksPanel({
           {hasMore ? ' · More EOS pages available' : ''}
         </span>
       </div>
+      {workLifecycleView === 'COMPLETED' && <form className="mt-3 flex flex-wrap items-end gap-2"
+        aria-label="Search completed project work" onSubmit={event => {
+          event.preventDefault();
+          completedSource.current = { view: 'COMPLETED', search: completedSearchInput.trim(),
+            order: completedOrder, assignee: completedAssignee };
+          setSelectedWorkIds([]);
+          void load(0);
+        }}>
+        <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-xs font-semibold text-slate-800">
+          Search completed work across EOS pages
+          <input type="search" maxLength={120} value={completedSearchInput}
+            onChange={event => setCompletedSearchInput(event.target.value)}
+            placeholder="Task title" className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"/>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-slate-800">
+          Completion date
+          <select aria-label="Sort completion date" value={completedOrder}
+            onChange={event => setCompletedOrder(event.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="NEWEST">Newest first</option>
+            <option value="OLDEST">Oldest first</option>
+          </select>
+        </label>
+        <label className="flex min-w-[165px] flex-col gap-1 text-xs font-semibold text-slate-800">
+          Completed task contributor
+          <select aria-label="Filter completed contributor" value={completedAssignee}
+            onChange={event => setCompletedAssignee(event.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="">All contributors</option>
+            {participants.filter(person => person.role === 'CONTRIBUTOR').map(person =>
+              <option key={person.principal_id} value={person.principal_id}>
+                {[person.first_name, person.last_name].filter(Boolean).join(' ') || 'Verified contributor'}
+              </option>)}
+          </select>
+        </label>
+        <button type="submit" className="wp-button wp-button-primary">Search EOS</button>
+      </form>}
       <p className="mt-1 text-xs text-slate-600">
-        Completed work remains in EOS with its history and evidence. Views apply to this verified page;
-        use the EOS page controls to inspect additional records.
+        {workLifecycleView === 'COMPLETED'
+          ? 'Completed results are filtered and paginated by Python EOS across this project. Completion dates and actors are checked against immutable task events.'
+          : 'Active and all-work controls apply to this verified page; use EOS batch navigation for additional records.'}
       </p>
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
@@ -2613,7 +2685,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS
+// VERSION: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
