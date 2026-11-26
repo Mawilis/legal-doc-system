@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.35.0-SHARED-READINESS-NO-LEGACY-CRM
+ * VERSION: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,7 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS applies the shared Projects readiness component to all admitted My Work sources, retiring the remaining duplicate legacy metadata/provenance panel; source-specific completion commands remain governed in EOS.
  * CHANGELOG: v1.35.0-SHARED-READINESS-NO-LEGACY-CRM uses the exact Projects execution-readiness component for CRM and strips duplicated legacy CRM summary fields from its primary view; CRM editor/commands stay behind independent capability checks.
  * CHANGELOG: v1.34.0-CANONICAL-TASK-MODAL uses the shared Projects task header and modal interaction for My Work, with source-specific CRM controls hidden until independently authorized. Data/commands remain in the original EOS registry; no source migration or new AI entitlement.
  * CHANGELOG: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS makes CRM work open as a task-first, light, tabbed execution surface. The independently authorized CRM editor, status actions and history remain available under explicit Source actions & history. No CRM record is masqueraded as a Projects task, and EOS ownership and readback are unchanged.
@@ -1026,29 +1027,26 @@ export default function MyWorkWorkspace(props = {}) {
                 : null}
             />
             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-6">
-              {selectedItem.source === 'CRM'
-                ? <UnifiedTaskReadiness
-                    description="Current independently verified CRM work record. Project-specific dependencies, activity, approvals and AI are not asserted for this source."
-                    facts={[
-                      { label: 'Accountable contributor',
-                        value: crmDetailState === 'VERIFIED' ? 'Owner principal recorded; display name unavailable' : null },
-                      { label: 'Delivery deadline', value: formatWorkDue(selectedItem) },
-                      { label: 'Source lifecycle', value: statusLabel(selectedItem) },
-                      { label: 'Predecessor gate', value: 'Not supplied by CRM source' },
-                    ]}
-                    footnote="Source visibility is not edit authority. CRM task actions remain unavailable until separately authorized; Projects task evidence and AI are not invented for this record."
-                  />
-                : <>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded border border-amber-300/25 bg-amber-300/[0.07] px-2 py-1 text-xs text-amber-100">{SOURCE_LABELS[selectedItem.source] || selectedItem.source}</span>
-                <span className={`rounded border px-2 py-1 text-xs font-semibold ${PRIORITY_STYLE[selectedItem.priority] || PRIORITY_STYLE.NORMAL}`}>{selectedItem.priority}</span>
-                <span className="inline-flex items-center gap-1.5 rounded border border-white/10 px-2 py-1 text-xs text-slate-300"><Circle size={9} /> {statusLabel(selectedItem)}</span>
-              </div>
-              <dl className="flex flex-wrap gap-x-8 gap-y-3 border-y border-white/10 py-3 text-sm [&>dd]:font-medium">
-                <dt className="text-slate-400">Deadline</dt><dd className="text-slate-100">{formatWorkDue(selectedItem)}</dd>
-                <dt className="text-slate-400">Work type</dt><dd className="text-slate-100">{kindLabel(selectedItem)}</dd>
-              </dl>
-                </>}
+              <UnifiedTaskReadiness
+                description="Current EOS work facts. Source-owned evidence, commands and approvals require independent authorization."
+                facts={[
+                  { label: 'Accountable contributor',
+                    value: selectedItem.source === 'CRM'
+                      ? crmDetailState === 'VERIFIED' ? 'Owner principal recorded; display name unavailable' : null
+                      : selectedItem.owner_principal_id ? 'Owner recorded; display name unavailable' : null },
+                  { label: 'Delivery deadline', value: formatWorkDue(selectedItem) },
+                  { label: 'Source lifecycle', value: statusLabel(selectedItem) },
+                  { label: 'Predecessor gate',
+                    value: selectedItem.source === 'PROJECTS'
+                      ? selectedItem.dependency_readiness === 'WAITING'
+                        ? 'Waiting on ' + selectedItem.dependency_remaining + ' predecessor(s)'
+                        : selectedItem.dependency_readiness === 'READY'
+                          ? selectedItem.dependency_total ? 'Recorded predecessors complete' : 'No predecessor gate'
+                          : 'Not verified by this source snapshot'
+                      : 'Not supplied by this source' },
+                ]}
+                footnote="This view does not invent evidence, AI, approvals or completion authority. Only source-owned commands independently authorized by EOS may change the task."
+              />
               <section className="space-y-1 rounded-lg border border-white/10 bg-white/[0.025] p-4">
                 <h3 className="text-sm font-semibold text-white">Description</h3>
                 <p id="my-work-detail-description" className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">
@@ -1057,18 +1055,6 @@ export default function MyWorkWorkspace(props = {}) {
                 </p>
               </section>
 
-              {selectedItem.source === 'PROJECTS' && <section aria-label="Verified project dependency readiness"
-                className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
-                <h3 className="text-sm font-semibold text-white">Predecessor readiness</h3>
-                <p className="mt-2 text-sm text-slate-200">
-                  {selectedItem.dependency_readiness === 'WAITING'
-                    ? 'EOS verified ' + selectedItem.dependency_remaining + ' of ' + selectedItem.dependency_total + ' predecessors remain unfinished.'
-                    : selectedItem.dependency_readiness === 'READY'
-                      ? selectedItem.dependency_total ? 'EOS verified all ' + selectedItem.dependency_total + ' predecessors are Done.' : 'EOS verified no predecessor completion gate.'
-                      : 'Dependency readiness is not verified by this EOS response. Refresh after restarting the current Python EOS.'}
-                </p>
-                <p className="mt-2 text-xs text-slate-400">This is read-only Projects source evidence, not a task status transition or permission to view predecessor records.</p>
-              </section>}
               {selectedItem.source === 'CRM' && taskDetailTab === 'DETAILS' && (
                 <p role={crmDetailState === 'UNAVAILABLE' ? 'alert' : 'status'}
                   className={crmDetailState === 'UNAVAILABLE' ? 'text-xs text-rose-800' : 'text-xs text-slate-600'}>
@@ -1745,7 +1731,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.35.0-SHARED-READINESS-NO-LEGACY-CRM
+ * VERSION: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
