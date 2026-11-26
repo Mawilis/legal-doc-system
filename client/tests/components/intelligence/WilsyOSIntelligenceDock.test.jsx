@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT
+ * VERSION: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT verifies conversational task inspection sends without credits when a project is verified and fails closed without project authority; EOS GETs remain required.
  * CHANGELOG: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT proves consented, EOS-verified active paid-model greetings route through canonical reasoning instead of silently returning built-in courtesy; isolated fallback stays nonmetered.
  * CHANGELOG: v1.51.0-PERSONAL-COURTESY-CERT certifies authenticated name-aware casual exchanges and continuity language without claiming model inference or crossing EOS authority.
  * CHANGELOG: v1.50.2-BROWSER-SAFE-RAW-CERT retains source contract checks using Vite raw imports instead of a Node filesystem dependency under jsdom; no test assertions weakened.
@@ -1861,7 +1862,13 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path, options]) =>
       path === '/wilsy-ai/reasoning/context' && options?.params?.project_id === projectId)).toBe(true));
     expect(screen.queryByRole('region', { name: 'Needs your attention' })).not.toBeInTheDocument();
-    requestReadOnlySource('Inspect MW-T11');
+    // A natural follow-up is allowed to reach exactly the same verified
+    // source lookup without any paid-model entitlement or provider binding.
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: "Let's inspect MW-T11" },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
     await waitFor(() => expect(screen.getByLabelText('EOS-verified selected task lifecycle'))
       .toHaveTextContent('in progress'));
     const liveTask = await screen.findByRole('region', { name: 'Live EOS task' });
@@ -1941,6 +1948,21 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => expect(mockPersistTurn).toHaveBeenCalledTimes(2));
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(await screen.findByText(/MW-T11 · EOS lifecycle activity/)).toBeVisible();
+  });
+
+  it('does not allow a natural task-inspection phrase to bypass missing EOS project authority', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'natural-task-principal', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
+      target: { value: "Let's inspect MW-T12" },
+    });
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(await screen.findByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent('Open the verified project before inspecting a task');
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
   it('opens selected task operation from a restored SOURCE view without reusing the old locator', async () => {
@@ -2569,7 +2591,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT
+ * VERSION: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
