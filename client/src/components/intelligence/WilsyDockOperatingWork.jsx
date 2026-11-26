@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.5.0-MW-T11-QUIET-TENANT-NEUTRAL-WORK
+ * VERSION: v1.6.0-IN-APP-WORK-NAVIGATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.6.0-IN-APP-WORK-NAVIGATION uses React Router for in-app EOS work links to avoid restarting authentication/tenant bootstrap on every Open; keeps accessible real anchors, modifier-key browser behavior, destination reauthorization and non-router test compatibility.
  * CHANGELOG: v1.5.0-MW-T11-QUIET-TENANT-NEUTRAL-WORK reduces task-title visual weight and uses compact neutral sentence-case source metadata for every tenant; exact EOS source order, priority, overdue date and authorized navigation remain unchanged.
  * CHANGELOG: v1.4.0-MW-T11-SCANNABLE-SOURCE-WORK replaces repeated technical ranking prose with a quiet numeric EOS-order position and readable secondary source/priority/date, preserving full canonical ranking explanation in the row title and exact task selection semantics. No source rank recomputation, action authority or approval inference.
  * CHANGELOG: v1.3.0-MW-T11-SOURCE-RANKED-HANDOFF displays EOS's authorized source identity and returned work order with priority/deadline evidence, then confirms the selected Projects task binding before independent Projects reauthorization on navigation. Neither source ordering nor status is inferred.
@@ -19,6 +20,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link, useInRouterContext } from 'react-router-dom';
 import { sha3_512 } from 'js-sha3';
 import api from '../../services/api.js';
 import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
@@ -31,6 +33,16 @@ import styles from './WilsyOSIntelligenceDock.module.css';
 const pendingCommands = new Map();
 const pendingArtifacts = new Map();
 const pendingProviderDrafts = new Map();
+
+// Internal EOS work navigation belongs to the currently mounted SPA Router.
+// Keep real href semantics for copied URLs and modifier keys; when the component
+// is embedded in an isolated test without Router, retain a normal anchor.
+function DockWorkLink({ href, children, ...props }) {
+  const inRouter = useInRouterContext();
+  return inRouter
+    ? <Link to={href} {...props}>{children}</Link>
+    : <a href={href} {...props}>{children}</a>;
+}
 
 // Preserve the exact position supplied by EOS. Show only useful secondary
 // facts in the row; the accessible row title preserves the source explanation.
@@ -456,14 +468,14 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
                       workspace: 'PROJECTS', project_id: item.project_id,
                       task_id: item.work_item_id, participant_view: true,
                     })}>{label}</button>
-                  : <a {...common} href={'/headquarters?section=my-work&work='
-                    + encodeURIComponent(item.source_key)}>{label}</a>;
+                  : <DockWorkLink {...common} href={'/headquarters?section=my-work&work='
+                    + encodeURIComponent(item.source_key)}>{label}</DockWorkLink>;
               })()}
             </li>)}</ol>
             : <p>{view.data.sources_included.length ? 'No active work in the verified sources.' : 'No work sources were admitted for this session.'}</p>}
           <div className={styles.attentionFooterActions}>
             <button type="button" onClick={() => setRetry(value => value + 1)}>Refresh work</button>
-            <a href="/headquarters?section=my-work">View all in My Work</a>
+            <DockWorkLink href="/headquarters?section=my-work">View all in My Work</DockWorkLink>
           </div></>
           : brief && <>
             {handoffConfirmed && <p role="status" aria-label="EOS-confirmed work handoff">
@@ -477,7 +489,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
               <p className={styles.nextAction}>EOS action order: {actions.map(action => action.outcome).join(' · ')}. Each operation rechecks current source authority.</p>
               <div className={styles.operatingActions} aria-label="Suggested task actions">
                 {actions.map(action => action.kind === 'OPEN_TASK' || action.kind === 'REVIEW_EVIDENCE'
-                  ? <a key={action.id} href={dockTaskPath(action.source, action.kind === 'REVIEW_EVIDENCE')}>{action.outcome}</a>
+                  ? <DockWorkLink key={action.id} href={dockTaskPath(action.source, action.kind === 'REVIEW_EVIDENCE')}>{action.outcome}</DockWorkLink>
                   : <button key={action.id} type="button" data-primary={action.priority === 0 ? 'true' : undefined}
                     disabled={busy || (action.execution.operation === 'PROJECT_TASK_TRANSITION' && (continuityBlocked || Boolean(pending)))}
                     onClick={() => action.kind === 'DRAFT_PLAN' ? void draft() : void transition(action)}>{action.kind === 'DRAFT_PLAN' && providerReady && usageConsent ? 'Generate alignment plan' : action.outcome}</button>)}
@@ -508,7 +520,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.5.0-MW-T11-QUIET-TENANT-NEUTRAL-WORK
+// VERSION: v1.6.0-IN-APP-WORK-NAVIGATION
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
