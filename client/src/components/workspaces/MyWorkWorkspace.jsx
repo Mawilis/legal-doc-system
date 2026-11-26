@@ -535,7 +535,7 @@ export default function MyWorkWorkspace(props = {}) {
       params.set('section', 'projects');
       params.set('project', destination.locator.project_id);
       params.set('task', destination.locator.task_id);
-      navigate({ pathname: location.pathname, search: '?' + params.toString() });
+      navigate({ pathname: '/headquarters', search: '?' + params.toString() });
       return;
     }
     setActionError('');
