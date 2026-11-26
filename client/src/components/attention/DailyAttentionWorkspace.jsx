@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.18.1-BOUNDED-CALENDAR-REFRESH
+ * VERSION: v3.19.0-CANONICAL-SOURCE-TASK-OPEN
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -10,6 +10,7 @@
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v3.19.0-CANONICAL-SOURCE-TASK-OPEN routes explicit Open task controls to the single source-owned task destination; legacy in-panel detail remains a read-only inspection path.
  * CHANGELOG: v3.18.1-BOUNDED-CALENDAR-REFRESH restores a working
  *          source revalidation control inside focused calendar mode,
  *          with no duplicate task API or widened authorization.
@@ -1293,7 +1294,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.18.1-BOUNDED-CALENDAR-REFRESH
+// VERSION: v3.19.0-CANONICAL-SOURCE-TASK-OPEN
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.
