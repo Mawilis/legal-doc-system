@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.1.0-READONLY-ISOLATION-DENIAL-TEST
+VERSION: v1.2.0-ISOLATION-CLI-FAILCLOSED-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.0-ISOLATION-CLI-FAILCLOSED-CERT verifies the real
+           read-only CLI denies wildcard, refuses mutation flag combinations
+           before opening network sessions and never issues POST/DELETE.
 CHANGELOG: v1.1.0-READONLY-ISOLATION-DENIAL-TEST guards against
            wildcard, broader, duplicate, unattributed and private network
            inventory without making Atlas requests or launching ECS.
@@ -241,8 +244,38 @@ def test_readonly_network_cert_proves_only_ip_inventory(capsys) -> None:
     assert "MW_T12_ATLAS_BACKUP_RESTORE_CERTIFIED=FALSE" in output
 
 
+def test_readonly_isolation_cli_fails_closed_without_mutation(
+    monkeypatch, capsys,
+) -> None:
+    """The operator flag must deny a wildcard without changing Atlas."""
+    class FakeClient:
+        def close(self):
+            pass
+    monkeypatch.setattr(admission, "atlas_session", lambda: FakeClient())
+    monkeypatch.setattr(admission, "inventory",
+                        lambda client: [{"cidrBlock": "0.0.0.0/0"}])
+    monkeypatch.setattr(admission, "atlas", lambda *a, **k:
+                        pytest.fail("MUST_NOT_MUTATE_ATLAS"))
+    result = admission.main(["--certify-isolation"])
+    assert result == 2
+    output = capsys.readouterr().out
+    assert "MW_T12_ERROR=ATLAS_PUBLIC_NETWORK_WILDCARD_PRESENT" in output
+    assert "MW_T12_ATLAS_ACCESS_ADMISSION=FAIL_CLOSED" in output
+
+
+def test_isolation_flag_never_combines_with_network_write(monkeypatch) -> None:
+    """Reject disallowed combinations before any API credential prompt."""
+    monkeypatch.setattr(admission, "atlas_session", lambda:
+                        pytest.fail("MUST_NOT_OPEN_ATLAS_SESSION"))
+    result = admission.main([
+        "--certify-isolation", "--admit-six-hours",
+        "--task-arn", TASK_ARN,
+    ])
+    assert result == 2
+
+
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.1.0-READONLY-ISOLATION-DENIAL-TEST
+# VERSION: v1.2.0-ISOLATION-CLI-FAILCLOSED-CERT
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
