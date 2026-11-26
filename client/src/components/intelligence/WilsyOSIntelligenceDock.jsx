@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND
+ * VERSION: v4.61.1-EXPLICIT-WORK-LOCATOR
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.61.1-EXPLICIT-WORK-LOCATOR makes Conversation navigation leave the work view and an explicitly selected task enter it without requiring a redundant click.
  * CHANGELOG: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND defaults to transcript, opens EOS work on demand, restores chat after send/history selection and scrolls to latest assistant reply.
  * CHANGELOG: v4.60.0-PERMISSIONED-OPERATING-JOURNEY wires controlled briefs, actions,
  * deterministic editable PDF drafts and task-linked encrypted continuity.
@@ -1401,6 +1402,9 @@ export function WilsyOSIntelligenceDock({
           || !Number.isSafeInteger(candidate.task_revision) || candidate.task_revision < 1))
         || (candidate.participant_view !== undefined && typeof candidate.participant_view !== 'boolean')) return;
       setWorkLocator(previous => JSON.stringify(previous) === JSON.stringify(candidate) ? previous : { ...candidate });
+      // Explicit task selection enters the governed operating view; incidental
+      // Headquarters context does not display a persistent attention queue.
+      setWorkSurfaceOpen(Boolean(candidate.task_id));
     };
     window.addEventListener('wilsy:ai-context-locator', receive);
     window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
@@ -2726,7 +2730,7 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockNavBar} role="navigation" aria-label="Intelligence Dock navigation">
             <button type="button"
               className={`${styles.navTabButton} ${activeTab === 'chat' ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab('chat')}>
+              onClick={() => { setWorkSurfaceOpen(false); setActiveTab('chat'); }}>
               <MessageSquareText size={15}/><span>Conversation</span>
             </button>
             <button type="button"
@@ -3544,7 +3548,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND
+ * VERSION: v4.61.1-EXPLICIT-WORK-LOCATOR
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
