@@ -1070,11 +1070,12 @@ export default function MyWorkWorkspace(props = {}) {
                 <p className="mt-2 text-xs text-slate-400">This is read-only Projects source evidence, not a task status transition or permission to view predecessor records.</p>
               </section>}
               {selectedItem.source === 'CRM' && taskDetailTab === 'DETAILS' && (
-                <p role="status" className="text-xs text-slate-600">
+                <p role={crmDetailState === 'UNAVAILABLE' ? 'alert' : 'status'}
+                  className={crmDetailState === 'UNAVAILABLE' ? 'text-xs text-rose-800' : 'text-xs text-slate-600'}>
                   {crmDetailState === 'VERIFIED'
                     ? 'Current task source independently verified by EOS. No CRM editing or completion authority is inferred from task visibility.'
                     : crmDetailState === 'UNAVAILABLE'
-                      ? 'CRM source detail could not be verified. Review the source status before editing.'
+                      ? 'CRM source detail could not be verified (' + crmDetailError + '). No CRM actions are available.'
                       : 'Verifying CRM source record independently with EOS…'}
                 </p>
               )}
