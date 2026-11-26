@@ -2402,8 +2402,8 @@ export default function ProjectTasksPanel({
                 locator={{ workspace: 'PROJECTS', project_id: projectId,
                   task_id: drawerTask.task_id, task_revision: drawerTask.revision,
                   participant_view: Boolean(selfIsContributor) }}
-                providerReady={false} usageConsent={false}
-                onVerified={() => {}} onRecord={() => {}} />
+                providerReady={false} usageConsent={false} readOnly
+                onVerified={() => { void load(offset); }} onRecord={() => {}} />
             </section> : <>
             {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section
               className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4"
