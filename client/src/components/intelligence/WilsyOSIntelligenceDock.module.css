@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.13.0-OPERATING-WORK-ARTIFACTS
+ * VERSION: v1.14.0-CONVERSATION-FOCUS
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.14.0-CONVERSATION-FOCUS compresses recents to a searchable text list and keeps work actions opt-in, preserving keyboard focus and existing color contrast.
  * CHANGELOG: v1.13.0-OPERATING-WORK-ARTIFACTS adds compact work actions and an accessible editable artifact area.
  * CHANGELOG: v1.8.0-BALANCED-FOLLOWUP-ROW uses a full-width responsive auto-fit grid for contextual follow-ups so two choices occupy balanced equal-width action lanes; retains transparent inline actions, keyboard focus, reduced-motion and source-only authority.
  * CHANGELOG: v1.7.0-QUIET-CONVERSATION-WORK-ACTIONS adds accessible, low-chrome inline contextual actions, a flexible follow-up row, clearly focused work links and restrained responsive focus treatment instead of bulky black/gold rectangular status buttons.
@@ -1592,4 +1593,42 @@
 }
 @media(prefers-reduced-motion:reduce){
   .intelligenceDockContainer .liveTaskRefresh{transition:none}
+}
+
+/* v1.14.0: History is a compact conversation navigator, never a landing banner. */
+.intelligenceDockContainer .historyTabContent {
+  gap: 8px;
+  padding: 12px clamp(12px, 2vw, 20px);
+}
+.intelligenceDockContainer .historyNavigatorHead {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+.intelligenceDockContainer .historyNavigatorHead h4 {
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 620;
+}
+.intelligenceDockContainer .historyNewButton {
+  min-height: 36px;
+  padding: 6px 11px;
+  font-size: 12px;
+}
+.intelligenceDockContainer .historyArchiveStatus {
+  padding: 2px 0 5px;
+  font-size: 11px;
+}
+.intelligenceDockContainer .historyArchiveStatus button { min-height: 30px; }
+.intelligenceDockContainer .historyToolbar { gap: 8px; align-items: center; }
+.intelligenceDockContainer .historySearch { gap: 0; }
+.intelligenceDockContainer .historySearch span { display: none; }
+.intelligenceDockContainer .historySearch input { min-height: 36px; padding: 6px 10px; }
+.intelligenceDockContainer .historyOpenRow { gap: 3px; padding: 9px 8px; }
+.intelligenceDockContainer .historyGroupHeading { padding: 9px 0 4px; }
+.intelligenceDockContainer .historyEmpty { padding: 16px 8px; }
+.intelligenceDockContainer .historyFooter { margin-top: 4px; }
+@media(max-width:600px) {
+  .intelligenceDockContainer .historyNavigatorHead { flex-wrap: wrap; }
+  .intelligenceDockContainer .historyToolbar { gap: 6px; }
 }
