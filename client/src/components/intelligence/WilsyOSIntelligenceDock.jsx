@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY
+ * VERSION: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY retains the LIVE TASK strip in a fresh conversation when independent EOS context still verifies the exact selected Projects task; never treats the new thread's absent locator as a source failure.
  * CHANGELOG: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY resolves narrow pronouns from the currently independently verified selected EOS task; otherwise presents explicit missing-task guidance before provider admission.
  * CHANGELOG: v4.75.1-EXACT-ANSWER-CONTINUITY binds pronoun follow-ups to the latest source-verified assistant reply naming the current EOS task; unlocated existing threads cannot silently borrow a different task's facts.
  * CHANGELOG: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS resolves bounded selected-task questions and verified same-thread pronouns into the already-governed nonbillable multi-source briefing, without widening provider, task or tenant authority.
@@ -3237,7 +3238,11 @@ export function WilsyOSIntelligenceDock({
                 {!isLegalDockRole(authUser?.role) && workLocator.workspace === 'PROJECTS'
                   && workLocator.task_id
                   && (workSurfaceOpen || conversationView === 'SOURCE'
-                    || activeThread?.workLocator?.task_id === workLocator.task_id) && (
+                    || activeThread?.workLocator?.task_id === workLocator.task_id
+                    || (visibleWorkspaceContext?.state === 'READY'
+                      && visibleWorkspaceContext.data?.locator?.workspace === 'PROJECTS'
+                      && visibleWorkspaceContext.data?.locator?.project_id === workLocator.project_id
+                      && visibleWorkspaceContext.data?.work?.selected_task?.task_id === workLocator.task_id)) && (
                   <div className={styles.liveTaskStrip} role="region" aria-label="Live EOS task">
                     <div className={styles.liveTaskFacts} aria-live="polite">
                       <span className={styles.liveTaskLabel}>LIVE TASK</span>
@@ -4055,7 +4060,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.75.2-SELECTED-TASK-PRONOUN-RECOVERY
+ * VERSION: v4.75.3-VERIFIED-TASK-STRIP-CONTINUITY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
