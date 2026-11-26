@@ -29,6 +29,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // React 18's test act() is unavailable when an inherited production
+    // NODE_ENV selects react.production.min.js. Set the worker environment
+    // before Testing Library and React are imported; never weaken assertions.
+    env: { NODE_ENV: 'test' },
     setupFiles: [resolveSetupFile()],
     include: ['tests/**/*.{test,spec}.{js,jsx}', 'src/**/*.{test,spec}.{js,jsx}'],
   },
