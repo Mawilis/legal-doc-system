@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING
+ * VERSION: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION fixes escaped regex/newline syntax in the exact-task read-only briefing path before testing.
  * CHANGELOG: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING adds an explicit nonbillable selected-task briefing with independently validated Projects task-list, events, discussions, attachments and approval reads, reconciles civil deadlines and distinguishes evidence from certification.
  * CHANGELOG: v4.73.1-REPLAY-LOCK-PRESERVED keeps exact uncertain-reconciliation replay disabled while still allowing other nonempty submissions to receive explicit, fail-closed admission feedback without model execution.
  * CHANGELOG: v4.73.0-VISIBLE-SEND-ADMISSION permits nonempty Send to reach the existing fail-closed admission handler, returning visible provider, entitlement, consent and replay refusals without issuing prohibited model requests.
@@ -2152,7 +2153,7 @@ export function WilsyOSIntelligenceDock({
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       const briefingCode = isLegalDockRole(authUser?.role) ? null
-        : /^(?:brief|summari[sz]e|assess)\\s+(MW-T\\d{1,3})(?:\\s+(?:from|using)\\s+EOS)?[?.!]?$/i
+        : /^(?:brief|summari[sz]e|assess)\s+(MW-T\d{1,3})(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i
           .exec(text)?.[1]?.toUpperCase() || null;
       if (briefingCode) {
         const scopeAtStart = dockScopeRef.current;
@@ -2184,7 +2185,7 @@ export function WilsyOSIntelligenceDock({
           const due = exactTask.due_date ?? exactTask.due_at ?? null;
           const contextDue = task.due_at ?? task.due_date ?? null;
           const normalizeDue = value => typeof value === 'string'
-            && /^\\d{4}-\\d{2}-\\d{2}(?:$|T)/.test(value)
+            && /^\d{4}-\d{2}-\d{2}(?:$|T)/.test(value)
             ? value.slice(0, 10) : null;
           const authoritativeDue = normalizeDue(due);
           const projectedDue = normalizeDue(contextDue);
@@ -2207,36 +2208,36 @@ export function WilsyOSIntelligenceDock({
           const lastEvent = [...evidence.events.items].sort(
             (a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))[0];
           const latestUpdate = latestComment
-            ? '\\nLatest recorded comment (' + latestComment.created_at + '): '
-              + latestComment.body.replace(/\\s+/g, ' ').slice(0, 350)
-            : '\\nNo discussion comments on the verified first page.';
-          const pageLine = (name, page) => '\\n' + name + ': '
+            ? '\nLatest recorded comment (' + latestComment.created_at + '): '
+              + latestComment.body.replace(/\s+/g, ' ').slice(0, 350)
+            : '\nNo discussion comments on the verified first page.';
+          const pageLine = (name, page) => '\n' + name + ': '
             + page.items.length + (page.has_more ? '+ on first page; more pages require inspection' : ' verified records');
           const attachmentsClean = evidence.attachments.items.filter(
             item => item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').length;
           const approvalsPending = evidence.approvals.items.filter(
             item => item.status === 'PENDING' || item.status === 'REJECTED').length;
           const result = 'EOS source briefing · ' + task.title
-            + '\\nLifecycle: ' + exactTask.status.replaceAll('_', ' ').toLowerCase()
+            + '\nLifecycle: ' + exactTask.status.replaceAll('_', ' ').toLowerCase()
             + ' · revision ' + exactTask.revision
-            + '\\nAccountable contributor: ' + (task.assignee_name || 'Name not verified by EOS')
-            + '\\nDeadline: ' + deadline
-            + '\\nDependencies: ' + (!graphVerified ? 'Current predecessor graph not verified'
+            + '\nAccountable contributor: ' + (task.assignee_name || 'Name not verified by EOS')
+            + '\nDeadline: ' + deadline
+            + '\nDependencies: ' + (!graphVerified ? 'Current predecessor graph not verified'
               : linked.length === 0 ? 'No recorded predecessors'
                 : pending.length + ' of ' + linked.length + ' unfinished'
                   + (pending.length ? ' · ' + pending.slice(0, 5).map(item =>
                     item.title + ' (' + item.status.toLowerCase() + ')').join('; ') : ''))
             + pageLine('Lifecycle events', evidence.events)
-            + (lastEvent ? '\\nLatest event: ' + lastEvent.event_type.replaceAll('_', ' ').toLowerCase()
+            + (lastEvent ? '\nLatest event: ' + lastEvent.event_type.replaceAll('_', ' ').toLowerCase()
               + ' · ' + lastEvent.occurred_at : '')
             + pageLine('Discussion comments', evidence.comments) + latestUpdate
             + pageLine('Attachments', evidence.attachments)
-            + '\\nVerified scan-clean attachments on this page: ' + attachmentsClean
+            + '\nVerified scan-clean attachments on this page: ' + attachmentsClean
             + pageLine('Approval decisions', evidence.approvals)
-            + '\\nPending or rejected decisions on this page: ' + approvalsPending
-            + '\\nSource records and discussion do not independently certify acceptance,'
+            + '\nPending or rejected decisions on this page: ' + approvalsPending
+            + '\nSource records and discussion do not independently certify acceptance,'
             + ' production deployment, rollback, approval completion or strategic outcomes.'
-            + '\\nPython EOS · Read-only, nonbillable. No model or task command invoked.';
+            + '\nPython EOS · Read-only, nonbillable. No model or task command invoked.';
           let thread = activeThread;
           if (!thread?.id) thread = await createWilsyAIConversationThread({
             title: 'EOS briefing · ' + briefingCode, workspace: 'Projects',
@@ -3000,7 +3001,7 @@ export function WilsyOSIntelligenceDock({
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt)
     || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt)
-    || /^(?:brief|summari[sz]e|assess)\\s+MW-T\\d{1,3}(?:\\s+(?:from|using)\\s+EOS)?[?.!]?$/i.test(prompt.trim()));
+    || /^(?:brief|summari[sz]e|assess)\s+MW-T\d{1,3}(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i.test(prompt.trim()));
   const localCourtesyIntent = Boolean((!consentedReasoningReady
     && resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser))
     || resolveWilsyLocalClock(prompt)
@@ -3982,7 +3983,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING
+ * VERSION: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
