@@ -1,5 +1,5 @@
 """TITLE: MW-T12 synthetic Atlas temporary source-IP admission.
-VERSION: v1.4.0-SAFE-ADMIN-API-DENIAL-CODES
+VERSION: v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inventory the shared free Atlas test project's network exposure and
          optionally admit exactly one verified ECS task public source IP for
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Read-only AWS ECS/EC2 identity via existing MW-T12
          task admission; Atlas Admin API v2 project-scoped network capability.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY adds opt-in
+           client-credentials OAuth for existing Atlas Service Accounts,
+           limited to read-only project access inventory and isolation audit;
+           validates short-lived Bearer token and never prints credentials.
 CHANGELOG: v1.4.0-SAFE-ADMIN-API-DENIAL-CODES preserves only status-class
            diagnostics for Atlas API 401/403/429, without exposing body,
            headers, credentials, or mistaking API-key IP allowlists for DB
@@ -53,7 +57,7 @@ import re
 
 from tools.eos.ops import mw_t12_task_definition_admission as ecs
 
-VERSION = "v1.4.0-SAFE-ADMIN-API-DENIAL-CODES"
+VERSION = "v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY"
 PROJECT = "668cdbbd975c3c0f05fca20c"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
@@ -64,6 +68,7 @@ PUBLIC_IP_TTL_HOURS = 6
 OWNED_COMMENT_PREFIX = "MW-T12 task "
 ATLAS_API = "https://cloud.mongodb.com/api/atlas/v2/groups/" + PROJECT
 ATLAS_MEDIA_TYPE = "application/vnd.atlas.2024-08-05+json"
+OAUTH_TOKEN_URL = "https://cloud.mongodb.com/api/oauth/token"
 TASK_ARN = re.compile(
     r"arn:aws:ecs:af-south-1:121014832643:task/"
     r"wilsy-mwt12-nonproduction/[0-9a-f]{32}\Z"
@@ -80,24 +85,75 @@ def require(condition: bool, reason: str) -> None:
         raise NetworkAdmissionError(reason)
 
 
-def atlas_session():
-    """Build digest-auth Atlas transport from non-echoing operator inputs only.
+def atlas_session(auth_mode: str = "api-key"):
+    """Create a process-local Atlas client with one explicit auth mechanism.
 
-    Credentials never pass through command arguments, environment variables,
-    logs, exceptions or saved files. Returned session is process-local.
+    The legacy API-key mode retains Digest; Service Account mode obtains an
+    OAuth2 Bearer token solely for the project-scoped, read-only inventory.
+    Client secrets/access tokens never enter command arguments, environment,
+    source files, exceptions, application logs, or user-visible output.
     """
+    require(auth_mode in {"api-key", "service-account"},
+            "ATLAS_AUTH_MODE_INVALID")
     try:
         import requests
-        from requests.auth import HTTPDigestAuth
+        from requests.auth import HTTPBasicAuth, HTTPDigestAuth
     except ImportError as exc:
         raise NetworkAdmissionError("ATLAS_REQUESTS_DEPENDENCY_REQUIRED") from exc
-    public = getpass("Atlas Admin API public key (hidden): ")
-    private = getpass("Atlas Admin API private key (hidden): ")
-    require(bool(public and private), "ATLAS_API_CREDENTIALS_REQUIRED")
+    if auth_mode == "api-key":
+        public = getpass("Atlas Admin API public key (hidden): ")
+        private = getpass("Atlas Admin API private key (hidden): ")
+        require(bool(public and private), "ATLAS_API_CREDENTIALS_REQUIRED")
+        client = requests.Session()
+        client.auth = HTTPDigestAuth(public, private)
+        client.headers.update({"Accept": ATLAS_MEDIA_TYPE})
+        return client
+
+    client_id = getpass("Atlas test-project Service Account Client ID (hidden): ")
+    client_secret = getpass("Atlas test-project Service Account Secret (hidden): ")
+    require(bool(client_id and client_secret)
+            and len(client_id) <= 256 and len(client_secret) <= 2048,
+            "ATLAS_SERVICE_ACCOUNT_CREDENTIALS_REQUIRED")
     client = requests.Session()
-    client.auth = HTTPDigestAuth(public, private)
-    client.headers.update({"Accept": ATLAS_MEDIA_TYPE})
-    return client
+    try:
+        # The OAuth token endpoint uses Basic client authentication and
+        # form-encoded client_credentials. The Atlas Admin API itself uses
+        # the resulting Bearer token; no OAuth credential is persisted.
+        result = client.post(
+            OAUTH_TOKEN_URL,
+            auth=HTTPBasicAuth(client_id, client_secret),
+            data={"grant_type": "client_credentials"},
+            headers={"Accept": "application/json"},
+            timeout=20,
+            allow_redirects=False,
+        )
+        if result.status_code == 401:
+            raise NetworkAdmissionError("ATLAS_OAUTH_CLIENT_AUTH_DENIED_401")
+        if result.status_code == 403:
+            raise NetworkAdmissionError("ATLAS_OAUTH_CLIENT_ACCESS_DENIED_403")
+        if result.status_code == 429:
+            raise NetworkAdmissionError("ATLAS_OAUTH_RATE_LIMITED_429")
+        require(result.status_code == 200, "ATLAS_OAUTH_TOKEN_UNAVAILABLE")
+        require(len(result.content) <= 16384, "ATLAS_OAUTH_RESPONSE_OVERSIZED")
+        payload = result.json()
+        require(isinstance(payload, dict), "ATLAS_OAUTH_RESPONSE_INVALID")
+        token = payload.get("access_token")
+        duration = payload.get("expires_in")
+        require(payload.get("token_type") == "Bearer"
+                and isinstance(token, str) and 0 < len(token) <= 8192
+                and type(duration) is int and 0 < duration <= 3600,
+                "ATLAS_OAUTH_TOKEN_INVALID")
+        client.headers.update({
+            "Accept": ATLAS_MEDIA_TYPE,
+            "Authorization": "Bearer " + token,
+        })
+        return client
+    except NetworkAdmissionError:
+        client.close()
+        raise
+    except Exception:
+        client.close()
+        raise NetworkAdmissionError("ATLAS_OAUTH_TRANSPORT_OR_RESPONSE_INVALID") from None
 
 
 def atlas(client, method: str, route: str, *, payload=None, params=None):
@@ -433,6 +489,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="MW-T12 isolated Atlas source-network admission")
     parser.add_argument("--profile", default="wilsy-legal-cert")
+    parser.add_argument("--auth-mode", choices=("api-key", "service-account"),
+                        default="api-key",
+                        help="Explicit Atlas Admin API authentication mode")
     parser.add_argument("--task-arn", help="Exact running owned Fargate task ARN")
     parser.add_argument("--certify-isolation", action="store_true",
                         help="Read-only deny of unowned or public Atlas access")
@@ -445,6 +504,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="Exact recorded /32 source IPv4 for owned rollback")
     args = parser.parse_args(argv)
     try:
+        require(args.auth_mode != "service-account" or (
+            args.certify_isolation and not (args.task_arn or args.admit_six_hours
+                                            or args.revoke_owned
+                                            or args.owned_source_ip)),
+            "SERVICE_ACCOUNT_AUTH_READ_ONLY_ISOLATION_REQUIRED")
         require(not args.certify_isolation or not (
             args.admit_six_hours or args.revoke_owned or args.task_arn
             or args.owned_source_ip), "ISOLATION_AUDIT_MUST_BE_READ_ONLY")
@@ -455,7 +519,7 @@ def main(argv: list[str] | None = None) -> int:
                 "OWNED_SOURCE_IP_REQUIRED_FOR_ROLLBACK")
         require(not args.owned_source_ip or args.revoke_owned,
                 "SOURCE_IP_ONLY_ALLOWED_FOR_ROLLBACK")
-        client = atlas_session()
+        client = atlas_session(args.auth_mode)
         try:
             entries = inventory(client)
             audit_entries(entries)
@@ -489,7 +553,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_access_admission.py
-# VERSION: v1.4.0-SAFE-ADMIN-API-DENIAL-CODES
+# VERSION: v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY
 # AUTHORITY BOUNDARY: Exact temporary /32 source add/owned delete only.
 # TENANT POSTURE: Synthetic test database only; no production read/write.
 # FAIL-CLOSED POSTURE: Wildcard add blocked; delete restricted to owned task.
