@@ -5,14 +5,15 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY
+ * VERSION: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/MyWorkWorkspace.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS makes CRM work open as a task-first, light, tabbed execution surface. The independently authorized CRM editor, status actions and history remain available under explicit Source actions & history. No CRM record is masqueraded as a Projects task, and EOS ownership and readback are unchanged.
  * CHANGELOG: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY restores the
  *          prior direct EOS queue GET because existing source-owned queue
  *          suites do not provision complete current AuthContext credentials.
@@ -316,6 +317,7 @@ export default function MyWorkWorkspace(props = {}) {
   const requestControllerRef = useRef(null);
   const rowRefs = useRef(new Map());
   const [selectedKey, setSelectedKey] = useState(null);
+  const [taskDetailTab, setTaskDetailTab] = useState('DETAILS');
   const closeButtonRef = useRef(null);
   const queueHeadingRef = useRef(null);
   const previousSelectedRef = useRef(null);
@@ -904,7 +906,7 @@ export default function MyWorkWorkspace(props = {}) {
                           if (element) rowRefs.current.set(item.source_key, element);
                           else rowRefs.current.delete(item.source_key);
                         }}
-                        onClick={() => { setActionError(''); setCrmEditNotice(null); setCloseGuard(false); setSelectedKey(item.source_key); }}
+                        onClick={() => { setActionError(''); setCrmEditNotice(null); setCloseGuard(false); setTaskDetailTab('DETAILS'); setSelectedKey(item.source_key); }}
                         className="grid min-h-14 w-full grid-cols-1 items-center gap-2 px-3 py-2 text-left outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] sm:gap-3 sm:px-4">
                         <span className="min-w-0">
                           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -980,6 +982,19 @@ export default function MyWorkWorkspace(props = {}) {
               </button>
             </header>
 
+            <nav className="flex flex-wrap gap-2 border-b border-[#d5dfef] px-4 py-3 sm:px-6" aria-label="Task work views">
+              <button type="button" aria-pressed={taskDetailTab === 'DETAILS'}
+                onClick={() => setTaskDetailTab('DETAILS')}
+                className="min-h-10 rounded-lg border border-[#c9d6e8] bg-white px-4 text-sm font-medium text-[#18365f] aria-pressed:bg-[#1747ce] aria-pressed:text-white">
+                Details
+              </button>
+              {selectedItem.source === 'CRM' && <button type="button"
+                aria-pressed={taskDetailTab === 'SOURCE'}
+                onClick={() => setTaskDetailTab('SOURCE')}
+                className="min-h-10 rounded-lg border border-[#c9d6e8] bg-white px-4 text-sm font-medium text-[#18365f] aria-pressed:bg-[#1747ce] aria-pressed:text-white">
+                Source actions &amp; history
+              </button>}
+            </nav>
             <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded border border-amber-300/25 bg-amber-300/[0.07] px-2 py-1 text-xs text-amber-100">{SOURCE_LABELS[selectedItem.source] || selectedItem.source}</span>
@@ -1010,7 +1025,16 @@ export default function MyWorkWorkspace(props = {}) {
                 </p>
                 <p className="mt-2 text-xs text-slate-400">This is read-only Projects source evidence, not a task status transition or permission to view predecessor records.</p>
               </section>}
-              {selectedItem.source === 'CRM' && (
+              {selectedItem.source === 'CRM' && taskDetailTab === 'DETAILS' && (
+                <p role="status" className="text-xs text-slate-600">
+                  {crmDetailState === 'VERIFIED'
+                    ? 'Current CRM record independently verified by EOS. Source-owned edit and history controls are available in Source actions & history.'
+                    : crmDetailState === 'UNAVAILABLE'
+                      ? 'CRM source detail could not be verified. Review the source status before editing.'
+                      : 'Verifying CRM source record independently with EOS…'}
+                </p>
+              )}
+              {selectedItem.source === 'CRM' && taskDetailTab === 'SOURCE' && (
                 <section aria-label="Verified CRM source record"
                   className="min-w-0 space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
                   <h3 className="text-sm font-semibold text-white">CRM source record</h3>
@@ -1672,7 +1696,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY
+ * VERSION: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
