@@ -252,6 +252,14 @@ export function resolveUnifiedWorkDestination(item) {
  * The destination performs fresh authorization; this builds no grant.
  */
 export function resolveUnifiedWorkRoute(item) {
+  // Paginated Attention source keys can omit the source-owned project locator.
+  // Only the current authenticated EOS My Work read may resolve that identity.
+  if (item?.source === 'PROJECTS' && !item.project_id
+    && /^ptk-[0-9a-f]{48}$/.test(item.work_item_id || '')
+    && item.source_key === 'PROJECTS:' + item.work_item_id) {
+    return { pathname: '/my-work', search: '',
+      state: { focusWorkItem: item.source_key } };
+  }
   const destination = resolveUnifiedWorkDestination(item);
   if (destination.kind === 'PROJECTS_TASK') {
     const query = new URLSearchParams({
