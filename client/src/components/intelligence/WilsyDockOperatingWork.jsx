@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE
+ * VERSION: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT independently verifies bounded EOS task events, comments, attachment and approval page identities inside the embedded assessment; distinguishes recorded artifacts from certified milestone execution and offers an evidence-driven next action with no invented completion or model authority.
  * CHANGELOG: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE replaces the in-modal source-prose transcript with a compact independently EOS-verified task assessment, explicit incomplete/predecessor risk, and live Activity/Evidence/Approvals navigation; no new AI model, invented completion, or authorization. Other Dock views remain unchanged.
  * CHANGELOG: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE exposes the existing source-verified task brief without command, attachment or model-generation controls in the Projects task dialog. Full Dock permissions and command gates remain unchanged.
  * CHANGELOG: v1.6.1-IN-APP-WORK-FOCUS minimizes the Dock on an ordinary internal work navigation so the destination task receives the screen, preserving modifier-key copy/new-tab interactions and all original task authorization checks.
@@ -158,6 +159,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
   const [continuityBlocked, setContinuityBlocked] = useState(false);
   const [pendingCommand, setPendingCommand] = useState(null);
   const [retry, setRetry] = useState(0);
+  const [assessment, setAssessment] = useState({ identity: null, state: 'IDLE', sources: {} });
   const current = useRef(identity);
   const generation = useRef(0);
   const lock = useRef(null);
@@ -239,6 +241,83 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
     && envelope.source.project_id === locator.project_id
     && envelope.source.task_id === locator.task_id
     && (locator.task_revision === undefined || envelope.source.revision === locator.task_revision));
+
+  // A verified task identity does not certify its execution. Query the already
+  // canonical Projects records independently, never treating missing endpoints,
+  // truncated first pages or source denials as an empty or complete evidence set.
+  useEffect(() => {
+    if (!embedded || !readOnly || !handoffConfirmed) {
+      setAssessment({ identity: null, state: 'IDLE', sources: {} });
+      return undefined;
+    }
+    const controller = new AbortController();
+    const project = envelope.source.project_id;
+    const task = envelope.source.task_id;
+    const participant = Boolean(envelope.source.participant_view);
+    const sourcePath = '/projects/' + encodeURIComponent(project)
+      + (participant ? '/my-project/tasks/' : '/tasks/') + encodeURIComponent(task);
+    const requestIdentity = identity + ':' + envelope.source.revision
+      + ':' + envelope.source.fingerprint + ':' + retry + ':' + refresh;
+    setAssessment({ identity: requestIdentity, state: 'LOADING', sources: {} });
+    const matchesPage = (page, schema) => page?.schema === schema
+      && page.tenant_id === tenantId && page.principal_id === principalId
+      && page.project_id === project && page.task_id === task
+      && page.limit === 50 && page.offset === 0
+      && typeof page.has_more === 'boolean'
+      && Array.isArray(page.items) && page.items.length <= 50
+      && page.next_offset === (page.has_more ? page.items.length : null);
+    const sourceSpecs = [
+      ['activity', 'events', 'WILSY-PROJECT-TASK-EVENT-LIST/V1', 'wilsy.project.task.event.v1'],
+      ['updates', 'comments', 'WILSY-PROJECT-COMMENT-LIST/V1', 'wilsy.project.comment.v1'],
+      ['evidence', 'attachments', 'WILSY-PROJECT-ATTACHMENT-LIST/V1', 'wilsy.project.attachment.v1'],
+      ['approvals', 'approvals', 'WILSY-PROJECT-APPROVAL-LIST/V1', 'wilsy.project.approval.v1'],
+    ];
+    const load = async () => {
+      const results = await Promise.all(sourceSpecs.map(async ([key, endpoint, schema, itemSchema]) => {
+        try {
+          const response = await api.get(sourcePath + '/' + endpoint + '?limit=50&offset=0', {
+            headers: { 'X-Tenant-ID': tenantId }, signal: controller.signal,
+            timeout: 15000, forceNetworkRetry: true,
+          });
+          const page = response?.data;
+          const valid = matchesPage(page, schema) && page.items.every(item =>
+            item?.schema === itemSchema && item.tenant_id === tenantId
+            && item.project_id === project && item.task_id === task);
+          if (!valid) throw new Error('TASK_ASSESSMENT_SOURCE_INVALID');
+          if (key === 'activity' && page.items.some(item =>
+            !Number.isSafeInteger(item.revision) || item.revision < 1
+            || !['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED'].includes(item.event_type)
+            || !['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status_after))) {
+            throw new Error('TASK_ASSESSMENT_ACTIVITY_INVALID');
+          }
+          if (key === 'evidence' && page.items.some(item =>
+            !/^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
+            || item.state !== 'QUARANTINED'
+            || !['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
+            || Object.hasOwn(item, 'download_url') || Object.hasOwn(item, 'presigned_url'))) {
+            throw new Error('TASK_ASSESSMENT_EVIDENCE_INVALID');
+          }
+          if (key === 'approvals' && page.items.some(item =>
+            !/^par-[a-f0-9]{48}$/.test(item.approval_id || '')
+            || !['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
+            || item.requester_principal_id === item.reviewer_principal_id)) {
+            throw new Error('TASK_ASSESSMENT_APPROVAL_INVALID');
+          }
+          return [key, { state: 'VERIFIED', count: page.items.length,
+            hasMore: page.has_more, items: page.items }];
+        } catch {
+          return [key, { state: 'UNVERIFIED', count: null, hasMore: false, items: [] }];
+        }
+      }));
+      if (!controller.signal.aborted) {
+        setAssessment({ identity: requestIdentity, state: 'READY', sources: Object.fromEntries(results) });
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [embedded, readOnly, handoffConfirmed, identity, envelope?.source.revision,
+    envelope?.source.fingerprint, tenantId, principalId, retry, refresh]);
+
   const record = async (content, token) => {
     if (!isCurrent(token)) return;
     try {
