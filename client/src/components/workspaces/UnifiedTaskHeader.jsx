@@ -1,0 +1,45 @@
+/**
+ * TITLE: WILSY OS Unified Task Header
+ * VERSION: v1.0.0-CANONICAL-SOURCE-NEUTRAL-TASK-PRESENTATION
+ * AUTHORITY: WILSY OS Core Governance
+ * EPITOME: One task-detail header used by Projects and My Work without changing
+ *          EOS source ownership or granting any task action.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/UnifiedTaskHeader.jsx
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * SECURITY: Presentation only; no requests, persistence, IAM, source casting, or mutations.
+ * TENANT: Caller must independently authorize record and its actions.
+ */
+import React from 'react';
+
+export default function UnifiedTaskHeader({
+  kind = 'Task', source, title, status, due, owner,
+  onClose, closeLabel = 'Close', primaryControl = null,
+  reviewNavigation = null, actions = null, titleId,
+}) {
+  return <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
+    <div className="flex items-center justify-between gap-3">
+      <p className="min-w-0 text-xs font-bold uppercase tracking-wide text-slate-600">
+        {kind} · {source} work
+      </p>
+      {primaryControl}
+      <button type="button" onClick={onClose}
+        className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+        aria-label={closeLabel}>{closeLabel}</button>
+    </div>
+    {reviewNavigation}
+    <h2 id={titleId} className="mt-3 break-words text-2xl font-bold leading-tight text-slate-950">{title}</h2>
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+      <span className="rounded-md bg-slate-100 px-3 py-1.5 font-bold text-slate-900">{status}</span>
+      <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">{due || 'No due date'}</span>
+      {owner && <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">{owner}</span>}
+    </div>
+    {actions && <nav className="mt-3 flex flex-wrap gap-2" aria-label="Task execution actions">{actions}</nav>}
+  </header>;
+}
+
+/*
+ * ARTIFACT: UnifiedTaskHeader.jsx
+ * VERSION: v1.0.0-CANONICAL-SOURCE-NEUTRAL-TASK-PRESENTATION
+ * AUTHORITY BOUNDARY: Shared UI only; all commands remain source-owned.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
