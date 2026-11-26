@@ -247,6 +247,22 @@ export function resolveUnifiedWorkDestination(item) {
     href: '/headquarters?section=my-work&work=' + encodeURIComponent(item.source_key) };
 }
 
+/**
+ * Canonical cross-workspace navigation for Daily Attention and Calendar.
+ * The destination performs fresh authorization; this builds no grant.
+ */
+export function resolveUnifiedWorkRoute(item) {
+  const destination = resolveUnifiedWorkDestination(item);
+  if (destination.kind === 'PROJECTS_TASK') {
+    const query = new URLSearchParams({
+      section: 'projects', project: destination.locator.project_id,
+      task: destination.locator.task_id,
+    });
+    return { pathname: '/headquarters', search: '?' + query.toString(), state: null };
+  }
+  return { pathname: '/my-work', search: '', state: { focusWorkItem: item.source_key } };
+}
+
 export function unifiedMyWorkSourceLabel(source) {
   return Object.hasOwn(SOURCES, source) ? SOURCES[source] : null;
 }
