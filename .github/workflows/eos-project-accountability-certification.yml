@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Governed Tenant Projects Assignment Certification
-# VERSION: v1.20.0-TASK-QUARANTINE-UPLOAD-CERT
+# VERSION: v1.21.0-MW-T11-DOCK-ROUTE-CERT
 # AUTHORITY: WILSY OS Python EOS and authenticated client certification.
 # EPITOME: Verify exact-tenant assignment directory, department provisioning
 #          source currentness, revision CAS, immutable audit and client build.
@@ -7,6 +7,9 @@
 # COLLABORATION / OWNERSHIP: Projects router, ProjectRegistry, ProjectsWorkspace,
 #                           sovereign repository integrity and certification.
 # CERTIFICATION / UPDATE DATE: 2026-11-18
+# CHANGELOG: v1.21.0-MW-T11-DOCK-ROUTE-CERT runs the exact
+#            Dock task source/revision and SPA Projects handoff tests
+#            in existing governed Projects CI without a second workflow.
 # CHANGELOG: v1.20.0-TASK-QUARANTINE-UPLOAD-CERT certifies
 #            exact-scope encrypted quarantined task attachments, signature
 #            and SHA3 checks, replay/audit and no unsafe preview/download.
@@ -154,6 +157,8 @@ on:
       - client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
       - client/src/components/workspaces/ProjectParticipantsPanel.jsx
       - client/src/__tests__/components/ProjectsWorkspace.test.jsx
+      - client/src/components/intelligence/WilsyDockOperatingWork.jsx
+      - client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
       - client/src/__tests__/components/ProjectParticipantsPanel.test.jsx
       - .github/workflows/eos-project-accountability-certification.yml
   workflow_dispatch:
@@ -222,7 +227,7 @@ jobs:
         run: node --test scripts/certify-projects-workspace-css.mjs
       - name: Certify project source-backed interaction
         working-directory: client
-        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx src/__tests__/components/ProjectParticipantsPanel.test.jsx src/__tests__/components/ProjectTaskCommentsPanel.test.jsx src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx src/__tests__/components/ProjectApprovalInbox.test.jsx src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx src/__tests__/components/AssignedProjectsWorkspace.test.jsx src/__tests__/services/unifiedMyWorkProjection.test.js
+        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/ProjectsWorkspace.test.jsx src/__tests__/components/ProjectParticipantsPanel.test.jsx src/__tests__/components/ProjectTaskCommentsPanel.test.jsx src/__tests__/components/ProjectTaskApprovalsPanel.test.jsx src/__tests__/components/ProjectApprovalInbox.test.jsx src/__tests__/components/ProjectTaskAttachmentsPanel.test.jsx src/__tests__/components/AssignedProjectsWorkspace.test.jsx src/__tests__/services/unifiedMyWorkProjection.test.js tests/components/intelligence/WilsyDockOperatingWork.test.jsx
       - name: Build certified frontend
         working-directory: client
         run: npm run build
@@ -248,7 +253,7 @@ jobs:
 
 
 # ARTIFACT: eos-project-accountability-certification.yml
-# VERSION: v1.20.0-TASK-QUARANTINE-UPLOAD-CERT
+# VERSION: v1.21.0-MW-T11-DOCK-ROUTE-CERT
 # AUTHORITY BOUNDARY: Exact-head CI only; no IAM grant or business mutation.
 # TENANT POSTURE: Synthetic tenant-scoped verification only.
 # FAIL-CLOSED POSTURE: Python, client and build failures block success.
