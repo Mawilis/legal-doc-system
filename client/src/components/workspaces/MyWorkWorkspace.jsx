@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS
+ * VERSION: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,7 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING opens verified Projects tasks in their source-owned Projects panel. Fixes modal title contrast and duplicate due-date prefix; source commands and IAM remain unchanged.
  * CHANGELOG: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS applies the shared Projects readiness component to all admitted My Work sources, retiring the remaining duplicate legacy metadata/provenance panel; source-specific completion commands remain governed in EOS.
  * CHANGELOG: v1.35.0-SHARED-READINESS-NO-LEGACY-CRM uses the exact Projects execution-readiness component for CRM and strips duplicated legacy CRM summary fields from its primary view; CRM editor/commands stay behind independent capability checks.
  * CHANGELOG: v1.34.0-CANONICAL-TASK-MODAL uses the shared Projects task header and modal interaction for My Work, with source-specific CRM controls hidden until independently authorized. Data/commands remain in the original EOS registry; no source migration or new AI entitlement.
@@ -188,7 +189,7 @@ import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 import { readAttentionSourceActions } from '../../services/attentionFeedClient.js';
-import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
+import { assertUnifiedMyWorkProjection, resolveUnifiedWorkDestination } from '../../services/unifiedMyWorkProjection.js';
 import {
   currentUnifiedMyWorkScope,
   invalidateUnifiedMyWork,
@@ -522,6 +523,26 @@ export default function MyWorkWorkspace(props = {}) {
     UNCLASSIFIED: items.filter((item) => sourceVerifiedAudience(item) === 'UNCLASSIFIED').length,
   }), [items]);
   const selectedItem = items.find((item) => item.source_key === selectedKey) || null;
+  const openSourceOwnedWork = useCallback((item) => {
+    if (!item || !items.some(row => row.source_key === item.source_key)) return;
+    let destination;
+    try { destination = resolveUnifiedWorkDestination(item); }
+    catch { setActionError('MY_WORK_NAVIGATION_SOURCE_INVALID'); return; }
+    if (destination.kind === 'PROJECTS_TASK') {
+      const params = new URLSearchParams(location.search);
+      ['section', 'work', 'project', 'task', 'document', 'returnTo', 'resumeM04'].forEach(key => params.delete(key));
+      params.set('section', 'projects');
+      params.set('project', destination.locator.project_id);
+      params.set('task', destination.locator.task_id);
+      navigate({ pathname: location.pathname, search: '?' + params.toString() });
+      return;
+    }
+    setActionError('');
+    setCrmEditNotice(null);
+    setCloseGuard(false);
+    setTaskDetailTab('DETAILS');
+    setSelectedKey(item.source_key);
+  }, [items, location.pathname, location.search, navigate]);
   const admittedSources = projection?.sources_included || [];
   // Work source admission is NOT permission to edit or complete that source.
   // Only a fresh, exact-principal capability result can expose CRM controls.
@@ -942,7 +963,7 @@ export default function MyWorkWorkspace(props = {}) {
                           if (element) rowRefs.current.set(item.source_key, element);
                           else rowRefs.current.delete(item.source_key);
                         }}
-                        onClick={() => { setActionError(''); setCrmEditNotice(null); setCloseGuard(false); setTaskDetailTab('DETAILS'); setSelectedKey(item.source_key); }}
+                        onClick={() => openSourceOwnedWork(item)}
                         className="grid min-h-14 w-full grid-cols-1 items-center gap-2 px-3 py-2 text-left outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] sm:gap-3 sm:px-4">
                         <span className="min-w-0">
                           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -1013,7 +1034,7 @@ export default function MyWorkWorkspace(props = {}) {
             className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
             <UnifiedTaskHeader kind="Task" source={SOURCE_LABELS[selectedItem.source] || selectedItem.source}
               title={selectedItem.title} status={statusLabel(selectedItem)}
-              due={formatWorkDue(selectedItem) === 'Not set' ? 'No due date' : 'Due ' + formatWorkDue(selectedItem)}
+              due={formatWorkDue(selectedItem)}
               owner={null} onClose={requestClose} closeRef={closeButtonRef} closeLabel="Back to work"
               primaryControl={taskDetailTab === 'SOURCE'
                 ? <button type="button" onClick={() => setTaskDetailTab('DETAILS')}
@@ -1253,6 +1274,8 @@ const PROJECTS_STYLE_MY_WORK = `
 .wilsy-project-work-surface main>div>section button[aria-pressed=false]{background:#f4f7fe!important;color:#18365f!important;border-color:#cedaeb!important}
 .wilsy-project-work-surface main>div>footer{background:#f8faff;border:1px solid #d5dfef;padding:10px 20px}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside{color:#172e52}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside header h2{color:#0f2749!important;visibility:visible!important;opacity:1!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside [aria-label="Source-verified task execution readiness"] h3{color:#12315b!important}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300,.text-amber-100,.text-amber-200){color:#172e52!important}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-slate-400,.text-slate-500){color:#526787!important}
 .wilsy-project-work-surface .wilsy-source-task-focus>aside section:not([aria-label="Source-verified task execution readiness"]){background:#f8faff!important;border:1px solid #d5dfef!important;border-radius:12px}
@@ -1731,7 +1754,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS
+ * VERSION: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
