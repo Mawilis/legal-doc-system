@@ -743,6 +743,13 @@ export default function MyWorkWorkspace(props = {}) {
     setCrmEditNotice(null);
     setCloseGuard(false);
     setSelectedKey(null);
+    const origin = location.state?.attentionReturn;
+    if (origin && typeof origin.pathname === 'string'
+      && origin.pathname.startsWith('/') && !origin.pathname.startsWith('//')
+      && typeof origin.search === 'string') {
+      navigate({ pathname: origin.pathname, search: origin.search },
+        { state: { reopenDailyAttention: true } });
+    }
   };
 
   const complete = async (item) => {
