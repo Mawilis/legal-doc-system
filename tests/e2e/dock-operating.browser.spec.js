@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Authenticated Dock Operating Browser Certificate
- * VERSION: v1.1.0
+ * VERSION: v1.2.0
  * AUTHORITY: Disposable synthetic browser/EOS/Mongo evidence only.
  * EPITOME: Advance real source-owned work from the Dock and recover encrypted task conversations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/dock-operating.browser.spec.js
  * COLLABORATION / OWNERSHIP: Existing browser harness, canonical EOS, Projects and Dock.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.2.0 verifies conversation is primary and work is an explicit replaceable view, preserving authenticated desktop/mobile task selection.
  * CHANGELOG: v1.1.0 certifies mobile lost-response recovery using a real EOS POST, browser reload, and receipt-only reconciliation without a second command.
  * CHANGELOG: v1.0.0 adds desktop/mobile task commands, editable deterministic drafts and refresh continuity.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2.
@@ -69,9 +70,15 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     try {
       await page.goto('/discovery', { waitUntil: 'domcontentloaded' }); await mount();
       if (viewport.width === 1440) {
+        // Task sources do not become a persistent landing panel. The operator
+        // requests the work view explicitly and can return to conversation.
+        await expect(page.getByRole('region', { name: 'Needs your attention' })).toHaveCount(0);
+        await page.getByRole('button', { name: 'Work', exact: true }).click();
         const attention = page.getByRole('region', { name: 'Needs your attention' });
         await expect(attention.getByRole('heading', { name: 'Needs your attention' })).toBeVisible();
         await expect(attention).toContainText('MW-T11 browser alignment');
+        await page.getByRole('button', { name: 'Back to chat' }).click();
+        await expect(attention).toHaveCount(0);
       }
       const selectTask = async () => page.evaluate(({ tenant, principal, project, task }) => {
         window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', { detail: {
@@ -154,7 +161,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 // ARTIFACT: dock-operating.browser.spec.js
-// VERSION: v1.1.0
+// VERSION: v1.2.0
 // AUTHORITY BOUNDARY: authenticated synthetic browser evidence; no Founder acceptance
 // TENANT POSTURE: UUID disposable database and explicit synthetic owner/contributor
 // FAIL-CLOSED POSTURE: real source state, saved history and no model call required
