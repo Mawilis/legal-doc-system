@@ -411,13 +411,13 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
                     workspace: 'PROJECTS', project_id: item.project_id, task_id: item.work_item_id, participant_view: true,
                   })}>
                   <span className={styles.attentionItemText}><strong>{item.title}</strong>
-                    <small>{item.source_key} · {rankedSourceReason(item, index + 1)}</small>
+                    <small>{item.source} · {rankedSourceReason(item, index + 1)}</small>
                   </span><span className={styles.attentionActionCue} aria-hidden="true">Verify</span>
                 </button>
                 : <a className={styles.attentionItemAction}
                     href={"/headquarters?section=my-work&work=" + encodeURIComponent(item.source_key)}>
                   <span className={styles.attentionItemText}><strong>{item.title}</strong>
-                    <small>{item.source_key} · {rankedSourceReason(item, index + 1)}</small>
+                    <small>{item.source} · {rankedSourceReason(item, index + 1)}</small>
                   </span><span className={styles.attentionActionCue} aria-hidden="true">View</span>
                 </a>}
             </li>)}</ol>
