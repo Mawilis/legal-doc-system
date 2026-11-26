@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE
+ * VERSION: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE hides internal comment references from rendered and screen-reader transcripts and rejects delayed full-comment responses after task scope changes.
  * CHANGELOG: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE summarizes EOS discussion cleanly and supports an explicit full-update read via fresh exact-task EOS readback; message archives retain only bounded comment references and no historical transcript is treated as current source.
  * CHANGELOG: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER distinguishes short EOS answers, governed full briefings, semantic fact rows and independent source footers while keeping saved-transcript provenance and source admission unchanged.
  * CHANGELOG: v4.76.1-FOCUSED-TURN-CHAIN treats the prior exact-task source answer as a verified conversational anchor for compact follow-ups, without extending scope to a different task.
@@ -469,6 +470,13 @@ function summarizeWilsySourceComment(value) {
  */
 function WilsyVerifiedCommentDisclosure({ message, workspaceContext, workLocator, tenantId, principalId }) {
   const [state, setState] = useState({ status: 'IDLE', text: '' });
+  const currentScope = [
+    tenantId, principalId, workLocator?.project_id, workLocator?.task_id,
+    workLocator?.task_revision, workspaceContext?.state,
+    workspaceContext?.data?.context_fingerprint,
+  ].join(':');
+  const currentScopeRef = useRef(currentScope);
+  currentScopeRef.current = currentScope;
   const stamp = String(message?.content || '').match(
     /^Source comment reference: (pcm-[a-f0-9]{48}) · ([a-f0-9]{128})$/m);
   const task = workspaceContext?.state === 'READY'
@@ -486,6 +494,7 @@ function WilsyVerifiedCommentDisclosure({ message, workspaceContext, workLocator
   if (!stamp || message?.role !== 'assistant') return null;
   const show = async () => {
     if (!scoped || state.status === 'LOADING') return;
+    const capturedScope = currentScopeRef.current;
     setState({ status: 'LOADING', text: '' });
     try {
       const { evidence } = await readWilsyTaskBriefing(
@@ -493,12 +502,15 @@ function WilsyVerifiedCommentDisclosure({ message, workspaceContext, workLocator
         Boolean(workLocator.participant_view));
       const comment = evidence.comments.items.find(item => item.comment_id === stamp[1]);
       if (!comment || comment.fingerprint !== stamp[2]
-        || !scoped || comment.body.length > 5000) {
+        || !scoped || currentScopeRef.current !== capturedScope
+        || comment.body.length > 5000) {
         throw new Error('SOURCE_COMMENT_CHANGED');
       }
       setState({ status: 'READY', text: comment.body });
     } catch {
-      setState({ status: 'ERROR', text: '' });
+      if (currentScopeRef.current === capturedScope) {
+        setState({ status: 'ERROR', text: '' });
+      }
     }
   };
   return <div className={styles.verifiedCommentDisclosure}>
@@ -1225,7 +1237,8 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
     return () => window.clearInterval(timer);
   }, [animate, fullText]);
 
-  const visibleText = fullText.slice(0, visibleCount);
+  const withoutInternalRef = text => text.replace(/^Source comment reference: [^\n]*(?:\n|$)/gm, '');
+  const visibleText = withoutInternalRef(fullText.slice(0, visibleCount));
   const isVerified = format === 'VERIFIED_TASK' && fullText.includes('\n');
   const isFocusedAnswer = /^EOS source answer · MW-T\d{1,3}\n/.test(fullText);
   const sourceFooter = line => /^(?:Python EOS ·|Source records and discussion do not independently certify)/.test(line);
@@ -1263,7 +1276,7 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
           <span aria-hidden="true" className={styles.replyCursor}>▍</span>
         )}
       </span>
-      {animate && <span className={styles.srOnly}>{fullText}</span>}
+      {animate && <span className={styles.srOnly}>{withoutInternalRef(fullText)}</span>}
     </>
   );
 }
@@ -4202,7 +4215,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE
+ * VERSION: v4.78.1-COMMENT-SCOPE-AND-REFERENCE-HYGIENE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
