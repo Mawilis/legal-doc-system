@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS
+VERSION: v1.51.0-COMPLETED-SOURCE-PAGING
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -29,8 +29,7 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
                       response follows commit. The registry never opens one.
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
-CHANGELOG: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS
-  Original-author task comment corrections are append-only and admitted only
+CHANGELOG: v1.51.0-COMPLETED-SOURCE-PAGING adds independently IAM-gated, exact-project completed-task paging with bounded search, assignee filtering, newest/oldest completion sort and immutable source-event completion metadata; no task mutation or access expansion.\nCHANGELOG: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS\n  Original-author task comment corrections are append-only and admitted only
   within 30 minutes of the original source timestamp; EOS checks author,
   comment fingerprint, reason and time in the write transaction.
 CHANGELOG: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS exposes exact-command
@@ -3460,6 +3459,42 @@ def list_project_tasks(
     ))
 
 
+@router.get("/{project_id}/tasks/completed")
+def list_completed_project_tasks(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    search: str = Query(default="", max_length=120),
+    assignee_principal_id: str | None = Query(default=None, min_length=1, max_length=180),
+    order: Literal["NEWEST", "OLDEST"] = Query(default="NEWEST"),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Independently authorize exact-project completed history before querying."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        store = _project_task_store(registry, context.tenant_id, project_id, session)
+        rows, more = store.list_completed_page(
+            tenant_id=context.tenant_id, project_id=project_id, session=session,
+            limit=limit, offset=offset, search=search,
+            assignee_principal_id=assignee_principal_id, completion_order=order,
+        )
+        return {
+            "schema": "WILSY-PROJECT-TASK-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "view": "COMPLETED", "search": search, "order": order,
+            "assignee_principal_id": assignee_principal_id,
+            "items": list(rows),
+            "limit": limit, "offset": offset, "has_more": more,
+            "next_offset": offset + len(rows) if more else None,
+        }
+
+    return _profiled_projects_get(context, "TASK_LIST", read)
+
+
 @router.get("/{project_id}/my-project/tasks")
 def list_assigned_project_tasks(
     response: Response,
@@ -4427,7 +4462,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS
+# VERSION: v1.51.0-COMPLETED-SOURCE-PAGING
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
