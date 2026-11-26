@@ -5,14 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.13.5-CANONICAL-CALENDAR-HANDOFF-CERT
+ * VERSION: v3.13.6-SOURCE-RETURN-AND-CRM-ADMISSION-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/daily-attention-calendar.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CERTIFICATION / UPDATE DATE: 2026-11-26.
+ * CHANGELOG: v3.13.6-SOURCE-RETURN-AND-CRM-ADMISSION-CERT checks the
+ *          return-to-Daily-Attention origin and independently authorized
+ *          CRM source-actions tab in the canonical task modal.
  * CHANGELOG: v3.13.5-CANONICAL-CALENDAR-HANDOFF-CERT verifies the current
  *          source-owned calendar Open authorized task action and the
  *          canonical My Work task modal before EOS completion.
@@ -639,7 +642,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(panel).toHaveCount(0);
       const workItem = page.getByRole('dialog', {name: 'Work details: ' + title, exact: true});
       await expect(workItem).toBeVisible();
-      await expect(workItem.getByRole('button', {name: 'Back to work'})).toBeFocused();
+      await expect(workItem.getByRole('button', {name: 'Back to Daily attention'})).toBeFocused();
       await workItem.getByRole('textbox', {name: 'Completion note'})
         .fill('Source-owned calendar completion evidence');
       const completedResponse = page.waitForResponse(response => (
@@ -854,8 +857,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const revisionRow = page.getByRole('button', {name: new RegExp(revisionOriginal)});
       await expect(revisionRow).toBeVisible();
       await revisionRow.click();
-      const revisionDialog = page.getByRole('region', {name: revisionOriginal});
+      const revisionDialog = page.getByRole('dialog', {name: 'Work details: ' + revisionOriginal});
       await expect(revisionDialog).toBeVisible();
+      await revisionDialog.getByRole('button', {name: 'Authorized CRM source actions & history'}).click();
       const sourceEdit = revisionDialog.getByRole('button', {name: 'Edit CRM task'});
       await expect(sourceEdit).toBeVisible();
       await sourceEdit.click();
@@ -879,7 +883,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const patchReceipt = patchPayload;
       expect(patchReceipt.work_item_id).toBe(revisionWork.work_item_id);
       expect(patchReceipt.title).toBe(revisionChanged);
-      const renamedDialog = page.getByRole('region', {name: revisionChanged});
+      const renamedDialog = page.getByRole('dialog', {name: 'Work details: ' + revisionChanged});
       await expect(renamedDialog.getByText(
         'CRM edit confirmed by source, audit history and fresh My Work.',
       )).toBeVisible();
@@ -1000,7 +1004,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.13.5-CANONICAL-CALENDAR-HANDOFF-CERT
+// VERSION: v3.13.6-SOURCE-RETURN-AND-CRM-ADMISSION-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
