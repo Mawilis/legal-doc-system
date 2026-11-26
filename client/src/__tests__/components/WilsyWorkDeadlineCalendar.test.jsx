@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Authorised Work Calendar Component Certification
- * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-CERTIFICATE
+ * VERSION: v1.3.0-PROJECTS-CIVIL-DATE-SOURCE-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certify source-owned action handoff, civil dates, local instants,
  *          DST boundaries, keyboard focus, day/week/month views and navigation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyWorkDeadlineCalendar.jsx; client certification CI.
  * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CHANGELOG: v1.3.0-PROJECTS-CIVIL-DATE-SOURCE-HANDOFF certifies date-only Projects records are dated work, not undated, with exact source identity passed to the canonical task router and no invented time.
  * CHANGELOG: v1.2.0-CIVIL-DATE-DAY-WEEK-CERTIFICATE proves single-day and
  *            Monday-first week views use the selected dates and preserve
  *            source-owned agenda handoff, while retaining month-view coverage.
@@ -87,6 +88,24 @@ describe('EOS source-backed deadline calendar', () => {
     expect(screen.getByText('Verify authorised dispatch evidence')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Open authorized task' }));
     expect(onOpenWork).toHaveBeenCalledWith(items[0]);
+  });
+
+  it('includes EOS Projects civil due_date in the calendar and opens the same task identity', () => {
+    freezeToday();
+    const projects = {
+      source: 'PROJECTS', source_key: 'PROJECTS:ptk-7', work_item_id: 'ptk-7',
+      project_id: 'prj-8', title: 'Certify production readiness',
+      priority: 'NORMAL', status: 'IN_PROGRESS', is_overdue: false,
+      due_at: null, due_date: '2026-11-26',
+    };
+    const onOpenWork = vi.fn();
+    render(<WilsyWorkDeadlineCalendar items={[projects]} onOpenWork={onOpenWork}/>);
+    expect(screen.getByRole('button', { name: 'Without due date (0)' })).toBeTruthy();
+    fireEvent.click(dateButton(2026, 11, 26, 1));
+    expect(screen.getByText('Certify production readiness')).toBeTruthy();
+    expect(screen.getByText('Date only · no due time')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open authorized task' }));
+    expect(onOpenWork).toHaveBeenCalledWith(projects);
   });
 
   it('moves to the following month and selects an actual deadline', () => {
