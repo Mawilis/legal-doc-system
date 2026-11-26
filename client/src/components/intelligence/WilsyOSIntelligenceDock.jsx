@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS
+ * VERSION: v4.75.1-EXACT-ANSWER-CONTINUITY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.75.1-EXACT-ANSWER-CONTINUITY binds pronoun follow-ups to the latest source-verified assistant reply naming the current EOS task; unlocated existing threads cannot silently borrow a different task's facts.
  * CHANGELOG: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS resolves bounded selected-task questions and verified same-thread pronouns into the already-governed nonbillable multi-source briefing, without widening provider, task or tenant authority.
  * CHANGELOG: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION fixes escaped regex/newline syntax in the exact-task read-only briefing path before testing.
  * CHANGELOG: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING adds an explicit nonbillable selected-task briefing with independently validated Projects task-list, events, discussions, attachments and approval reads, reconciles civil deadlines and distinguishes evidence from certification.
@@ -391,13 +392,19 @@ function parseWilsySelectedTaskFollowup(value, selectedTask, thread, locator) {
   if (explicitOtherCodes.some(value => value.toUpperCase() !== code)) return null;
   const referencesSelected = new RegExp('\\b' + code + '\\b', 'i').test(text)
     || /\b(?:this|the current|selected) task\b/i.test(text);
-  const priorVerified = thread?.workLocator?.project_id === locator.project_id
-    && thread?.workLocator?.task_id === locator.task_id
-    && Array.isArray(thread.messages)
-    && [...thread.messages].reverse().some(message =>
-      message?.role === 'assistant'
-      && message.meta?.source === 'PYTHON_EOS'
-      && message.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY');
+  const lastAssistant = Array.isArray(thread?.messages)
+    ? [...thread.messages].reverse().find(message => message?.role === 'assistant')
+    : null;
+  const sourceText = typeof lastAssistant?.content === 'string' ? lastAssistant.content : '';
+  const sourceIdentifiesTask = sourceText.startsWith('EOS source briefing · ' + selectedTask.title)
+    || sourceText.startsWith('EOS source verified: ' + selectedTask.title)
+    || sourceText.startsWith(code + ' · EOS lifecycle activity');
+  const priorVerified = lastAssistant?.meta?.source === 'PYTHON_EOS'
+    && lastAssistant.meta.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && sourceIdentifiesTask
+    && (!thread?.workLocator?.task_id
+      || (thread.workLocator.project_id === locator.project_id
+        && thread.workLocator.task_id === locator.task_id));
   const pronounReference = priorVerified && /\b(?:it|its|that|those|them)\b/i.test(text);
   const anchoredIntent = /^(?:(?:please|and|also)\s+)?(?:what(?:'s| is| are| was)?|who(?:'s| is)?|when(?: is| was)?|show|tell|summari[sz]e|brief|review|check|explain|any|are there|does|has|how many)\b/i.test(text);
   const relatedFact = /\b(?:status|progress|owner|responsible|assigned|contributor|deadline|due|date|predecessor|dependenc(?:y|ies)|blocker|activity|event|comment|update|discussion|attachment|file|evidence|approval|decision|revision|changed|recorded|summary|brief|readiness)\b/i.test(text);
@@ -4024,7 +4031,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS
+ * VERSION: v4.75.1-EXACT-ANSWER-CONTINUITY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
