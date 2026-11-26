@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.1.0-REMOUNT-RECONCILIATION
+ * VERSION: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION certifies a lost-response accepted PDF attachment across unmount/remount with independent manifest reconciliation, no duplicate POST and no scan-clearance claim.
  * CHANGELOG: v1.1.0-REMOUNT-RECONCILIATION certifies a committed-but-lost HTTP response across unmount/remount with exactly one POST and independently verified receipt readback.
  * CHANGELOG: v1.0.0 covers action races, unknown outcomes, drafts and exact source isolation.
  * COMPLIANCE: AGENTS.md; synthetic records; keyboard-accessible semantic controls.
@@ -188,6 +189,39 @@ describe('permissioned operating work', () => {
     await waitFor(() => expect(get.mock.calls.filter(([path]) => path.endsWith('/attachments'))).toHaveLength(2));
     expect(post).toHaveBeenCalledTimes(1);
   });
+  it('restores an uncertain attachment across unmount and verifies its manifest with no duplicate upload', async () => {
+    const stableScope = scope();
+    const original = post.getMockImplementation();
+    let acceptedUpload = false;
+    post.mockImplementation(async (...args) => {
+      const result = await original(...args);
+      if (args[0].endsWith('/attachments') && !acceptedUpload) {
+        acceptedUpload = true;
+        throw new Error('synthetic committed upload with lost HTTP response');
+      }
+      return result;
+    });
+    const initial = mount({ scope: stableScope });
+    fireEvent.click(await screen.findByRole('button', { name: 'Draft alignment plan' }));
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Edit plan' }), {
+      target: { value: 'Human-reviewed alignment plan; no unverified claims.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Accept and attach PDF' }));
+    await screen.findByText(/Attachment outcome unverified/);
+    expect(post.mock.calls.filter(([path]) => path.endsWith('/attachments'))).toHaveLength(1);
+    initial.unmount();
+
+    mount({ scope: stableScope });
+    expect(await screen.findByRole('button', { name: 'Reconcile attachment' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Accept and attach PDF' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reconcile attachment' }));
+    await screen.findByText(/EOS independently verified the attached PDF/);
+    expect(post.mock.calls.filter(([path]) => path.endsWith('/attachments'))).toHaveLength(1);
+    expect(get.mock.calls.some(([path]) => path.endsWith('/attachments'))).toBe(true);
+    expect(screen.getByText(/quarantined pending scan clearance/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Back to task' })).toBeEnabled();
+  });
+
   it('discards an unaccepted draft without a write, and disables attachment without contributor admission', async () => {
     source = dockEnvelope({ mutate: false, attach: false });
     mount(); fireEvent.click(await screen.findByRole('button', { name: 'Draft alignment plan' }));
@@ -199,7 +233,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.1.0-REMOUNT-RECONCILIATION
+// VERSION: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
