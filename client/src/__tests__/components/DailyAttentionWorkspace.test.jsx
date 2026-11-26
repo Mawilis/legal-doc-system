@@ -354,6 +354,19 @@ describe('Daily Attention bounded inbox', () => {
     expect(inert).not.toHaveBeenCalled();
   });
 
+  it('opens the owning task from Daily Attention without reusing the legacy detail rail', () => {
+    const onOpenWork = vi.fn();
+    render(<DailyAttentionWorkspace feed={fixtureFeed(1)} calendarItems={[]}
+      filter="ALL" setFilter={vi.fn()} source="ALL" setSource={vi.fn()}
+      query="" setQuery={vi.fn()} onRefresh={vi.fn()} onOpenWork={onOpenWork}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Open details for Attention item 0' }));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source_key: 'OPERATIONS:attention-0', source: 'OPERATIONS', work_item_id: 'attention-0',
+    }));
+    expect(screen.queryByRole('complementary', { name: 'Attention detail rail' })).toBeNull();
+  });
+
   it('gates completion on verified source action and opens the evidence form from the row', async () => {
     const onComplete = vi.fn();
     const feed = fixtureFeed(1);
@@ -365,7 +378,7 @@ describe('Daily Attention bounded inbox', () => {
     };
     const { rerender } = render(<DailyAttentionWorkspace {...base} authorisedActions={{}} />);
     expect(screen.queryByRole('button', { name: 'Complete Attention item 0' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open details for Attention item 0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
     expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Confirm completion' })).toBeNull();
 
