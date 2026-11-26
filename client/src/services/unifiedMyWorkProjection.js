@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Unified My Work Client Projection Contract
- * VERSION: v1.4.1-READINESS-VERSION-SKEW-FAIL-SAFE
+ * VERSION: v1.5.0-SOURCE-OWNED-TASK-NAVIGATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Validates the existing EOS My Work read shape consistently across
  *          Daily Attention, Headquarters, and My Work without creating authority.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/unifiedMyWorkProjection.js
  * COLLABORATION / OWNERSHIP: Python EOS owns visibility, records and commands;
  *                            authenticated client views consume this validator.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.5.0-SOURCE-OWNED-TASK-NAVIGATION introduces one pure, fail-closed destination resolver for EOS-admitted work identities: CRM and other admitted sources retain their My Work task shell, while Projects uses its authorized Projects task locator; no source service or IAM authority is transferred.
  * CHANGELOG: v1.4.1-READINESS-VERSION-SKEW-FAIL-SAFE accepts
  *            a wholly absent optional readiness extension from older EOS
  *            without asserting READY; partially present or inconsistent
@@ -252,7 +253,7 @@ export function unifiedMyWorkSourceLabel(source) {
 
 /*
  * ARTIFACT: unifiedMyWorkProjection.js
- * VERSION: v1.4.1-READINESS-VERSION-SKEW-FAIL-SAFE
+ * VERSION: v1.5.0-SOURCE-OWNED-TASK-NAVIGATION
  * AUTHORITY BOUNDARY: Client projection validation and source labels only.
  * TENANT POSTURE: Exact supplied scope is checked; server authorization remains canonical.
  * FAIL-CLOSED POSTURE: Malformed scope, counts, rows or source metadata are rejected.
