@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.17.0-ASSIGNED-WORK-URL-FOCUS
+ * VERSION: v4.18.0-STRATEGY-RETURN-ROUTE
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v4.18.0-STRATEGY-RETURN-ROUTE retains exact Strategy origin for handoffs and returns directly to the existing governed M04 workspace without a new project workflow or IAM grant.
  * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS preserves independently authorized assigned-task navigation from the Dock.
  * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS binds Strategy/Mission
  *          and exact validated Projects task navigation to browser URL
@@ -905,11 +906,13 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     }
     openMyWork(item);
   };
-  const updateWorkspaceUrl = (nextSection, documentKind = null, projectId = null, taskId = null) => {
+  const updateWorkspaceUrl = (nextSection, documentKind = null, projectId = null, taskId = null, strategyReturn = false, resumeM04 = false) => {
     const params = new URLSearchParams(location.search);
-    for (const key of ['section', 'document', 'project', 'task']) params.delete(key);
+    for (const key of ['section', 'document', 'project', 'task', 'returnTo', 'resumeM04']) params.delete(key);
     if (linkedSections.has(nextSection)) params.set('section', nextSection);
     if (['STRATEGY', 'MISSION'].includes(documentKind)) params.set('document', documentKind);
+    if (nextSection === 'projects' && strategyReturn) params.set('returnTo', 'STRATEGY');
+    if (documentKind === 'STRATEGY' && resumeM04) params.set('resumeM04', '1');
     if (nextSection === 'projects' && /^prj-[0-9a-f]{48}$/.test(projectId || '')) {
       params.set('project', projectId);
       if (/^ptk-[0-9a-f]{48}$/.test(taskId || '')) params.set('task', taskId);
@@ -926,7 +929,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     updateWorkspaceUrl(section);
   };
   const navigateSection = (nextSection, focus = null) => {
-    updateWorkspaceUrl(nextSection, null, focus?.projectId, focus?.taskId);
+    updateWorkspaceUrl(nextSection, null, focus?.projectId, focus?.taskId, focus?.fromStrategy === true);
     setSection(nextSection);
     setShowMyWork(false);
     setCalendarOpen(false);
@@ -1211,7 +1214,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
               onRefresh={() => setRequisitionsRefresh((value) => value + 1)}
             />
           ) : section === 'projects' ? (
-            <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}/>
+            <>
+              {new URLSearchParams(location.search).get('returnTo') === 'STRATEGY' && <nav aria-label="Strategy project return" className="mb-3">
+                <button type="button" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50" onClick={() => {
+                  setSection('overview'); setShowMyWork(false); setProjectTaskFocus(null); setProjectDeliveryFocus(null);
+                  setOperatingDocumentClass('STRATEGY');
+                  updateWorkspaceUrl('overview', 'STRATEGY', null, null, false, true);
+                }}>← Back to Strategy execution</button>
+              </nav>}
+              <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}/>
+            </>
           ) : section === 'onboarding' ? (
             <>
               <PageHeading eyebrow="People lifecycle" title="Employee onboarding" subtitle="Employment record, then separately governed identity and access admission."/>
@@ -1245,13 +1257,13 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
         </div>
       </div>
       {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={closeOperatingDocument} onOpenWork={() => { closeOperatingDocument(); openMyWork(); }}
-        onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects'); }}
+        onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects', { fromStrategy: operatingDocumentClass === 'STRATEGY' }); }}
         onOpenProject={(projectId, focus = null) => {
           if (!/^prj-[0-9a-f]{48}$/.test(projectId)) return;
           setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(focus?.taskId || '') ? focus.taskId : null);
           setProjectDeliveryFocus(projectId);
           setOperatingDocumentClass(null);
-          navigateSection('projects', { projectId, taskId: focus?.taskId });
+          navigateSection('projects', { projectId, taskId: focus?.taskId, fromStrategy: true });
         }}/>}
     </main>
   );
@@ -1724,7 +1736,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.17.0-ASSIGNED-WORK-URL-FOCUS
+ * VERSION: v4.18.0-STRATEGY-RETURN-ROUTE
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
