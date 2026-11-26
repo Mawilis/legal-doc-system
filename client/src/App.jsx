@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.14.0-PERSISTENT-HEADQUARTERS-NAVIGATION
+ * VERSION: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN routes Daily Attention and calendar selections through the canonical EOS work destination contract. Projects opens its exact project/task view, other admitted sources retain source-owned My Work, forged source identities fail closed; no task command or privilege change.
  * CHANGELOG: v20.14.0-PERSISTENT-HEADQUARTERS-NAVIGATION excludes ephemeral location.key from the stable, identity-bound Headquarters controller key so same-session in-app work navigation no longer forces its subtree to remount. Existing route hooks update the destination; auth/tenant/legal admission gates and EOS work reads remain authoritative.
  * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays EOS-issued Founder title independently from tenant_owner capacity; it never changes workspace authorization.
  * CHANGELOG: v20.10.2-GLOBAL-SEARCH-FOCUS-RETURN returns keyboard focus to the element that opened global search after Escape, dismissal, or navigation. Search routing, auth, and authority are unchanged.
@@ -132,6 +133,7 @@ import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
+import { resolveUnifiedWorkDestination } from './services/unifiedMyWorkProjection.js';
 import api from './services/api';
 import {
   currentUnifiedMyWorkScope,
@@ -447,8 +449,28 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
             onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
             onClose={() => setNotificationsOpen(false)}
             onOpenWork={(item) => {
+              if (!item) {
+                setNotificationsOpen(false);
+                navigate('/my-work');
+                return;
+              }
+              // All Daily Attention and calendar selections use the same
+              // source-owned destination contract as My Work and Headquarters.
+              // A projection row never grants command authority at the target.
+              let destination;
+              try { destination = resolveUnifiedWorkDestination(item); }
+              catch { return; } // Invalid or foreign source locator fails closed.
               setNotificationsOpen(false);
-              navigate('/my-work', { state: item?.source_key ? { focusWorkItem: item.source_key } : null });
+              if (destination.kind === 'PROJECTS_TASK') {
+                const query = new URLSearchParams({
+                  section: 'projects',
+                  project: destination.locator.project_id,
+                  task: destination.locator.task_id,
+                });
+                navigate('/headquarters?' + query.toString());
+              } else {
+                navigate('/my-work', { state: { focusWorkItem: item.source_key } });
+              }
             }}
             onOpenWorkforce={() => {
               setNotificationsOpen(false);
@@ -1059,7 +1081,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.14.0-PERSISTENT-HEADQUARTERS-NAVIGATION
+ * VERSION: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
