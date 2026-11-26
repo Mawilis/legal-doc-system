@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT
+ * VERSION: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT repairs the negative-test context fixture to meet unchanged no-model/no-financial-execution source admission, then proves foreign discussion is independently requested and rejected without a partial briefing.
  * CHANGELOG: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT tests the authorized nonbillable consolidated task, event, comment, evidence and approval readback and foreign-source denial without a fabricated assistant turn.
  * CHANGELOG: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT accepts actionable nonempty Send while retaining the explicit fail-closed no-provider, no-entitlement, no-consent, and exact replay blocks. No backend authority, consent or model grants are inferred.
  * CHANGELOG: v1.57.0-MODAL-TASK-CONVERSATION-CERT checks same-principal/task-modal launch opens the real Dock, while a foreign tenant cannot open it or trigger a write.
@@ -2118,7 +2119,8 @@ describe('WilsyOSIntelligenceDock', () => {
         schema: 'WILSY-AI-VERIFIED-CONTEXT/V1', tenant_id: 'TEST_TENANT',
         principal_id: principal, locator: options.params,
         context_fingerprint: 'f'.repeat(128), observed_at: '2026-11-26T09:00:00Z',
-        authority: { source: 'PYTHON_EOS', read_only: true, provider_binding: 'UNAVAILABLE' },
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false, provider_binding: 'UNAVAILABLE' },
         allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
         work: { project: { project_id: project, revision: 3 },
           selected_task: { task_id: task, title: 'MW-T11 — Align Intelligence Dock',
@@ -2143,6 +2145,8 @@ describe('WilsyOSIntelligenceDock', () => {
     await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
       .toHaveTextContent('MW-T11'));
     requestReadOnlySource('Brief MW-T11');
+    await waitFor(() => expect(mockApiGet.mock.calls.some(([url]) =>
+      url.endsWith('/comments?limit=50&offset=0'))).toBe(true));
     await waitFor(() => expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
       .toHaveTextContent(/could not verify all current task/));
     expect(mockPersistTurn.mock.calls.filter(([payload]) =>
@@ -2791,7 +2795,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.59.0-MW-T11-CONSOLIDATED-BRIEFING-CERT
+ * VERSION: v1.59.1-MW-T11-FOREIGN-SOURCE-FIXTURE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
