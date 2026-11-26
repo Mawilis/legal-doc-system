@@ -354,6 +354,27 @@ describe('Daily Attention bounded inbox', () => {
     expect(inert).not.toHaveBeenCalled();
   });
 
+  it('displays an independently EOS-verified Projects civil deadline without inventing a time', () => {
+    const feed = fixtureFeed(1);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    feed.items[0] = {
+      ...feed.items[0], id: 'PROJECTS:' + taskId,
+      sourceModule: 'PROJECTS', sourceRecordId: taskId,
+      dueAt: null, title: 'Certify production readiness',
+    };
+    const calendarItems = [{
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId, project_id: 'prj-' + 'a'.repeat(48),
+      due_at: null, due_date: '2026-11-27',
+    }];
+    render(<DailyAttentionWorkspace feed={feed} calendarItems={calendarItems}
+      filter="ALL" setFilter={vi.fn()} source="ALL" setSource={vi.fn()}
+      query="" setQuery={vi.fn()} onRefresh={vi.fn()} onOpenWork={vi.fn()}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    expect(screen.getByTitle('Due 2026-11-27 (calendar date)')).toBeTruthy();
+    expect(screen.queryByText('No deadline recorded')).toBeNull();
+  });
+
   it('opens the owning task from Daily Attention without reusing the legacy detail rail', () => {
     const onOpenWork = vi.fn();
     render(<DailyAttentionWorkspace feed={fixtureFeed(1)} calendarItems={[]}
