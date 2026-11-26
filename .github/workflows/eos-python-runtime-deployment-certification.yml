@@ -1,5 +1,5 @@
 # TITLE: Python EOS Runtime Deployment and MW-T12 Secure Metadata Certification
-# VERSION: v1.1.0-MWT12-ATLAS-EGRESS-CERT
+# VERSION: v1.2.0-MWT12-ATLAS-ISOLATION-CERT
 # AUTHORITY: WILSY OS Core Governance / AGENTS.md
 # EPITOME: Compile, test and build Python EOS with independently enforced
 #          dormant scoped SSM-backed MW-T12 task-definition regression.
@@ -7,6 +7,8 @@
 # COLLABORATION / OWNERSHIP: Python EOS runtime image; task definition registrar;
 #                            existing MW-T12 tests and CI gates.
 # CERTIFICATION / UPDATE DATE: 2026-11-27
+# CHANGELOG: v1.2.0-MWT12-ATLAS-ISOLATION-CERT adds read-only
+#            Atlas network consumer attribution and wildcard denial tests.
 # CHANGELOG: v1.1.0-MWT12-ATLAS-EGRESS-CERT adds exact grouped
 #            Atlas-node egress readback and drift-denial tests to existing
 #            zero-cloud-cost Python runtime certification. the secure task definition
@@ -45,6 +47,7 @@ on:
       - "tests/unit/test_python_eos_runtime_deployment.py"
       - "tests/unit/test_mw_t12_secure_task_registration.py"
       - "tests/unit/test_mw_t12_atlas_egress_activation.py"
+      - "tests/unit/test_mw_t12_atlas_access_admission.py"
       - "server/**"
       - "docs/architecture/eos-runtime-database-consumer-inventory.md"
       - ".github/workflows/eos-python-runtime-deployment-certification.yml"
@@ -67,6 +70,7 @@ on:
       - "tests/unit/test_python_eos_runtime_deployment.py"
       - "tests/unit/test_mw_t12_secure_task_registration.py"
       - "tests/unit/test_mw_t12_atlas_egress_activation.py"
+      - "tests/unit/test_mw_t12_atlas_access_admission.py"
       - "tests/unit/test_owner_commercial_workspace_server_mount.py"
       - "package.json"
       - "package-lock.json"
@@ -99,8 +103,8 @@ jobs:
         run: python -m pytest -q tests/unit/test_python_eos_runtime_deployment.py
       - name: Certify MW-T12 dormant secure ECS task metadata
         run: |
-          python -m py_compile tools/eos/ops/mw_t12_runtime_readiness.py tools/eos/ops/mw_t12_task_definition_admission.py tests/unit/test_mw_t12_secure_task_registration.py tests/unit/test_mw_t12_atlas_egress_activation.py
-          python -m pytest -q tests/unit/test_mw_t12_secure_task_registration.py tests/unit/test_mw_t12_atlas_egress_activation.py
+          python -m py_compile tools/eos/ops/mw_t12_runtime_readiness.py tools/eos/ops/mw_t12_task_definition_admission.py tools/eos/ops/mw_t12_atlas_access_admission.py tests/unit/test_mw_t12_secure_task_registration.py tests/unit/test_mw_t12_atlas_egress_activation.py tests/unit/test_mw_t12_atlas_access_admission.py
+          python -m pytest -q tests/unit/test_mw_t12_secure_task_registration.py tests/unit/test_mw_t12_atlas_egress_activation.py tests/unit/test_mw_t12_atlas_access_admission.py
       - name: Validate canonical Python EOS Compose manifests
         run: |
           MONGODB_URI="mongodb://127.0.0.1:27017" docker compose --file docker-compose.yml config --quiet
@@ -127,7 +131,7 @@ jobs:
         run: docker build --file Dockerfile.eos --tag wilsy-eos-python:certification .
 
 # ARTIFACT: .github/workflows/eos-python-runtime-deployment-certification.yml
-# VERSION: v1.1.0-MWT12-ATLAS-EGRESS-CERT
+# VERSION: v1.2.0-MWT12-ATLAS-ISOLATION-CERT
 # AUTHORITY BOUNDARY: Exact-head Python CI only; no AWS registration or launch.
 # TENANT POSTURE: Disposable Mongo and synthetic IAM only.
 # FAIL-CLOSED POSTURE: Any compile, unit, replica or image build failure denies.
