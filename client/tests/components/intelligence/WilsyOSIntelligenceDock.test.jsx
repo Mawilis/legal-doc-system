@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.63.2-PROGRESSIVE-FOOTER-TIMING-CERT
+ * VERSION: v1.64.0-CHAT-ACTIONS-AND-LOCAL-TIME-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.64.0-CHAT-ACTIONS-AND-LOCAL-TIME-CERT verifies New conversation from chat, Clear chat preserves the EOS archive without history mutation, and source timestamps are human-readable while original UTC evidence is retained.
  * CHANGELOG: v1.63.2-PROGRESSIVE-FOOTER-TIMING-CERT waits for the genuine visible source footer to emerge from the existing 90-step progressive renderer rather than timing out on its immediate screen-reader copy; preserves semantic footer assertions.
  * CHANGELOG: v1.63.1-VISIBLE-FOOTER-ASSERTION-CERT distinguishes rendered source footers from the intentional screen-reader-only progressive-animation transcript copies using CSS module class evidence and bounded async assertions.
  * CHANGELOG: v1.63.0-LIVE-COMMENT-READBACK-CERT requires clean compact discussion summary, hidden internal source reference, explicit full-source readback and independently reauthorized comments GET without a provider call.
@@ -2503,6 +2504,60 @@ describe('WilsyOSIntelligenceDock', () => {
       payload?.message?.role === 'assistant')).toHaveLength(0);
   });
 
+  it('exposes New conversation in chat and distinguishes Clear chat from saved history deletion', async () => {
+    mockThreads = [
+      { id: 'thread1', title: 'Previous saved work', workspace: 'Projects',
+        storagePosture: 'EOS_ENCRYPTED_HISTORY',
+        messages: [{ role: 'assistant', content: 'Prior source reply', timestamp: '2026-11-26T09:00:00Z' }] },
+      { id: 'thread2', title: 'Another archive entry', workspace: 'Projects',
+        storagePosture: 'EOS_ENCRYPTED_HISTORY', messages: [] },
+    ];
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'test-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const controls = screen.getByRole('group', { name: 'Conversation actions' });
+    expect(within(controls).getByRole('button', { name: 'New conversation' })).toBeEnabled();
+    await waitFor(() => expect(within(controls).getByRole('button', { name: 'Clear chat' }))
+      .toBeEnabled());
+    fireEvent.click(within(controls).getByRole('button', { name: 'Clear chat' }));
+    await waitFor(() => expect(mockCreateThread).toHaveBeenCalledTimes(1));
+    expect(mockClearThreads).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText('Ask Wilsy OS…')).toHaveValue('');
+    expect(screen.queryByText('Prior source reply')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    expect(screen.getByText('Previous saved work')).toBeVisible();
+    expect(screen.getByText('Another archive entry')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Conversation actions' }))
+      .getByRole('button', { name: 'New conversation' }));
+    await waitFor(() => expect(mockCreateThread).toHaveBeenCalledTimes(2));
+    expect(mockClearThreads).not.toHaveBeenCalled();
+  });
+
+  it('formats EOS event time locally in view without modifying archived source text', async () => {
+    const original = '2026-11-26T09:07:54.344000+00:00';
+    const originalContent = 'EOS source briefing · MW-T11 — Verified work'
+      + '\nLatest event: project task revised · ' + original
+      + '\nPython EOS · Source verified, read-only. No model invoked.';
+    mockThreads = [{ id: 'thread1', title: 'Archived source response', workspace: 'Projects',
+      messages: [{ role: 'assistant', content: originalContent,
+        meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' },
+        timestamp: '2026-11-26T09:08:00Z' }] }];
+    render(<WilsyOSIntelligenceDock authUser={{ id: 'test-principal',
+      tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const local = new Intl.DateTimeFormat(undefined, {
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+    }).format(new Date(original));
+    await waitFor(() => expect(screen.getByText(/Latest event:/).textContent)
+      .toContain(local));
+    expect(screen.queryByText(new RegExp(original.replace(/[.+]/g, '\\  it('creates a new thread when "New thread" is clicked', async () => {'))))
+      .not.toBeInTheDocument();
+    expect(mockThreads[0].messages[0].content).toContain(original);
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('creates a new thread when "New thread" is clicked', async () => {
     render(<WilsyOSIntelligenceDock />);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
@@ -2888,7 +2943,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.63.2-PROGRESSIVE-FOOTER-TIMING-CERT
+ * VERSION: v1.64.0-CHAT-ACTIONS-AND-LOCAL-TIME-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
