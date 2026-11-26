@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION
+ * VERSION: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS resolves bounded selected-task questions and verified same-thread pronouns into the already-governed nonbillable multi-source briefing, without widening provider, task or tenant authority.
  * CHANGELOG: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION fixes escaped regex/newline syntax in the exact-task read-only briefing path before testing.
  * CHANGELOG: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING adds an explicit nonbillable selected-task briefing with independently validated Projects task-list, events, discussions, attachments and approval reads, reconciles civil deadlines and distinguishes evidence from certification.
  * CHANGELOG: v4.73.1-REPLAY-LOCK-PRESERVED keeps exact uncertain-reconciliation replay disabled while still allowing other nonempty submissions to receive explicit, fail-closed admission feedback without model execution.
@@ -370,6 +371,39 @@ function parseWilsyTaskActivityInspection(value) {
   const match = /^(?:inspect|show|review)\s+(MW-T\d{1,3})\s+activity[?.!]?$/i
     .exec(String(value || '').trim());
   return match ? match[1].toUpperCase() : null;
+}
+
+/**
+ * @description Resolve only narrow, read-only conversational follow-ups to the
+ * currently EOS-verified selected task. Pronouns require a preceding source-
+ * verified assistant turn in the same task-linked thread. No broad guessing,
+ * commands, provider inference or alternate task reference is admitted.
+ * @authority This returns only an intent hint; the briefing handler rechecks
+ * tenant, principal, project, task revision and all EOS source pages.
+ */
+function parseWilsySelectedTaskFollowup(value, selectedTask, thread, locator) {
+  const text = String(value || '').trim();
+  const code = /^((?:MW-T)\d{1,3})\s+[—-]\s+/i.exec(selectedTask?.title || '')?.[1]?.toUpperCase();
+  if (!code || !/^ptk-[a-f0-9]{48}$/.test(selectedTask?.task_id || '')
+    || selectedTask.task_id !== locator?.task_id || locator?.workspace !== 'PROJECTS'
+    || !/^prj-[a-f0-9]{48}$/.test(locator?.project_id || '')) return null;
+  const explicitOtherCodes = text.match(/MW-T\d{1,3}/gi) || [];
+  if (explicitOtherCodes.some(value => value.toUpperCase() !== code)) return null;
+  const referencesSelected = new RegExp('\\b' + code + '\\b', 'i').test(text)
+    || /\b(?:this|the current|selected) task\b/i.test(text);
+  const priorVerified = thread?.workLocator?.project_id === locator.project_id
+    && thread?.workLocator?.task_id === locator.task_id
+    && Array.isArray(thread.messages)
+    && [...thread.messages].reverse().some(message =>
+      message?.role === 'assistant'
+      && message.meta?.source === 'PYTHON_EOS'
+      && message.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY');
+  const pronounReference = priorVerified && /\b(?:it|its|that|those|them)\b/i.test(text);
+  const anchoredIntent = /^(?:(?:please|and|also)\s+)?(?:what(?:'s| is| are| was)?|who(?:'s| is)?|when(?: is| was)?|show|tell|summari[sz]e|brief|review|check|explain|any|are there|does|has|how many)\b/i.test(text);
+  const relatedFact = /\b(?:status|progress|owner|responsible|assigned|contributor|deadline|due|date|predecessor|dependenc(?:y|ies)|blocker|activity|event|comment|update|discussion|attachment|file|evidence|approval|decision|revision|changed|recorded|summary|brief|readiness)\b/i.test(text);
+  const compactFollowup = priorVerified && /^(?:and|what about|how about)\s+(?:the\s+)?(?:deadline|owner|dependencies|activity|comments|updates|attachments|evidence|approvals|decisions)[?.!]?$/i.test(text);
+  return ((anchoredIntent && relatedFact && (referencesSelected || pronounReference))
+    || compactFollowup) ? code : null;
 }
 
 /** Independently read one current EOS lifecycle event page, never cached chat. */
@@ -2153,8 +2187,12 @@ export function WilsyOSIntelligenceDock({
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
       const briefingCode = isLegalDockRole(authUser?.role) ? null
-        : /^(?:brief|summari[sz]e|assess)\s+(MW-T\d{1,3})(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i
-          .exec(text)?.[1]?.toUpperCase() || null;
+        : (/^(?:brief|summari[sz]e|assess)\s+(MW-T\d{1,3})(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i
+          .exec(text)?.[1]?.toUpperCase()
+          || (visibleWorkspaceContext?.state === 'READY'
+            && parseWilsySelectedTaskFollowup(text,
+              visibleWorkspaceContext.data?.work?.selected_task, activeThread, workLocator))
+          || null);
       if (briefingCode) {
         const scopeAtStart = dockScopeRef.current;
         const locatorAtStart = workLocatorKeyRef.current;
@@ -3001,7 +3039,10 @@ export function WilsyOSIntelligenceDock({
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt)
     || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt)
-    || /^(?:brief|summari[sz]e|assess)\s+MW-T\d{1,3}(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i.test(prompt.trim()));
+    || /^(?:brief|summari[sz]e|assess)\s+MW-T\d{1,3}(?:\s+(?:from|using)\s+EOS)?[?.!]?$/i.test(prompt.trim())
+    || (visibleWorkspaceContext?.state === 'READY'
+      && parseWilsySelectedTaskFollowup(prompt,
+        visibleWorkspaceContext.data?.work?.selected_task, activeThread, workLocator)));
   const localCourtesyIntent = Boolean((!consentedReasoningReady
     && resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser))
     || resolveWilsyLocalClock(prompt)
@@ -3983,7 +4024,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.74.1-MW-T11-BRIEFING-SYNTAX-CORRECTION
+ * VERSION: v4.75.0-SOURCE-VERIFIED-CONVERSATIONAL-FOLLOWUPS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
