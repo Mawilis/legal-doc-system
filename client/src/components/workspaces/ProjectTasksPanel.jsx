@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.69.1-SINGLE-TASK-MODAL-EXIT
+ * VERSION: v1.70.0-IN-TASK-INTELLIGENCE-VIEW
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTasksPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.70.0-IN-TASK-INTELLIGENCE-VIEW offers a source-authorized WILSY AI task brief inside the current task modal, with a deliberate transition to full Dock conversation and exact task locator. Keeps the external floating Dock hidden while modal is active; source/IAM remain EOS owned.
  * CHANGELOG: v1.69.1-SINGLE-TASK-MODAL-EXIT keeps the
  *          parent's accessible Back to Work action as the sole modal exit
  *          for discussion, aligning with existing Files and Approvals
@@ -359,6 +360,7 @@ import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 import ProjectWorkPurposePanel from './ProjectWorkPurposePanel.jsx';
 import ProjectParticipantsPanel, { validOptions, optionName } from './ProjectParticipantsPanel.jsx';
+import WilsyDockOperatingWork from '../intelligence/WilsyDockOperatingWork.jsx';
 
 const LIST_SCHEMA = 'WILSY-PROJECT-TASK-LIST/V1';
 const RESULT_SCHEMA = 'WILSY-PROJECT-TASK-RESULT/V1';
@@ -669,6 +671,7 @@ export default function ProjectTasksPanel({
   const [completionCandidate, setCompletionCandidate] = useState(null);
   const [completionAttested, setCompletionAttested] = useState(false);
   const [drawerTaskId, setDrawerTaskId] = useState(null);
+  const [taskIntelligenceOpen, setTaskIntelligenceOpen] = useState(false);
   const [dependencyOriginId, setDependencyOriginId] = useState(null);
   const createFormRef = useRef(null);
   useEffect(() => {
@@ -1385,14 +1388,36 @@ export default function ProjectTasksPanel({
   };
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
   const closeDrawer = () => {
+    setTaskIntelligenceOpen(false);
     setDrawerTaskId(null);
     drawerReturnFocus.current?.focus?.();
+  };
+  const openTaskIntelligenceConversation = () => {
+    if (!drawerTask || state !== 'READY'
+      || !TASK_ID.test(drawerTask.task_id)
+      || !Number.isSafeInteger(drawerTask.revision)
+      || drawerTask.revision < 1 || !principalId || !tenantId) return;
+    const locator = {
+      workspace: 'PROJECTS', project_id: projectId,
+      task_id: drawerTask.task_id, task_revision: drawerTask.revision,
+      participant_view: Boolean(selfIsContributor),
+    };
+    closeDrawer();
+    // Only task coordinates leave the modal. These browser events confer no
+    // membership, context truth, entitlement or model execution authority.
+    window.dispatchEvent(new CustomEvent('wilsy:ai-context-locator', {
+      detail: { tenantId, principalId, locator },
+    }));
+    window.dispatchEvent(new CustomEvent('wilsy:ai-request-open', {
+      detail: { tenantId, principalId },
+    }));
   };
   useEffect(() => {
     if (!drawerTaskId) return undefined;
     const keyDown = event => {
       if (event.key === 'Escape') {
         event.preventDefault();
+        setTaskIntelligenceOpen(false);
         setDrawerTaskId(null);
         drawerReturnFocus.current?.focus?.();
       }
@@ -2298,6 +2323,11 @@ export default function ProjectTasksPanel({
                 {drawerTask.kind === 'MILESTONE' ? 'Milestone'
                   : drawerTask.parent_task_id ? 'Subtask' : 'Task'} · Project work
               </p>
+              <button type="button" onClick={() => setTaskIntelligenceOpen(value => !value)}
+                aria-pressed={taskIntelligenceOpen}
+                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+                {taskIntelligenceOpen ? 'Task details' : 'WILSY AI'}
+              </button>
               <button type="button" onClick={closeDrawer}
                 className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 aria-label="Close work details">Close</button>
@@ -2358,6 +2388,23 @@ export default function ProjectTasksPanel({
             </nav>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
+            {taskIntelligenceOpen ? <section aria-label="WILSY AI task intelligence" className="mt-4 rounded-xl bg-[#0d1e32] p-4 text-slate-100">
+              <header className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-white/15 pb-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-100">WILSY AI · Current work</h4>
+                  <p className="mt-1 text-xs text-slate-300">Independent EOS task verification. No model or task command is assumed.</p>
+                </div>
+                <button type="button" className="min-h-9 rounded-md border border-slate-400 px-3 text-xs font-semibold text-slate-100 hover:bg-white/10"
+                  onClick={openTaskIntelligenceConversation}>Open conversation</button>
+              </header>
+              <WilsyDockOperatingWork
+                tenantId={tenantId} principalId={principalId} scope={scope}
+                locator={{ workspace: 'PROJECTS', project_id: projectId,
+                  task_id: drawerTask.task_id, task_revision: drawerTask.revision,
+                  participant_view: Boolean(selfIsContributor) }}
+                providerReady={false} usageConsent={false}
+                onVerified={() => {}} onRecord={() => {}} />
+            </section> : <>
             {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section
               className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4"
               aria-label="Source-verified task execution readiness">
@@ -2508,6 +2555,7 @@ export default function ProjectTasksPanel({
                     </li>)}
                 </ul>}
             </section>
+            </>}
           </div>
         </aside>
       </div>}
@@ -2530,7 +2578,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.69.1-SINGLE-TASK-MODAL-EXIT
+// VERSION: v1.70.0-IN-TASK-INTELLIGENCE-VIEW
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
