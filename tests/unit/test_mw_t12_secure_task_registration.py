@@ -1,5 +1,5 @@
 """TITLE: MW-T12 dormant SSM secret-backed ECS task registration contract.
-VERSION: v1.0.0-EXACT-REVISION-IDEMPOTENCE-REGRESSION
+VERSION: v1.1.0-RUNTIME-READINESS-SECURE-REVISION-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify initial and replay-safe task definition metadata registration
          without launching ECS compute, exposing secrets or accepting drift.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 task definition registrar, ECR
          provenance and guarded ECS readback implementation.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.1.0-RUNTIME-READINESS-SECURE-REVISION-CERT verifies
+           current read-only runtime gate reopens both scoped secret-backed
+           revisions, rejects altered image identity and cannot start compute.
 CHANGELOG: v1.0.0-EXACT-REVISION-IDEMPOTENCE-REGRESSION adds mocked initial,
            existing, partial, and drift-denial tests for exact dormant SSM
            revisions 3/4; no live AWS or payment authority.
@@ -21,6 +24,7 @@ from __future__ import annotations
 import pytest
 
 from tools.eos.ops import mw_t12_task_definition_admission as target
+from tools.eos.ops import mw_t12_runtime_readiness as readiness
 
 
 ARN_PREFIX = (
@@ -134,8 +138,62 @@ def test_registration_spec_preserves_exact_secret_and_no_task_role() -> None:
     )
 
 
+def test_runtime_gate_reads_both_secure_revisions_without_launch(monkeypatch) -> None:
+    """Verify the exact owned SSM revisions before any ECS runtime claim."""
+    seen = {"iam": 0, "reads": [], "contract": []}
+    monkeypatch.setattr(readiness.registered, "secure_plan",
+                        lambda profile: seen.__setitem__("iam", seen["iam"] + 1))
+    def read_task(profile, revision):
+        seen["reads"].append(revision)
+        return {"taskDefinitionArn": ARN_PREFIX + str(revision)}
+    monkeypatch.setattr(readiness, "task", read_task)
+    def verify(profile, arn, expected):
+        seen["contract"].append((arn, expected["containerDefinitions"][0]["image"],
+                                  expected["containerDefinitions"][0]["secrets"]))
+        return int(arn.rsplit(":", 1)[1])
+    monkeypatch.setattr(readiness.registered, "verify", verify)
+
+    readiness.verify_secure_task_revisions("synthetic", ("HISTORICAL", "CURRENT"))
+    assert seen["iam"] == 1
+    assert seen["reads"] == [3, 4]
+    assert [x[0] for x in seen["contract"]] == [
+        ARN_PREFIX + "3", ARN_PREFIX + "4"
+    ]
+    assert [x[1] for x in seen["contract"]] == ["HISTORICAL", "CURRENT"]
+    assert all(x[2] == [{
+        "name": "MONGODB_URI", "valueFrom": target.SSM_PARAMETER_ARN,
+    }] for x in seen["contract"])
+
+
+def test_runtime_gate_rejects_wrong_secure_revision_identity(monkeypatch) -> None:
+    """Do not certify a task ARN not owned by the exact admission family."""
+    monkeypatch.setattr(readiness.registered, "secure_plan", lambda profile: None)
+    monkeypatch.setattr(readiness, "task", lambda profile, revision: {
+        "taskDefinitionArn": ARN_PREFIX + "99",
+    })
+    monkeypatch.setattr(readiness.registered, "verify",
+                        lambda *args: pytest.fail("Unexpected second read"))
+    with pytest.raises(readiness.ReadinessError,
+                       match="SECURE_TASK_IDENTITY_DRIFT"):
+        readiness.verify_secure_task_revisions("synthetic",
+                                               ("HISTORICAL", "CURRENT"))
+
+
+def test_runtime_gate_rejects_secure_secret_or_image_drift(monkeypatch) -> None:
+    """Independent task definition readback must certify its whole contract."""
+    monkeypatch.setattr(readiness.registered, "secure_plan", lambda profile: None)
+    monkeypatch.setattr(readiness, "task", lambda profile, revision: {
+        "taskDefinitionArn": ARN_PREFIX + str(revision),
+    })
+    monkeypatch.setattr(readiness.registered, "verify", lambda *args: 0)
+    with pytest.raises(readiness.ReadinessError,
+                       match="SECURE_TASK_SPEC_OR_SECRET_DRIFT"):
+        readiness.verify_secure_task_revisions("synthetic",
+                                               ("HISTORICAL", "CURRENT"))
+
+
 # ARTIFACT: tests/unit/test_mw_t12_secure_task_registration.py
-# VERSION: v1.0.0-EXACT-REVISION-IDEMPOTENCE-REGRESSION
+# VERSION: v1.1.0-RUNTIME-READINESS-SECURE-REVISION-CERT
 # AUTHORITY BOUNDARY: Mocked ECS metadata registration only; no compute.
 # TENANT POSTURE: No live tenant database, role or secret access.
 # FAIL-CLOSED POSTURE: Unknown revisions or settings deny registration.
