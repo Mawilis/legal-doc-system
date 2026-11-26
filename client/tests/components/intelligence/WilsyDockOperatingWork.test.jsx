@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT
+ * VERSION: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT checks client-side Open yields task focus through one callback, retaining no reload and no write.
  * CHANGELOG: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT certifies CRM Open changes React Router location without document reload or task mutation and retains a valid canonical href for direct navigation. Existing mock-only tests remain Router-independent.
  * CHANGELOG: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT checks tenant-neutral sentence-case metadata and preserved full EOS rank explanation without changing task identity or action rights.
  * CHANGELOG: v1.4.0-MW-T11-SCANNABLE-SOURCE-CERT certifies readable work title and quiet metadata, preserved EOS ordinal and full source explanation in the accessible row, unchanged canonical selection, and no exposed opaque task ID.
@@ -99,10 +100,11 @@ describe('permissioned operating work', () => {
         authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
       } };
     });
+    const navigated = vi.fn();
     render(<MemoryRouter initialEntries={['/headquarters?section=my-work']}>
       <OperatingWork tenantId={TENANT} principalId={PERSON} scope={scope()}
         locator={{ workspace: 'HEADQUARTERS' }}
-        onRecord={record} onSelectWork={selected} />
+        onRecord={record} onSelectWork={selected} onNavigateWork={navigated} />
       <RouteLocationProbe />
     </MemoryRouter>);
     const action = await screen.findByRole('link', { name: /Open authorized CRM work/ });
@@ -111,6 +113,7 @@ describe('permissioned operating work', () => {
     fireEvent.click(action);
     expect(screen.getByLabelText('Current client route')).toHaveTextContent(
       '/headquarters?section=my-work&work=' + encodeURIComponent('CRM:' + crmId));
+    expect(navigated).toHaveBeenCalledTimes(1);
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -339,7 +342,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT
+// VERSION: v1.6.1-SPA-INTERNAL-WORK-FOCUS-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
