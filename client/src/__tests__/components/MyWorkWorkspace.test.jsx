@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.20.0-UNIFIED-MODAL-SOURCE-CAPABILITY-CERT
+ * VERSION: v1.21.0-CANONICAL-PROJECT-SOURCE-ROUTING-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.21.0-CANONICAL-PROJECT-SOURCE-ROUTING-CERT proves exact source-verified Projects work opens the canonical Projects route and does not mutate work or open the incomplete My Work details.
  * CHANGELOG: v1.20.0-UNIFIED-MODAL-SOURCE-CAPABILITY-CERT verifies the shared Projects/My Work task-modal header, CRM capability gating, and canonical command reconciliation behind independently admitted source actions.
  * CHANGELOG: v1.19.0-SOURCE-NEUTRAL-TASK-DETAIL-CERT certifies the task-first details view with CRM actions and audit under an explicit source tab. Existing CRM update, cancel, status/revision readback regressions continue through the same authorized source-specific controls.
  * CHANGELOG: v1.18.0-INPLACE-WORK-FOCUS-CERT verifies the approved
@@ -77,7 +78,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import MyWorkWorkspace from '../../components/workspaces/MyWorkWorkspace.jsx';
 import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
@@ -136,6 +137,46 @@ beforeEach(() => {
     data: { work_item_id: decodeURIComponent(path.split('/').at(-2)), status: 'COMPLETED' },
   }));
   completeLegalWorkItem.mockResolvedValue({ work_item_id: 'legal-1', completion_event_id: 'event-1' });
+});
+
+function RouteProbe() {
+  const location = useLocation();
+  return <output data-testid="current-work-route">{location.pathname + location.search}</output>;
+}
+
+describe('canonical source-owned project task routing', () => {
+  it('opens an EOS-admitted Projects task in the Projects workspace instead of the incomplete My Work drawer', async () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const item = {
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId, work_item_id: taskId,
+      project_id: projectId, owner_principal_id: 'principal-a', title: 'Verify engineering milestone',
+      description: 'Evidence belongs to Projects', kind: 'TASK',
+      status: 'IN_PROGRESS', priority: 'NORMAL', is_overdue: false,
+      due_at: null, due_date: '2026-11-27', action_authority: 'SOURCE_SERVICE_ONLY',
+      completion_route: null, dependency_total: 0, dependency_remaining: 0,
+      dependency_readiness: 'READY',
+    };
+    api.get.mockResolvedValue({ data: {
+      ...payload, items: [item], sources_included: ['PROJECTS'],
+      summary: { active_count: 1, overdue_count: 0, source_counts: { PROJECTS: 1 } },
+    } });
+    render(<AuthContext.Provider value={{ user: { id: 'principal-a', tenantId: 'tenant-a' }, sessionGeneration: 12 }}>
+      <MemoryRouter initialEntries={['/headquarters?section=my-work']}>
+        <MyWorkWorkspace />
+        <RouteProbe />
+      </MemoryRouter>
+    </AuthContext.Provider>);
+    fireEvent.click(await screen.findByRole('button', { name: /Verify engineering milestone/ }));
+    await waitFor(() => expect(screen.getByTestId('current-work-route').textContent).toContain('section=projects'));
+    const query = new URLSearchParams(screen.getByTestId('current-work-route').textContent.split('?')[1]);
+    expect(query.get('project')).toBe(projectId);
+    expect(query.get('task')).toBe(taskId);
+    expect(query.get('work')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /Verify engineering milestone/ })).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
 });
 
 describe('authenticated My Work execution queue', () => {
@@ -803,7 +844,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.20.0-UNIFIED-MODAL-SOURCE-CAPABILITY-CERT
+ * VERSION: v1.21.0-CANONICAL-PROJECT-SOURCE-ROUTING-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
