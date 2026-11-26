@@ -587,6 +587,7 @@ export default function MyWorkWorkspace(props = {}) {
     if (!focusKey || !items.some((item) => item.source_key === focusKey)) return;
     rowRefs.current.get(focusKey)?.focus();
     rowRefs.current.get(focusKey)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    setTaskDetailTab('DETAILS');
     setSelectedKey(focusKey);
   }, [items, focusKey]);
 
@@ -973,7 +974,7 @@ export default function MyWorkWorkspace(props = {}) {
             className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[#d5dfef] bg-white shadow-sm">
             <header className="flex items-start justify-between gap-3 border-b border-[#d5dfef] px-4 py-4 sm:px-6">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-amber-200">{SOURCE_LABELS[selectedItem.source] || selectedItem.source} work</p>
+                <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">Task · {SOURCE_LABELS[selectedItem.source] || selectedItem.source} work</p>
                 <h2 id="my-work-detail-title" className="mt-1 break-words text-xl font-semibold text-white">{selectedItem.title}</h2>
               </div>
               <button ref={closeButtonRef} type="button" onClick={requestClose} aria-label="Back to work"
