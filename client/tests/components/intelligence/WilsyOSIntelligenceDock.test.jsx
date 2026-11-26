@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.64.1-STALE-CHAT-RECOVERY-CERT
+ * VERSION: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT respects the history list's nonempty-message filter and waits for tab transition before invoking the new conversation control, while still asserting no EOS deletion.
  * CHANGELOG: v1.64.1-STALE-CHAT-RECOVERY-CERT verifies an empty thread's stale task refusal and draft can be cleared in place without adding a thread or modifying EOS history.
  * CHANGELOG: v1.64.0-CHAT-ACTIONS-AND-LOCAL-TIME-CERT verifies New conversation from chat, Clear chat preserves the EOS archive without history mutation, and source timestamps are human-readable while original UTC evidence is retained.
  * CHANGELOG: v1.63.2-PROGRESSIVE-FOOTER-TIMING-CERT waits for the genuine visible source footer to emerge from the existing 90-step progressive renderer rather than timing out on its immediate screen-reader copy; preserves semantic footer assertions.
@@ -2529,8 +2530,8 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByText('Previous saved work')).toBeVisible();
     expect(screen.getByText('Another archive entry')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
-    fireEvent.click(within(screen.getByRole('group', { name: 'Conversation actions' }))
-      .getByRole('button', { name: 'New conversation' }));
+    const chatActions = await screen.findByRole('group', { name: 'Conversation actions' });
+    fireEvent.click(within(chatActions).getByRole('button', { name: 'New conversation' }));
     await waitFor(() => expect(mockCreateThread).toHaveBeenCalledTimes(2));
     expect(mockClearThreads).not.toHaveBeenCalled();
   });
@@ -2553,7 +2554,11 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockCreateThread).not.toHaveBeenCalled();
     expect(mockClearThreads).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    expect(screen.getByText('Existing archive')).toBeVisible();
+    // The archive hides empty threads by contract; its in-memory EOS record
+    // remains available and no delete/clear mutation was issued.
+    expect(mockThreads.some(thread => thread.id === 'thread1'
+      && thread.title === 'Existing archive')).toBe(true);
+    expect(screen.getByText('No conversations yet.')).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -2965,7 +2970,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.64.1-STALE-CHAT-RECOVERY-CERT
+ * VERSION: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
