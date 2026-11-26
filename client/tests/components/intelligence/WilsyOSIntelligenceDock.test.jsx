@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.48.0-NO-PREFETCH-CERT
+ * VERSION: v1.48.1-EMPTY-CONVERSATION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.48.1-EMPTY-CONVERSATION-CERT additionally requires a genuine unboxed chat entry with no automatic attention panel.
  * CHANGELOG: v1.48.0-NO-PREFETCH-CERT asserts zero My Work network reads on open, exactly one on intentional source query and one per explicit retry.
  * CHANGELOG: v1.47.0-CHAT-FIRST-REGRESSION verifies opt-in task view, return to transcript and compact recent-conversation heading.
  * CHANGELOG: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT admits automatic authorized daily attention
@@ -389,6 +390,8 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
     await waitFor(() => expect(screen.getByText('WILSY OS Intelligence Dock')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Conversation' })).toBeInTheDocument();
+    expect(screen.getByText('What would you like to explore?')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Needs your attention' })).not.toBeInTheDocument();
   });
 
   it('uses WILSY OS with paid EOS reasoning and no legacy BFF', async () => {
@@ -2425,7 +2428,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.48.0-NO-PREFETCH-CERT
+ * VERSION: v1.48.1-EMPTY-CONVERSATION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
