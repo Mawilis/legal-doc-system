@@ -525,12 +525,25 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
   if (embedded && readOnly && hasTask) {
     const checked = Boolean(handoffConfirmed && brief);
     const outstanding = checked ? brief.blockers : [];
-    const dependencies = checked ? brief.dependencies.length : 0;
-    const summary = outstanding?.length
-      ? 'Requires attention: ' + outstanding[0]
-      : dependencies
-        ? dependencies + ' recorded dependencies. Check current source evidence before completing work.'
-        : 'No unfinished predecessor reported by this source. Evidence and decisions need separate review.';
+    const assessmentKey = checked ? identity + ':' + envelope.source.revision
+      + ':' + envelope.source.fingerprint + ':' + retry + ':' + refresh : null;
+    const sourcesReady = Boolean(assessmentKey && assessment.identity === assessmentKey
+      && assessment.state === 'READY');
+    const sources = sourcesReady ? assessment.sources : {};
+    const source = key => sources[key]?.state === 'VERIFIED' ? sources[key] : null;
+    const activity = source('activity');
+    const updates = source('updates');
+    const evidence = source('evidence');
+    const approvals = source('approvals');
+    const summaryLine = (value, noun) => !value ? noun + ' not verified'
+      : value.count + (value.hasMore ? '+ ' : ' ') + noun + ' recorded';
+    const nextAction = outstanding.length
+      ? { label: 'Inspect the recorded blocker', onClick: onReviewActivity }
+      : !updates ? { label: 'Verify progress activity', onClick: onReviewActivity }
+        : updates.count === 0 ? { label: 'Record engineering progress', onClick: onReviewActivity }
+          : !evidence ? { label: 'Verify supporting evidence', onClick: onReviewEvidence }
+            : evidence.count === 0 ? { label: 'Review the missing supporting evidence', onClick: onReviewEvidence }
+              : { label: 'Review handoff and completion evidence', onClick: onReviewActivity };
     return <section aria-label="WILSY AI task assessment" className="space-y-4 text-sm text-slate-800">
       {!ready || !checked ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
         <span>{view.state === 'UNAVAILABLE' ? view.message || 'EOS task source unavailable.'
@@ -547,12 +560,50 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
           </div>
           <span className="text-xs text-slate-500">EOS · Revision {envelope.source.revision}</span>
         </div>
-        <div className="space-y-1.5" aria-label="Current work assessment">
-          <h5 className="text-sm font-semibold text-slate-900">What needs attention</h5>
-          <p className="max-w-prose text-sm leading-relaxed text-slate-700">{summary}</p>
-          {outstanding.length > 1 && <p className="text-xs text-slate-500">
-            {outstanding.length - 1} additional source-reported issue(s). Review the full task for details.
+        <div className="space-y-2.5" aria-label="Current work assessment">
+          <h5 className="text-sm font-semibold text-slate-900">Completion evidence</h5>
+          {!sourcesReady && <p role="status" className="text-xs text-slate-500">
+            Checking task activity, engineering updates, attachments and reviewer decisions…
           </p>}
+          <ul className="divide-y divide-slate-100 text-sm">
+            <li className="flex flex-wrap justify-between gap-2 py-2">
+              <span>EOS lifecycle</span>
+              <span className="text-slate-600">Revision {envelope.source.revision} verified; not a completion certificate</span>
+            </li>
+            <li className="flex flex-wrap justify-between gap-2 py-2">
+              <span>Task lifecycle events</span>
+              <span className="text-slate-600">{summaryLine(activity, 'events')}</span>
+            </li>
+            <li className="flex flex-wrap justify-between gap-2 py-2">
+              <span>Engineering updates</span>
+              <span className="text-slate-600">{summaryLine(updates, 'updates')}</span>
+            </li>
+            <li className="flex flex-wrap justify-between gap-2 py-2">
+              <span>Supporting attachments</span>
+              <span className="text-slate-600">{summaryLine(evidence, 'attachments')}
+                {evidence?.items.some(item => item.scan_clearance_status !== 'SCAN_CLEAN_VERIFIED')
+                  ? ' · scan clearance outstanding' : ''}</span>
+            </li>
+            <li className="flex flex-wrap justify-between gap-2 py-2">
+              <span>Reviewer decisions</span>
+              <span className="text-slate-600">{summaryLine(approvals, 'decisions')}
+                {approvals?.items.some(item => item.status === 'PENDING' || item.status === 'REJECTED')
+                  ? ' · unresolved decisions present' : ''}</span>
+            </li>
+          </ul>
+          {outstanding.length > 0 && <p className="text-sm text-slate-700">
+            EOS-reported blocker: {outstanding[0]}
+            {outstanding.length > 1 ? ' (' + (outstanding.length - 1) + ' further)' : ''}
+          </p>}
+          <p className="text-xs leading-relaxed text-slate-600">
+            Source identity, event counts, attachments and decisions do not prove the task's
+            acceptance criteria. Ranking explanation, independently observed handoff and
+            exact-head test results need their own certification evidence.
+          </p>
+          {sourcesReady && <button type="button" onClick={nextAction.onClick}
+            className="min-h-10 rounded-md bg-blue-700 px-4 text-xs font-semibold text-white hover:bg-blue-800">
+            Next: {nextAction.label}
+          </button>}
         </div>
         <nav aria-label="Review task evidence and activity" className="flex flex-wrap gap-2 border-t border-slate-200 pt-3">
           <button type="button" onClick={onReviewActivity}
@@ -568,7 +619,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
             Approvals
           </button>
         </nav>
-        <p className="text-xs text-slate-500">Read-only inspection. These actions open the existing Projects records; nothing is approved or completed by AI.</p>
+        <p className="text-xs text-slate-500">Recorded evidence is not certified execution. All review actions open existing EOS task records; WILSY AI cannot approve or complete work.</p>
       </>}
     </section>;
   }
@@ -664,7 +715,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE
+// VERSION: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
