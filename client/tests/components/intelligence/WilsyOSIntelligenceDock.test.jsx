@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.49.0-RESTORED-TASK-MODE-CERT
+ * VERSION: v1.50.0-SESSION-AND-GREETING-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.50.0-SESSION-AND-GREETING-CERT certifies EOS-saved threads also appear in the current-session filter after use, while unopened threads stay excluded, and authenticated greetings require no paid model.
  * CHANGELOG: v1.49.0-RESTORED-TASK-MODE-CERT certifies that task selection exits SOURCE history inspection into governed operating mode with exact selected task ID and no unauthorized write.
  * CHANGELOG: v1.48.1-EMPTY-CONVERSATION-CERT additionally requires a genuine unboxed chat entry with no automatic attention panel.
  * CHANGELOG: v1.48.0-NO-PREFETCH-CERT asserts zero My Work network reads on open, exactly one on intentional source query and one per explicit retry.
@@ -2157,9 +2158,29 @@ describe('WilsyOSIntelligenceDock', () => {
       target: { value: '' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Saved' }));
+    expect(screen.getByRole('button', { name: 'Open conversation Foundation work' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Open conversation Operating plan' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'This session' }));
+    // The active EOS-saved thread is also part of the current Dock session.
+    expect(screen.getByRole('button', { name: 'Open conversation Foundation work' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Open conversation Operating plan' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open conversation Operating plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    fireEvent.click(screen.getByRole('button', { name: 'This session' }));
+    expect(screen.getByRole('button', { name: 'Open conversation Foundation work' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Open conversation Operating plan' })).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('greets the authenticated operator on a fresh general conversation without a paid model request', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'greeting-principal', tenantId: 'TEST_TENANT', role: 'OWNER',
+      firstName: 'Amina',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    expect(await screen.findByText(/^Good (morning|afternoon|evening), Amina\.$/)).toBeVisible();
+    expect(screen.getByText('What would you like to explore?')).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -2479,7 +2500,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.49.0-RESTORED-TASK-MODE-CERT
+ * VERSION: v1.50.0-SESSION-AND-GREETING-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
