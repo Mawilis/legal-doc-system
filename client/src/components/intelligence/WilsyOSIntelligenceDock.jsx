@@ -1,19 +1,20 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION
+ * VERSION: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.jsx
  * COLLABORATION / OWNERSHIP: App authenticated runtime gate, canonical api.js,
  * Legal advisory/deadline adapters and session-only conversation engines.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * COMPLIANCE: AGENTS.md; exact-scope fail-closed source evidence.
  * SECURITY / PRIVACY POSTURE: Session-person label never displays account email;
  * no model calls arise from read-only context inspection.
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION replaces generic dependency counts with strictly validated EOS predecessor state in the existing task-source conversation; no paid model, fabricated action, or decorative panel.
  * CHANGELOG: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION admits natural forms such as Let’s inspect MW-T12 into the same verified, read-only task inspection path without provider credits, broad intent guessing or client authorization.
  * CHANGELOG: v4.65.0-CONSENTED-MODEL-CONVERSATION permits ordinary conversation to use the actual EOS-governed provider when a current verified allowance and explicit model consent exist; free courtesy never impersonates a generative response.
  * CHANGELOG: v4.64.0-PERSONAL-CONTEXT-COURTESY makes nonmetered courtesy time-appropriate, authenticated-name-aware and respectful of continuing conversation, with no generic task-only pitch or claim of model inference.
@@ -1905,10 +1906,33 @@ export function WilsyOSIntelligenceDock({
         const deadline = typeof dueValue === 'string'
           && /^\d{4}-\d{2}-\d{2}(?:$|T)/.test(dueValue)
           ? dueValue.slice(0, 10) : 'not supplied by EOS';
-        const dependencyLine = Array.isArray(task.depends_on)
-          && task.depends_on.every(id => /^ptk-[a-f0-9]{48}$/.test(id))
-          ? '\nDependencies: ' + task.depends_on.length + ' recorded (completion separately verified)'
-          : '';
+        // MW-T11: exact selected-task predecessor evidence comes from the
+        // existing EOS-authorized Projects snapshot, not the browser's graph.
+        const linked = task.depends_on;
+        const predecessors = task.predecessors;
+        const graphVerified = Array.isArray(linked) && linked.length <= 25
+          && linked.every(id => /^ptk-[a-f0-9]{48}$/.test(id))
+          && new Set(linked).size === linked.length
+          && Array.isArray(predecessors) && predecessors.length === linked.length
+          && predecessors.every((entry, index) => entry?.task_id === linked[index]
+            && typeof entry.title === 'string' && entry.title.trim().length > 0
+            && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(entry.status)
+            && Number.isSafeInteger(entry.revision) && entry.revision >= 1);
+        const unfinished = graphVerified
+          ? predecessors.filter(entry => entry.status !== 'DONE') : [];
+        const dependencyLine = !graphVerified
+          ? '\nDependencies: Current predecessor states not independently verified.'
+          : linked.length === 0
+            ? '\nDependencies: No recorded predecessors.'
+            : '\nDependencies: ' + (linked.length - unfinished.length) + '/'
+              + linked.length + ' predecessors done.'
+              + (unfinished.length
+                ? '\nWaiting for:\n' + unfinished.slice(0, 8).map(entry =>
+                    '• ' + entry.title.slice(0, 120) + ' — '
+                    + entry.status.replaceAll('_', ' ').toLowerCase()).join('\n')
+                  + (unfinished.length > 8
+                    ? '\n' + (unfinished.length - 8) + ' more unfinished; inspect the task in Projects.' : '')
+                : '\nAll recorded predecessors are done. Other completion gates remain independent.');
         const reply = 'EOS source verified: ' + task.title
           + '\nLifecycle: ' + verifiedStatus
           + '\nRevision: ' + task.revision
@@ -3628,7 +3652,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION
+ * VERSION: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
