@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS
+ * VERSION: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE admits only explicit same-tenant/principal/project task-open requests against uniquely matched EOS-verified items and opens the existing canonical task drawer without granting context or IAM authority.
  * CHANGELOG: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS replaces dark duplicate task transcript with a compact source-verified assessment using the same canonical EOS brief and task-owned Activity/Evidence/Approvals navigation; no new workflow or model entitlement. Modal context and keyboard safety remain unchanged.
  * CHANGELOG: v1.70.0-IN-TASK-INTELLIGENCE-VIEW offers a source-authorized WILSY AI task brief inside the current task modal, with a deliberate transition to full Dock conversation and exact task locator. Keeps the external floating Dock hidden while modal is active; source/IAM remain EOS owned.
  * CHANGELOG: v1.69.1-SINGLE-TASK-MODAL-EXIT keeps the
@@ -1391,6 +1392,29 @@ export default function ProjectTasksPanel({
     }
   };
   const drawerTask = items.find(item => item.task_id === drawerTaskId);
+  useEffect(() => {
+    // A Dock button may request navigation into this already-mounted Projects
+    // panel. Only this EOS-validated exact project page may resolve that hint.
+    // The request itself grants no task, tenant or model authority.
+    const onDockOpenTask = event => {
+      const detail = event?.detail;
+      if (!detail || state !== 'READY' || busy || discussionOnly
+        || detail.tenantId !== tenantId || detail.principalId !== principalId
+        || detail.projectId !== projectId
+        || !/^MW-T\\d{1,3}$/.test(detail.taskCode || '')) return;
+      const matching = items.filter(item => TASK_ID.test(item.task_id || '')
+        && Number.isSafeInteger(item.revision) && item.revision > 0
+        && (item.title === detail.taskCode
+          || item.title.startsWith(detail.taskCode + ' — ')
+          || item.title.startsWith(detail.taskCode + ' - ')));
+      if (matching.length !== 1) return;
+      detail.accepted = true;
+      setDrawerTaskId(matching[0].task_id);
+      recordWorkVisit(matching[0]);
+    };
+    window.addEventListener('wilsy:projects-open-task-request', onDockOpenTask);
+    return () => window.removeEventListener('wilsy:projects-open-task-request', onDockOpenTask);
+  }, [state, busy, discussionOnly, tenantId, principalId, projectId, items]);
   const closeDrawer = () => {
     setTaskIntelligenceOpen(false);
     setDrawerTaskId(null);
@@ -2533,7 +2557,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS
+// VERSION: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
