@@ -5,7 +5,8 @@ EPITOME: Prove source lifecycle, receipts, encrypted continuity and quarantined 
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_wilsy_dock_operating_real_mongo.py
 COLLABORATION / OWNERSHIP: Canonical Projects, Dock HTTP and encrypted EOS archive.
 CERTIFICATION / UPDATE DATE: 2026-11-25
-CHANGELOG: v1.1.0-MANIFEST-REOPEN-CERT checks accepted attachment manifest survives an independent authenticated HTTP client reopen, with source hash unchanged and quarantine unpromoted.\nCHANGELOG: v1.0.0 certifies the nonproduction vertical source journey and denial cases.
+CHANGELOG: v1.1.0-MANIFEST-REOPEN-CERT checks accepted attachment manifest survives an independent authenticated HTTP client reopen, with source hash unchanged and quarantine unpromoted.
+CHANGELOG: v1.0.0 certifies the nonproduction vertical source journey and denial cases.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2.
 SECURITY / PRIVACY POSTURE: UUID disposable database, synthetic identities, local fake object store.
 TENANT BOUNDARY: Exact source tenant/principal; no Founder or production records.
