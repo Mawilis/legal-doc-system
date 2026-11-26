@@ -19,7 +19,7 @@ import React from 'react';
 
 export default function UnifiedTaskHeader({
   kind = 'Task', source, title, status, due, owner,
-  onClose, closeLabel = 'Close', primaryControl = null,
+  onClose, closeLabel = 'Close', closeRef = null, primaryControl = null,
   reviewNavigation = null, actions = null, titleId,
 }) {
   return <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
@@ -28,7 +28,7 @@ export default function UnifiedTaskHeader({
         {kind} · {source} work
       </p>
       {primaryControl}
-      <button type="button" onClick={onClose}
+      <button type="button" ref={closeRef} onClick={onClose}
         className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
         aria-label={closeLabel}>{closeLabel}</button>
     </div>
