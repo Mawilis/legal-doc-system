@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.9.2-STRICT-SOURCE-RECORD-CERT
+ * VERSION: v1.9.3-ALIGNED-EVIDENCE-COLUMNS-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.3-ALIGNED-EVIDENCE-COLUMNS-CERT validates all five evidence values share the same responsive fixed-start grid column, left alignment and narrow stacking without changing source-evidence assertions.
  * CHANGELOG: v1.9.2-STRICT-SOURCE-RECORD-CERT uses fully scoped synthetic event records to require EOS event authorship/time validation and rejects mismatched source items as unverified.
  * CHANGELOG: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT requires task's original acceptance text and lifecycle to remain visible while activity and attachment presence are not falsely treated as completion.
  * CHANGELOG: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT verifies bounded independent task event, comment, attachment and approval counts with missing evidence named explicitly, no false completion, no cross-tenant read acceptance, and unchanged source-backed navigation.
@@ -121,6 +122,14 @@ describe('permissioned operating work', () => {
     expect(assessment).toHaveTextContent('to do · revision 1');
     expect(assessment).toHaveTextContent('0 attachments recorded');
     expect(assessment).toHaveTextContent('0 decisions recorded');
+    const rows = [...screen.getByRole('list', { name: 'Verified completion evidence' }).children];
+    expect(rows).toHaveLength(5);
+    for (const row of rows) {
+      expect(row).toHaveClass('grid', 'grid-cols-1',
+        'sm:grid-cols-[minmax(0,1fr)_minmax(0,42%)]');
+      expect(row.children).toHaveLength(2);
+      expect(row.children[1]).toHaveClass('min-w-0', 'text-left');
+    }
     expect(assessment).toHaveTextContent('do not prove the task');
     fireEvent.click(screen.getByRole('button', { name: /Next: Review the missing supporting evidence/i }));
     expect(evidence).toHaveBeenCalledTimes(1);
@@ -446,7 +455,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.9.2-STRICT-SOURCE-RECORD-CERT
+// VERSION: v1.9.3-ALIGNED-EVIDENCE-COLUMNS-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
