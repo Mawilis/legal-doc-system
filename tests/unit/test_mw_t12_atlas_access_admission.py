@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.2.0-ISOLATION-CLI-FAILCLOSED-CERT
+VERSION: v1.3.0-ATLAS-API-DENIAL-CLASSIFICATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,6 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.0-ATLAS-API-DENIAL-CLASSIFICATION tests only
+           safe HTTP status classifications; no request body or key exposure.
 CHANGELOG: v1.2.0-ISOLATION-CLI-FAILCLOSED-CERT verifies the real
            read-only CLI denies wildcard, refuses mutation flag combinations
            before opening network sessions and never issues POST/DELETE.
@@ -274,8 +276,33 @@ def test_isolation_flag_never_combines_with_network_write(monkeypatch) -> None:
     assert result == 2
 
 
+@pytest.mark.parametrize("status,code", [
+    (401, "ATLAS_ADMIN_API_AUTHENTICATION_DENIED_401"),
+    (403, "ATLAS_ADMIN_API_ACCESS_DENIED_403"),
+    (429, "ATLAS_ADMIN_API_RATE_LIMITED_429"),
+    (404, "ATLAS_API_REQUEST_DENIED"),
+])
+def test_atlas_admin_api_denials_are_status_only(
+    status, code,
+) -> None:
+    """Never print or process a denied response body containing secrets."""
+    class Denial:
+        status_code = status
+        content = b"PRIVATE-ERROR-BODY-MUST-NOT-BE-READ"
+        def json(self):
+            pytest.fail("DENIAL_BODY_MUST_NOT_BE_PARSED")
+    class Client:
+        def request(self, method, url, **kwargs):
+            assert method == "GET"
+            return Denial()
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="^" + code + "$") as denied:
+        admission.atlas(Client(), "GET", "/accessList")
+    assert "PRIVATE-ERROR-BODY-MUST-NOT-BE-READ" not in str(denied.value)
+
+
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.2.0-ISOLATION-CLI-FAILCLOSED-CERT
+# VERSION: v1.3.0-ATLAS-API-DENIAL-CLASSIFICATION
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
