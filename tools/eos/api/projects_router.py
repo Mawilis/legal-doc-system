@@ -29,6 +29,10 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
                       response follows commit. The registry never opens one.
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
+CHANGELOG: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS
+  Original-author task comment corrections are append-only and admitted only
+  within 30 minutes of the original source timestamp; EOS checks author,
+  comment fingerprint, reason and time in the write transaction.
 CHANGELOG: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS exposes exact-command
   immutable receipt reconciliation without resubmitting a mutation.
 CHANGELOG:
@@ -4423,7 +4427,7 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS
+# VERSION: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
