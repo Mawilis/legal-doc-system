@@ -1,3 +1,22 @@
+# TITLE: Python EOS Runtime Deployment and MW-T12 Secure Metadata Certification
+# VERSION: v1.0.0-MWT12-SECURE-REVISION-CI
+# AUTHORITY: WILSY OS Core Governance / AGENTS.md
+# EPITOME: Compile, test and build Python EOS with independently enforced
+#          dormant scoped SSM-backed MW-T12 task-definition regression.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/eos-python-runtime-deployment-certification.yml
+# COLLABORATION / OWNERSHIP: Python EOS runtime image; task definition registrar;
+#                            existing MW-T12 tests and CI gates.
+# CERTIFICATION / UPDATE DATE: 2026-11-27
+# CHANGELOG: v1.0.0-MWT12-SECURE-REVISION-CI adds the secure task definition
+#            test and Python compile to the existing runtime certificate.
+#            Preserves the worker, Compose and image build tests.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+# SECURITY / PRIVACY POSTURE: Synthetic tests; no AWS access or secrets;
+#                             no ECS launch, Atlas mutation or production deploy.
+# TENANT BOUNDARY: Test-only and existing isolated disposable MongoDB sources.
+# AUTHORITY BOUNDARY: Test and build evidence only; no IAM, release or source write.
+# FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
+#
 name: Python EOS Runtime Deployment Certification
 
 on:
@@ -102,3 +121,11 @@ jobs:
         run: python -m py_compile tools/eos/api/server.py tools/eos/runtime/durable_task_queue.py tools/eos/runtime/durable_worker_runner.py tools/eos/runtime/durable_worker_runtime.py tools/eos/runtime/compliance_scan_worker.py tools/eos/runtime/compliance_scan_scheduler.py tools/eos/runtime/core_worker_registry.py tools/eos/runtime/core_worker_service.py tools/eos/runtime/worker_process.py
       - name: Build Python-only runtime image
         run: docker build --file Dockerfile.eos --tag wilsy-eos-python:certification .
+
+# ARTIFACT: .github/workflows/eos-python-runtime-deployment-certification.yml
+# VERSION: v1.0.0-MWT12-SECURE-REVISION-CI
+# AUTHORITY BOUNDARY: Exact-head Python CI only; no AWS registration or launch.
+# TENANT POSTURE: Disposable Mongo and synthetic IAM only.
+# FAIL-CLOSED POSTURE: Any compile, unit, replica or image build failure denies.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
