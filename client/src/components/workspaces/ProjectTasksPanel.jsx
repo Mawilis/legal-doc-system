@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.70.0-IN-TASK-INTELLIGENCE-VIEW
+ * VERSION: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS replaces dark duplicate task transcript with a compact source-verified assessment using the same canonical EOS brief and task-owned Activity/Evidence/Approvals navigation; no new workflow or model entitlement. Modal context and keyboard safety remain unchanged.
  * CHANGELOG: v1.70.0-IN-TASK-INTELLIGENCE-VIEW offers a source-authorized WILSY AI task brief inside the current task modal, with a deliberate transition to full Dock conversation and exact task locator. Keeps the external floating Dock hidden while modal is active; source/IAM remain EOS owned.
  * CHANGELOG: v1.69.1-SINGLE-TASK-MODAL-EXIT keeps the
  *          parent's accessible Back to Work action as the sole modal exit
@@ -2388,21 +2389,25 @@ export default function ProjectTasksPanel({
             </nav>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
-            {taskIntelligenceOpen ? <section aria-label="WILSY AI task intelligence" className="mt-4 rounded-xl bg-[#0d1e32] p-4 text-slate-100">
-              <header className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-white/15 pb-3">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-100">WILSY AI · Current work</h4>
-                  <p className="mt-1 text-xs text-slate-300">Independent EOS task verification. No model or task command is assumed.</p>
+            {taskIntelligenceOpen ? <section aria-label="WILSY AI task intelligence"
+              className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-4 sm:px-5">
+              <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-semibold text-slate-900">WILSY AI · Task intelligence</h4>
+                  <p className="text-xs text-slate-500">Current authorized source · No model required</p>
                 </div>
-                <button type="button" className="min-h-9 rounded-md border border-slate-400 px-3 text-xs font-semibold text-slate-100 hover:bg-white/10"
-                  onClick={openTaskIntelligenceConversation}>Open conversation</button>
+                <button type="button" className="min-h-10 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-blue-800 hover:bg-slate-50"
+                  onClick={openTaskIntelligenceConversation}>Continue in conversation</button>
               </header>
               <WilsyDockOperatingWork
                 tenantId={tenantId} principalId={principalId} scope={scope}
                 locator={{ workspace: 'PROJECTS', project_id: projectId,
                   task_id: drawerTask.task_id, task_revision: drawerTask.revision,
                   participant_view: Boolean(selfIsContributor) }}
-                providerReady={false} usageConsent={false} readOnly
+                providerReady={false} usageConsent={false} readOnly embedded
+                onReviewActivity={() => { const id = drawerTask.task_id; closeDrawer(); setDiscussionTaskId(id); }}
+                onReviewEvidence={() => { const id = drawerTask.task_id; closeDrawer(); setAttachmentTaskId(id); }}
+                onReviewApprovals={() => { const id = drawerTask.task_id; closeDrawer(); setApprovalTaskId(id); }}
                 onVerified={() => { void load(offset); }} onRecord={() => {}} />
             </section> : <>
             {!['DONE', 'CANCELLED'].includes(drawerTask.status) && <section
@@ -2578,7 +2583,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.70.0-IN-TASK-INTELLIGENCE-VIEW
+// VERSION: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
