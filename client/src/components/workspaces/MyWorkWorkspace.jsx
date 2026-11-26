@@ -5,7 +5,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING
+ * VERSION: v1.38.0-ATTENTION-REVERIFIED-SOURCE-KEY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
@@ -13,6 +13,7 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.38.0-ATTENTION-REVERIFIED-SOURCE-KEY routes source-key-only Projects attention handoffs through an independently EOS-verified My Work record before entering the canonical Projects task, never inferring a project ID from a paginated attention result.
  * CHANGELOG: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING opens verified Projects tasks in their source-owned Projects panel. Fixes modal title contrast and duplicate due-date prefix; source commands and IAM remain unchanged.
  * CHANGELOG: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS applies the shared Projects readiness component to all admitted My Work sources, retiring the remaining duplicate legacy metadata/provenance panel; source-specific completion commands remain governed in EOS.
  * CHANGELOG: v1.35.0-SHARED-READINESS-NO-LEGACY-CRM uses the exact Projects execution-readiness component for CRM and strips duplicated legacy CRM summary fields from its primary view; CRM editor/commands stay behind independent capability checks.
@@ -640,6 +641,13 @@ export default function MyWorkWorkspace(props = {}) {
 
   useEffect(() => {
     if (!focusKey || !items.some((item) => item.source_key === focusKey)) return;
+    const focused = items.find(item => item.source_key === focusKey);
+    if (focused?.source === 'PROJECTS') {
+      // Attention pagination can supply only a source key. The independently
+      // verified My Work record restores the exact project/task locator.
+      openSourceOwnedWork(focused);
+      return;
+    }
     rowRefs.current.get(focusKey)?.focus();
     rowRefs.current.get(focusKey)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
     if (lastRouteFocusRef.current !== focusKey) {
@@ -647,7 +655,7 @@ export default function MyWorkWorkspace(props = {}) {
       lastRouteFocusRef.current = focusKey;
     }
     setSelectedKey(focusKey);
-  }, [items, focusKey]);
+  }, [items, focusKey, openSourceOwnedWork]);
 
   useEffect(() => {
     if (selectedKey) {
@@ -1754,7 +1762,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING
+ * VERSION: v1.38.0-ATTENTION-REVERIFIED-SOURCE-KEY
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.
