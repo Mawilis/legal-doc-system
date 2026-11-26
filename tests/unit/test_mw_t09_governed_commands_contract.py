@@ -1,12 +1,12 @@
 """TITLE: WILSY OS MW-T09 Governed Command HTTP Boundary Certificate
-VERSION: v1.0.2-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
+VERSION: v1.0.3-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
 AUTHORITY: Synthetic read-only inspection of the canonical Python EOS Projects router.
 EPITOME: Certifies existing create/revise/transition/approval/decision route declarations,
          current IAM, CAS, idempotent registry delegation and read-only receipt authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t09_governed_commands_contract.py
 COLLABORATION / OWNERSHIP: MW-T09 Foundation programme; Projects API/router/registry boundaries.
 CERTIFICATION / UPDATE DATE: 2026-11-26.
-CHANGELOG: v1.0.2-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT uses the exact TENANT BOUNDARY label required by repository_integrity_guard.\nCHANGELOG: v1.0.1-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT asserts the canonical actual financial fence strings rather than a synthesized phrase.\nCHANGELOG: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT adds explicit source contract assertions;
+CHANGELOG: v1.0.3-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT restores the mandatory terminal sovereign end seal.\nCHANGELOG: v1.0.2-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT uses the exact TENANT BOUNDARY label required by repository_integrity_guard.\nCHANGELOG: v1.0.1-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT asserts the canonical actual financial fence strings rather than a synthesized phrase.\nCHANGELOG: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT adds explicit source contract assertions;
            authenticated HTTP, real Mongo and actor-denial tests are separate existing certificates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; WILSY institutional source governance.
 SECURITY / PRIVACY POSTURE: Static AST inspection; no tokens, identities, external requests or database.
@@ -200,3 +200,11 @@ def test_no_financial_execution_authority_is_issued_by_project_commands():
     assert 'FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend' in source
     assert 'Kennel EOS remains exclusive' in source
     assert 'FINANCIAL EXECUTION AUTHORITY: none' in source
+
+# ARTIFACT: test_mw_t09_governed_commands_contract.py
+# VERSION: v1.0.3-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
+# AUTHORITY BOUNDARY: static source inspection only; EOS IAM remains independent
+# TENANT POSTURE: exact tenant and project/task scope checked at runtime
+# FAIL-CLOSED POSTURE: absent route, missing CAS, IAM or replay declarations fail
+# FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS exclusively
+# END OF WILSY OS SOVEREIGN ARTIFACT
