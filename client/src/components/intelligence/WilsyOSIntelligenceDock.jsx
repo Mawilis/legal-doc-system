@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.60.0-PERMISSIONED-OPERATING-JOURNEY
+ * VERSION: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND defaults to transcript, opens EOS work on demand, restores chat after send/history selection and scrolls to latest assistant reply.
  * CHANGELOG: v4.60.0-PERMISSIONED-OPERATING-JOURNEY wires controlled briefs, actions,
  * deterministic editable PDF drafts and task-linked encrypted continuity.
  * CHANGELOG: v4.60.0-PERMISSIONED-OPERATING-JOURNEY adds a governed Start/Resume command and independent
@@ -1246,6 +1247,7 @@ export function WilsyOSIntelligenceDock({
     onPointerDown={beginDockMove} onPointerMove={moveDock} onPointerUp={endDockMove}
     onPointerCancel={endDockMove} onKeyDown={moveDockWithKeyboard}><GripVertical size={16}/></button>;
   const [activeTab, setActiveTab] = useState('chat');
+  const [workSurfaceOpen, setWorkSurfaceOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
   const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
@@ -1288,6 +1290,7 @@ export function WilsyOSIntelligenceDock({
   const [deadlineLoading, setDeadlineLoading] = useState(false);
   const [deadlineError, setDeadlineError] = useState('');
   const messagesEndRef = useRef(null);
+  const latestAssistantReplyRef = useRef(null);
   const messagesScrollRef = useRef(null);
   const latestVerifiedReplyRef = useRef(null);
   const healthAbortRef = useRef(null);
@@ -1329,6 +1332,7 @@ export function WilsyOSIntelligenceDock({
     setPrompt('');
     setErrorMessage('');
     setActiveTab('chat');
+    setWorkSurfaceOpen(false);
     setWorkLocator({ workspace: 'HEADQUARTERS' });
     setVerifiedWorkspaceContext(null);
     setHeadquartersWork(null);
@@ -1785,7 +1789,8 @@ export function WilsyOSIntelligenceDock({
 
   useEffect(() => {
     if (activeTab !== 'chat' || !isOpen) return;
-    const target = hasVerifiedSourceReply ? latestVerifiedReplyRef.current : messagesEndRef.current;
+    if (workSurfaceOpen) return;
+    const target = latestAssistantReplyRef.current || messagesEndRef.current;
     const scroller = messagesScrollRef.current;
     if (!target || !scroller) return;
     const distance = target.getBoundingClientRect().top
@@ -1797,7 +1802,7 @@ export function WilsyOSIntelligenceDock({
       top: Math.max(0, scroller.scrollTop + distance - 18),
       behavior: prefersReducedMotion ? 'auto' : 'smooth',
     });
-  }, [conversationThreads, activeThreadId, activeTab, isOpen, isSubmitting, hasVerifiedSourceReply]);
+  }, [conversationThreads, activeThreadId, activeTab, isOpen, isSubmitting, hasVerifiedSourceReply, workSurfaceOpen]);
 
   // A verified source read is an inspectable same-session turn, not a
   // model-generated answer or a durable EOS conversation record. Record it
@@ -1877,6 +1882,7 @@ export function WilsyOSIntelligenceDock({
     async (rawText) => {
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting || sendLockRef.current) return;
+      setWorkSurfaceOpen(false);
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
       const localCourtesyReply = isLegalDockRole(authUser?.role)
@@ -2725,9 +2731,15 @@ export function WilsyOSIntelligenceDock({
             </button>
             <button type="button"
               className={`${styles.navTabButton} ${activeTab === 'history' ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab('history')}>
+              onClick={() => { setWorkSurfaceOpen(false); setActiveTab('history'); }}>
               <History size={15}/><span>Recent conversations</span>
             </button>
+            {!isLegalDockRole(authUser?.role) && <button type="button"
+              className={`${styles.navTabButton} ${activeTab === 'chat' && workSurfaceOpen ? styles.activeTab : ''}`}
+              aria-pressed={activeTab === 'chat' && workSurfaceOpen}
+              onClick={() => { setActiveTab('chat'); setConversationView('WELCOME'); setWorkSurfaceOpen(value => !value); }}>
+              <ListFilter size={15}/><span>{workSurfaceOpen ? 'Back to chat' : 'Work'}</span>
+            </button>}
             {isLegalDockRole(authUser?.role) && (
               <button type="button"
                 className={`${styles.navTabButton} ${activeTab === 'legalAdvisory' ? styles.activeTab : ''}`}
@@ -2780,7 +2792,7 @@ export function WilsyOSIntelligenceDock({
                   </div>
                 )}
                 <div ref={messagesScrollRef} className={`${styles.messagesContainer} ${hasVerifiedSourceReply ? styles.verifiedAnswerFocus : ''}`} style={{ minHeight: 0 }}>
-                  {conversationView === 'WELCOME' && !isLegalDockRole(authUser?.role) && isOpen && (
+                  {conversationView === 'WELCOME' && workSurfaceOpen && !isLegalDockRole(authUser?.role) && isOpen && (
                     <WilsyDockOperatingWork
                       tenantId={activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId}
                       principalId={authUser?.id} scope={dockScope} locator={workLocator} refresh={contextRefresh}
@@ -2794,7 +2806,7 @@ export function WilsyOSIntelligenceDock({
                         setContextRefresh(value => value + 1);
                       }}
                       onRecord={recordDockWork}
-                      onSelectWork={locator => { setWorkLocator(locator); setConversationView('WELCOME'); }}/>
+                      onSelectWork={locator => { setWorkLocator(locator); setConversationView('WELCOME'); setWorkSurfaceOpen(true); }}/>
                   )}
                   {conversationView === 'WELCOME' && isLegalDockRole(authUser?.role)
                     && (!activeThread?.messages || activeThread.messages.length === 0) && (
@@ -3044,12 +3056,13 @@ export function WilsyOSIntelligenceDock({
                     )}
                   </nav>
                 )}
-                {(activeThread?.messages || []).map((msg, idx) => (
+                {!workSurfaceOpen && (activeThread?.messages || []).map((msg, idx) => (
                     <div
                       key={`${msg.timestamp || idx}-${idx}`}
-                      ref={msg.role === 'assistant' && msg.meta?.source === 'PYTHON_EOS'
-                        && msg.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY'
-                        ? latestVerifiedReplyRef : undefined}
+                      ref={msg.role === 'assistant' && idx === (activeThread?.messages?.length || 0) - 1
+                        ? latestAssistantReplyRef : msg.role === 'assistant' && msg.meta?.source === 'PYTHON_EOS'
+                          && msg.meta?.phase === 'SOURCE_VERIFIED_READ_ONLY'
+                          ? latestVerifiedReplyRef : undefined}
                       className={`${styles.chatMessageBubble} ${
                         msg.role === 'user' ? styles.userBubble : styles.assistantBubble
                       }`}
@@ -3095,12 +3108,12 @@ export function WilsyOSIntelligenceDock({
                       </div>
                     </div>
                   ))}
-                  {isSubmitting && (
+                  {!workSurfaceOpen && isSubmitting && (
                     <div className={styles.chatMessageBubble + ' ' + styles.assistantBubble}>
                       <div className={styles.bubbleBody}>Consulting operator intelligence…</div>
                     </div>
                   )}
-                  {errorMessage && (
+                  {!workSurfaceOpen && errorMessage && (
                     <div className={styles.assistantBubble} role="status"
                       aria-label="WILSY OS request status"
                       style={{ padding: '10px 0', maxWidth: '70ch' }}>
@@ -3376,8 +3389,8 @@ export function WilsyOSIntelligenceDock({
               <section className={styles.historyTabContent} aria-label="Conversation history">
                 <div className={styles.historyNavigatorHead}>
                   <div>
-                    <h4>Pick up where you left off</h4>
-                    <p>Find a conversation and continue your work. Live task facts are verified again in EOS.</p>
+                    <h4>Recent conversations</h4>
+                    
                   </div>
                   <button className={styles.historyNewButton} type="button" onClick={handleNewThread}>+ New conversation</button>
                 </div>
@@ -3446,6 +3459,7 @@ export function WilsyOSIntelligenceDock({
                             aria-current={thread.id === activeThreadId ? 'true' : undefined}
                             onClick={() => {
                               setAnimatedAssistantKey(null); setActiveThreadId(thread.id);
+                               setWorkSurfaceOpen(false);
                               setConversationView('WELCOME'); setActiveTab('chat');
                               const historical = conversationThreads.find(item => item.id === thread.id)?.workLocator;
                               if (historical?.workspace === 'PROJECTS' && /^prj-[a-f0-9]{48}$/.test(historical.project_id || '')
@@ -3530,7 +3544,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.60.0-PERMISSIONED-OPERATING-JOURNEY
+ * VERSION: v4.61.0-CONVERSATION-FIRST-WORK-ON-DEMAND
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
