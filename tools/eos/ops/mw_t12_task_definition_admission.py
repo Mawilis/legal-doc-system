@@ -1,5 +1,5 @@
 """TITLE: MW-T12 digest-pinned dormant ECS task-definition admission.
-VERSION: v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION
+VERSION: v1.3.0-EPHEMERAL-ECR-CRANE-AUTH
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Verify immutable ECR provenance and optionally register two dormant,
          equivalent nonproduction Fargate task definitions.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Reuses MW-T12 ECR budget/ownership preflight,
          existing CloudFormation resources, and later read-only ECS admission.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.0-EPHEMERAL-ECR-CRANE-AUTH uses scoped AWS ECR pull
+           authorization inside a disposable owner-only Docker config for
+           immutable Crane image inspection; no registry credential persists.
 CHANGELOG: v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION adds opt-in, idempotent
            registration of exact historical/current digest-pinned synthetic
            SSM-secret-backed task revisions after the two dormant no-secret
@@ -46,7 +49,7 @@ import tempfile
 
 from tools.eos.ops import mw_t12_ecr_publication as source
 
-VERSION = "v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION"
+VERSION = "v1.3.0-EPHEMERAL-ECR-CRANE-AUTH"
 FAMILY = "wilsy-mwt12-eos-nonproduction"
 CLUSTER = "wilsy-mwt12-nonproduction"
 LOG_GROUP = "/wilsy/mwt12/nonproduction/eos"
@@ -98,19 +101,51 @@ def no_compute(profile: str) -> None:
                 "ECS_TASKS_PRESENT")
 
 
-def image_config(image: str) -> dict:
-    """Read the exact manifest's runtime config via Mac-host Crane transport."""
+def image_config(image: str, profile: str) -> dict:
+    """Read immutable ECR image configuration with isolated Crane credentials.
+
+    Authenticate the existing AWS profile inside an owner-only temporary
+    Docker configuration. Passwords travel through stdin, never command
+    arguments or logs. The config's platform and source labels are still
+    independently checked by images(). No task, IAM, or registry write occurs.
+    """
+    require(image.startswith(source.URI + "@sha256:"),
+            "IMAGE_REGISTRY_IDENTITY_INVALID")
     env = os.environ.copy()
     for key in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
                 "http_proxy", "https_proxy", "all_proxy"):
         env.pop(key, None)
+    registry = source.URI.split("/", 1)[0]
     try:
-        result = subprocess.run(
-            ["crane", "config", image], env=env, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL, timeout=60, check=False,
-        )
+        with tempfile.TemporaryDirectory(prefix="wilsy-mwt12-ecr-auth-") as directory:
+            os.chmod(directory, 0o700)
+            env["DOCKER_CONFIG"] = directory
+            token = subprocess.run(
+                ["aws", "ecr", "get-login-password",
+                 "--profile", profile, "--region", source.REGION,
+                 "--no-cli-pager"],
+                env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                timeout=60, check=False,
+            )
+            require(token.returncode == 0
+                    and 0 < len(token.stdout) <= 16384,
+                    "ECR_PULL_AUTH_UNAVAILABLE")
+            try:
+                login = subprocess.run(
+                    ["crane", "auth", "login", registry,
+                     "--username", "AWS", "--password-stdin"],
+                    input=token.stdout, env=env, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, timeout=60, check=False,
+                )
+            finally:
+                del token
+            require(login.returncode == 0, "CRANE_ECR_AUTH_UNAVAILABLE")
+            result = subprocess.run(
+                ["crane", "config", image], env=env, stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, timeout=60, check=False,
+            )
     except (OSError, subprocess.SubprocessError) as exc:
-        raise AdmissionError("CRANE_UNAVAILABLE") from exc
+        raise AdmissionError("IMAGE_CONFIG_TRANSPORT_UNAVAILABLE") from exc
     require(result.returncode == 0 and len(result.stdout) <= 1048576,
             "IMAGE_CONFIG_UNAVAILABLE")
     try:
@@ -138,7 +173,7 @@ def images(profile: str, head: str) -> tuple[str, str]:
         require(source.image_digest(profile, revision) == expected,
                 "IMAGE_DIGEST_DRIFT")
         image = source.URI + "@" + expected
-        config = image_config(image)
+        config = image_config(image, profile)
         require(config.get("os") == "linux"
                 and config.get("architecture") == "amd64",
                 "IMAGE_PLATFORM_INVALID")
@@ -491,7 +526,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_task_definition_admission.py
-# VERSION: v1.2.0-DORMANT-SECURE-REVISION-REGISTRATION
+# VERSION: v1.3.0-EPHEMERAL-ECR-CRANE-AUTH
 # AUTHORITY BOUNDARY: Exact owned ECS task metadata; no running services/tasks.
 # TENANT POSTURE: No business records or tenant runtime authorized.
 # FAIL-CLOSED POSTURE: Unknown image, budget, task identity or compute denies.
