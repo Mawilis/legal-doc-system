@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT
+ * VERSION: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT certifies CRM Open changes React Router location without document reload or task mutation and retains a valid canonical href for direct navigation. Existing mock-only tests remain Router-independent.
  * CHANGELOG: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT checks tenant-neutral sentence-case metadata and preserved full EOS rank explanation without changing task identity or action rights.
  * CHANGELOG: v1.4.0-MW-T11-SCANNABLE-SOURCE-CERT certifies readable work title and quiet metadata, preserved EOS ordinal and full source explanation in the accessible row, unchanged canonical selection, and no exposed opaque task ID.
  * CHANGELOG: v1.3.0-MW-T11-RANKED-HANDOFF-CERT checks exact-source work ordering, task handoff proof and wrong-identity rejection without executing mutations.
@@ -19,6 +20,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sha3_512 } from 'js-sha3';
@@ -73,7 +75,45 @@ beforeEach(() => {
   vi.spyOn(window, 'confirm').mockReturnValue(true);
 });
 
+function RouteLocationProbe() {
+  const location = useLocation();
+  return <output aria-label="Current client route">{location.pathname + location.search}</output>;
+}
+
 describe('permissioned operating work', () => {
+  it('opens CRM work within React Router without restarting application bootstrap', async () => {
+    const crmId = 'owk_' + 'a'.repeat(32);
+    get.mockImplementation(async path => {
+      if (path !== '/my-work') throw refusal(503);
+      return { data: {
+        schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+        tenant_id: TENANT, principal_id: PERSON,
+        as_of: '2026-11-26T08:00:00Z',
+        items: [{ source: 'CRM', source_key: 'CRM:' + crmId,
+          work_item_id: crmId, title: 'Open authorized CRM work',
+          status: 'IN_PROGRESS', priority: 'HIGH',
+          due_at: null, due_date: null, is_overdue: false,
+          action_authority: 'SOURCE_SERVICE_ONLY', completion_route: null }],
+        summary: { active_count: 1, overdue_count: 0, source_counts: { CRM: 1 } },
+        sources_included: ['CRM'],
+        authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
+      } };
+    });
+    render(<MemoryRouter initialEntries={['/headquarters?section=my-work']}>
+      <OperatingWork tenantId={TENANT} principalId={PERSON} scope={scope()}
+        locator={{ workspace: 'HEADQUARTERS' }}
+        onRecord={record} onSelectWork={selected} />
+      <RouteLocationProbe />
+    </MemoryRouter>);
+    const action = await screen.findByRole('link', { name: /Open authorized CRM work/ });
+    expect(action).toHaveAttribute('href',
+      '/headquarters?section=my-work&work=' + encodeURIComponent('CRM:' + crmId));
+    fireEvent.click(action);
+    expect(screen.getByLabelText('Current client route')).toHaveTextContent(
+      '/headquarters?section=my-work&work=' + encodeURIComponent('CRM:' + crmId));
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('preserves EOS queue order and confirms only its ranking evidence', async () => {
     const second = 'ptk-' + 'c'.repeat(48);
     const row = (taskId, title, priority, dueDate, overdue) => ({
@@ -299,7 +339,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.5.0-MW-T11-QUIET-TYPOGRAPHY-CERT
+// VERSION: v1.6.0-SPA-INTERNAL-WORK-ROUTE-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
