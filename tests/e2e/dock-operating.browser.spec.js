@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Authenticated Dock Operating Browser Certificate
- * VERSION: v1.5.0
+ * VERSION: v1.6.0-ONE-SHOT-NETWORK-LOSS
  * AUTHORITY: Disposable synthetic browser/EOS/Mongo evidence only.
  * EPITOME: Advance real source-owned work from the Dock and recover encrypted task conversations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/dock-operating.browser.spec.js
  * COLLABORATION / OWNERSHIP: Existing browser harness, canonical EOS, Projects and Dock.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.6.0-ONE-SHOT-NETWORK-LOSS limits Playwright's lost-response interceptor to the first Start transition; Complete must use normal EOS transport, receipt/readback and source-verified DONE.
  * CHANGELOG: v1.5.0 independently checks pending task continuity before/after page reload and verifies a visible source-owned task brief before receipt-only reconciliation.
  * CHANGELOG: v1.4.1 waits for EOS thread hydration after mobile reload before choosing the pending-command locator; prevents restored historical work from overriding reconciliation.
  * CHANGELOG: v1.4.0 recognizes source-owned desktop conversation continuity before mobile task selection, instead of treating an EOS-restored task as a fresh My Work queue.
@@ -109,7 +110,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
           const committed = await route.fetch();
           expect(committed.ok()).toBeTruthy();
           await route.abort('failed');
-        });
+        }, { times: 1 }); // Only lose Start's reply; Complete must receive its EOS response.
         await page.getByRole('button', { name: 'Start work', exact: true }).click();
         await expect(page.getByText(/Command outcome unverified/)).toBeVisible();
         // Assert continuity metadata exists before navigating away. Do not read
@@ -165,7 +166,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await page.screenshot({ path: path.join(evidence, `draft-${viewport.width}.png`) });
       await page.getByRole('button', { name: 'Discard draft' }).click();
       await page.getByRole('button', { name: 'Complete task', exact: true }).click();
+      await expect(page.getByText('EOS verified the command receipt and independently read the current task.', { exact: true })).toBeVisible();
       await expect(page.getByRole('region', { name: 'Live EOS task' })).toContainText('done');
+      if (viewport.width === 390) expect(transitionPosts).toBe(1);
       const headers = { Authorization: `Bearer ${actor.access_token}`, 'X-Tenant-ID': state.tenant_id };
       const source = await page.request.get('/api/wilsy-ai/dock/context', { headers,
         params: { workspace: 'PROJECTS', project_id: fixture.project_id, task_id: task, participant_view: true } });
@@ -189,7 +192,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 // ARTIFACT: dock-operating.browser.spec.js
-// VERSION: v1.5.0
+// VERSION: v1.6.0-ONE-SHOT-NETWORK-LOSS
 // AUTHORITY BOUNDARY: authenticated synthetic browser evidence; no Founder acceptance
 // TENANT POSTURE: UUID disposable database and explicit synthetic owner/contributor
 // FAIL-CLOSED POSTURE: real source state, saved history and no model call required
