@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.73.1-REPLAY-LOCK-PRESERVED
+ * VERSION: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING adds an explicit nonbillable selected-task briefing with independently validated Projects task-list, events, discussions, attachments and approval reads, reconciles civil deadlines and distinguishes evidence from certification.
  * CHANGELOG: v4.73.1-REPLAY-LOCK-PRESERVED keeps exact uncertain-reconciliation replay disabled while still allowing other nonempty submissions to receive explicit, fail-closed admission feedback without model execution.
  * CHANGELOG: v4.73.0-VISIBLE-SEND-ADMISSION permits nonempty Send to reach the existing fail-closed admission handler, returning visible provider, entitlement, consent and replay refusals without issuing prohibited model requests.
  * CHANGELOG: v4.72.0-MODAL-TO-TASK-CONVERSATION admits an explicit same-tenant/principal task-modal request to open the existing Dock after leaving the modal, with a separately verified task locator; no global modal overlay, model/permission bypass, or source-derived UI assertions.
@@ -401,6 +402,134 @@ async function readWilsyTaskActivity(projectId, taskId, tenantId, principalId, p
     }
   }
   return data;
+}
+
+/**
+ * @description Read a bounded, exact-task EOS evidence batch for a nonbillable
+ * task briefing. Every list is independently authorized, source validated and
+ * required; an unavailable or truncated response never becomes an empty fact.
+ * The Projects task list supplies civil due_date independently of AI context.
+ */
+async function readWilsyTaskBriefing(projectId, task, tenantId, principalId, participantView) {
+  const taskId = task?.task_id;
+  if (!/^prj-[a-f0-9]{48}$/.test(projectId || '')
+    || !/^ptk-[a-f0-9]{48}$/.test(taskId || '')
+    || !tenantId || !principalId || !Number.isSafeInteger(task.revision)
+    || task.revision < 1) throw new Error('TASK_BRIEFING_SCOPE_INVALID');
+  const base = '/projects/' + encodeURIComponent(projectId)
+    + (participantView ? '/my-project/tasks/' : '/tasks/') + encodeURIComponent(taskId);
+  const specs = [
+    ['events', 'WILSY-PROJECT-TASK-EVENT-LIST/V1', 'wilsy.project.task.event.v1'],
+    ['comments', 'WILSY-PROJECT-COMMENT-LIST/V1', 'wilsy.project.comment.v1'],
+    ['attachments', 'WILSY-PROJECT-ATTACHMENT-LIST/V1', 'wilsy.project.attachment.v1'],
+    ['approvals', 'WILSY-PROJECT-APPROVAL-LIST/V1', 'wilsy.project.approval.v1'],
+  ];
+  const pages = await Promise.all(specs.map(async ([endpoint, schema, itemSchema]) => {
+    const response = await api.get(base + '/' + endpoint + '?limit=50&offset=0', {
+      headers: { 'X-Tenant-ID': tenantId }, timeout: 15000, forceNetworkRetry: true,
+    });
+    const page = response?.data;
+    if (page?.schema !== schema || page.tenant_id !== tenantId
+      || page.principal_id !== principalId || page.project_id !== projectId
+      || page.task_id !== taskId || page.limit !== 50 || page.offset !== 0
+      || typeof page.has_more !== 'boolean' || !Array.isArray(page.items)
+      || page.items.length > 50
+      || page.next_offset !== (page.has_more ? page.items.length : null)
+      || (page.has_more && page.items.length === 0)
+      || !page.items.every(item => item?.schema === itemSchema
+        && item.tenant_id === tenantId && item.project_id === projectId
+        && item.task_id === taskId)) throw new Error('TASK_BRIEFING_SOURCE_INVALID');
+    const fingerprint = value => /^[a-f0-9]{128}$/.test(value || '');
+    const identifiers = [];
+    for (const item of page.items) {
+      let id;
+      if (endpoint === 'events') {
+        id = String(item.revision);
+        if (!Number.isSafeInteger(item.revision) || item.revision < 1
+          || !item.actor_principal_id || !Number.isFinite(Date.parse(item.occurred_at))
+          || !['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED'].includes(item.event_type)
+          || !['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status_after)) {
+          throw new Error('TASK_BRIEFING_EVENT_INVALID');
+        }
+      } else if (endpoint === 'comments') {
+        id = item.comment_id;
+        if (!/^pcm-[a-f0-9]{48}$/.test(id || '') || !item.author_principal_id
+          || typeof item.body !== 'string' || !item.body.trim()
+          || !Number.isFinite(Date.parse(item.created_at))
+          || !Array.isArray(item.mentions) || item.mentions.length > 10
+          || !item.mentions.every(value => typeof value === 'string' && !!value)
+          || !fingerprint(item.fingerprint)) throw new Error('TASK_BRIEFING_COMMENT_INVALID');
+      } else if (endpoint === 'attachments') {
+        id = item.attachment_id;
+        if (!/^pat-[a-f0-9]{48}$/.test(id || '') || item.state !== 'QUARANTINED'
+          || item.revision !== 1 || !item.filename || !item.uploader_principal_id
+          || !['application/pdf', 'image/png', 'image/jpeg'].includes(item.media_type)
+          || !Number.isSafeInteger(item.size_bytes) || item.size_bytes <= 0
+          || !fingerprint(item.content_sha3_512) || !fingerprint(item.fingerprint)
+          || !['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
+          || (item.scan_clearance_status === 'QUARANTINED'
+            ? item.scan_clearance_fingerprint !== null
+            : !fingerprint(item.scan_clearance_fingerprint))
+          || ['storage_receipt', 'download_url', 'presigned_url'].some(field => Object.hasOwn(item, field))) {
+          throw new Error('TASK_BRIEFING_ATTACHMENT_INVALID');
+        }
+      } else {
+        id = item.approval_id;
+        if (!/^par-[a-f0-9]{48}$/.test(id || '')
+          || !['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
+          || !item.requester_principal_id || !item.reviewer_principal_id
+          || item.requester_principal_id === item.reviewer_principal_id
+          || typeof item.rationale !== 'string' || !item.rationale
+          || item.revision !== (item.status === 'PENDING' ? 1 : 2)
+          || !fingerprint(item.fingerprint)) throw new Error('TASK_BRIEFING_APPROVAL_INVALID');
+      }
+      identifiers.push(id);
+    }
+    if (new Set(identifiers).size !== identifiers.length) {
+      throw new Error('TASK_BRIEFING_DUPLICATE_SOURCE');
+    }
+    return [endpoint, page];
+  }));
+  const evidence = Object.fromEntries(pages);
+  // Task list readback reconciles the civil deadline and assignment with the
+  // context source; a missing page is NOT a missing due date.
+  let offset = 0;
+  let exactTask = null;
+  const found = new Set();
+  for (let index = 0; index < 20; index += 1) {
+    const response = await api.get('/projects/' + encodeURIComponent(projectId)
+      + '/tasks?limit=50&offset=' + offset, {
+      headers: { 'X-Tenant-ID': tenantId }, timeout: 15000, forceNetworkRetry: true,
+    });
+    const page = response?.data;
+    if (page?.schema !== 'WILSY-PROJECT-TASK-LIST/V1'
+      || page.tenant_id !== tenantId || page.principal_id !== principalId
+      || page.project_id !== projectId || page.limit !== 50 || page.offset !== offset
+      || typeof page.has_more !== 'boolean' || !Array.isArray(page.items)
+      || page.items.length > 50 || (page.has_more && page.items.length === 0)
+      || page.next_offset !== (page.has_more ? offset + page.items.length : null)) {
+      throw new Error('TASK_BRIEFING_TASK_PAGE_INVALID');
+    }
+    for (const item of page.items) {
+      if (item?.schema !== 'wilsy.project.task.v1'
+        || item.tenant_id !== tenantId || item.project_id !== projectId
+        || !/^ptk-[a-f0-9]{48}$/.test(item.task_id || '')
+        || !Number.isSafeInteger(item.revision) || item.revision < 1
+        || !/^[a-f0-9]{128}$/.test(item.fingerprint || '')
+        || found.has(item.task_id)) throw new Error('TASK_BRIEFING_TASK_INVALID');
+      found.add(item.task_id);
+      if (item.task_id === taskId) exactTask = item;
+    }
+    if (!page.has_more) {
+      if (!exactTask || exactTask.revision !== task.revision
+        || exactTask.title !== task.title || exactTask.status !== task.status) {
+        throw new Error('TASK_BRIEFING_REVISION_CHANGED');
+      }
+      return { evidence, exactTask };
+    }
+    offset = page.next_offset;
+  }
+  throw new Error('TASK_BRIEFING_TASK_PAGINATION_INCOMPLETE');
 }
 
 /**
@@ -2022,6 +2151,134 @@ export function WilsyOSIntelligenceDock({
         ? null : planWilsyFinancialSourceRead(text);
       const allowedSourceView = isLegalDockRole(authUser?.role)
         ? null : classifyWilsyAISourceIntent(text);
+      const briefingCode = isLegalDockRole(authUser?.role) ? null
+        : /^(?:brief|summari[sz]e|assess)\\s+(MW-T\\d{1,3})(?:\\s+(?:from|using)\\s+EOS)?[?.!]?$/i
+          .exec(text)?.[1]?.toUpperCase() || null;
+      if (briefingCode) {
+        const scopeAtStart = dockScopeRef.current;
+        const locatorAtStart = workLocatorKeyRef.current;
+        const tenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+        const principal = authUser?.id;
+        const project = workLocator.workspace === 'PROJECTS' ? workLocator.project_id : null;
+        const context = visibleWorkspaceContext?.data;
+        const task = context?.work?.selected_task;
+        if (visibleWorkspaceContext?.state !== 'READY' || !project
+          || context?.tenant_id !== tenant || context?.principal_id !== principal
+          || context?.locator?.workspace !== 'PROJECTS'
+          || context?.locator?.project_id !== project || context?.locator?.task_id !== workLocator.task_id
+          || !task || task.task_id !== workLocator.task_id
+          || (workLocator.task_revision && task.revision !== workLocator.task_revision)
+          || !(task.title?.startsWith(briefingCode + ' — ')
+            || task.title?.startsWith(briefingCode + ' - '))) {
+          setErrorMessage('Open and verify the exact Projects task before requesting its EOS briefing.');
+          return;
+        }
+        sendLockRef.current = true;
+        setIsSubmitting(true);
+        setErrorMessage('');
+        try {
+          const { evidence, exactTask } = await readWilsyTaskBriefing(
+            project, task, tenant, principal, Boolean(workLocator.participant_view));
+          if (dockScopeRef.current !== scopeAtStart
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          const due = exactTask.due_date ?? exactTask.due_at ?? null;
+          const contextDue = task.due_at ?? task.due_date ?? null;
+          const normalizeDue = value => typeof value === 'string'
+            && /^\\d{4}-\\d{2}-\\d{2}(?:$|T)/.test(value)
+            ? value.slice(0, 10) : null;
+          const authoritativeDue = normalizeDue(due);
+          const projectedDue = normalizeDue(contextDue);
+          const deadline = authoritativeDue && projectedDue && authoritativeDue !== projectedDue
+            ? 'Source projections disagree; verify in Projects.'
+            : authoritativeDue || projectedDue || 'No verified deadline in either source.';
+          const linked = task.depends_on;
+          const predecessors = task.predecessors;
+          const graphVerified = Array.isArray(linked) && linked.length <= 25
+            && linked.every(id => /^ptk-[a-f0-9]{48}$/.test(id))
+            && new Set(linked).size === linked.length
+            && Array.isArray(predecessors) && predecessors.length === linked.length
+            && predecessors.every((item, index) => item?.task_id === linked[index]
+              && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status)
+              && Number.isSafeInteger(item.revision) && item.revision >= 1);
+          const pending = graphVerified
+            ? predecessors.filter(item => item.status !== 'DONE') : [];
+          const latestComment = [...evidence.comments.items].sort(
+            (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+          const lastEvent = [...evidence.events.items].sort(
+            (a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))[0];
+          const latestUpdate = latestComment
+            ? '\\nLatest recorded comment (' + latestComment.created_at + '): '
+              + latestComment.body.replace(/\\s+/g, ' ').slice(0, 350)
+            : '\\nNo discussion comments on the verified first page.';
+          const pageLine = (name, page) => '\\n' + name + ': '
+            + page.items.length + (page.has_more ? '+ on first page; more pages require inspection' : ' verified records');
+          const attachmentsClean = evidence.attachments.items.filter(
+            item => item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').length;
+          const approvalsPending = evidence.approvals.items.filter(
+            item => item.status === 'PENDING' || item.status === 'REJECTED').length;
+          const result = 'EOS source briefing · ' + task.title
+            + '\\nLifecycle: ' + exactTask.status.replaceAll('_', ' ').toLowerCase()
+            + ' · revision ' + exactTask.revision
+            + '\\nAccountable contributor: ' + (task.assignee_name || 'Name not verified by EOS')
+            + '\\nDeadline: ' + deadline
+            + '\\nDependencies: ' + (!graphVerified ? 'Current predecessor graph not verified'
+              : linked.length === 0 ? 'No recorded predecessors'
+                : pending.length + ' of ' + linked.length + ' unfinished'
+                  + (pending.length ? ' · ' + pending.slice(0, 5).map(item =>
+                    item.title + ' (' + item.status.toLowerCase() + ')').join('; ') : ''))
+            + pageLine('Lifecycle events', evidence.events)
+            + (lastEvent ? '\\nLatest event: ' + lastEvent.event_type.replaceAll('_', ' ').toLowerCase()
+              + ' · ' + lastEvent.occurred_at : '')
+            + pageLine('Discussion comments', evidence.comments) + latestUpdate
+            + pageLine('Attachments', evidence.attachments)
+            + '\\nVerified scan-clean attachments on this page: ' + attachmentsClean
+            + pageLine('Approval decisions', evidence.approvals)
+            + '\\nPending or rejected decisions on this page: ' + approvalsPending
+            + '\\nSource records and discussion do not independently certify acceptance,'
+            + ' production deployment, rollback, approval completion or strategic outcomes.'
+            + '\\nPython EOS · Read-only, nonbillable. No model or task command invoked.';
+          let thread = activeThread;
+          if (!thread?.id) thread = await createWilsyAIConversationThread({
+            title: 'EOS briefing · ' + briefingCode, workspace: 'Projects',
+            workLocator: { ...workLocator },
+          });
+          if (dockScopeRef.current !== scopeAtStart
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          const requestTurn = await persistWilsyAIConversationTurn({
+            threadId: thread.id, workLocator: { ...workLocator },
+            message: { role: 'user', content: text },
+          });
+          const recorded = await persistWilsyAIConversationTurn({
+            threadId: requestTurn.id, workLocator: { ...workLocator },
+            message: { role: 'assistant', content: result,
+              meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' } },
+          });
+          if (dockScopeRef.current !== scopeAtStart
+            || workLocatorKeyRef.current !== locatorAtStart) return;
+          setConversationThreads(previous => [
+            recorded, ...previous.filter(item => item.id !== recorded.id),
+          ]);
+          setActiveThreadId(recorded.id);
+          setAnimatedAssistantKey(recorded.id + ':' + recorded.messages?.at(-1)?.timestamp);
+          setConversationView('WELCOME');
+          setLocalSourceQuery('');
+          setPrompt('');
+        } catch (cause) {
+          if (dockScopeRef.current === scopeAtStart
+            && workLocatorKeyRef.current === locatorAtStart) {
+            setErrorMessage([401, 403].includes(cause?.response?.status)
+              ? 'EOS denied access to at least one task briefing source. No partial result was presented.'
+              : 'EOS could not verify all current task, discussion, evidence and approval sources. No briefing was invented.');
+          }
+        } finally {
+          if (dockScopeRef.current === scopeAtStart
+            && workLocatorKeyRef.current === locatorAtStart) {
+            setIsSubmitting(false);
+            sendLockRef.current = false;
+          }
+        }
+        return;
+      }
       const activityCode = isLegalDockRole(authUser?.role)
         ? null : parseWilsyTaskActivityInspection(text);
       if (activityCode) {
@@ -2742,7 +2999,8 @@ export function WilsyOSIntelligenceDock({
     ? (visibleWorkspaceContext.data.locator?.workspace === 'PROJECTS'
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt)
-    || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt));
+    || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt)
+    || /^(?:brief|summari[sz]e|assess)\\s+MW-T\\d{1,3}(?:\\s+(?:from|using)\\s+EOS)?[?.!]?$/i.test(prompt.trim()));
   const localCourtesyIntent = Boolean((!consentedReasoningReady
     && resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser))
     || resolveWilsyLocalClock(prompt)
@@ -3724,7 +3982,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.73.1-REPLAY-LOCK-PRESERVED
+ * VERSION: v4.74.0-MW-T11-CONSOLIDATED-EOS-BRIEFING
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
