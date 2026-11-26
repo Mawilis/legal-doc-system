@@ -1,17 +1,18 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT
+ * VERSION: v1.54.0-EXPLICIT-ADMISSION-REFUSAL-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyOSIntelligenceDock.test.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, canonical transport and runtime.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
  * SECURITY / PRIVACY POSTURE: Synthetic fixtures, no secrets or real customer records
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.54.0-EXPLICIT-ADMISSION-REFUSAL-CERT requires interactive Send and visible fail-closed reason for unavailable providers and missing AI entitlement, without a POST or invented response; replay hold stays non-resubmittable.
  * CHANGELOG: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT verifies conversational task inspection sends without credits when a project is verified and fails closed without project authority; EOS GETs remain required.
  * CHANGELOG: v1.52.0-GOVERNED-GENERATIVE-COURTESY-CERT proves consented, EOS-verified active paid-model greetings route through canonical reasoning instead of silently returning built-in courtesy; isolated fallback stays nonmetered.
  * CHANGELOG: v1.51.0-PERSONAL-COURTESY-CERT certifies authenticated name-aware casual exchanges and continuity language without claiming model inference or crossing EOS authority.
@@ -1779,7 +1780,10 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'What is my current work?' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(await screen.findByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent('AI provider is not configured');
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1809,7 +1813,10 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'Which task is overdue?' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(await screen.findByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent('AI reasoning is not yet activated');
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -2591,7 +2598,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.53.0-NATURAL-FOLLOWUP-ADMISSION-CERT
+ * VERSION: v1.54.0-EXPLICIT-ADMISSION-REFUSAL-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
