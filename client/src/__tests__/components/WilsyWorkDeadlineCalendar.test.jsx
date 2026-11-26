@@ -85,7 +85,7 @@ describe('EOS source-backed deadline calendar', () => {
     expect(screen.getByRole('group', { name: 'Choose work deadline date' })).toBeTruthy();
     expect(screen.getByText('Approve supplier delivery')).toBeTruthy();
     expect(screen.getByText('Verify authorised dispatch evidence')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Review and complete in My Work' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open authorized task' }));
     expect(onOpenWork).toHaveBeenCalledWith(items[0]);
   });
 
@@ -237,7 +237,7 @@ describe('EOS source-backed deadline calendar', () => {
     fireEvent.click(screen.getByRole('button', {name: 'Overdue (1)'}));
     expect(screen.getByText(overdue.title)).toBeTruthy();
     expect(screen.queryByText(items[1].title)).toBeNull();
-    fireEvent.click(screen.getByRole('button', {name: 'Review and complete in My Work'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Open authorized task'}));
     expect(onOpenWork).toHaveBeenCalledWith(overdue);
     rerender(<WilsyWorkDeadlineCalendar {...props} items={[items[1]]}/>);
     expect(screen.queryByText(overdue.title)).toBeNull();
