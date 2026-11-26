@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.16.1-END-SEAL-ALIGNMENT
+ * VERSION: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY sets a modest, sentence-case welcome prompt and removes the obsolete oversized provider disclaimer treatment.
  * CHANGELOG: v1.16.1-END-SEAL-ALIGNMENT moves the matching sovereign end seal after all active CSS declarations.
  * CHANGELOG: v1.16.0-UNOBTRUSIVE-EMPTY-CONVERSATION presents an unboxed general-purpose empty conversation state that disappears when an interaction starts.
  * CHANGELOG: v1.15.0-ACTIONABLE-WORK-ROWS makes authorized attention items full-width text rows, with explicit focus and an unobtrusive My Work exit.
@@ -1696,29 +1697,24 @@
 .intelligenceDockContainer .conversationEmptyPrompt {
   align-self: stretch;
   margin: auto 0;
-  padding: 14px 0;
+  padding: 8px 12px;
   text-align: center;
-  color: #e4edfa;
+  color: #d7e4f3;
+  text-transform: none;
+  letter-spacing: normal;
 }
 .intelligenceDockContainer .conversationEmptyPrompt p {
   margin: 0;
-  font-size: clamp(17px, 2.4vw, 23px);
-  line-height: 1.45;
-  font-weight: 460;
-  letter-spacing: -.02em;
-}
-.intelligenceDockContainer .conversationEmptyPrompt small {
-  display: block;
-  max-width: 52ch;
-  margin: 9px auto 0;
-  color: #b3c8dd;
-  font-size: 12px;
+  font-size: clamp(16px, 1.7vw, 18px);
   line-height: 1.5;
+  font-weight: 420;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 /*
  * ARTIFACT: WilsyOSIntelligenceDock.module.css
- * VERSION: v1.16.1-END-SEAL-ALIGNMENT
+ * VERSION: v1.17.0-QUIET-CONVERSATION-TYPOGRAPHY
  * AUTHORITY BOUNDARY: client presentation only; Python EOS owns advisory truth
  * TENANT POSTURE: no client-side tenant derivation or persistence
  * FAIL-CLOSED POSTURE: styling cannot create an advisory or command authority
