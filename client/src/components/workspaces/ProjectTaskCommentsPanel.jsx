@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE
+ * VERSION: v1.18.2-EXPLICIT-CORRECTION-WINDOW
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
- * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.\n * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
+ * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.\n * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.\n * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
  *          existing source-owned comment editor directly under the action
@@ -706,7 +706,7 @@ export default function ProjectTaskCommentsPanel({
       <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
         {correction && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-slate-900">
           <strong>Correct an existing entry · append-only audit</strong>
-          <p className="mt-1 text-xs">The original stays in EOS. Your revised text will be published as a new linked correction after the original is reverified.</p>
+          <p className="mt-1 text-xs">You can correct your own comment for 30 minutes from its EOS posting time. Python EOS checks the deadline again on submission. The original stays in EOS and your correction is a new linked audit entry.</p>
           <label className="mt-3 block font-semibold">Reason for correction
             <input aria-label="Reason for correction" required minLength={10} maxLength={500}
               value={correctionReason} onChange={event => setCorrectionReason(event.target.value)}
@@ -875,7 +875,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE
+// VERSION: v1.18.2-EXPLICIT-CORRECTION-WINDOW
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
