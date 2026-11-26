@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION
+ * VERSION: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS keeps nonempty conversational submissions interactive so missing consent, provider or entitlement yields the existing explicit status message rather than a disabled silent send control; source-only inspection remains nonbillable and no IAM or financial gate is weakened.
  * CHANGELOG: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION replaces generic dependency counts with strictly validated EOS predecessor state in the existing task-source conversation; no paid model, fabricated action, or decorative panel.
  * CHANGELOG: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION admits natural forms such as Let’s inspect MW-T12 into the same verified, read-only task inspection path without provider credits, broad intent guessing or client authorization.
  * CHANGELOG: v4.65.0-CONSENTED-MODEL-CONVERSATION permits ordinary conversation to use the actual EOS-governed provider when a current verified allowance and explicit model consent exist; free courtesy never impersonates a generative response.
@@ -1971,6 +1972,10 @@ export function WilsyOSIntelligenceDock({
       const text = String(rawText || prompt).trim();
       if (!text || isSubmitting || sendLockRef.current) return;
       setWorkSurfaceOpen(false);
+      if (text.length > 12000) {
+        setErrorMessage('This prompt exceeds the EOS 12,000-character reasoning limit. Shorten it or inspect one authorized task at a time. No model was invoked.');
+        return;
+      }
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
       const localCourtesyReply = isLegalDockRole(authUser?.role)
@@ -3280,14 +3285,10 @@ export function WilsyOSIntelligenceDock({
                     type="button"
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
-                    disabled={isSubmitting || !prompt.trim()
-                      || (!isLegalDockRole(authUser?.role)
-                        && !readOnlySourceIntent && !localCourtesyIntent
-                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable
-                          || (reasoningReplayRef.current.blocked === true
-                            && reasoningReplayRef.current.scope === dockScopeRef.current
-                            && reasoningReplayRef.current.text === prompt.trim()
-                            && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)))}
+                    disabled={isSubmitting || !prompt.trim()}
+                    title={!prompt.trim() ? 'Enter a question'
+                      : isSubmitting ? 'WILSY AI is processing a request'
+                        : 'Submit question or see the EOS reason it cannot be admitted'}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -3652,7 +3653,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION
+ * VERSION: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
