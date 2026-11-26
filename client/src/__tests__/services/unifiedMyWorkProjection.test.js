@@ -246,6 +246,14 @@ describe('unified My Work projection contract', () => {
       search: '?section=projects&project=' + projectId + '&task=' + taskId,
       state: null,
     });
+    const keyOnly = resolveUnifiedWorkRoute({
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId,
+    });
+    expect(keyOnly).toEqual({
+      pathname: '/my-work', search: '',
+      state: { focusWorkItem: 'PROJECTS:' + taskId },
+    });
     const crm = resolveUnifiedWorkRoute({
       source: 'CRM', source_key: 'CRM:CRM-7', work_item_id: 'CRM-7',
     });
