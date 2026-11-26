@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT
+ * VERSION: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT tests preservation of two genuinely populated EOS archives across Clear chat; empty threads are intentionally excluded by the history renderer.
  * CHANGELOG: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT respects the history list's nonempty-message filter and waits for tab transition before invoking the new conversation control, while still asserting no EOS deletion.
  * CHANGELOG: v1.64.1-STALE-CHAT-RECOVERY-CERT verifies an empty thread's stale task refusal and draft can be cleared in place without adding a thread or modifying EOS history.
  * CHANGELOG: v1.64.0-CHAT-ACTIONS-AND-LOCAL-TIME-CERT verifies New conversation from chat, Clear chat preserves the EOS archive without history mutation, and source timestamps are human-readable while original UTC evidence is retained.
@@ -2512,7 +2513,9 @@ describe('WilsyOSIntelligenceDock', () => {
         storagePosture: 'EOS_ENCRYPTED_HISTORY',
         messages: [{ role: 'assistant', content: 'Prior source reply', timestamp: '2026-11-26T09:00:00Z' }] },
       { id: 'thread2', title: 'Another archive entry', workspace: 'Projects',
-        storagePosture: 'EOS_ENCRYPTED_HISTORY', messages: [] },
+        storagePosture: 'EOS_ENCRYPTED_HISTORY',
+        messages: [{ role: 'assistant', content: 'Second saved source reply',
+          timestamp: '2026-11-26T09:01:00Z' }] },
     ];
     render(<WilsyOSIntelligenceDock authUser={{ id: 'test-principal',
       tenantId: 'TEST_TENANT', role: 'OWNER' }}/>);
@@ -2970,7 +2973,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT
+ * VERSION: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
