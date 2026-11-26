@@ -29,7 +29,8 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
                       response follows commit. The registry never opens one.
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
-CHANGELOG: v1.51.0-COMPLETED-SOURCE-PAGING adds independently IAM-gated, exact-project completed-task paging with bounded search, assignee filtering, newest/oldest completion sort and immutable source-event completion metadata; no task mutation or access expansion.\nCHANGELOG: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS\n  Original-author task comment corrections are append-only and admitted only
+CHANGELOG: v1.51.0-COMPLETED-SOURCE-PAGING adds independently IAM-gated, exact-project completed-task paging with bounded search, assignee filtering, newest/oldest completion sort and immutable source-event completion metadata; no task mutation or access expansion.
+CHANGELOG: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS\n  Original-author task comment corrections are append-only and admitted only
   within 30 minutes of the original source timestamp; EOS checks author,
   comment fingerprint, reason and time in the write transaction.
 CHANGELOG: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS exposes exact-command
