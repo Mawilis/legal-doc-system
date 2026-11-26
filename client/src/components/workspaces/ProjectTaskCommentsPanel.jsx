@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION
+ * VERSION: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
- * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
+ * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.\n * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
  *          existing source-owned comment editor directly under the action
@@ -544,7 +544,12 @@ export default function ProjectTaskCommentsPanel({
       setError('Mention recipient is not in the verified project participant page.');
       return;
     }
-    const fingerprint = JSON.stringify({ text, mentions });
+    const fingerprint = JSON.stringify({
+      text, mentions,
+      correction_of: correction?.comment_id || null,
+      correction_fingerprint: correction?.fingerprint || null,
+      correction_reason: correction ? reason : null,
+    });
     if (!command.current.key || command.current.fingerprint !== fingerprint) {
       if (typeof globalThis.crypto?.randomUUID !== 'function') {
         setError('Cannot establish a durable command key in this browser session.');
@@ -870,7 +875,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION
+// VERSION: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
