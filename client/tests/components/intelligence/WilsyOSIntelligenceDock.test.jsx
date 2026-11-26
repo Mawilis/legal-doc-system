@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.65.0-CANONICAL-TASK-OPEN-RECOVERY-CERT
+ * VERSION: v1.66.0-SINGLE-SELECTED-EOS-HINT-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.66.0-SINGLE-SELECTED-EOS-HINT-CERT verifies one checkbox-selected task can drive a fresh exact-task EOS context without a task dialog, and ambiguity clears only the selection-owned locator without provider calls.
  * CHANGELOG: v1.65.0-CANONICAL-TASK-OPEN-RECOVERY-CERT verifies explicit MW-T11 navigation requires synchronous acceptance by an EOS-current Projects panel; unaccepted requests remain blocked without provider calls or fabricated assistant answers.
  * CHANGELOG: v1.64.3-POPULATED-ARCHIVE-RETENTION-CERT tests preservation of two genuinely populated EOS archives across Clear chat; empty threads are intentionally excluded by the history renderer.
  * CHANGELOG: v1.64.2-HISTORY-VISIBILITY-FIXTURE-CERT respects the history list's nonempty-message filter and waits for tab transition before invoking the new conversation control, while still asserting no EOS deletion.
@@ -2540,6 +2541,52 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockClearThreads).not.toHaveBeenCalled();
   });
 
+  it('uses a single checked Projects task as an EOS-reverified hint without opening details', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    const principal = 'selection-principal';
+    mockApiGet.mockImplementation((url, options = {}) => {
+      if (url === '/wilsy-ai/reasoning/context') return Promise.resolve({ data: {
+        schema: 'WILSY-AI-VERIFIED-CONTEXT/V1',
+        tenant_id: 'TEST_TENANT', principal_id: principal,
+        locator: options.params, context_fingerprint: 'f'.repeat(128),
+        observed_at: '2026-11-26T09:00:00Z',
+        authority: { source: 'PYTHON_EOS', read_only: true,
+          model_invoked: false, financial_execution: false,
+          provider_binding: 'UNAVAILABLE' },
+        allowance: { state: 'NOT_PROVISIONED', available_request_units: 0 },
+        work: { project: { project_id: project, revision: 3 },
+          selected_task: { task_id: task, revision: 4,
+            title: 'MW-T11 — Align Intelligence Dock', status: 'IN_PROGRESS',
+            depends_on: [], predecessors: [] } },
+      } });
+      return Promise.reject(rejectedResponse(503, 'no additional source'));
+    });
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
+    const hint = { tenantId: 'TEST_TENANT', principalId: principal,
+      locator: { workspace: 'PROJECTS', project_id: project,
+        task_id: task, task_revision: 4, participant_view: false } };
+    await act(async () => window.dispatchEvent(
+      new CustomEvent('wilsy:ai-task-selection', { detail: hint })));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Live EOS task' }))
+      .toHaveTextContent('MW-T11'));
+    expect(screen.getByRole('group', { name: 'Conversation actions' }))
+      .toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /task workspace/i }))
+      .not.toBeInTheDocument();
+    // A second checkbox creates an ambiguous batch selection; only the
+    // hint owned by this selection bridge is removed, without EOS mutation.
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-task-selection', {
+      detail: { tenantId: 'TEST_TENANT', principalId: principal, locator: null },
+    })));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Live EOS task' }))
+      .not.toBeInTheDocument());
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('offers direct canonical Projects task recovery and minimizes only after verified panel accepts', async () => {
     const handler = event => {
       expect(event.detail.tenantId).toBe('TEST_TENANT');
@@ -3013,7 +3060,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.65.0-CANONICAL-TASK-OPEN-RECOVERY-CERT
+ * VERSION: v1.66.0-SINGLE-SELECTED-EOS-HINT-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
