@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.65.0-CONSENTED-MODEL-CONVERSATION
+ * VERSION: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION admits natural forms such as Let’s inspect MW-T12 into the same verified, read-only task inspection path without provider credits, broad intent guessing or client authorization.
  * CHANGELOG: v4.65.0-CONSENTED-MODEL-CONVERSATION permits ordinary conversation to use the actual EOS-governed provider when a current verified allowance and explicit model consent exist; free courtesy never impersonates a generative response.
  * CHANGELOG: v4.64.0-PERSONAL-CONTEXT-COURTESY makes nonmetered courtesy time-appropriate, authenticated-name-aware and respectful of continuing conversation, with no generic task-only pitch or claim of model inference.
  * CHANGELOG: v4.63.0-SESSION-CONTINUITY-AND-GREETING distinguishes current-session participation from EOS storage provenance; saved threads remain in This session when opened, and authenticated time-aware greetings return.
@@ -345,7 +346,10 @@ function describeConversation(thread, query = '') {
 }
 
 function parseWilsyTaskInspection(value) {
-  const match = /^(?:inspect|show|review|open|view)\s+(MW-T\d{1,3})[?.!]?$/i
+  // Permit ordinary conversational phrasing for the same closed, read-only
+  // task lookup. The reference is still independently resolved in EOS and
+  // cannot be interpreted as permission to mutate the task.
+  const match = /^(?:(?:let['’]?s|let\s+us)\s+)?(?:inspect|show|review|open|view)\s+(?:the\s+)?(MW-T\d{1,3})[?.!]?$/i
     .exec(String(value || '').trim());
   return match ? match[1].toUpperCase() : null;
 }
@@ -3624,7 +3628,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.65.0-CONSENTED-MODEL-CONVERSATION
+ * VERSION: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
