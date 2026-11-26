@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS
+ * VERSION: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS adds accessible Active/Completed/All view controls over the current source-verified task page; terminal Done and Cancelled leave the default action list without deletion, selection resets across views, and existing EOS pagination and details remain authoritative.
  * CHANGELOG: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS publishes an untrusted exact-task locator only for a single checkbox selection in the current EOS-verified Projects page, without opening a drawer, granting IAM authority, or guessing among multiple selected rows.
  * CHANGELOG: v1.72.0-DOCK-EXACT-TASK-OPEN-BRIDGE admits only explicit same-tenant/principal/project task-open requests against uniquely matched EOS-verified items and opens the existing canonical task drawer without granting context or IAM authority.
  * CHANGELOG: v1.71.0-TASK-NATIVE-INTELLIGENCE-ACTIONS replaces dark duplicate task transcript with a compact source-verified assessment using the same canonical EOS brief and task-owned Activity/Evidence/Approvals navigation; no new workflow or model entitlement. Modal context and keyboard safety remain unchanged.
@@ -671,6 +672,7 @@ export default function ProjectTasksPanel({
   const bulkLock = useRef(false);
   const [workDensity, setWorkDensity] = useState('compact');
   const [workStatus, setWorkStatus] = useState('ALL');
+  const [workLifecycleView, setWorkLifecycleView] = useState('ACTIVE');
   const [workKind, setWorkKind] = useState('ALL');
   const [workGroup, setWorkGroup] = useState('HIERARCHY');
   const [workOrder, setWorkOrder] = useState('DUE_ASC');
@@ -1126,7 +1128,10 @@ export default function ProjectTasksPanel({
     const result = items.filter(item => {
       const kind = item.kind === 'MILESTONE' ? 'MILESTONE'
         : item.parent_task_id ? 'SUBTASK' : 'TASK';
-      return (!workMineOnly || item.assignee_principal_id === principalId)
+      return (workLifecycleView === 'ALL'
+          || (workLifecycleView === 'COMPLETED' && item.status === 'DONE')
+          || (workLifecycleView === 'ACTIVE' && !['DONE', 'CANCELLED'].includes(item.status)))
+        && (!workMineOnly || item.assignee_principal_id === principalId)
         && (workAttention === 'ALL'
           || (workAttention === 'UNASSIGNED' && !item.assignee_principal_id
             && !['DONE', 'CANCELLED'].includes(item.status))
@@ -1147,7 +1152,7 @@ export default function ProjectTasksPanel({
         || a.task_id.localeCompare(b.task_id);
     });
     return result;
-  }, [items, workQuery, workMineOnly, workAttention, principalId, workStatus, workKind, workOrder]);
+  }, [items, workLifecycleView, workQuery, workMineOnly, workAttention, principalId, workStatus, workKind, workOrder]);
   // Presentation-only paging. Never fabricate EOS totals or silently search
   // records outside the currently authenticated, verified 50-item batch.
   const workViewCount = Math.max(1, Math.ceil(workRows.length / workViewSize));
@@ -1155,7 +1160,7 @@ export default function ProjectTasksPanel({
   const workViewStart = workViewIndex * workViewSize;
   const visibleWorkRows = workRows.slice(workViewStart, workViewStart + workViewSize);
   useEffect(() => { setWorkViewPage(0); }, [
-    offset, workQuery, workMineOnly, workAttention, workStatus, workKind, workOrder, workViewSize,
+    offset, workLifecycleView, workQuery, workMineOnly, workAttention, workStatus, workKind, workOrder, workViewSize,
   ]);
   const overdueOnPage = items.filter(item => item.due_date && item.due_date < todayISO
     && !['DONE', 'CANCELLED'].includes(item.status)).length;
@@ -1762,6 +1767,34 @@ export default function ProjectTasksPanel({
           Often opened this session: {frequentWork.map(item => item.title).join(' · ')}
         </span>}
       </div>}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2" aria-label="Project work lifecycle views">
+        <div role="group" aria-label="Work lifecycle view" className="inline-flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          {[
+            ['ACTIVE', 'Active work'],
+            ['COMPLETED', 'Completed'],
+            ['ALL', 'All work'],
+          ].map(([value, title]) => <button key={value} type="button"
+            aria-pressed={workLifecycleView === value}
+            className={'min-h-10 rounded-md px-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+              + (workLifecycleView === value
+                ? 'bg-blue-700 text-white'
+                : 'bg-transparent text-slate-800 hover:bg-slate-200')}
+            onClick={() => {
+              setWorkLifecycleView(value);
+              setWorkStatus('ALL');
+              setWorkAttention('ALL');
+              setSelectedWorkIds([]);
+            }}>{title}</button>)}
+        </div>
+        <span role="status" className="text-xs text-slate-600">
+          {workRows.length} matching · EOS-verified batch {Math.floor(offset / 50) + 1}
+          {hasMore ? ' · More EOS pages available' : ''}
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-slate-600">
+        Completed work remains in EOS with its history and evidence. Views apply to this verified page;
+        use the EOS page controls to inspect additional records.
+      </p>
       <details className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Project work queue controls">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
           Work filters, grouping and sorting · {workRows.length} match on this verified EOS batch
@@ -2580,7 +2613,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.73.0-SINGLE-SELECTION-INTELLIGENCE-FOCUS
+// VERSION: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
