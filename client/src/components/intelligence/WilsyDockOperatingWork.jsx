@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE
+ * VERSION: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE replaces the in-modal source-prose transcript with a compact independently EOS-verified task assessment, explicit incomplete/predecessor risk, and live Activity/Evidence/Approvals navigation; no new AI model, invented completion, or authorization. Other Dock views remain unchanged.
  * CHANGELOG: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE exposes the existing source-verified task brief without command, attachment or model-generation controls in the Projects task dialog. Full Dock permissions and command gates remain unchanged.
  * CHANGELOG: v1.6.1-IN-APP-WORK-FOCUS minimizes the Dock on an ordinary internal work navigation so the destination task receives the screen, preserving modifier-key copy/new-tab interactions and all original task authorization checks.
  * CHANGELOG: v1.6.0-IN-APP-WORK-NAVIGATION uses React Router for in-app EOS work links to avoid restarting authentication/tenant bootstrap on every Open; keeps accessible real anchors, modifier-key browser behavior, destination reauthorization and non-router test compatibility.
@@ -147,6 +148,7 @@ export function DockInertComponent({ component, source }) {
  */
 export default function WilsyDockOperatingWork({ tenantId, principalId, scope, locator,
   refresh = 0, providerReady = false, usageConsent = false, readOnly = false,
+  embedded = false, onReviewActivity, onReviewEvidence, onReviewApprovals,
   onVerified, onRecord, onSelectWork, onNavigateWork }) {
   const identity = JSON.stringify([scope, locator.project_id || '', locator.task_id || '', Boolean(locator.participant_view)]);
   const [view, setView] = useState({ identity, state: 'LOADING' });
@@ -438,6 +440,60 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
     } finally { if (lock.current === operationLock) { lock.current = null; if (isCurrent(token)) setBusy(false); } }
   };
 
+  // Task modal is an accessible operating surface, not a second chat transcript.
+  // Every fact below comes from the independently admitted Dock context envelope.
+  // The selected Projects task's revision is checked against the modal locator.
+  if (embedded && readOnly && hasTask) {
+    const checked = Boolean(handoffConfirmed && brief);
+    const outstanding = checked ? brief.blockers : [];
+    const dependencies = checked ? brief.dependencies.length : 0;
+    const summary = outstanding?.length
+      ? 'Requires attention: ' + outstanding[0]
+      : dependencies
+        ? dependencies + ' recorded dependencies. Check current source evidence before completing work.'
+        : 'No unfinished predecessor reported by this source. Evidence and decisions need separate review.';
+    return <section aria-label="WILSY AI task assessment" className="space-y-4 text-sm text-slate-800">
+      {!ready || !checked ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+        <span>{view.state === 'UNAVAILABLE' ? view.message || 'EOS task source unavailable.'
+          : 'Verifying this task against EOS…'}</span>
+        {view.state === 'UNAVAILABLE' && <button type="button" onClick={() => setRetry(value => value + 1)}
+          className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+          Retry verification
+        </button>}
+      </div> : <>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2">
+            <span aria-hidden="true" className="text-emerald-700">✓</span>
+            <span className="font-medium text-slate-900">Task source verified</span>
+          </div>
+          <span className="text-xs text-slate-500">EOS · Revision {envelope.source.revision}</span>
+        </div>
+        <div className="space-y-1.5" aria-label="Current work assessment">
+          <h5 className="text-sm font-semibold text-slate-900">What needs attention</h5>
+          <p className="max-w-prose text-sm leading-relaxed text-slate-700">{summary}</p>
+          {outstanding.length > 1 && <p className="text-xs text-slate-500">
+            {outstanding.length - 1} additional source-reported issue(s). Review the full task for details.
+          </p>}
+        </div>
+        <nav aria-label="Review task evidence and activity" className="flex flex-wrap gap-2 border-t border-slate-200 pt-3">
+          <button type="button" onClick={onReviewActivity}
+            className="min-h-10 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 hover:bg-slate-50">
+            Activity
+          </button>
+          <button type="button" onClick={onReviewEvidence}
+            className="min-h-10 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 hover:bg-slate-50">
+            Evidence
+          </button>
+          <button type="button" onClick={onReviewApprovals}
+            className="min-h-10 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 hover:bg-slate-50">
+            Approvals
+          </button>
+        </nav>
+        <p className="text-xs text-slate-500">Read-only inspection. These actions open the existing Projects records; nothing is approved or completed by AI.</p>
+      </>}
+    </section>;
+  }
+
   return <section className={styles.operatingWork} aria-label={hasTask ? 'Task operating brief' : 'Needs your attention'}>
     {view.identity !== identity || view.state === 'LOADING' ? <p role="status">Checking authorized work…</p>
       : !ready ? <div><p role="status">{view.message || 'Authorized work is unavailable.'}</p>
@@ -529,7 +585,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE
+// VERSION: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
