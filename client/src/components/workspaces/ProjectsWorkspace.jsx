@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.47.0-STRATEGY-IN-CONTEXT-RETURN
+ * VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER
+ * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER moves the secondary all-projects navigation into the project views strip, preserving the full project title and verified status in a dedicated header row.
  * CHANGELOG: v2.47.0-STRATEGY-IN-CONTEXT-RETURN Integrates a contextual M04 navigation trail and prominent accessible return action into the Projects operating surface; ordinary Projects unaffected.
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
@@ -1880,10 +1881,6 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           style={{ width: '100%', height: 'auto', maxHeight: 'none', overflow: 'visible' }}>
           <div className="wp-detail-top mb-1 flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-              <button type="button" onClick={closeDetail}
-                className="wp-button !min-h-9 !px-3 !text-xs" aria-label="Back to projects table">
-                <X size={15}/> Back to all projects
-              </button>
               <p className="sr-only">Projects &amp; delivery / Current project</p>
               <h2 className="wp-detail-title !text-xl !leading-tight">{detail?.project?.name || 'Loading project…'}</h2>
               {detail?.project && <div className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
@@ -1920,6 +1917,10 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
                   : undefined}>
                 {label}
               </button>)}
+            <button type="button" onClick={closeDetail}
+              className="wp-button ml-auto !min-h-9 !shrink-0 !px-3 !text-xs" aria-label="Back to projects table">
+              <X size={15}/> All projects
+            </button>
           </nav>
           {detailState === 'LOADING' && <p role="status" className="text-sm text-slate-600">Loading project and audit events…</p>}
           {detailState === 'ERROR' && <p role="alert" className="text-sm text-rose-700">{commandError === 'ACCESS_DENIED' ? 'EOS denied this project detail read.' : 'Project detail is unavailable. Retry the read.'}<button type="button" onClick={() => void openProject(selectedId)} className="ml-2 font-semibold underline">Retry</button></p>}
@@ -2057,7 +2058,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.47.0-STRATEGY-IN-CONTEXT-RETURN
+// VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
