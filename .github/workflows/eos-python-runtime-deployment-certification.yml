@@ -22,6 +22,7 @@ on:
       - "tests/unit/test_compliance_scan_scheduler.py"
       - "tests/integration/test_durable_task_queue_real_mongo.py"
       - "tests/unit/test_python_eos_runtime_deployment.py"
+      - "tests/unit/test_mw_t12_secure_task_registration.py"
       - "server/**"
       - "docs/architecture/eos-runtime-database-consumer-inventory.md"
       - ".github/workflows/eos-python-runtime-deployment-certification.yml"
@@ -42,6 +43,7 @@ on:
       - "tests/unit/test_compliance_scan_scheduler.py"
       - "tests/integration/test_durable_task_queue_real_mongo.py"
       - "tests/unit/test_python_eos_runtime_deployment.py"
+      - "tests/unit/test_mw_t12_secure_task_registration.py"
       - "tests/unit/test_owner_commercial_workspace_server_mount.py"
       - "package.json"
       - "package-lock.json"
@@ -72,6 +74,10 @@ jobs:
           python -m pip install --disable-pip-version-check pytest==9.1.1 httpx
       - name: Run Python runtime deployment tests
         run: python -m pytest -q tests/unit/test_python_eos_runtime_deployment.py
+      - name: Certify MW-T12 dormant secure ECS task metadata
+        run: |
+          python -m py_compile tools/eos/ops/mw_t12_runtime_readiness.py tools/eos/ops/mw_t12_task_definition_admission.py tests/unit/test_mw_t12_secure_task_registration.py
+          python -m pytest -q tests/unit/test_mw_t12_secure_task_registration.py
       - name: Validate canonical Python EOS Compose manifests
         run: |
           MONGODB_URI="mongodb://127.0.0.1:27017" docker compose --file docker-compose.yml config --quiet
