@@ -272,7 +272,7 @@ describe('EOS source-backed deadline calendar', () => {
 
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.test.jsx
- * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-CERTIFICATE
+ * VERSION: v1.3.0-PROJECTS-CIVIL-DATE-SOURCE-HANDOFF
  * AUTHORITY BOUNDARY: Deterministic component certification, not runtime IAM.
  * TENANT POSTURE: Synthetic source-shaped work; no tenant persistence.
  * FAIL-CLOSED POSTURE: Invalid dates reject; source removal removes agenda work.
