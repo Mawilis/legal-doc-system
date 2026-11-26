@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.47.0-CHAT-FIRST-REGRESSION
+ * VERSION: v1.48.0-NO-PREFETCH-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.48.0-NO-PREFETCH-CERT asserts zero My Work network reads on open, exactly one on intentional source query and one per explicit retry.
  * CHANGELOG: v1.47.0-CHAT-FIRST-REGRESSION verifies opt-in task view, return to transcript and compact recent-conversation heading.
  * CHANGELOG: v1.46.0-OPERATING-ENTRY-CONTRACT-CERT admits automatic authorized daily attention
  * and compact live-task entry while retaining source denials and no-model assertions.
@@ -683,7 +684,7 @@ describe('WilsyOSIntelligenceDock', () => {
       fireEvent.change(composer, { target: { value: question } });
       expect(screen.getByLabelText('Send')).toBeDisabled();
     }
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1239,21 +1240,21 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'work-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(screen.queryByRole('status', { name: 'Headquarters work source status' })).not.toBeInTheDocument();
     requestReadOnlySource('Review my work');
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
     await waitFor(() => expect(screen.getByRole('status', { name: 'Headquarters work source status' }))
       .toHaveTextContent(message));
     const readCount = mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length;
-    expect(readCount).toBe(2);
+    expect(readCount).toBe(1);
     expect(mockApiGet.mock.calls.find(([path]) => path === '/my-work')[1].forceNetworkRetry).toBe(true);
     expect(mockApiGet.mock.calls.find(([path]) => path === '/kernel')[1].forceNetworkRetry).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Recheck work source' }));
     await waitFor(() => expect(
       mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length,
-    ).toBe(3));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')[1][1].forceNetworkRetry).toBe(true);
+    ).toBe(2));
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')[0][1].forceNetworkRetry).toBe(true);
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.queryByText(/0 active · 0 overdue/)).not.toBeInTheDocument();
   });
@@ -1272,7 +1273,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'work-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     requestReadOnlySource('What are my outstanding work?');
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
     await waitFor(() => expect(screen.getByRole('status', { name: 'Headquarters work source status' }))
@@ -1282,7 +1283,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Recheck work source' }));
     await waitFor(() => expect(
       mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length,
-    ).toBe(3));
+    ).toBe(2));
   });
 
   it('renders source observations inside one conversational transcript, not fixed stacked panels', async () => {
@@ -1316,7 +1317,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: principal, tenantId: 'TEST_TENANT', role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(screen.queryByText('Review verified CRM work')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Verified workspace context')).not.toBeInTheDocument();
     requestReadOnlySource('Review my work');
@@ -1384,7 +1385,7 @@ describe('WilsyOSIntelligenceDock', () => {
       } }) : Promise.reject(rejectedResponse(403, 'not admitted')));
     render(<WilsyOSIntelligenceDock authUser={user}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(screen.queryByRole('region', { name: 'Current authorized work' })).not.toBeInTheDocument();
     requestReadOnlySource('Review my work');
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
@@ -1408,7 +1409,7 @@ describe('WilsyOSIntelligenceDock', () => {
       } }) : Promise.reject(rejectedResponse(403, 'not admitted')));
     render(<WilsyOSIntelligenceDock authUser={user}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(screen.queryByText('Foreign confidential task')).not.toBeInTheDocument();
     requestReadOnlySource('Review my work');
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
@@ -1805,7 +1806,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.getByLabelText('Inspect verified workspace context')).toBeVisible();
     expect(mockApiPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Recent conversations' }));
-    expect(screen.getByRole('heading', { name: 'Pick up where you left off' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Recent conversations' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /Open conversation EOS source · MW-T11/ }));
     expect(await screen.findByText(/EOS source verified: MW-T11/)).toBeVisible();
     const title = screen.getByText(/EOS source verified: MW-T11/);
@@ -2147,7 +2148,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'context-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     requestReadOnlySource('Review my work');
     await waitFor(() => expect(mockApiGet.mock.calls.some(([path]) => path === '/my-work')).toBe(true));
     const review = await screen.findByRole('button', { name: 'Review verified work: Meet Investors' });
@@ -2165,7 +2166,7 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(screen.queryByRole('region', { name: 'Selected verified work' })).not.toBeInTheDocument();
   });
 
-  it('renders compact attention on open and admits expanded source inspection without metering', async () => {
+  it('defers all work reads until a source request and admits expanded inspection without metering', async () => {
     mockApiGet.mockImplementation(path => path === '/my-work'
       ? Promise.resolve({ data: {
         tenant_id: 'TEST_TENANT', principal_id: 'catalog-operator',
@@ -2181,7 +2182,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'catalog-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(screen.queryByRole('group', { name: 'Available source actions' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Review my work' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Inspect this workspace' })).not.toBeInTheDocument();
@@ -2232,7 +2233,7 @@ describe('WilsyOSIntelligenceDock', () => {
       id: 'natural-operator', tenantId: 'TEST_TENANT', role: 'OWNER',
     }}/>);
     fireEvent.click(screen.getByTitle('Open Wilsy OS Intelligence Dock'));
-    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(1);
+    expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     const input = screen.getByPlaceholderText('Ask Wilsy OS…');
     fireEvent.change(input, { target: { value: question } });
     expect(screen.getByLabelText('Send')).toBeEnabled();
@@ -2424,7 +2425,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.47.0-CHAT-FIRST-REGRESSION
+ * VERSION: v1.48.0-NO-PREFETCH-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
