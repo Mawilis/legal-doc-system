@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.70.0-WORK-TAB-CANONICAL-QUEUE
+ * VERSION: v4.71.0-SPA-WORK-FOCUS
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.71.0-SPA-WORK-FOCUS minimizes the Dock when the operator follows an internal EOS work link, leaving destination reauthorization intact.
  * CHANGELOG: v4.70.0-WORK-TAB-CANONICAL-QUEUE makes the Work tab load the authenticated EOS My Work queue even when an exact Projects task is currently focused, restores the prior navigation locator when returning to chat, and never treats that locator as task authority.
  * CHANGELOG: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK restores the established disabled Send safety boundary for unavailable AI admission and uncertain replay, while clearly showing the reason directly beside a nonempty prompt; no unauthorized model request or silent dead end.
  * CHANGELOG: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS keeps nonempty conversational submissions interactive so missing consent, provider or entitlement yields the existing explicit status message rather than a disabled silent send control; source-only inspection remains nonbillable and no IAM or financial gate is weakened.
@@ -2940,6 +2941,7 @@ export function WilsyOSIntelligenceDock({
                         setContextRefresh(value => value + 1);
                       }}
                       onRecord={recordDockWork}
+                      onNavigateWork={() => { setIsOpen(false); setLauncherMinimized(true); }}
                       onSelectWork={locator => {
                         priorTaskLocatorRef.current = null;
                         setWorkLocator(locator);
@@ -3703,7 +3705,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.70.0-WORK-TAB-CANONICAL-QUEUE
+ * VERSION: v4.71.0-SPA-WORK-FOCUS
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
