@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS
+ * VERSION: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK restores the established disabled Send safety boundary for unavailable AI admission and uncertain replay, while clearly showing the reason directly beside a nonempty prompt; no unauthorized model request or silent dead end.
  * CHANGELOG: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS keeps nonempty conversational submissions interactive so missing consent, provider or entitlement yields the existing explicit status message rather than a disabled silent send control; source-only inspection remains nonbillable and no IAM or financial gate is weakened.
  * CHANGELOG: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION replaces generic dependency counts with strictly validated EOS predecessor state in the existing task-source conversation; no paid model, fabricated action, or decorative panel.
  * CHANGELOG: v4.66.0-NATURAL-VERIFIED-TASK-INSPECTION admits natural forms such as Let’s inspect MW-T12 into the same verified, read-only task inspection path without provider credits, broad intent guessing or client authorization.
@@ -3266,6 +3267,16 @@ export function WilsyOSIntelligenceDock({
                     </button>}
                   </details>
                 </div>}
+                {Boolean(prompt.trim()) && !readOnlySourceIntent && !localCourtesyIntent
+                  && !isLegalDockRole(authUser?.role) && !isSubmitting
+                  && (aiEntitlementNotProvisioned || aiProviderUnavailable || !reasoningUsageConsent)
+                  && <p role="status" aria-label="WILSY AI admission status" style={{
+                    margin: '0 14px 5px', color: '#f4d9cd', fontSize: 12, lineHeight: 1.5,
+                  }}>{aiEntitlementNotProvisioned
+                    ? 'AI reasoning is not activated for this tenant. Source-only EOS inspection remains available.'
+                    : aiProviderUnavailable
+                      ? 'AI provider is not configured. Source-only EOS inspection remains available.'
+                      : 'Confirm AI usage consent before requesting metered reasoning.'}</p>}
                 <div className={styles.chatInputArea} style={{ flexShrink: 0 }}>
                   <textarea
                     className={styles.promptInput}
@@ -3286,13 +3297,16 @@ export function WilsyOSIntelligenceDock({
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
                     disabled={isSubmitting || !prompt.trim()
-                      || (reasoningReplayRef.current.blocked === true
-                        && reasoningReplayRef.current.scope === dockScopeRef.current
-                        && reasoningReplayRef.current.text === prompt.trim()
-                        && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)}
+                      || (!isLegalDockRole(authUser?.role)
+                        && !readOnlySourceIntent && !localCourtesyIntent
+                        && (!reasoningUsageConsent || aiEntitlementNotProvisioned || aiProviderUnavailable
+                          || (reasoningReplayRef.current.blocked === true
+                            && reasoningReplayRef.current.scope === dockScopeRef.current
+                            && reasoningReplayRef.current.text === prompt.trim()
+                            && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)))}
                     title={!prompt.trim() ? 'Enter a question'
                       : isSubmitting ? 'WILSY AI is processing a request'
-                        : 'Submit question or see the EOS reason it cannot be admitted'}
+                        : 'Submit an EOS-admitted question'}
                     aria-label="Send"
                   >
                     <SendHorizontal size={18} />
@@ -3657,7 +3671,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS
+ * VERSION: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
