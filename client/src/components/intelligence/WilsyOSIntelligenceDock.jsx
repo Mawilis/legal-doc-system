@@ -3285,7 +3285,11 @@ export function WilsyOSIntelligenceDock({
                     type="button"
                     className={styles.sendButton}
                     onClick={() => handleSendMessage()}
-                    disabled={isSubmitting || !prompt.trim()}
+                    disabled={isSubmitting || !prompt.trim()
+                      || (reasoningReplayRef.current.blocked === true
+                        && reasoningReplayRef.current.scope === dockScopeRef.current
+                        && reasoningReplayRef.current.text === prompt.trim()
+                        && reasoningReplayRef.current.locatorKey === workLocatorKeyRef.current)}
                     title={!prompt.trim() ? 'Enter a question'
                       : isSubmitting ? 'WILSY AI is processing a request'
                         : 'Submit question or see the EOS reason it cannot be admitted'}
