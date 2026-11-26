@@ -1778,7 +1778,7 @@ describe('WilsyOSIntelligenceDock', () => {
       .toHaveTextContent('AI provider unavailable'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
-      target: { value: 'What is my current work?' },
+      target: { value: 'Provide a strategic analysis of responsible AI systems.' },
     });
     expect(screen.getByLabelText('Send')).toBeEnabled();
     fireEvent.click(screen.getByLabelText('Send'));
@@ -1811,7 +1811,7 @@ describe('WilsyOSIntelligenceDock', () => {
       .toHaveTextContent('AI reasoning not activated'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
-      target: { value: 'Which task is overdue?' },
+      target: { value: 'Provide a strategic analysis of responsible AI systems.' },
     });
     expect(screen.getByLabelText('Send')).toBeEnabled();
     fireEvent.click(screen.getByLabelText('Send'));
