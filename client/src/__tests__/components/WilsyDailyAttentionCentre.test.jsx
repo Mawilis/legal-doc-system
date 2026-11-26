@@ -11,7 +11,8 @@
  *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.12.0-CONCURRENT-SOURCE-ADMISSION-CERT verifies that an independent EOS Attention read begins while My Work is unresolved, with no results exposed before source validation.
  * CHANGELOG: v1.11.0-EDGE-RESIZE-FOCUSED-CERT verifies
  *          the accessible edge resize controls and transient dimension
  *          changes independently from the float/dock move command.
