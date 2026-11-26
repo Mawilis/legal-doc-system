@@ -2012,7 +2012,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(grid).getByText('Batch task 22')).toBeVisible();
     expect(within(grid).queryByText('Batch task 01')).not.toBeInTheDocument();
     fireEvent.click(within(grid).getByRole('button', { name: 'Batch task 22' }));
-    expect(await screen.findByText('Batch task 22', { selector: 'h2' })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Work details: Batch task 22' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
     fireEvent.click(within(views).getByRole('button', { name: 'All work' }));
     expect(within(views).getByRole('button', { name: 'All work' })).toHaveAttribute('aria-pressed', 'true');
