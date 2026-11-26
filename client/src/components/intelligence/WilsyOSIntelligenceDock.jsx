@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.80.0-EXACT-PROJECT-TASK-RECOVERY-ACTION
+ * VERSION: v4.81.0-CHECKBOX-SELECTED-TASK-SOURCE-CONTEXT
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.81.0-CHECKBOX-SELECTED-TASK-SOURCE-CONTEXT accepts a single checked Projects task only as an untrusted locator hint, keeps the conversation open, and requires the same independent Python EOS exact-task context verification before briefing; multi-selection removes only its own hint.
  * CHANGELOG: v4.80.0-EXACT-PROJECT-TASK-RECOVERY-ACTION replaces the dead-end task-focus refusal with an explicit same-tenant/principal exact-project task navigation request that only a currently verified Projects panel can accept; the Dock minimizes on acceptance and EOS rechecks task facts separately.
  * CHANGELOG: v4.79.1-CHAT-ERROR-DRAFT-RESET makes Clear chat recover from stale request status and unsent drafts without creating or deleting encrypted history, resets stale errors on history navigation, and explains table checkbox versus verified task focus.
  * CHANGELOG: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME adds chat-native New conversation and Clear chat actions (preserving EOS archive), displays source event times in local readable format without modifying stored evidence, and resets drafts safely when starting fresh.
@@ -1616,6 +1617,7 @@ export function WilsyOSIntelligenceDock({
   const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
   // Navigation-only locator. Restored context must be reauthorized by EOS.
   const priorTaskLocatorRef = useRef(null);
+  const selectedTaskHintRef = useRef(null);
   const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
   const workspaceDetailsRef = useRef(null);
   const [headquartersWork, setHeadquartersWork] = useState(null);
@@ -1770,6 +1772,11 @@ export function WilsyOSIntelligenceDock({
         || (candidate.task_revision !== undefined && (!candidate.task_id
           || !Number.isSafeInteger(candidate.task_revision) || candidate.task_revision < 1))
         || (candidate.participant_view !== undefined && typeof candidate.participant_view !== 'boolean')) return;
+      if (event.type === 'wilsy:ai-task-selection') {
+        selectedTaskHintRef.current = JSON.stringify(candidate);
+      } else {
+        selectedTaskHintRef.current = null;
+      }
       setWorkLocator(previous => JSON.stringify(previous) === JSON.stringify(candidate) ? previous : { ...candidate });
       // The SOURCE transcript and the governed operating view are mutually
       // exclusive. After restoring an EOS task-linked conversation the launcher
@@ -1780,10 +1787,25 @@ export function WilsyOSIntelligenceDock({
         setConversationView('WELCOME');
         setLocalSourceQuery('');
         setFocusedWorkIndex(null);
-        setWorkSurfaceOpen(true);
+        setWorkSurfaceOpen(event.type !== 'wilsy:ai-task-selection');
       } else {
         setWorkSurfaceOpen(false);
       }
+    };
+    const selectedTask = event => {
+      const detail = event?.detail;
+      const exactTenant = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+      if (!authUser?.id || detail?.tenantId !== exactTenant
+        || detail?.principalId !== authUser.id) return;
+      if (detail.locator) {
+        receive(event); // Reuse exact locator validation and independent EOS readback.
+        return;
+      }
+      if (!selectedTaskHintRef.current) return;
+      const previousHint = selectedTaskHintRef.current;
+      selectedTaskHintRef.current = null;
+      setWorkLocator(previous => JSON.stringify(previous) === previousHint
+        ? { workspace: 'HEADQUARTERS' } : previous);
     };
     const openFromTask = event => {
       const detail = event.detail;
@@ -1797,10 +1819,12 @@ export function WilsyOSIntelligenceDock({
       setConversationView('WELCOME');
     };
     window.addEventListener('wilsy:ai-context-locator', receive);
+    window.addEventListener('wilsy:ai-task-selection', selectedTask);
     window.addEventListener('wilsy:ai-request-open', openFromTask);
     window.dispatchEvent(new CustomEvent('wilsy:ai-context-request'));
     return () => {
       window.removeEventListener('wilsy:ai-context-locator', receive);
+      window.removeEventListener('wilsy:ai-task-selection', selectedTask);
       window.removeEventListener('wilsy:ai-request-open', openFromTask);
     };
   }, [dockScope]);
@@ -4305,7 +4329,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.80.0-EXACT-PROJECT-TASK-RECOVERY-ACTION
+ * VERSION: v4.81.0-CHECKBOX-SELECTED-TASK-SOURCE-CONTEXT
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
