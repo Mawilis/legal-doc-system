@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.11.0-EDGE-RESIZE-FOCUSED-CERT
+ * VERSION: v1.12.0-CONCURRENT-SOURCE-ADMISSION-CERT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
  *          interactive work triage, source-owned navigation and honest empty states.
@@ -175,6 +175,37 @@ const renderCentre = (props = {}) => {
 beforeEach(() => {
   vi.clearAllMocks();
   api.get.mockResolvedValue({ data: projection() });
+});
+
+describe('bounded concurrent EOS attention admission', () => {
+  it('starts the independent attention GET before My Work completes, without showing unverified task rows', async () => {
+    const source = projection();
+    let resolveProjection;
+    const heldProjection = new Promise(resolve => { resolveProjection = resolve; });
+    api.get.mockImplementation((path) => {
+      if (path === '/my-work') return heldProjection;
+      if (path === '/attention/feed') return Promise.resolve({ data: attentionFeedFor(source) });
+      if (path.startsWith('/attention/actions')) return Promise.resolve({ data: {
+        sourceActions: {}, unavailableSources: [],
+      } });
+      throw new Error('Unexpected EOS path: ' + path);
+    });
+    const session = {
+      ...authenticatedFounderTestSession, sessionGeneration: 991,
+    };
+    render(<AuthContext.Provider value={session}>
+      <WilsyDailyAttentionCentre tenantId={TENANT} open
+        activeCount={2} onToggle={vi.fn()} onClose={vi.fn()}
+        onOpenWork={vi.fn()}/>
+    </AuthContext.Provider>);
+    await waitFor(() => {
+      expect(api.get.mock.calls.some(([path]) => path === '/my-work')).toBe(true);
+      expect(api.get.mock.calls.some(([path]) => path === '/attention/feed')).toBe(true);
+    });
+    expect(screen.queryByText('Review governed contract')).toBeNull();
+    resolveProjection({ data: source });
+    expect(await screen.findByText('Review governed contract')).toBeTruthy();
+  });
 });
 
 describe('WILSY daily attention centre', () => {
@@ -681,7 +712,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.11.0-EDGE-RESIZE-FOCUSED-CERT
+ * VERSION: v1.12.0-CONCURRENT-SOURCE-ADMISSION-CERT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.
