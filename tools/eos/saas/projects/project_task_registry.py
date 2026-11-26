@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Enterprise Project Task Transaction Registry
-VERSION: v1.4.1-BSON-COMPLETION-PRECISION
+VERSION: v1.4.2-BATCHED-COMPLETION-EVIDENCE
 AUTHORITY: Python EOS canonical tenant/project task and milestone source truth.
 EPITOME: Source-backed tasks, nested subtasks, milestones, dependencies, due
          dates, assignees and audited lifecycle CAS with idempotent command replay.
@@ -7,14 +7,14 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router admits IAM, participant assignment,
          currentness, project existence and entitlement. EOS owns transactions.
 CERTIFICATION / UPDATE DATE: 2026-11-25
-CHANGELOG: v1.4.1-BSON-COMPLETION-PRECISION validates BSON millisecond-rounded event timestamps against exact task source instants without allowing a full-millisecond divergence; source task provides the unrounded timestamp after evidence confirmation.
+CHANGELOG: v1.4.2-BATCHED-COMPLETION-EVIDENCE verifies up to 100 exact-revision terminal events in one snapshot-scoped indexed query rather than N+1 remote reads, fail-closed on missing, duplicate, mismatched fingerprint/actor/time.\nCHANGELOG: v1.4.1-BSON-COMPLETION-PRECISION validates BSON millisecond-rounded event timestamps against exact task source instants without allowing a full-millisecond divergence; source task provides the unrounded timestamp after evidence confirmation.
 CHANGELOG: v1.4.0-VERIFIED-COMPLETED-PAGINATION filters DONE tasks before bounded pagination, supports title/contributor search and completion-time sorting, and validates each completion timestamp/actor against the immutable exact-revision transition event in the same read transaction.
 CHANGELOG: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY shares canonical completion gates with read-only Dock eligibility.
 CHANGELOG: v1.2.0-TASK-ACTIVITY-EVENT-READ reads bounded immutable lifecycle events in newest revision order with exact-tenant/project/task binding, source validation and privacy-preserving projection. No command or audit mutation.
 CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING adds guarded title, description,
 due date and assignee editing for active work, durable replay, CAS and
 immutable audit without rewriting dependency or completion history.
-CHANGELOG: v1.4.1-BSON-COMPLETION-PRECISION establishes an immutable
+CHANGELOG: v1.4.2-BATCHED-COMPLETION-EVIDENCE establishes an immutable
          project-work aggregate and exact-tenant Mongo transaction registry.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bounded plain text; no HTML, inferred approval,
@@ -38,7 +38,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.4.1-BSON-COMPLETION-PRECISION"
+VERSION: Final[str] = "v1.4.2-BATCHED-COMPLETION-EVIDENCE"
 SCHEMA: Final[str] = "wilsy.project.task.v1"
 COLLECTION: Final[str] = "wilsy_project_tasks"
 EVENT_COLLECTION: Final[str] = "wilsy_project_task_events"
@@ -520,26 +520,41 @@ class ProjectTaskRegistry:
             ).skip(offset).limit(limit + 1))
         except PyMongoError as error:
             raise ProjectTaskError("PROJECT_TASK_LIST_UNAVAILABLE") from error
-        result: list[dict[str, object]] = []
-        for row in rows[:limit]:
-            task = ProjectTask.hydrate({k: v for k, v in row.items() if k != "_id"})
-            if task.tenant_id != tenant_id or task.project_id != project_id \
-                    or task.status != "DONE":
-                raise ProjectTaskError("PROJECT_TASK_COMPLETION_SOURCE_INVALID")
-            evidence_query = {
-                "tenant_id": tenant_id, "project_id": project_id,
-                "task_id": task.task_id, "revision": task.revision,
-                "event_type": "PROJECT_TASK_TRANSITIONED",
-                "result_fingerprint": task.fingerprint,
-            }
+        page = tuple(ProjectTask.hydrate({k: v for k, v in row.items() if k != "_id"})
+                     for row in rows[:limit])
+        if any(task.tenant_id != tenant_id or task.project_id != project_id
+               or task.status != "DONE" for task in page):
+            raise ProjectTaskError("PROJECT_TASK_COMPLETION_SOURCE_INVALID")
+        # Query at most one exact-revision terminal event per returned task.
+        # Batch the event read to avoid N+1 Atlas roundtrips.
+        evidence: dict[tuple[str, int], dict[str, object]] = {}
+        if page:
+            requested = [{"task_id": task.task_id, "revision": task.revision}
+                         for task in page]
             try:
-                event = self._events.find_one(evidence_query, {
-                    "_id": 0, "schema": 1, "actor_principal_id": 1,
+                events = list(self._events.find({
+                    "tenant_id": tenant_id, "project_id": project_id,
+                    "event_type": "PROJECT_TASK_TRANSITIONED",
+                    "$or": requested,
+                }, {
+                    "_id": 0, "schema": 1, "task_id": 1, "revision": 1,
+                    "actor_principal_id": 1, "result_fingerprint": 1,
                     "occurred_at": 1, "result_snapshot.status": 1,
-                }, session=session)
+                }, session=session))
             except PyMongoError as error:
                 raise ProjectTaskError("PROJECT_TASK_EVENT_READ_UNAVAILABLE") from error
+            for event in events:
+                key = (event.get("task_id"), event.get("revision"))
+                if key in evidence or key not in {
+                    (task.task_id, task.revision) for task in page
+                }:
+                    raise ProjectTaskError("PROJECT_TASK_COMPLETION_SOURCE_INVALID")
+                evidence[key] = event
+        result: list[dict[str, object]] = []
+        for task in page:
+            event = evidence.get((task.task_id, task.revision))
             if not isinstance(event, dict) \
+                    or event.get("result_fingerprint") != task.fingerprint \
                     or event.get("schema") != "wilsy.project.task.event.v1" \
                     or not isinstance(event.get("actor_principal_id"), str) \
                     or event["actor_principal_id"] != task.updated_by_principal_id \
@@ -852,7 +867,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_task_registry.py
-# VERSION: v1.4.1-BSON-COMPLETION-PRECISION
+# VERSION: v1.4.2-BATCHED-COMPLETION-EVIDENCE
 # AUTHORITY BOUNDARY: source lifecycle/CAS only; router owns independent IAM
 # TENANT POSTURE: exact tenant/project/assignee; no privileged fallback
 # FAIL-CLOSED POSTURE: invalid graph, dependency, replay or revision denies
