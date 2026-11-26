@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.6.1-IN-APP-WORK-FOCUS
+ * VERSION: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE exposes the existing source-verified task brief without command, attachment or model-generation controls in the Projects task dialog. Full Dock permissions and command gates remain unchanged.
  * CHANGELOG: v1.6.1-IN-APP-WORK-FOCUS minimizes the Dock on an ordinary internal work navigation so the destination task receives the screen, preserving modifier-key copy/new-tab interactions and all original task authorization checks.
  * CHANGELOG: v1.6.0-IN-APP-WORK-NAVIGATION uses React Router for in-app EOS work links to avoid restarting authentication/tenant bootstrap on every Open; keeps accessible real anchors, modifier-key browser behavior, destination reauthorization and non-router test compatibility.
  * CHANGELOG: v1.5.0-MW-T11-QUIET-TENANT-NEUTRAL-WORK reduces task-title visual weight and uses compact neutral sentence-case source metadata for every tenant; exact EOS source order, priority, overdue date and authorized navigation remain unchanged.
@@ -145,7 +146,8 @@ export function DockInertComponent({ component, source }) {
  * @returns Accessible TaskBrief, ActionList and one replaceable ArtifactFrame.
  */
 export default function WilsyDockOperatingWork({ tenantId, principalId, scope, locator,
-  refresh = 0, providerReady = false, usageConsent = false, onVerified, onRecord, onSelectWork, onNavigateWork }) {
+  refresh = 0, providerReady = false, usageConsent = false, readOnly = false,
+  onVerified, onRecord, onSelectWork, onNavigateWork }) {
   const identity = JSON.stringify([scope, locator.project_id || '', locator.task_id || '', Boolean(locator.participant_view)]);
   const [view, setView] = useState({ identity, state: 'LOADING' });
   const [notice, setNotice] = useState('');
@@ -494,13 +496,13 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
               {!!brief.dependencies.length && <p>{brief.dependencies.length} recorded dependencies. Review current source evidence before completion.</p>}
               {!!brief.blockers.length && <ul>{brief.blockers.map(item => <li key={item}>{item}</li>)}</ul>}
               <p className={styles.nextAction}>EOS action order: {actions.map(action => action.outcome).join(' · ')}. Each operation rechecks current source authority.</p>
-              <div className={styles.operatingActions} aria-label="Suggested task actions">
+              {!readOnly ? <div className={styles.operatingActions} aria-label="Suggested task actions">
                 {actions.map(action => action.kind === 'OPEN_TASK' || action.kind === 'REVIEW_EVIDENCE'
                   ? <DockWorkLink key={action.id} onNavigate={() => callbacks.current.onNavigateWork?.()} href={dockTaskPath(action.source, action.kind === 'REVIEW_EVIDENCE')}>{action.outcome}</DockWorkLink>
                   : <button key={action.id} type="button" data-primary={action.priority === 0 ? 'true' : undefined}
                     disabled={busy || (action.execution.operation === 'PROJECT_TASK_TRANSITION' && (continuityBlocked || Boolean(pending)))}
                     onClick={() => action.kind === 'DRAFT_PLAN' ? void draft() : void transition(action)}>{action.kind === 'DRAFT_PLAN' && providerReady && usageConsent ? 'Generate alignment plan' : action.outcome}</button>)}
-              </div></> : <div aria-label="Alignment plan artifact" className={styles.artifactFrame}>
+              </div> : <p className={styles.nextAction}>Read-only EOS task inspection. Use the Projects task for authorized changes or open the AI conversation.</p>}</> : <div aria-label="Alignment plan artifact" className={styles.artifactFrame}>
               <h4>{artifact.title}</h4><p>{artifact.provenance === 'GOVERNED_PROVIDER' ? 'EOS-admitted model draft' : 'Deterministic draft'} · Task revision {artifact.source.revision} · {artifact.state.toLowerCase()}</p>
               <label htmlFor="dock-plan-content">Edit plan</label>
               <textarea id="dock-plan-content" value={artifact.content} maxLength={12000}
@@ -527,7 +529,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.6.1-IN-APP-WORK-FOCUS
+// VERSION: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
