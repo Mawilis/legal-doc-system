@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.79.1-CHAT-ERROR-DRAFT-RESET
+ * VERSION: v4.80.0-EXACT-PROJECT-TASK-RECOVERY-ACTION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.80.0-EXACT-PROJECT-TASK-RECOVERY-ACTION replaces the dead-end task-focus refusal with an explicit same-tenant/principal exact-project task navigation request that only a currently verified Projects panel can accept; the Dock minimizes on acceptance and EOS rechecks task facts separately.
  * CHANGELOG: v4.79.1-CHAT-ERROR-DRAFT-RESET makes Clear chat recover from stale request status and unsent drafts without creating or deleting encrypted history, resets stale errors on history navigation, and explains table checkbox versus verified task focus.
  * CHANGELOG: v4.79.0-CONVERSATION-COMMANDS-AND-LOCAL-SOURCE-TIME adds chat-native New conversation and Clear chat actions (preserving EOS archive), displays source event times in local readable format without modifying stored evidence, and resets drafts safely when starting fresh.
  * CHANGELOG: v4.78.2-COMMENT-DISCLOSURE-CURRENTNESS binds expanded comment text to its verified task/context scope so focus changes cannot display previous task content under a new source.
@@ -3836,6 +3837,28 @@ export function WilsyOSIntelligenceDock({
                       <div className={styles.bubbleHeader}>WILSY OS · Request status</div>
                       <p style={{ margin: 0, color: '#f4d9cd', lineHeight: 1.65,
                         overflowWrap: 'anywhere' }}>{errorMessage}</p>
+                      {!isLegalDockRole(authUser?.role)
+                        && /^MW-T\d{1,3} is not verified as an open Projects task\./.test(errorMessage)
+                        && <button type="button" className={styles.conversationInlineAction}
+                          onClick={() => {
+                            const taskCode = /^MW-T\d{1,3}/.exec(errorMessage)?.[0];
+                            const tenantId = activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId;
+                            const principalId = authUser?.id;
+                            if (!taskCode || !tenantId || !principalId) return;
+                            const detail = { tenantId, principalId, taskCode,
+                              projectId: workLocator.workspace === 'PROJECTS'
+                                ? workLocator.project_id : undefined, accepted: false };
+                            window.dispatchEvent(new CustomEvent('wilsy:projects-open-task-request', { detail }));
+                            if (detail.accepted !== true) {
+                              setErrorMessage('The requested task is not available in the currently verified Projects work page. Open the correct project and refresh its work list; no task access was granted.');
+                              return;
+                            }
+                            setErrorMessage('');
+                            setIsOpen(false);
+                            setLauncherMinimized(true);
+                          }}>
+                          <span>Open {/^MW-T\d{1,3}/.exec(errorMessage)?.[0]} task</span>
+                        </button>}
                     </div>
                   )}
                   <div ref={messagesEndRef} />
@@ -4282,7 +4305,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.79.1-CHAT-ERROR-DRAFT-RESET
+ * VERSION: v4.80.0-EXACT-PROJECT-TASK-RECOVERY-ACTION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
