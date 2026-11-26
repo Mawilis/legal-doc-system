@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS
+VERSION: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -573,6 +573,12 @@ class ProjectTaskCommentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     body: str = Field(min_length=1, max_length=5000)
     mentions: tuple[str, ...] = Field(default=(), max_length=10)
+    # Corrections are fresh, audited append-only comments. Never allow a
+    # user-controlled timestamp, original author or mutable comment update.
+    correction_of: str | None = Field(default=None, pattern=r"^pcm-[0-9a-f]{48}$")
+    correction_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{128}$")
+    correction_reason: str | None = Field(default=None, min_length=10, max_length=500)
+
 
     @field_validator("mentions", mode="before")
     @classmethod
@@ -2208,13 +2214,51 @@ def _create_project_comment(
             principal_id=principal, session=session,
         )
     actor = context.identity.identity_id
+    body = payload.body
+    correction_values = (payload.correction_of, payload.correction_fingerprint, payload.correction_reason)
+    if any(value is not None for value in correction_values):
+        if not all(value is not None for value in correction_values):
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_CORRECTION_FIELDS_REQUIRED")
+        # Server-owned 30-minute admission window, enforced in the same
+        # transaction as the new comment write. Aged/foreign records fail closed.
+        now = datetime.now(timezone.utc)
+        cursor = 0
+        original = None
+        for _ in range(10):
+            page, more = store.list_page(
+                tenant_id=context.tenant_id, project_id=project_id,
+                task_id=task_id, limit=100, offset=cursor, session=session,
+            )
+            original = next((item for item in page if item.comment_id == payload.correction_of), None)
+            if original is not None or not more:
+                break
+            cursor += len(page)
+            if not page:
+                break
+        if original is None or original.author_principal_id != actor:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_ORIGINAL_UNAVAILABLE")
+        if original.fingerprint != payload.correction_fingerprint:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED")
+        age = now - original.created_at
+        if age.total_seconds() < 0 or age.total_seconds() > 30 * 60:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_WINDOW_EXPIRED")
+        if body.strip() == original.body.strip():
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_CORRECTION_UNCHANGED")
+        body = (
+            "**Correction to earlier project activity**\\n"
+            + "Original comment: " + original.comment_id + "\\n"
+            + "**Reason:** " + str(payload.correction_reason) + "\\n"
+            + "**Corrected update:**\\n" + body
+        )
+        if len(body) > 5000:
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_BODY_INVALID")
     comment = ProjectComment(
         tenant_id=context.tenant_id, project_id=project_id,
         task_id=task_id,
         comment_id=comment_id_for_command(
             context.tenant_id, project_id, task_id, actor, idempotency_key,
         ),
-        author_principal_id=actor, body=payload.body,
+        author_principal_id=actor, body=body,
         mentions=tuple(payload.mentions), created_at=datetime.now(timezone.utc),
     )
     stored = store.create_or_replay(
