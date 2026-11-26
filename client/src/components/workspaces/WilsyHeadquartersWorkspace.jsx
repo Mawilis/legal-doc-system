@@ -1229,6 +1229,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
             <>
               <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}
                 strategyOrigin={new URLSearchParams(location.search).get('returnTo') === 'STRATEGY'}
+                onReturnToAttention={location.state?.attentionReturn
+                  && typeof location.state.attentionReturn.pathname === 'string'
+                  && location.state.attentionReturn.pathname.startsWith('/')
+                  && !location.state.attentionReturn.pathname.startsWith('//')
+                  && typeof location.state.attentionReturn.search === 'string'
+                    ? () => navigate({
+                        pathname: location.state.attentionReturn.pathname,
+                        search: location.state.attentionReturn.search,
+                      }, { state: { reopenDailyAttention: true } })
+                    : null}
                 onReturnToStrategy={() => {
                   setSection('overview'); setShowMyWork(false);
                   setProjectTaskFocus(null); setProjectDeliveryFocus(null);
