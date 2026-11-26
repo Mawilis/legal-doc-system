@@ -351,6 +351,7 @@
  *          task pagination, status distribution, governed creation, milestone,
  *          dependency and assignment selectors and revisioned transitions.
  */
+import UnifiedTaskHeader from './UnifiedTaskHeader.jsx';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, Plus, RefreshCw, Waypoints } from 'lucide-react';
 import api from '../../services/api.js';
@@ -2318,22 +2319,19 @@ export default function ProjectTasksPanel({
         <aside role="dialog" aria-modal="true"
           aria-label={'Work details: ' + drawerTask.title} ref={drawerRef}
           className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
-          <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
-                {drawerTask.kind === 'MILESTONE' ? 'Milestone'
-                  : drawerTask.parent_task_id ? 'Subtask' : 'Task'} · Project work
-              </p>
-              <button type="button" onClick={() => setTaskIntelligenceOpen(value => !value)}
-                aria-pressed={taskIntelligenceOpen}
-                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
-                {taskIntelligenceOpen ? 'Task details' : 'WILSY AI'}
-              </button>
-              <button type="button" onClick={closeDrawer}
-                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
-                aria-label="Close work details">Close</button>
-            </div>
-            {selectedReviewTasks.length > 1 && selectedReviewIndex !== -1 && <nav
+          <UnifiedTaskHeader
+            kind={drawerTask.kind === 'MILESTONE' ? 'Milestone' : drawerTask.parent_task_id ? 'Subtask' : 'Task'}
+            source="Project" title={drawerTask.title} status={label(drawerTask.status)}
+            due={drawerTask.due_date ? (drawerTask.due_date < todayISO && !['DONE', 'CANCELLED'].includes(drawerTask.status)
+              ? 'Overdue · ' : 'Due ') + drawerTask.due_date : 'No due date'}
+            owner={drawerTask.assignee_principal_id ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}
+            onClose={closeDrawer} closeLabel="Close work details"
+            primaryControl={<button type="button" onClick={() => setTaskIntelligenceOpen(value => !value)}
+          aria-pressed={taskIntelligenceOpen}
+          className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+          {taskIntelligenceOpen ? 'Task details' : 'WILSY AI'}
+        </button>}
+            reviewNavigation={{selectedReviewTasks.length > 1 && selectedReviewIndex !== -1 && <nav
               aria-label="Selected work review navigation" className="mt-3 flex flex-wrap items-center gap-2">
               <span className="mr-auto text-xs font-semibold text-slate-700">
                 Reviewing {selectedReviewIndex + 1} of {selectedReviewTasks.length} selected tasks
@@ -2348,26 +2346,8 @@ export default function ProjectTasksPanel({
                 onClick={() => setDrawerTaskId(selectedReviewTasks[selectedReviewIndex + 1].task_id)}>
                 Next task
               </button>
-            </nav>}
-            <h3 className="mt-3 break-words text-2xl font-bold leading-tight text-slate-950">{drawerTask.title}</h3>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-              <span className="rounded-md bg-slate-100 px-3 py-1.5 font-bold text-slate-900">
-                {label(drawerTask.status)}
-              </span>
-              {drawerTask.due_date && drawerTask.status !== 'DONE' && drawerTask.status !== 'CANCELLED'
-                && drawerTask.due_date < todayISO
-                ? <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 font-semibold text-rose-900">
-                  Overdue · {drawerTask.due_date}
-                </span>
-                : <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">
-                  {drawerTask.due_date ? 'Due ' + drawerTask.due_date : 'No due date'}
-                </span>}
-              <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-800">
-                {drawerTask.assignee_principal_id
-                  ? contributorName(drawerTask.assignee_principal_id) : 'Not assigned'}
-              </span>
-            </div>
-            <nav className="mt-3 flex flex-wrap gap-2" aria-label="Task execution actions">
+            </nav>}}
+            actions={<>
               {!['DONE', 'CANCELLED'].includes(drawerTask.status) &&
                 <button type="button" disabled={!actionCapabilities?.canEdit && !actionCapabilities?.canAssign}
                   className="min-h-11 rounded-lg border border-blue-700 bg-blue-800 px-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
@@ -2386,8 +2366,8 @@ export default function ProjectTasksPanel({
                 onClick={() => { const item = drawerTask; closeDrawer(); setApprovalTaskId(item.task_id); }}>
                 Approvals
               </button>
-            </nav>
-          </header>
+            </>}
+          />
           <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7">
             {taskIntelligenceOpen ? <section aria-label="WILSY AI task intelligence"
               className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-4 sm:px-5">
