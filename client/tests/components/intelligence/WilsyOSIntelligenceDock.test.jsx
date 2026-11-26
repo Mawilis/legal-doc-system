@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.56.0-PROJECT-TO-WORK-TAB-CERT
+ * VERSION: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT begins in Conversation after a Projects task automatically opens its work surface, explicitly enters Work and requires independent EOS recheck on return. Only test navigation is corrected; no production or source assertion is weakened.
  * CHANGELOG: v1.56.0-PROJECT-TO-WORK-TAB-CERT certifies a selected Projects task cannot trap the Dock Work tab on the task-specific view: one click reads the current authorized My Work queue and Back to chat restores the previous untrusted locator for fresh EOS reauthorization.
  * CHANGELOG: v1.55.0-VISIBLE-SAFETY-ADMISSION-CERT preserves the disabled Send control for nonadmitted model requests while asserting visible provider/entitlement reasons without posting or weakening existing safety tests.
  * CHANGELOG: v1.54.0-EXPLICIT-ADMISSION-REFUSAL-CERT requires interactive Send and visible fail-closed reason for unavailable providers and missing AI entitlement, without a POST or invented response; replay hold stays non-resubmittable.
@@ -1244,6 +1245,11 @@ describe('WilsyOSIntelligenceDock', () => {
         locator: { workspace: 'PROJECTS', project_id: projectId, task_id: taskId } },
     })));
     expect(await screen.findByRole('region', { name: 'Live EOS task' })).toBeInTheDocument();
+    // A selected task automatically opens the operating surface, where the
+    // tab is Back to chat. Return to Conversation before entering Work.
+    expect(screen.getByRole('button', { name: 'Back to chat' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
+    expect(screen.getByRole('button', { name: 'Work', exact: true })).toBeVisible();
     const before = mockApiGet.mock.calls.filter(([path]) => path === '/my-work').length;
     fireEvent.click(screen.getByRole('button', { name: 'Work', exact: true }));
     expect(await screen.findByRole('region', { name: 'Needs your attention' })).toBeVisible();
@@ -1252,11 +1258,15 @@ describe('WilsyOSIntelligenceDock', () => {
     expect(mockApiGet.mock.calls.some(([path, options]) =>
       path === '/my-work' && options?.headers?.['X-Tenant-ID'] === 'TEST_TENANT')).toBe(true);
     expect(mockApiPost).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Back to chat' }));
-    await waitFor(() => expect(mockApiGet.mock.calls.some(([path, options]) =>
+    const priorReads = mockApiGet.mock.calls.filter(([path, options]) =>
       path === '/wilsy-ai/reasoning/context'
       && options?.params?.project_id === projectId
-      && options?.params?.task_id === taskId)).toBe(true));
+      && options?.params?.task_id === taskId).length;
+    fireEvent.click(screen.getByRole('button', { name: 'Back to chat' }));
+    await waitFor(() => expect(mockApiGet.mock.calls.filter(([path, options]) =>
+      path === '/wilsy-ai/reasoning/context'
+      && options?.params?.project_id === projectId
+      && options?.params?.task_id === taskId).length).toBeGreaterThan(priorReads));
   });
 
   it('keeps the transcript clear until work is explicitly requested', async () => {
@@ -2625,7 +2635,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.56.0-PROJECT-TO-WORK-TAB-CERT
+ * VERSION: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
