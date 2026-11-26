@@ -1,13 +1,13 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT
+ * VERSION: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
- * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
+ * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.\n * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
  * CHANGELOG: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT proves
  *          Write update makes the textarea the immediate focused task,
  *          hides the long source history while composing, restores it with
@@ -239,7 +239,8 @@ it('does not hide ordinary source comments behind disclosure', async () => {
 });
 
 it('offers the original author a reasoned append-only correction with current EOS readback', async () => {
-  const original = { ...source, body: '**MW-T11 acceptance** mistakenly written on MW-T09' };
+  const original = { ...source, created_at: new Date().toISOString(),
+    body: '**MW-T11 acceptance** mistakenly written on MW-T09' };
   const corrected = { ...source, comment_id: 'pcm-' + 'e'.repeat(48),
     fingerprint: 'f'.repeat(128), body: '', created_at: '2026-11-26T18:30:00Z' };
   let comments = [original];
@@ -253,10 +254,14 @@ it('offers the original author a reasoned append-only correction with current EO
   });
   api.post.mockImplementation(async (path, payload) => {
     expect(path).toBe(route);
-    expect(payload.body).toContain('Original comment: ' + original.comment_id);
-    expect(payload.body).toContain('Posted under MW-T09 instead of MW-T11');
-    expect(payload.body).toContain('Corrected activity attribution');
-    corrected.body = payload.body;
+    expect(payload.correction_of).toBe(original.comment_id);
+    expect(payload.correction_fingerprint).toBe(original.fingerprint);
+    expect(payload.correction_reason).toBe('Posted under MW-T09 instead of MW-T11');
+    expect(payload.body).toBe('Corrected activity attribution');
+    corrected.body = '**Correction to earlier project activity**\n'
+      + 'Original comment: ' + original.comment_id + '\n'
+      + '**Reason:** ' + payload.correction_reason + '\n'
+      + '**Corrected update:**\n' + payload.body;
     comments = [corrected, original];
     return { data: {
       schema: 'WILSY-PROJECT-COMMENT-RESULT/V1', tenant_id: tenantId,
@@ -280,6 +285,22 @@ it('offers the original author a reasoned append-only correction with current EO
   expect(screen.getByText(/mistakenly written on MW-T09/)).toBeVisible();
 });
 
+it('hides correction actions after the 30-minute source window', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Correct entry' })).not.toBeInTheDocument();
+  expect(screen.getByText(/Correction window closed/)).toBeVisible();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 it('refuses a stale or foreign original correction without issuing an EOS write', async () => {
   let reads = 0;
   api.get.mockImplementation(async path => {
@@ -288,7 +309,8 @@ it('refuses a stale or foreign original correction without issuing an EOS write'
       return { data: {
         schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
         principal_id: principalId, project_id: projectId, task_id: taskId,
-        items: reads === 1 ? [source] : [{ ...source, fingerprint: 'e'.repeat(128) }],
+        items: reads === 1 ? [{ ...source, created_at: new Date().toISOString() }]
+          : [{ ...source, created_at: new Date().toISOString(), fingerprint: 'e'.repeat(128) }],
         limit: 50, offset: 0, has_more: false, next_offset: null,
       } };
     }
@@ -419,7 +441,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT
+// VERSION: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
