@@ -1400,8 +1400,8 @@ export default function ProjectTasksPanel({
       const detail = event?.detail;
       if (!detail || state !== 'READY' || busy || discussionOnly
         || detail.tenantId !== tenantId || detail.principalId !== principalId
-        || detail.projectId !== projectId
-        || !/^MW-T\\d{1,3}$/.test(detail.taskCode || '')) return;
+        || (detail.projectId && detail.projectId !== projectId)
+        || !/^MW-T\d{1,3}$/.test(detail.taskCode || '')) return;
       const matching = items.filter(item => TASK_ID.test(item.task_id || '')
         && Number.isSafeInteger(item.revision) && item.revision > 0
         && (item.title === detail.taskCode
