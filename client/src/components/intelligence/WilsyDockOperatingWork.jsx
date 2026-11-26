@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT
+ * VERSION: v1.9.1-SOURCE-OWNED-ACCEPTANCE-DEFINITION
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.1-SOURCE-OWNED-ACCEPTANCE-DEFINITION shows the exact current EOS task acceptance description and lifecycle separately from evidence counts; a source-verified record or recorded discussion never automatically satisfies source-defined delivery requirements.
  * CHANGELOG: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT independently verifies bounded EOS task events, comments, attachment and approval page identities inside the embedded assessment; distinguishes recorded artifacts from certified milestone execution and offers an evidence-driven next action with no invented completion or model authority.
  * CHANGELOG: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE replaces the in-modal source-prose transcript with a compact independently EOS-verified task assessment, explicit incomplete/predecessor risk, and live Activity/Evidence/Approvals navigation; no new AI model, invented completion, or authorization. Other Dock views remain unchanged.
  * CHANGELOG: v1.7.0-IN-MODAL-READONLY-TASK-INTELLIGENCE exposes the existing source-verified task brief without command, attachment or model-generation controls in the Projects task dialog. Full Dock permissions and command gates remain unchanged.
@@ -565,10 +566,15 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
           {!sourcesReady && <p role="status" className="text-xs text-slate-500">
             Checking task activity, engineering updates, attachments and reviewer decisions…
           </p>}
+          <p className="text-sm leading-relaxed text-slate-700">
+            <span className="font-medium text-slate-900">Acceptance definition: </span>
+            {brief.purpose || 'The EOS task has no acceptance description in this source.'}
+          </p>
           <ul className="divide-y divide-slate-100 text-sm">
             <li className="flex flex-wrap justify-between gap-2 py-2">
               <span>EOS lifecycle</span>
-              <span className="text-slate-600">Revision {envelope.source.revision} verified; not a completion certificate</span>
+              <span className="text-slate-600">{brief.status.replaceAll('_', ' ').toLowerCase()}
+                {' · '}revision {envelope.source.revision}</span>
             </li>
             <li className="flex flex-wrap justify-between gap-2 py-2">
               <span>Task lifecycle events</span>
@@ -715,7 +721,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT
+// VERSION: v1.9.1-SOURCE-OWNED-ACCEPTANCE-DEFINITION
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
