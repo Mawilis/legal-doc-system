@@ -184,7 +184,7 @@ import React from 'react';
 import dockSource from '../../../src/components/intelligence/WilsyOSIntelligenceDock.jsx?raw';
 import mainSource from '../../../src/main.jsx?raw';
 import appSource from '../../../src/App.jsx?raw';
-import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { vi } from 'vitest';
 import api from '../../../src/services/api.js';
 
@@ -2550,7 +2550,7 @@ describe('WilsyOSIntelligenceDock', () => {
       day: 'numeric', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
     }).format(new Date(original));
-    await waitFor(() => expect(screen.getByText(/Latest event:/).textContent)
+    await waitFor(() => expect(screen.getByText('Latest event').closest('p').textContent)
       .toContain(local));
     expect(screen.queryByText(original, { exact: false })).not.toBeInTheDocument();
     expect(mockThreads[0].messages[0].content).toContain(original);
