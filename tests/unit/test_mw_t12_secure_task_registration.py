@@ -1,5 +1,5 @@
 """TITLE: MW-T12 dormant SSM secret-backed ECS task registration contract.
-VERSION: v1.1.0-RUNTIME-READINESS-SECURE-REVISION-CERT
+VERSION: v1.2.0-PRIVATE-ECR-AUTH-ISOLATION-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify initial and replay-safe task definition metadata registration
          without launching ECS compute, exposing secrets or accepting drift.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 task definition registrar, ECR
          provenance and guarded ECS readback implementation.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.2.0-PRIVATE-ECR-AUTH-ISOLATION-CERT checks isolated
+           ECR login, ephemeral credential disposal and exact fail-closed
+           AWS/Crane denial without registry or AWS mutations.
 CHANGELOG: v1.1.0-RUNTIME-READINESS-SECURE-REVISION-CERT verifies
            current read-only runtime gate reopens both scoped secret-backed
            revisions, rejects altered image identity and cannot start compute.
@@ -20,6 +23,10 @@ AUTHORITY BOUNDARY: Regression tests cannot deploy or authorize runtime tasks.
 FINANCIAL AUTHORITY BOUNDARY: No compute spending; Kennel EOS exclusively.
 """
 from __future__ import annotations
+
+import json
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -192,8 +199,67 @@ def test_runtime_gate_rejects_secure_secret_or_image_drift(monkeypatch) -> None:
                                                ("HISTORICAL", "CURRENT"))
 
 
+def test_private_ecr_crane_login_is_ephemeral_and_never_logs_token(monkeypatch) -> None:
+    """Private registry reads must isolate credential config and use stdin."""
+    secret = b"synthetic-secret-for-regression-only"
+    observed = []
+    image = target.source.URI + "@sha256:" + "a" * 64
+    def fake_run(args, **kwargs):
+        observed.append((list(args), dict(kwargs)))
+        if args[:3] == ["aws", "ecr", "get-login-password"]:
+            return SimpleNamespace(returncode=0, stdout=secret)
+        if args[:3] == ["crane", "auth", "login"]:
+            assert kwargs.get("input") == secret
+            assert "--password-stdin" in args
+            assert "--password" not in args
+            return SimpleNamespace(returncode=0)
+        if args[:2] == ["crane", "config"]:
+            return SimpleNamespace(returncode=0, stdout=json.dumps({
+                "os": "linux", "architecture": "amd64",
+                "config": {"Labels": {"wilsy.mwt12.source_sha": "synthetic"}},
+            }).encode())
+        pytest.fail("UNEXPECTED_EXTERNAL_COMMAND")
+    monkeypatch.setattr(target.subprocess, "run", fake_run)
+    data = target.image_config(image, "wilsy-legal-cert")
+    assert data["architecture"] == "amd64"
+    assert len(observed) == 3
+    assert all(x[1]["env"]["DOCKER_CONFIG"] == observed[0][1]["env"]["DOCKER_CONFIG"]
+               for x in observed)
+    path = Path(observed[0][1]["env"]["DOCKER_CONFIG"])
+    assert not path.exists()
+    assert all(secret.decode() not in " ".join(x[0]) for x in observed)
+
+
+@pytest.mark.parametrize("failure_stage,expected_code", [
+    ("aws", "ECR_PULL_AUTH_UNAVAILABLE"),
+    ("login", "CRANE_ECR_AUTH_UNAVAILABLE"),
+    ("config", "IMAGE_CONFIG_UNAVAILABLE"),
+])
+def test_private_ecr_transport_denials_are_safe_and_do_not_register(
+    monkeypatch, failure_stage, expected_code,
+) -> None:
+    """Never register a task after missing ECR auth or image inspection."""
+    calls = []
+    def fake_run(args, **kwargs):
+        calls.append(list(args))
+        if args[0] == "aws":
+            return SimpleNamespace(returncode=1 if failure_stage == "aws" else 0,
+                                   stdout=b"safe-synthetic-token")
+        if args[:3] == ["crane", "auth", "login"]:
+            return SimpleNamespace(returncode=1 if failure_stage == "login" else 0)
+        if args[:2] == ["crane", "config"]:
+            return SimpleNamespace(returncode=1 if failure_stage == "config" else 0,
+                                   stdout=b"{}")
+        pytest.fail("UNEXPECTED_EXTERNAL_COMMAND")
+    monkeypatch.setattr(target.subprocess, "run", fake_run)
+    with pytest.raises(target.AdmissionError, match="^" + expected_code + "$"):
+        target.image_config(target.source.URI + "@sha256:" + "a" * 64,
+                            "wilsy-legal-cert")
+    assert not any(args[:2] == ["aws", "ecs"] for args in calls)
+
+
 # ARTIFACT: tests/unit/test_mw_t12_secure_task_registration.py
-# VERSION: v1.1.0-RUNTIME-READINESS-SECURE-REVISION-CERT
+# VERSION: v1.2.0-PRIVATE-ECR-AUTH-ISOLATION-CERT
 # AUTHORITY BOUNDARY: Mocked ECS metadata registration only; no compute.
 # TENANT POSTURE: No live tenant database, role or secret access.
 # FAIL-CLOSED POSTURE: Unknown revisions or settings deny registration.
