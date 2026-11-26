@@ -36,6 +36,7 @@ import {
   assertUnifiedMyWorkProjection,
   unifiedMyWorkSourceLabel,
   resolveUnifiedWorkDestination,
+  resolveUnifiedWorkRoute,
 } from '../../services/unifiedMyWorkProjection.js';
 
 const valid = () => ({
@@ -230,6 +231,35 @@ describe('unified My Work projection contract', () => {
     expect(() => resolveUnifiedWorkDestination({
       source: 'PROJECTS', source_key: 'PROJECTS:' + id,
       work_item_id: id, project_id: 'foreign-project',
+    })).toThrow('MY_WORK_PROJECT_DESTINATION_INVALID');
+  });
+
+  it('routes Calendar and Daily Attention directly to canonical task destinations without fallback', () => {
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const projects = resolveUnifiedWorkRoute({
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      project_id: projectId, work_item_id: taskId,
+    });
+    expect(projects).toEqual({
+      pathname: '/headquarters',
+      search: '?section=projects&project=' + projectId + '&task=' + taskId,
+      state: null,
+    });
+    const crm = resolveUnifiedWorkRoute({
+      source: 'CRM', source_key: 'CRM:CRM-7', work_item_id: 'CRM-7',
+    });
+    expect(crm).toEqual({
+      pathname: '/my-work', search: '',
+      state: { focusWorkItem: 'CRM:CRM-7' },
+    });
+    expect(() => resolveUnifiedWorkRoute({
+      source: 'PROJECTS', project_id: projectId,
+      source_key: 'CRM:' + taskId, work_item_id: taskId,
+    })).toThrow('MY_WORK_NAVIGATION_SOURCE_INVALID');
+    expect(() => resolveUnifiedWorkRoute({
+      source: 'PROJECTS', project_id: 'not-admitted',
+      source_key: 'PROJECTS:' + taskId, work_item_id: taskId,
     })).toThrow('MY_WORK_PROJECT_DESTINATION_INVALID');
   });
 
