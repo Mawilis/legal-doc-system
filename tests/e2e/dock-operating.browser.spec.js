@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Authenticated Dock Operating Browser Certificate
- * VERSION: v1.4.0
+ * VERSION: v1.4.1
  * AUTHORITY: Disposable synthetic browser/EOS/Mongo evidence only.
  * EPITOME: Advance real source-owned work from the Dock and recover encrypted task conversations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/dock-operating.browser.spec.js
  * COLLABORATION / OWNERSHIP: Existing browser harness, canonical EOS, Projects and Dock.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.4.1 waits for EOS thread hydration after mobile reload before choosing the pending-command locator; prevents restored historical work from overriding reconciliation.
  * CHANGELOG: v1.4.0 recognizes source-owned desktop conversation continuity before mobile task selection, instead of treating an EOS-restored task as a fresh My Work queue.
  * CHANGELOG: v1.3.0 certifies on-demand authorized My Work hydration at both desktop and mobile before injecting the synthetic task locator; preserves real EOS commands, loss/reconcile and independent readback.
  * CHANGELOG: v1.2.0 verifies conversation is primary and work is an explicit replaceable view, preserving authenticated desktop/mobile task selection.
@@ -112,6 +113,13 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await expect(page.getByText(/Command outcome unverified/)).toBeVisible();
         await page.reload({ waitUntil: 'domcontentloaded' });
         await mount();
+        // The same principal again rehydrates an EOS-owned earlier thread.
+        // Wait for that read to settle before selecting the mobile task, so
+        // historical work locators cannot race the explicit operator choice.
+        await page.getByRole('button', { name: 'Recent conversations' }).click();
+        await expect(page.getByRole('button', { name: /^Open conversation/ }).first())
+          .toContainText('Saved in EOS');
+        await page.getByRole('button', { name: 'Conversation', exact: true }).click();
         await selectTask();
         await expect(page.getByRole('button', { name: 'Reconcile task command' })).toBeVisible();
         await page.getByRole('button', { name: 'Reconcile task command' }).click();
@@ -170,7 +178,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 // ARTIFACT: dock-operating.browser.spec.js
-// VERSION: v1.4.0
+// VERSION: v1.4.1
 // AUTHORITY BOUNDARY: authenticated synthetic browser evidence; no Founder acceptance
 // TENANT POSTURE: UUID disposable database and explicit synthetic owner/contributor
 // FAIL-CLOSED POSTURE: real source state, saved history and no model call required
