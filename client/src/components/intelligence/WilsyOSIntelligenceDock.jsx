@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK
+ * VERSION: v4.70.0-WORK-TAB-CANONICAL-QUEUE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.70.0-WORK-TAB-CANONICAL-QUEUE makes the Work tab load the authenticated EOS My Work queue even when an exact Projects task is currently focused, restores the prior navigation locator when returning to chat, and never treats that locator as task authority.
  * CHANGELOG: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK restores the established disabled Send safety boundary for unavailable AI admission and uncertain replay, while clearly showing the reason directly beside a nonempty prompt; no unauthorized model request or silent dead end.
  * CHANGELOG: v4.68.0-EXPLICIT-REASONING-ADMISSION-STATUS keeps nonempty conversational submissions interactive so missing consent, provider or entitlement yields the existing explicit status message rather than a disabled silent send control; source-only inspection remains nonbillable and no IAM or financial gate is weakened.
  * CHANGELOG: v4.67.0-MW-T11-LIVE-GRAPH-EXPLANATION replaces generic dependency counts with strictly validated EOS predecessor state in the existing task-source conversation; no paid model, fabricated action, or decorative panel.
@@ -1282,6 +1283,8 @@ export function WilsyOSIntelligenceDock({
   const [prompt, setPrompt] = useState('');
   const [reasoningUsageConsent, setReasoningUsageConsent] = useState(false);
   const [workLocator, setWorkLocator] = useState({ workspace: 'HEADQUARTERS' });
+  // Navigation-only locator. Restored context must be reauthorized by EOS.
+  const priorTaskLocatorRef = useRef(null);
   const [verifiedWorkspaceContext, setVerifiedWorkspaceContext] = useState(null);
   const workspaceDetailsRef = useRef(null);
   const [headquartersWork, setHeadquartersWork] = useState(null);
@@ -1367,6 +1370,7 @@ export function WilsyOSIntelligenceDock({
     setErrorMessage('');
     setActiveTab('chat');
     setWorkSurfaceOpen(false);
+    priorTaskLocatorRef.current = null;
     setWorkLocator({ workspace: 'HEADQUARTERS' });
     setVerifiedWorkspaceContext(null);
     setHeadquartersWork(null);
@@ -2824,7 +2828,14 @@ export function WilsyOSIntelligenceDock({
           <div className={styles.dockNavBar} role="navigation" aria-label="Intelligence Dock navigation">
             <button type="button"
               className={`${styles.navTabButton} ${activeTab === 'chat' ? styles.activeTab : ''}`}
-              onClick={() => { setWorkSurfaceOpen(false); setActiveTab('chat'); }}>
+              onClick={() => {
+                if (workSurfaceOpen && priorTaskLocatorRef.current) {
+                  setWorkLocator(priorTaskLocatorRef.current);
+                  priorTaskLocatorRef.current = null;
+                }
+                setWorkSurfaceOpen(false);
+                setActiveTab('chat');
+              }}>
               <MessageSquareText size={15}/><span>Conversation</span>
             </button>
             <button type="button"
@@ -2835,7 +2846,23 @@ export function WilsyOSIntelligenceDock({
             {!isLegalDockRole(authUser?.role) && <button type="button"
               className={`${styles.navTabButton} ${activeTab === 'chat' && workSurfaceOpen ? styles.activeTab : ''}`}
               aria-pressed={activeTab === 'chat' && workSurfaceOpen}
-              onClick={() => { setActiveTab('chat'); setConversationView('WELCOME'); setWorkSurfaceOpen(value => !value); }}>
+              onClick={() => {
+                setActiveTab('chat');
+                setConversationView('WELCOME');
+                if (workSurfaceOpen) {
+                  if (priorTaskLocatorRef.current) {
+                    setWorkLocator(priorTaskLocatorRef.current);
+                    priorTaskLocatorRef.current = null;
+                  }
+                  setWorkSurfaceOpen(false);
+                } else {
+                  if (workLocator.workspace === 'PROJECTS') {
+                    priorTaskLocatorRef.current = { ...workLocator };
+                  }
+                  setWorkLocator({ workspace: 'HEADQUARTERS' });
+                  setWorkSurfaceOpen(true);
+                }
+              }}>
               <ListFilter size={15}/><span>{workSurfaceOpen ? 'Back to chat' : 'Work'}</span>
             </button>}
             {isLegalDockRole(authUser?.role) && (
@@ -2913,7 +2940,12 @@ export function WilsyOSIntelligenceDock({
                         setContextRefresh(value => value + 1);
                       }}
                       onRecord={recordDockWork}
-                      onSelectWork={locator => { setWorkLocator(locator); setConversationView('WELCOME'); setWorkSurfaceOpen(true); }}/>
+                      onSelectWork={locator => {
+                        priorTaskLocatorRef.current = null;
+                        setWorkLocator(locator);
+                        setConversationView('WELCOME');
+                        setWorkSurfaceOpen(true);
+                      }}/>
                   )}
                   {conversationView === 'WELCOME' && isLegalDockRole(authUser?.role)
                     && (!activeThread?.messages || activeThread.messages.length === 0) && (
@@ -3671,7 +3703,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.69.0-VISIBLE-ADMISSION-AND-SAFETY-LOCK
+ * VERSION: v4.70.0-WORK-TAB-CANONICAL-QUEUE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
