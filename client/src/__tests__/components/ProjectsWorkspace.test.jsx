@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.79.0-FOCUS-FIRST-TASK-ACTIVITY-EDITOR-CERT
+ * VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT
+ * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT verifies the selected project's title remains in its own heading row and the all-projects action lives only in the project navigation strip.
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
@@ -2544,6 +2545,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
     fireEvent.click(screen.getByRole('button', { name: /Persisted roadmap/ }));
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeVisible();
+    // The secondary list-return action belongs to project view navigation,
+    // never beside the source-owned project title.
+    const detail = screen.getByRole('region', { name: 'Project detail' });
+    const projectHeader = detail.querySelector('.wp-detail-top');
+    const views = within(detail).getByRole('navigation', { name: 'Project workspace views' });
+    const allProjects = within(views).getByRole('button', { name: 'Back to projects table' });
+    expect(allProjects).toHaveTextContent('All projects');
+    expect(projectHeader).not.toContainElement(allProjects);
+    expect(projectHeader).toContainElement(screen.getByRole('heading', { name: 'Persisted roadmap' }));
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     expect(screen.getAllByText('Automatically assigned').length).toBeGreaterThan(0);
@@ -2979,7 +2989,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.79.0-FOCUS-FIRST-TASK-ACTIVITY-EDITOR-CERT
+ * VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
