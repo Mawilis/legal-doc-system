@@ -1,12 +1,13 @@
 /*
  * TITLE: WILSY OS Sovereign Intelligence Dock Presentation Contract
- * VERSION: v1.14.0-CONVERSATION-FOCUS
+ * VERSION: v1.15.0-ACTIONABLE-WORK-ROWS
  * AUTHORITY: Wilsy OS Core Governance; client projection only
  * EPITOME: Preserves the established Intelligence Dock visual system and adds
  *          a calm, accessible CURRENT/STALE evidence-backed advisory surface.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyOSIntelligenceDock.module.css
  * COLLABORATION / OWNERSHIP: WilsyOSIntelligenceDock.jsx and its client tests.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.15.0-ACTIONABLE-WORK-ROWS makes authorized attention items full-width text rows, with explicit focus and an unobtrusive My Work exit.
  * CHANGELOG: v1.14.0-CONVERSATION-FOCUS compresses recents to a searchable text list and keeps work actions opt-in, preserving keyboard focus and existing color contrast.
  * CHANGELOG: v1.13.0-OPERATING-WORK-ARTIFACTS adds compact work actions and an accessible editable artifact area.
  * CHANGELOG: v1.8.0-BALANCED-FOLLOWUP-ROW uses a full-width responsive auto-fit grid for contextual follow-ups so two choices occupy balanced equal-width action lanes; retains transparent inline actions, keyboard focus, reduced-motion and source-only authority.
@@ -1631,4 +1632,68 @@
 @media(max-width:600px) {
   .intelligenceDockContainer .historyNavigatorHead { flex-wrap: wrap; }
   .intelligenceDockContainer .historyToolbar { gap: 6px; }
+}
+
+/* One action per live row, no repeated button cards or static banners. */
+.intelligenceDockContainer .attentionRows li {
+  padding: 0;
+  gap: 0;
+}
+.intelligenceDockContainer .attentionRows .attentionItemAction {
+  display: flex;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 3px;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  background: transparent;
+  color: #edf4ff;
+  text-decoration: none;
+}
+.intelligenceDockContainer .attentionRows .attentionItemAction:hover {
+  background: rgba(101, 159, 212, 0.09);
+}
+.intelligenceDockContainer .attentionRows .attentionItemText {
+  display: block;
+  min-width: 0;
+}
+.intelligenceDockContainer .attentionRows .attentionItemText strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 580;
+  white-space: normal;
+}
+.intelligenceDockContainer .attentionRows .attentionItemText small {
+  display: block;
+  color: #b6c9e0;
+  font-size: 11px;
+}
+.intelligenceDockContainer .attentionRows .attentionActionCue {
+  flex-shrink: 0;
+  color: #a7c9ed;
+  font-size: 11px;
+}
+.intelligenceDockContainer .attentionFooterActions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.intelligenceDockContainer .attentionFooterActions button,
+.intelligenceDockContainer .attentionFooterActions a {
+  min-height: 32px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #aacff5;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
