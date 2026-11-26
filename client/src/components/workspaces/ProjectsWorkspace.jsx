@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
  * VERSION: v2.47.0-STRATEGY-IN-CONTEXT-RETURN
+ * CHANGELOG: v2.47.0-STRATEGY-IN-CONTEXT-RETURN Integrates a contextual M04 navigation trail and prominent accessible return action into the Projects operating surface; ordinary Projects unaffected.
  * AUTHORITY: Python EOS Projects API and existing authenticated api.js transport.
  * EPITOME: Presents source-backed project list, create, detail, update, status,
  *          archive and immutable event evidence without creating local truth.
