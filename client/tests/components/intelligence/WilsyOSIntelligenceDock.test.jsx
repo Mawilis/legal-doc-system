@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT
+ * VERSION: v1.57.0-MODAL-TASK-CONVERSATION-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.57.0-MODAL-TASK-CONVERSATION-CERT checks same-principal/task-modal launch opens the real Dock, while a foreign tenant cannot open it or trigger a write.
  * CHANGELOG: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT begins in Conversation after a Projects task automatically opens its work surface, explicitly enters Work and requires independent EOS recheck on return. Only test navigation is corrected; no production or source assertion is weakened.
  * CHANGELOG: v1.56.0-PROJECT-TO-WORK-TAB-CERT certifies a selected Projects task cannot trap the Dock Work tab on the task-specific view: one click reads the current authorized My Work queue and Back to chat restores the previous untrusted locator for fresh EOS reauthorization.
  * CHANGELOG: v1.55.0-VISIBLE-SAFETY-ADMISSION-CERT preserves the disabled Send control for nonadmitted model requests while asserting visible provider/entitlement reasons without posting or weakening existing safety tests.
@@ -342,6 +343,22 @@ describe('WilsyOSIntelligenceDock', () => {
     render(<WilsyOSIntelligenceDock />);
     expect(screen.getByTitle('Open Wilsy OS Intelligence Dock')).toBeInTheDocument();
     expect(screen.queryByText('WILSY OS Intelligence Dock')).not.toBeInTheDocument();
+  });
+
+  it('opens task-modal AI conversation only for current tenant and principal', async () => {
+    render(<WilsyOSIntelligenceDock authUser={{
+      id: 'named-person', tenantId: 'TEST_TENANT', role: 'OWNER',
+    }}/>);
+    expect(screen.getByTitle('Open Wilsy OS Intelligence Dock')).toBeInTheDocument();
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-request-open', {
+      detail: { tenantId: 'FOREIGN_TENANT', principalId: 'named-person' },
+    })));
+    expect(screen.getByTitle('Open Wilsy OS Intelligence Dock')).toBeInTheDocument();
+    await act(async () => window.dispatchEvent(new CustomEvent('wilsy:ai-request-open', {
+      detail: { tenantId: 'TEST_TENANT', principalId: 'named-person' },
+    })));
+    expect(await screen.findByText('WILSY OS Intelligence Dock')).toBeVisible();
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
   it('opens the dock when launcher is clicked', async () => {
@@ -2635,7 +2652,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT
+ * VERSION: v1.57.0-MODAL-TASK-CONVERSATION-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
