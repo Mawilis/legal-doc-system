@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Authenticated Dock Operating Browser Certificate
- * VERSION: v1.4.1
+ * VERSION: v1.5.0
  * AUTHORITY: Disposable synthetic browser/EOS/Mongo evidence only.
  * EPITOME: Advance real source-owned work from the Dock and recover encrypted task conversations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/dock-operating.browser.spec.js
  * COLLABORATION / OWNERSHIP: Existing browser harness, canonical EOS, Projects and Dock.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v1.5.0 independently checks pending task continuity before/after page reload and verifies a visible source-owned task brief before receipt-only reconciliation.
  * CHANGELOG: v1.4.1 waits for EOS thread hydration after mobile reload before choosing the pending-command locator; prevents restored historical work from overriding reconciliation.
  * CHANGELOG: v1.4.0 recognizes source-owned desktop conversation continuity before mobile task selection, instead of treating an EOS-restored task as a fresh My Work queue.
  * CHANGELOG: v1.3.0 certifies on-demand authorized My Work hydration at both desktop and mobile before injecting the synthetic task locator; preserves real EOS commands, loss/reconcile and independent readback.
@@ -111,7 +112,13 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         });
         await page.getByRole('button', { name: 'Start work', exact: true }).click();
         await expect(page.getByText(/Command outcome unverified/)).toBeVisible();
+        // Assert continuity metadata exists before navigating away. Do not read
+        // or emit its opaque idempotency key or source payload.
+        const pendingCount = () => page.evaluate(() => Object.keys(sessionStorage)
+          .filter(key => key.startsWith('wilsy.dock.pending.v1:task:')).length);
+        await expect.poll(pendingCount).toBe(1);
         await page.reload({ waitUntil: 'domcontentloaded' });
+        await expect.poll(pendingCount).toBe(1);
         await mount();
         // The same principal again rehydrates an EOS-owned earlier thread.
         // Wait for that read to settle before selecting the mobile task, so
@@ -121,6 +128,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
           .toContainText('Saved in EOS');
         await page.getByRole('button', { name: 'Conversation', exact: true }).click();
         await selectTask();
+        // The selected operating view must read current EOS state while its
+        // pending command stays separately recoverable from sessionStorage.
+        await expect(page.getByRole('region', { name: 'Task operating brief' })).toBeVisible();
+        await expect.poll(pendingCount).toBe(1);
         await expect(page.getByRole('button', { name: 'Reconcile task command' })).toBeVisible();
         await page.getByRole('button', { name: 'Reconcile task command' }).click();
         expect(transitionPosts).toBe(1);
@@ -178,7 +189,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 // ARTIFACT: dock-operating.browser.spec.js
-// VERSION: v1.4.1
+// VERSION: v1.5.0
 // AUTHORITY BOUNDARY: authenticated synthetic browser evidence; no Founder acceptance
 // TENANT POSTURE: UUID disposable database and explicit synthetic owner/contributor
 // FAIL-CLOSED POSTURE: real source state, saved history and no model call required
