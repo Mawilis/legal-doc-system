@@ -885,8 +885,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const pendingApprovalCount = currentRequisitions
     ? currentRequisitions.items.filter((item) => item.status === 'SUBMITTED').length
     : null;
-  const datedWork = (currentSnapshot?.items || []).filter((item) => item.due_at)
-    .sort((left, right) => Date.parse(left.due_at) - Date.parse(right.due_at));
+  // Projects delivers a date-only deadline rather than a due_at instant.
+  // Include it in the preview without assigning an invented time of day.
+  const workDeadline = (item) => item.source === 'PROJECTS' && item.due_date
+    ? item.due_date : item.due_at;
+  const datedWork = (currentSnapshot?.items || []).filter((item) => Boolean(workDeadline(item)))
+    .sort((left, right) => Date.parse(workDeadline(left)) - Date.parse(workDeadline(right)));
   const openMyWork = (item = null) => {
     const sourceKey = typeof item?.source_key === 'string' && item.source_key.trim()
       ? item.source_key
