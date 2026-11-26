@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT
+ * VERSION: v1.9.2-STRICT-SOURCE-RECORD-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.2-STRICT-SOURCE-RECORD-CERT uses fully scoped synthetic event records to require EOS event authorship/time validation and rejects mismatched source items as unverified.
  * CHANGELOG: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT requires task's original acceptance text and lifecycle to remain visible while activity and attachment presence are not falsely treated as completion.
  * CHANGELOG: v1.9.0-EOS-CROSS-SOURCE-ASSESSMENT-CERT verifies bounded independent task event, comment, attachment and approval counts with missing evidence named explicitly, no false completion, no cross-tenant read acceptance, and unchanged source-backed navigation.
  * CHANGELOG: v1.8.0-ACTIONABLE-TASK-ASSESSMENT-CERT certifies the compact embedded view uses independently read EOS revision/blocker state, routes to existing task Activity/Evidence/Approvals callbacks, and exposes no model/command controls.
@@ -92,6 +93,7 @@ describe('permissioned operating work', () => {
       events: { schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1', items: [{
         schema: 'wilsy.project.task.event.v1', tenant_id: TENANT, project_id: PROJECT,
         task_id: TASK, revision: 1, event_type: 'PROJECT_TASK_CREATED', status_after: 'TODO',
+        actor_principal_id: PERSON, occurred_at: '2026-11-26T08:00:00Z',
       }] },
       comments: { schema: 'WILSY-PROJECT-COMMENT-LIST/V1', items: [{
         schema: 'wilsy.project.comment.v1', tenant_id: TENANT, project_id: PROJECT,
@@ -444,7 +446,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.9.1-SOURCE-ACCEPTANCE-EVIDENCE-CERT
+// VERSION: v1.9.2-STRICT-SOURCE-RECORD-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
