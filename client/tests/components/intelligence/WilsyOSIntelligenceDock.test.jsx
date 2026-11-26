@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Companion State and Authority Certificate
- * VERSION: v1.57.0-MODAL-TASK-CONVERSATION-CERT
+ * VERSION: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT
  * AUTHORITY: Isolated client regression; Python EOS owns all business authority.
  * EPITOME: Verify movable/minimizable UI does not navigate, erase work or reset
  * conversation drafts while preserving every existing source/advisory boundary.
@@ -12,6 +12,7 @@
  * TENANT BOUNDARY: Exact authenticated tenant and principal source isolation
  * AUTHORITY BOUNDARY: Test-only assertions; Python EOS owns IAM and task lifecycle
  * FINANCIAL AUTHORITY BOUNDARY: Never authorizes model charging, banking or settlement
+ * CHANGELOG: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT accepts actionable nonempty Send while retaining the explicit fail-closed no-provider, no-entitlement, no-consent, and exact replay blocks. No backend authority, consent or model grants are inferred.
  * CHANGELOG: v1.57.0-MODAL-TASK-CONVERSATION-CERT checks same-principal/task-modal launch opens the real Dock, while a foreign tenant cannot open it or trigger a write.
  * CHANGELOG: v1.56.1-PROJECT-TO-WORK-NAVIGATION-CERT begins in Conversation after a Projects task automatically opens its work surface, explicitly enters Work and requires independent EOS recheck on return. Only test navigation is corrected; no production or source assertion is weakened.
  * CHANGELOG: v1.56.0-PROJECT-TO-WORK-TAB-CERT certifies a selected Projects task cannot trap the Dock Work tab on the task-specific view: one click reads the current authorized My Work queue and Back to chat restores the previous untrusted locator for fresh EOS reauthorization.
@@ -782,7 +783,7 @@ describe('WilsyOSIntelligenceDock', () => {
       'How many HR and CRM tasks should we delete?',
     ]) {
       fireEvent.change(composer, { target: { value: question } });
-      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(screen.getByLabelText('Send')).toBeEnabled();
     }
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/my-work')).toHaveLength(0);
     expect(mockApiPost).not.toHaveBeenCalled();
@@ -926,7 +927,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'How many projects are active and delete their invoices?' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
@@ -976,7 +977,7 @@ describe('WilsyOSIntelligenceDock', () => {
     const composer = screen.getByPlaceholderText('Ask Wilsy OS…');
     for (const question of ['How may are active?', 'How many active employees?', 'How many projects should we delete?']) {
       fireEvent.change(composer, { target: { value: question } });
-      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(screen.getByLabelText('Send')).toBeEnabled();
       expect(mockApiPost).not.toHaveBeenCalled();
     }
     expect(mockApiGet.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
@@ -1032,7 +1033,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'What time is my meeting tomorrow?' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     expect(mockApiPost).not.toHaveBeenCalled();
     expect(screen.queryByText('WILSY OS · Device time')).not.toBeInTheDocument();
   });
@@ -1053,7 +1054,7 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'Explain the procurement risks for a new supplier' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     fireEvent.click(screen.getByLabelText('Send'));
     await waitFor(() => expect(mockApiPost).toHaveBeenCalledTimes(1));
@@ -1555,7 +1556,10 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'Ask about my project' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/Confirm the WILSY AI usage terms/);
     expect(mockApiPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Confirm WILSY AI usage admission' }));
     expect(screen.getByLabelText('Send')).toBeEnabled();
@@ -1836,9 +1840,12 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'Provide a strategic analysis of responsible AI systems.' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     expect(await screen.findByRole('status', { name: 'WILSY AI admission status' }))
       .toHaveTextContent('AI provider is not configured');
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/EOS AI provider is not configured/);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -1868,9 +1875,12 @@ describe('WilsyOSIntelligenceDock', () => {
     fireEvent.change(screen.getByPlaceholderText('Ask Wilsy OS…'), {
       target: { value: 'Provide a strategic analysis of responsible AI systems.' },
     });
-    expect(screen.getByLabelText('Send')).toBeDisabled();
+    expect(screen.getByLabelText('Send')).toBeEnabled();
     expect(await screen.findByRole('status', { name: 'WILSY AI admission status' }))
       .toHaveTextContent('AI reasoning is not activated');
+    fireEvent.click(screen.getByLabelText('Send'));
+    expect(screen.getByRole('status', { name: 'WILSY OS request status' }))
+      .toHaveTextContent(/AI reasoning is not yet activated/);
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
@@ -2491,7 +2501,7 @@ describe('WilsyOSIntelligenceDock', () => {
       'Show my tasks then delete them',
     ]) {
       fireEvent.change(input, { target: { value: text } });
-      expect(screen.getByLabelText('Send')).toBeDisabled();
+      expect(screen.getByLabelText('Send')).toBeEnabled();
     }
     expect(screen.queryByLabelText('Your source request')).not.toBeInTheDocument();
     expect(mockApiPost).not.toHaveBeenCalled();
@@ -2652,7 +2662,7 @@ describe('WilsyOSIntelligenceDock', () => {
  * C1E legal advisory proof remains a read-only client projection; no command,
  * payment, settlement, subscription, tenant-plan, or financial authority is introduced.
  * ARTIFACT: WilsyOSIntelligenceDock.test.jsx
- * VERSION: v1.57.0-MODAL-TASK-CONVERSATION-CERT
+ * VERSION: v1.58.0-VISIBLE-ADMISSION-AND-REPLAY-CERT
  * AUTHORITY BOUNDARY: certificate only; Python EOS remains sovereign
  * TENANT POSTURE: adapter calls preserve authenticated api.js context
  * FAIL-CLOSED POSTURE: failed/stale outcomes never produce advisory cards
