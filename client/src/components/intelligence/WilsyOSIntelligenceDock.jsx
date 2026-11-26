@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.64.0-PERSONAL-CONTEXT-COURTESY
+ * VERSION: v4.65.0-CONSENTED-MODEL-CONVERSATION
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.65.0-CONSENTED-MODEL-CONVERSATION permits ordinary conversation to use the actual EOS-governed provider when a current verified allowance and explicit model consent exist; free courtesy never impersonates a generative response.
  * CHANGELOG: v4.64.0-PERSONAL-CONTEXT-COURTESY makes nonmetered courtesy time-appropriate, authenticated-name-aware and respectful of continuing conversation, with no generic task-only pitch or claim of model inference.
  * CHANGELOG: v4.63.0-SESSION-CONTINUITY-AND-GREETING distinguishes current-session participation from EOS storage provenance; saved threads remain in This session when opened, and authenticated time-aware greetings return.
  * CHANGELOG: v4.62.0-QUIET-CONVERSATION-ENTRY removes the capitalized provider warning from the empty conversation canvas; capability truth remains exposed by existing AI usage and history postures.
@@ -1563,6 +1564,16 @@ export function WilsyOSIntelligenceDock({
     && verifiedWorkspaceContext.data?.allowance?.state === 'NOT_PROVISIONED';
   const visibleWorkspaceContext = verifiedWorkspaceContext?.scope === dockScope
     && verifiedWorkspaceContext?.locatorKey === workLocatorKey ? verifiedWorkspaceContext : null;
+  // Once the user has explicitly opted into usage and EOS verifies an ACTIVE
+  // allowance plus a configured provider, ordinary conversation may use the
+  // actual model. Without that grant, limited courtesies stay non-generative.
+  // Frontend state never creates admission; Python EOS still checks every POST.
+  const consentedReasoningReady = Boolean(reasoningUsageConsent
+    && visibleWorkspaceContext?.state === 'READY'
+    && visibleWorkspaceContext.data?.authority?.source === 'PYTHON_EOS'
+    && visibleWorkspaceContext.data?.authority?.provider_binding === 'CONFIGURED'
+    && visibleWorkspaceContext.data?.allowance?.state === 'ACTIVE'
+    && visibleWorkspaceContext.data?.allowance?.available_request_units > 0);
   const recordDockWork = async (content, locator) => {
     const scope = dockScopeRef.current;
     let thread = conversationThreads.find(item => item.id === activeThreadId);
@@ -1935,6 +1946,7 @@ export function WilsyOSIntelligenceDock({
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
       const localCourtesyReply = isLegalDockRole(authUser?.role)
+        || consentedReasoningReady
         ? null : resolveWilsyLocalCourtesy(text, activeThread?.messages, authUser);
       const localClockReply = isLegalDockRole(authUser?.role)
         ? null : resolveWilsyLocalClock(text);
@@ -2519,6 +2531,7 @@ export function WilsyOSIntelligenceDock({
       prompt,
       isSubmitting,
       reasoningUsageConsent,
+      consentedReasoningReady,
       aiEntitlementNotProvisioned,
       aiProviderUnavailable,
       workLocatorKey,
@@ -2673,7 +2686,8 @@ export function WilsyOSIntelligenceDock({
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt)
     || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt));
-  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser)
+  const localCourtesyIntent = Boolean((!consentedReasoningReady
+    && resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser))
     || resolveWilsyLocalClock(prompt)
     || (!isLegalDockRole(authUser?.role)
       && (planWilsyGovernedReadOnlyQuestion(prompt, activeThread?.messages)
@@ -3610,7 +3624,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.64.0-PERSONAL-CONTEXT-COURTESY
+ * VERSION: v4.65.0-CONSENTED-MODEL-CONVERSATION
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
