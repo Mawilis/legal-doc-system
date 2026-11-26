@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.63.0-SESSION-CONTINUITY-AND-GREETING
+ * VERSION: v4.64.0-PERSONAL-CONTEXT-COURTESY
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.64.0-PERSONAL-CONTEXT-COURTESY makes nonmetered courtesy time-appropriate, authenticated-name-aware and respectful of continuing conversation, with no generic task-only pitch or claim of model inference.
  * CHANGELOG: v4.63.0-SESSION-CONTINUITY-AND-GREETING distinguishes current-session participation from EOS storage provenance; saved threads remain in This session when opened, and authenticated time-aware greetings return.
  * CHANGELOG: v4.62.0-QUIET-CONVERSATION-ENTRY removes the capitalized provider warning from the empty conversation canvas; capability truth remains exposed by existing AI usage and history postures.
  * CHANGELOG: v4.61.5-RESTORED-TASK-OPERATING-ENTRY enters the operating view on explicit task selection even after EOS history restored SOURCE mode; leaves unrelated Headquarters locators conversation-only.
@@ -444,14 +445,29 @@ async function resolveWilsyTaskInspection(code, projectId, tenantId, principalId
  * Replies are labelled built-in, not model answers, and do not cross EOS IAM,
  * financial or provider boundaries.
  */
-function resolveWilsyLocalCourtesy(value, previousTurns = []) {
+function resolveWilsyLocalCourtesy(value, previousTurns = [], user = null) {
   const text = String(value || '').trim();
   if (!text || text.length > 120) return null;
-  if (/^(?:hi|hello|hey|hey\s+wilsy|hello\s+wilsy|hi\s+wilsy|good\s+(?:morning|afternoon|evening))[!.?\s]*$/i.test(text)) {
-    return 'Hello! I’m here and ready to help. What would you like to work on?';
+  // Only a verified authenticated display name is used, never email/role,
+  // project data or guesses from the browser's current screen.
+  const rawName = [user?.firstName, user?.first_name, user?.displayName, user?.name]
+    .find(value => typeof value === 'string' && value.trim() && !value.includes('@'));
+  const firstName = rawName?.trim().split(/\s+/u)[0]?.replace(/[^\p{L}\p{M}'-]/gu, '').slice(0, 48);
+  const name = firstName ? `, ${firstName}` : '';
+  const hasEarlierConversation = Array.isArray(previousTurns)
+    && previousTurns.some(turn => turn?.role === 'user' || turn?.role === 'assistant');
+  const ending = hasEarlierConversation
+    ? 'Would you like to continue our conversation or explore something different?'
+    : 'What’s on your mind today?';
+  const greeting = text.match(/^good\s+(morning|afternoon|evening)[!.?\s]*$/i);
+  if (greeting) {
+    return `Good ${greeting[1].toLowerCase()}${name}. ${ending}`;
+  }
+  if (/^(?:hi|hello|hey|hey\s+wilsy|hello\s+wilsy|hi\s+wilsy)[!.?\s]*$/i.test(text)) {
+    return `Hello${name}. ${ending}`;
   }
   if (/^(?:(?:hey|hello|hi)[,\s]+)?how\s+(?:(?:are|r)\s+you|(?:is|was)\s+(?:you|your)\s+day|(?:has|have)\s+(?:you|your)\s+day\s+been)[?.!\s]*$/i.test(text)) {
-    return 'I’m doing well, thanks for asking. How is your day going?';
+    return `Thanks for asking${name}. I’m ready to help. How has your day been?`;
   }
   // Day-status replies are nonmetered only when directly answering the
   // canonical built-in question in the same authenticated session thread.
@@ -1919,7 +1935,7 @@ export function WilsyOSIntelligenceDock({
       // Controlled local intent catalog: these are read-only EOS source views,
       // NOT model answers. No POST, admission, consent or billing for inspection.
       const localCourtesyReply = isLegalDockRole(authUser?.role)
-        ? null : resolveWilsyLocalCourtesy(text, activeThread?.messages);
+        ? null : resolveWilsyLocalCourtesy(text, activeThread?.messages, authUser);
       const localClockReply = isLegalDockRole(authUser?.role)
         ? null : resolveWilsyLocalClock(text);
       const localNonmeteredReply = localCourtesyReply || localClockReply;
@@ -2657,7 +2673,7 @@ export function WilsyOSIntelligenceDock({
       ? 'Project workspace' : 'Headquarters workspace') : null;
   const readOnlySourceIntent = Boolean(classifyWilsyAISourceIntent(prompt)
     || parseWilsyTaskInspection(prompt) || parseWilsyTaskActivityInspection(prompt));
-  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages)
+  const localCourtesyIntent = Boolean(resolveWilsyLocalCourtesy(prompt, activeThread?.messages, authUser)
     || resolveWilsyLocalClock(prompt)
     || (!isLegalDockRole(authUser?.role)
       && (planWilsyGovernedReadOnlyQuestion(prompt, activeThread?.messages)
@@ -3594,7 +3610,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.63.0-SESSION-CONTINUITY-AND-GREETING
+ * VERSION: v4.64.0-PERSONAL-CONTEXT-COURTESY
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
