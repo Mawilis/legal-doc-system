@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT
+ * VERSION: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT
+ * CHANGELOG: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT confirms Done tasks disappear from active work, remain in the Completed/All views and open their original source-backed task details; work selection resets on view changes, without mutation.
  * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT verifies the selected project's title remains in its own heading row and the all-projects action lives only in the project navigation strip.
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
@@ -1981,6 +1982,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     const rows = Array.from({ length: 22 }, (_, index) => ({
       ...base, task_id: 'ptk-' + (index + 1).toString(16).padStart(48, '0'),
       title: 'Batch task ' + String(index + 1).padStart(2, '0'),
+      status: index === 21 ? 'DONE' : 'TODO',
     }));
     mockProjectGet(async path => {
       if (path === '/projects') return { data: list([persisted]) };
@@ -2003,6 +2005,17 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Batch task 01' })).toBeVisible());
     const grid = screen.getByRole('grid', { name: 'Project work grid' });
+    const views = screen.getByRole('group', { name: 'Work lifecycle view' });
+    expect(within(views).getByRole('button', { name: 'Active work' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(grid).queryByText('Batch task 22')).not.toBeInTheDocument();
+    fireEvent.click(within(views).getByRole('button', { name: 'Completed' }));
+    expect(within(grid).getByText('Batch task 22')).toBeVisible();
+    expect(within(grid).queryByText('Batch task 01')).not.toBeInTheDocument();
+    fireEvent.click(within(grid).getByRole('button', { name: 'Batch task 22' }));
+    expect(await screen.findByText('Batch task 22', { selector: 'h2' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
+    fireEvent.click(within(views).getByRole('button', { name: 'All work' }));
+    expect(within(views).getByRole('button', { name: 'All work' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(grid).getAllByRole('row').length).toBe(11);
     expect(within(grid).queryByText('Batch task 11')).not.toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
@@ -2019,6 +2032,8 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(grid.querySelectorAll('tbody tr[data-task-id]')).toHaveLength(20);
     expect(within(grid).getByText('Batch task 01')).toBeVisible();
     expect(screen.getByText(/10 selected · verified current EOS batch/)).toBeVisible();
+    fireEvent.click(within(views).getByRole('button', { name: 'Completed' }));
+    expect(screen.queryByText(/10 selected · verified current EOS batch/)).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -2989,7 +3004,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT
+ * VERSION: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
