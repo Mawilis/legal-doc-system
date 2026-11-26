@@ -406,7 +406,7 @@ export default function WilsyDailyAttentionCentre({
       ? readUnifiedMyWork(
           workScope,
           { tenantId, principalId: auth.user.id },
-          { signal: controller.signal },
+          { signal: controller.signal, force: refreshId > 0 },
         )
       : api.get('/my-work', { forceNetworkRetry: true })
           .then((response) => assertAttentionProjection(response?.data, tenantId));
