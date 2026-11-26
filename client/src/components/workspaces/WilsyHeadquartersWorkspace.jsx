@@ -1215,7 +1215,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
             />
           ) : section === 'projects' ? (
             <>
-              {new URLSearchParams(location.search).get('returnTo') === 'STRATEGY' && <nav aria-label="Strategy project return" className="mb-3">
+              {new URLSearchParams(location.search).get('returnTo') === 'STRATEGY' && <nav aria-label="Strategy project return" className="sticky top-[72px] z-30 mb-3 w-fit rounded-lg bg-white/95 shadow-sm">
                 <button type="button" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-50" onClick={() => {
                   setSection('overview'); setShowMyWork(false); setProjectTaskFocus(null); setProjectDeliveryFocus(null);
                   setOperatingDocumentClass('STRATEGY');
