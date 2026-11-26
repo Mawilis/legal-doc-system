@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Authenticated My Work Execution Queue Tests
- * VERSION: v1.18.0-INPLACE-WORK-FOCUS-CERT
+ * VERSION: v1.19.0-SOURCE-NEUTRAL-TASK-DETAIL-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies compact queue rendering, source filters, detail access,
  *          keyboard/focus behavior, source-owned completion and EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/MyWorkWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: MyWorkWorkspace.jsx, shared projection validator,
  *                            EOS My Work and independent source commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.19.0-SOURCE-NEUTRAL-TASK-DETAIL-CERT certifies the task-first details view with CRM actions and audit under an explicit source tab. Existing CRM update, cancel, status/revision readback regressions continue through the same authorized source-specific controls.
  * CHANGELOG: v1.18.0-INPLACE-WORK-FOCUS-CERT verifies the approved
  *            Projects-style in-place record region and Back-to-work focus
  *            restoration without requiring the retired floating dialog.
@@ -120,6 +121,10 @@ const renderWorkspace = (props = {}) => render(
 const openRow = async (title) => {
   const row = await screen.findByRole('button', { name: new RegExp(title) });
   fireEvent.click(row);
+  // Existing command suites intentionally enter source-owned controls. New
+  // task-shell tests assert the Details view before this explicit transition.
+  const sourceTab = screen.queryByRole('button', { name: 'Source actions & history' });
+  if (sourceTab) fireEvent.click(sourceTab);
   return row;
 };
 
@@ -194,7 +199,13 @@ describe('authenticated My Work execution queue', () => {
         <MemoryRouter><MyWorkWorkspace /></MemoryRouter>
       </AuthContext.Provider>,
     );
-    await openRow('Prepare CRM launch plan');
+    const crmRow = await screen.findByRole('button', { name: /Prepare CRM launch plan/ });
+    fireEvent.click(crmRow);
+    expect(screen.getByRole('navigation', { name: 'Task work views' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Details', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('region', { name: 'Verified CRM source record' })).toBeNull();
+    expect(await screen.findByText(/Current CRM record independently verified by EOS/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Source actions & history' }));
     expect(await screen.findByText('Persisted source record verified for this tenant')).toBeTruthy();
     const focus = screen.getByRole('region', { name: 'Prepare CRM launch plan' });
     expect(focus).toBeTruthy();
@@ -790,7 +801,7 @@ describe('authenticated My Work execution queue', () => {
 
 /*
  * ARTIFACT: MyWorkWorkspace.test.jsx
- * VERSION: v1.18.0-INPLACE-WORK-FOCUS-CERT
+ * VERSION: v1.19.0-SOURCE-NEUTRAL-TASK-DETAIL-CERT
  * AUTHORITY BOUNDARY: Deterministic client projection and source command evidence only.
  * TENANT POSTURE: Synthetic exact-tenant work projections.
  * FAIL-CLOSED POSTURE: Invalid source metadata and failed commands never invent state.
