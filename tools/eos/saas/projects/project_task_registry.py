@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Enterprise Project Task Transaction Registry
-VERSION: v1.4.0-VERIFIED-COMPLETED-PAGINATION
+VERSION: v1.4.1-BSON-COMPLETION-PRECISION
 AUTHORITY: Python EOS canonical tenant/project task and milestone source truth.
 EPITOME: Source-backed tasks, nested subtasks, milestones, dependencies, due
          dates, assignees and audited lifecycle CAS with idempotent command replay.
@@ -7,12 +7,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/p
 COLLABORATION / OWNERSHIP: Projects router admits IAM, participant assignment,
          currentness, project existence and entitlement. EOS owns transactions.
 CERTIFICATION / UPDATE DATE: 2026-11-25
-CHANGELOG: v1.4.0-VERIFIED-COMPLETED-PAGINATION filters DONE tasks before bounded pagination, supports title/contributor search and completion-time sorting, and validates each completion timestamp/actor against the immutable exact-revision transition event in the same read transaction.\nCHANGELOG: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY shares canonical completion gates with read-only Dock eligibility.
+CHANGELOG: v1.4.1-BSON-COMPLETION-PRECISION validates BSON millisecond-rounded event timestamps against exact task source instants without allowing a full-millisecond divergence; source task provides the unrounded timestamp after evidence confirmation.\nCHANGELOG: v1.4.0-VERIFIED-COMPLETED-PAGINATION filters DONE tasks before bounded pagination, supports title/contributor search and completion-time sorting, and validates each completion timestamp/actor against the immutable exact-revision transition event in the same read transaction.\nCHANGELOG: v1.3.0-READ-ONLY-TRANSITION-ELIGIBILITY shares canonical completion gates with read-only Dock eligibility.
 CHANGELOG: v1.2.0-TASK-ACTIVITY-EVENT-READ reads bounded immutable lifecycle events in newest revision order with exact-tenant/project/task binding, source validation and privacy-preserving projection. No command or audit mutation.
 CHANGELOG: v1.1.0-REVISIONED-PROJECT-TASK-EDITING adds guarded title, description,
 due date and assignee editing for active work, durable replay, CAS and
 immutable audit without rewriting dependency or completion history.
-CHANGELOG: v1.4.0-VERIFIED-COMPLETED-PAGINATION establishes an immutable
+CHANGELOG: v1.4.1-BSON-COMPLETION-PRECISION establishes an immutable
          project-work aggregate and exact-tenant Mongo transaction registry.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Bounded plain text; no HTML, inferred approval,
@@ -36,7 +36,7 @@ from typing import Any, Final, Literal
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-VERSION: Final[str] = "v1.4.0-VERIFIED-COMPLETED-PAGINATION"
+VERSION: Final[str] = "v1.4.1-BSON-COMPLETION-PRECISION"
 SCHEMA: Final[str] = "wilsy.project.task.v1"
 COLLECTION: Final[str] = "wilsy_project_tasks"
 EVENT_COLLECTION: Final[str] = "wilsy_project_task_events"
@@ -546,7 +546,7 @@ class ProjectTaskRegistry:
                 raise ProjectTaskError("PROJECT_TASK_COMPLETION_SOURCE_INVALID")
             observed = event.get("occurred_at")
             if isinstance(observed, datetime):
-                observed = _timestamp(observed)
+                observed = _source_time(observed)
             elif isinstance(observed, str):
                 try:
                     observed = _timestamp(datetime.fromisoformat(observed))
@@ -554,11 +554,14 @@ class ProjectTaskRegistry:
                     raise ProjectTaskError("PROJECT_TASK_COMPLETION_SOURCE_INVALID") from error
             else:
                 raise ProjectTaskError("PROJECT_TASK_COMPLETION_SOURCE_INVALID")
-            if observed != task.updated_at:
+            # BSON datetime truncates to milliseconds; the canonical task
+            # snapshot retains its immutable UTC microseconds. Only a
+            # sub-millisecond rounding difference is admissible.
+            if not 0 <= (task.updated_at - observed).total_seconds() < 0.001:
                 raise ProjectTaskError("PROJECT_TASK_COMPLETION_SOURCE_INVALID")
             result.append({
                 **task.to_dict(),
-                "completed_at": observed.isoformat(),
+                "completed_at": task.updated_at.isoformat(),
                 "completed_by_principal_id": event["actor_principal_id"],
             })
         return tuple(result), len(rows) > limit
@@ -847,7 +850,7 @@ __all__ = [
 ]
 
 # ARTIFACT: project_task_registry.py
-# VERSION: v1.4.0-VERIFIED-COMPLETED-PAGINATION
+# VERSION: v1.4.1-BSON-COMPLETION-PRECISION
 # AUTHORITY BOUNDARY: source lifecycle/CAS only; router owns independent IAM
 # TENANT POSTURE: exact tenant/project/assignee; no privileged fallback
 # FAIL-CLOSED POSTURE: invalid graph, dependency, replay or revision denies
