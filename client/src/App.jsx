@@ -458,8 +458,18 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
               // source-owned destination contract as My Work and Headquarters.
               // A projection row never grants command authority at the target.
               let destination;
-              try { destination = resolveUnifiedWorkRoute(item); }
-              catch { return; } // Invalid or foreign source locator fails closed.
+              try {
+                if (item?.source === 'PROJECTS' && !item.project_id
+                  && /^ptk-[0-9a-f]{48}$/.test(item.work_item_id || '')
+                  && item.source_key === 'PROJECTS:' + item.work_item_id) {
+                  // Paginated Attention records do not always carry project_id.
+                  // Reverify through EOS My Work before opening Projects.
+                  destination = { pathname: '/my-work', search: '',
+                    state: { focusWorkItem: item.source_key } };
+                } else {
+                  destination = resolveUnifiedWorkRoute(item);
+                }
+              } catch { return; } // Invalid or foreign source locator fails closed.
               setNotificationsOpen(false);
               navigate({ pathname: destination.pathname, search: destination.search },
                 { state: destination.state });
