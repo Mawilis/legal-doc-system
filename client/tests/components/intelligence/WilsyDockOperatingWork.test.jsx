@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Dock Operating Journey Client Certificate
- * VERSION: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION
+ * VERSION: v1.3.0-MW-T11-RANKED-HANDOFF-CERT
  * AUTHORITY: Synthetic client regression evidence only.
  * EPITOME: Verify permissioned task actions, receipt currentness and draft attachment readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/intelligence/WilsyDockOperatingWork.test.jsx
  * COLLABORATION / OWNERSHIP: Closed Dock components, canonical transport and Projects.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.3.0-MW-T11-RANKED-HANDOFF-CERT checks exact-source work ordering, task handoff proof and wrong-identity rejection without executing mutations.
  * CHANGELOG: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION certifies a lost-response accepted PDF attachment across unmount/remount with independent manifest reconciliation, no duplicate POST and no scan-clearance claim.
  * CHANGELOG: v1.1.0-REMOUNT-RECONCILIATION certifies a committed-but-lost HTTP response across unmount/remount with exactly one POST and independently verified receipt readback.
  * CHANGELOG: v1.0.0 covers action races, unknown outcomes, drafts and exact source isolation.
@@ -71,6 +72,61 @@ beforeEach(() => {
 });
 
 describe('permissioned operating work', () => {
+  it('preserves EOS queue order and confirms only its ranking evidence', async () => {
+    const second = 'ptk-' + 'c'.repeat(48);
+    const row = (taskId, title, priority, dueDate, overdue) => ({
+      tenant_id: TENANT, source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId, project_id: PROJECT, owner_principal_id: PERSON,
+      title, description: '', status: 'OPEN', kind: 'TASK', priority,
+      due_at: null, due_date: dueDate, is_overdue: overdue,
+      action_authority: 'SOURCE_SERVICE_ONLY', completion_route: null,
+    });
+    get.mockImplementation(async path => {
+      if (path !== '/my-work') throw refusal(503);
+      return { data: { schema: 'WILSY-OS-UNIFIED-MY-WORK/V1',
+        tenant_id: TENANT, principal_id: PERSON, as_of: '2026-11-26T08:00:00Z',
+        items: [row(TASK, 'First source item', 'NORMAL', '2026-12-12', false),
+          row(second, 'Second source item', 'HIGH', '2026-11-26', true)],
+        summary: { active_count: 2, overdue_count: 1, source_counts: { PROJECTS: 2 } },
+        sources_included: ['PROJECTS'],
+        authority: { commands_owned_by: 'SOURCE_SERVICES', permits_completion: false },
+      } };
+    });
+    mount({ locator: { workspace: 'HEADQUARTERS' } });
+    const first = await screen.findByRole('button', { name: /First source item/ });
+    const secondRow = screen.getByRole('button', { name: /Second source item/ });
+    expect(first).toHaveTextContent('EOS order 1');
+    expect(first).toHaveTextContent('priority normal');
+    expect(secondRow).toHaveTextContent('EOS order 2');
+    expect(secondRow).toHaveTextContent('priority high');
+    expect(secondRow).toHaveTextContent('overdue per EOS');
+    expect(first).not.toHaveTextContent(TASK);
+    fireEvent.click(secondRow);
+    expect(selected).toHaveBeenCalledWith({ workspace: 'PROJECTS',
+      project_id: PROJECT, task_id: second, participant_view: true });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('confirms a handoff only after exact EOS task source verification', async () => {
+    mount();
+    const status = await screen.findByRole('status', { name: 'EOS-confirmed work handoff' });
+    expect(status).toHaveTextContent('Projects source verified · revision 1');
+    expect(screen.getByRole('link', { name: 'Open full task' }))
+      .toHaveAttribute('href', expect.stringContaining('task=' + TASK));
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('rejects a task identity mismatch with no handoff or write', async () => {
+    source.source.task_id = 'ptk-' + 'd'.repeat(48);
+    mount();
+    await screen.findByRole('button', { name: 'Retry authorized work' });
+    expect(screen.queryByRole('status', { name: 'EOS-confirmed work handoff' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open full task' }))
+      .not.toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it('renders a compact brief and four permitted source actions without a model call', async () => {
     mount();
     expect(await screen.findByRole('button', { name: 'Draft alignment plan' })).toBeVisible();
@@ -233,7 +289,7 @@ describe('permissioned operating work', () => {
 });
 
 // ARTIFACT: WilsyDockOperatingWork.test.jsx
-// VERSION: v1.2.0-ATTACHMENT-REOPEN-RECONCILIATION
+// VERSION: v1.3.0-MW-T11-RANKED-HANDOFF-CERT
 // AUTHORITY BOUNDARY: synthetic UI tests only
 // TENANT POSTURE: exact principal, tenant and capacity currentness
 // FAIL-CLOSED POSTURE: no uncertain success, duplicate command or forged source
