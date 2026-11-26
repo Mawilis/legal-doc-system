@@ -1,5 +1,5 @@
 """TITLE: MW-T12 synthetic Atlas temporary source-IP admission.
-VERSION: v1.2.1-FRESH-REVALIDATION-AND-ACCURATE-AUDIT
+VERSION: v1.3.0-READONLY-ISOLATION-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inventory the shared free Atlas test project's network exposure and
          optionally admit exactly one verified ECS task public source IP for
@@ -8,6 +8,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Read-only AWS ECS/EC2 identity via existing MW-T12
          task admission; Atlas Admin API v2 project-scoped network capability.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.0-READONLY-ISOLATION-CERT adds an opt-in, mutation-free
+           isolation admission that denies global access, duplicate/invalid
+           networks and missing consumer ownership without deleting access.
 CHANGELOG: v1.2.1-FRESH-REVALIDATION-AND-ACCURATE-AUDIT rechecks the exact Atlas network set immediately
            before any permitted add/revoke, refusing a concurrent change;
            labels baseline inventory truth accurately, and documents the
@@ -46,7 +49,7 @@ import re
 
 from tools.eos.ops import mw_t12_task_definition_admission as ecs
 
-VERSION = "v1.2.1-FRESH-REVALIDATION-AND-ACCURATE-AUDIT"
+VERSION = "v1.3.0-READONLY-ISOLATION-CERT"
 PROJECT = "668cdbbd975c3c0f05fca20c"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
@@ -171,6 +174,37 @@ def audit_entries(entries: list[dict]) -> None:
     print("MW_T12_ATLAS_ENTRIES_WITHOUT_OWNER_COMMENT=" + str(owner_unknown))
     print("MW_T12_ATLAS_CONSUMER_DEPENDENCIES=UNVERIFIED")
     print("MW_T12_ATLAS_INITIAL_INVENTORY_READ_ONLY=TRUE")
+
+
+def certify_isolated_network(entries: list[dict]) -> None:
+    """Deny unreviewed shared consumer dependencies without mutating Atlas.
+
+    A restrictive Atlas access list is necessary but never sufficient for
+    proving task identity, Fargate connectivity, backup or recovery. Require
+    exactly unique global IPv4 /32 entries with explicit nonempty owner
+    comments, no wildcard or broader CIDR. Never guess who uses a network.
+    """
+    networks = [entry_ip(entry) for entry in entries]
+    require("0.0.0.0/0" not in networks,
+            "ATLAS_PUBLIC_NETWORK_WILDCARD_PRESENT")
+    require(len(networks) == len(set(networks)),
+            "ATLAS_DUPLICATE_NETWORKS_UNATTRIBUTED")
+    for entry, network in zip(entries, networks, strict=True):
+        try:
+            cidr = ipaddress.ip_network(network, strict=True)
+        except ValueError as exc:
+            raise NetworkAdmissionError("ATLAS_NETWORK_INVALID") from exc
+        require(cidr.version == 4 and cidr.prefixlen == 32
+                and cidr.network_address.is_global,
+                "ATLAS_NONEXACT_OR_NONGLOBAL_NETWORK")
+        comment = entry.get("comment")
+        require(isinstance(comment, str) and bool(comment.strip())
+                and len(comment) <= 256,
+                "ATLAS_NETWORK_CONSUMER_UNATTRIBUTED")
+    print("MW_T12_ATLAS_SOURCE_NETWORK_INVENTORY=ISOLATION_ELIGIBLE")
+    print("MW_T12_ATLAS_SOURCE_NETWORK_EVIDENCE=READ_ONLY")
+    print("MW_T12_ATLAS_ECS_CONNECTIVITY_CERTIFIED=FALSE")
+    print("MW_T12_ATLAS_BACKUP_RESTORE_CERTIFIED=FALSE")
 
 
 def public_source_ip(profile: str, task_arn: str) -> str:
@@ -385,6 +419,8 @@ def main(argv: list[str] | None = None) -> int:
         description="MW-T12 isolated Atlas source-network admission")
     parser.add_argument("--profile", default="wilsy-legal-cert")
     parser.add_argument("--task-arn", help="Exact running owned Fargate task ARN")
+    parser.add_argument("--certify-isolation", action="store_true",
+                        help="Read-only deny of unowned or public Atlas access")
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument("--admit-six-hours", action="store_true",
                          help="Explicit Atlas temporary /32 addition")
@@ -394,6 +430,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="Exact recorded /32 source IPv4 for owned rollback")
     args = parser.parse_args(argv)
     try:
+        require(not args.certify_isolation or not (
+            args.admit_six_hours or args.revoke_owned or args.task_arn
+            or args.owned_source_ip), "ISOLATION_AUDIT_MUST_BE_READ_ONLY")
         require(not (args.admit_six_hours or args.revoke_owned)
                 or bool(args.task_arn),
                 "TASK_ARN_REQUIRED_FOR_MUTATION")
@@ -405,6 +444,8 @@ def main(argv: list[str] | None = None) -> int:
         try:
             entries = inventory(client)
             audit_entries(entries)
+            if args.certify_isolation:
+                certify_isolated_network(entries)
             if args.revoke_owned:
                 revoke_owned(client, entries, args.task_arn,
                              args.owned_source_ip)
@@ -433,7 +474,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_access_admission.py
-# VERSION: v1.2.1-FRESH-REVALIDATION-AND-ACCURATE-AUDIT
+# VERSION: v1.3.0-READONLY-ISOLATION-CERT
 # AUTHORITY BOUNDARY: Exact temporary /32 source add/owned delete only.
 # TENANT POSTURE: Synthetic test database only; no production read/write.
 # FAIL-CLOSED POSTURE: Wildcard add blocked; delete restricted to owned task.
