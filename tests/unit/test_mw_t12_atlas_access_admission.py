@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.3.0-ATLAS-API-DENIAL-CLASSIFICATION
+VERSION: v1.4.0-OAUTH-SERVICE-ACCOUNT-ISOLATION-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.4.0-OAUTH-SERVICE-ACCOUNT-ISOLATION-CERT covers
+           successful OAuth Bearer exchange, denied/invalid responses,
+           and restriction to read-only isolated inventory.
 CHANGELOG: v1.3.0-ATLAS-API-DENIAL-CLASSIFICATION tests only
            safe HTTP status classifications; no request body or key exposure.
 CHANGELOG: v1.2.0-ISOLATION-CLI-FAILCLOSED-CERT verifies the real
@@ -253,7 +256,7 @@ def test_readonly_isolation_cli_fails_closed_without_mutation(
     class FakeClient:
         def close(self):
             pass
-    monkeypatch.setattr(admission, "atlas_session", lambda: FakeClient())
+    monkeypatch.setattr(admission, "atlas_session", lambda *args: FakeClient())
     monkeypatch.setattr(admission, "inventory",
                         lambda client: [{"cidrBlock": "0.0.0.0/0"}])
     monkeypatch.setattr(admission, "atlas", lambda *a, **k:
@@ -301,8 +304,137 @@ def test_atlas_admin_api_denials_are_status_only(
     assert "PRIVATE-ERROR-BODY-MUST-NOT-BE-READ" not in str(denied.value)
 
 
+def test_oauth_service_account_token_uses_ephemeral_bearer(monkeypatch) -> None:
+    """Client credentials only enter TLS Basic auth, not CLI, logs or files."""
+    import requests
+
+    prompts = iter(("mdb_sa_id_synthetic", "mdb_sa_sk_synthetic"))
+    monkeypatch.setattr(admission, "getpass", lambda prompt: next(prompts))
+    calls = []
+
+    class Reply:
+        status_code = 200
+        content = b'{"access_token":"synthetic-access-token"}'
+        def json(self):
+            return {
+                "access_token": "synthetic-access-token",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+            }
+
+    class Session:
+        def __init__(self):
+            self.headers = {}
+            self.closed = False
+            self.auth = None
+        def post(self, url, **kwargs):
+            calls.append((url, kwargs))
+            return Reply()
+        def close(self):
+            self.closed = True
+
+    monkeypatch.setattr(requests, "Session", Session)
+    client = admission.atlas_session("service-account")
+    assert len(calls) == 1
+    url, options = calls[0]
+    assert url == admission.OAUTH_TOKEN_URL
+    assert options["data"] == {"grant_type": "client_credentials"}
+    assert options["auth"].username == "mdb_sa_id_synthetic"
+    assert options["auth"].password == "mdb_sa_sk_synthetic"
+    assert options["allow_redirects"] is False
+    assert client.auth is None
+    assert client.headers["Authorization"] == "Bearer synthetic-access-token"
+    assert client.headers["Accept"] == admission.ATLAS_MEDIA_TYPE
+    client.close()
+    assert client.closed
+
+
+@pytest.mark.parametrize("status,code", [
+    (401, "ATLAS_OAUTH_CLIENT_AUTH_DENIED_401"),
+    (403, "ATLAS_OAUTH_CLIENT_ACCESS_DENIED_403"),
+    (429, "ATLAS_OAUTH_RATE_LIMITED_429"),
+    (503, "ATLAS_OAUTH_TOKEN_UNAVAILABLE"),
+])
+def test_oauth_denials_do_not_parse_or_log_sensitive_body(
+    monkeypatch, status, code,
+) -> None:
+    """Denied OAuth token responses never disclose bodies or retry."""
+    import requests
+    prompts = iter(("mdb_sa_id_mock", "mdb_sa_sk_mock"))
+    monkeypatch.setattr(admission, "getpass", lambda prompt: next(prompts))
+
+    class Reply:
+        status_code = status
+        content = b"SENSITIVE_RESPONSE"
+        def json(self):
+            pytest.fail("MUST_NOT_PARSE_DENIED_OAUTH_RESPONSE")
+
+    class Session:
+        def __init__(self):
+            self.headers = {}
+            self.closed = False
+        def post(self, *args, **kwargs):
+            return Reply()
+        def close(self):
+            self.closed = True
+
+    monkeypatch.setattr(requests, "Session", Session)
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="^" + code + "$") as denied:
+        admission.atlas_session("service-account")
+    assert "SENSITIVE_RESPONSE" not in str(denied.value)
+
+
+@pytest.mark.parametrize("payload", [
+    {"access_token": "", "token_type": "Bearer", "expires_in": 3600},
+    {"access_token": "token", "token_type": "Basic", "expires_in": 3600},
+    {"access_token": "token", "token_type": "Bearer", "expires_in": 7200},
+    {"access_token": "token", "token_type": "Bearer", "expires_in": True},
+])
+def test_oauth_invalid_token_contract_denies(monkeypatch, payload) -> None:
+    """Malformed token fields cannot become Authorization Bearer."""
+    import requests
+    prompts = iter(("mdb_sa_id_mock", "mdb_sa_sk_mock"))
+    monkeypatch.setattr(admission, "getpass", lambda prompt: next(prompts))
+
+    class Reply:
+        status_code = 200
+        content = b"{}"
+        def json(self):
+            return payload
+
+    class Session:
+        def __init__(self):
+            self.headers = {}
+        def post(self, *args, **kwargs):
+            return Reply()
+        def close(self):
+            pass
+
+    monkeypatch.setattr(requests, "Session", Session)
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="^ATLAS_OAUTH_TOKEN_INVALID$"):
+        admission.atlas_session("service-account")
+
+
+def test_oauth_service_account_isolation_only_refuses_mutations(
+    monkeypatch,
+) -> None:
+    """No service account CLI mode can invoke POST, DELETE or task admission."""
+    monkeypatch.setattr(admission, "atlas_session", lambda *args:
+                        pytest.fail("SHOULD_NOT_OPEN_ATLAS_SESSION"))
+    for args in (
+        ["--auth-mode", "service-account"],
+        ["--auth-mode", "service-account", "--revoke-owned",
+         "--task-arn", TASK_ARN, "--owned-source-ip", TEST_SOURCE_IP],
+        ["--auth-mode", "service-account", "--admit-six-hours",
+         "--task-arn", TASK_ARN],
+    ):
+        assert admission.main(args) == 2
+
+
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.3.0-ATLAS-API-DENIAL-CLASSIFICATION
+# VERSION: v1.4.0-OAUTH-SERVICE-ACCOUNT-ISOLATION-CERT
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
