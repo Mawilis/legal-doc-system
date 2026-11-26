@@ -219,6 +219,33 @@ export function assertUnifiedMyWorkProjection(payload, expectedScope = {}) {
  * @param {string} source EOS source identifier.
  * @returns {string|null} Known source label or null for an unknown identifier.
  */
+/**
+ * One navigation contract for an already admitted EOS work projection.
+ * A locator is navigation-only, never a grant of Projects/CRM authority.
+ * Source services independently reauthorize the destination.
+ */
+export function resolveUnifiedWorkDestination(item) {
+  if (!item || typeof item !== 'object'
+    || typeof item.source !== 'string' || !Object.hasOwn(SOURCES, item.source)
+    || typeof item.work_item_id !== 'string' || !item.work_item_id.trim()
+    || item.source_key !== item.source + ':' + item.work_item_id) {
+    throw new Error('MY_WORK_NAVIGATION_SOURCE_INVALID');
+  }
+  if (item.source === 'PROJECTS') {
+    if (typeof item.project_id !== 'string'
+      || !/^prj-[a-f0-9]{48}$/.test(item.project_id)
+      || !/^ptk-[a-f0-9]{48}$/.test(item.work_item_id)) {
+      throw new Error('MY_WORK_PROJECT_DESTINATION_INVALID');
+    }
+    return { kind: 'PROJECTS_TASK', locator: {
+      workspace: 'PROJECTS', project_id: item.project_id,
+      task_id: item.work_item_id, participant_view: true,
+    } };
+  }
+  return { kind: 'MY_WORK_TASK',
+    href: '/headquarters?section=my-work&work=' + encodeURIComponent(item.source_key) };
+}
+
 export function unifiedMyWorkSourceLabel(source) {
   return Object.hasOwn(SOURCES, source) ? SOURCES[source] : null;
 }
