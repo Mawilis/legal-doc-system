@@ -61,7 +61,7 @@ from urllib.parse import parse_qsl, urlsplit
 from tools.eos.ops import mw_t12_ecr_publication as published
 from tools.eos.ops import mw_t12_task_definition_admission as registered
 
-VERSION = "v1.5.0-THREE-FRESH-TLS-SESSIONS-READBACK"
+VERSION = "v1.6.0-SECURE-ECS-REVISION-ADMISSION"
 REVISIONS = (1, 2)
 SECURE_REVISIONS = (3, 4)
 TASK_FAMILY = "wilsy-mwt12-eos-nonproduction"
