@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.62.0-QUIET-CONVERSATION-ENTRY
+ * VERSION: v4.63.0-SESSION-CONTINUITY-AND-GREETING
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.63.0-SESSION-CONTINUITY-AND-GREETING distinguishes current-session participation from EOS storage provenance; saved threads remain in This session when opened, and authenticated time-aware greetings return.
  * CHANGELOG: v4.62.0-QUIET-CONVERSATION-ENTRY removes the capitalized provider warning from the empty conversation canvas; capability truth remains exposed by existing AI usage and history postures.
  * CHANGELOG: v4.61.5-RESTORED-TASK-OPERATING-ENTRY enters the operating view on explicit task selection even after EOS history restored SOURCE mode; leaves unrelated Headquarters locators conversation-only.
  * CHANGELOG: v4.61.4-CONTEXTUAL-TASK-CHROME shows the live task strip only for an explicitly operated, inspected or thread-linked task; unrelated general conversations stay clean.
@@ -1279,6 +1280,8 @@ export function WilsyOSIntelligenceDock({
   const [historyOperationError, setHistoryOperationError] = useState('');
   const [historySearch, setHistorySearch] = useState('');
   const [historyFilter, setHistoryFilter] = useState('ALL');
+  // Session participation is distinct from EOS encrypted storage provenance.
+  const [sessionThreadIds, setSessionThreadIds] = useState([]);
   const recordedSourceReadRef = useRef('');
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [animatedAssistantKey, setAnimatedAssistantKey] = useState(null);
@@ -1351,6 +1354,7 @@ export function WilsyOSIntelligenceDock({
     founderActivationKeyRef.current = null;
     founderActivationInFlightRef.current = false;
     resetWilsyAIConversationSession();
+    setSessionThreadIds([]);
     setConversationThreads([]);
     setHistoryOperationError('');
     setActiveThreadId(null);
@@ -1555,6 +1559,7 @@ export function WilsyOSIntelligenceDock({
     if (scope !== dockScopeRef.current) return;
     setConversationThreads(previous => [saved, ...previous.filter(item => item.id !== saved.id)]);
     setActiveThreadId(saved.id);
+    setSessionThreadIds(previous => previous.includes(saved.id) ? previous : [...previous, saved.id]);
     if (saved.storagePosture !== 'EOS_ENCRYPTED_HISTORY') throw new Error('DOCK_HISTORY_NOT_SAVED');
   };
 
@@ -1718,6 +1723,7 @@ export function WilsyOSIntelligenceDock({
       if (scopeAtStart !== dockScopeRef.current) return;
       setConversationThreads((prev) => [fresh, ...prev.filter((item) => item.id !== fresh.id)]);
       setActiveThreadId(fresh.id);
+      setSessionThreadIds(previous => previous.includes(fresh.id) ? previous : [...previous, fresh.id]);
       setWorkSurfaceOpen(false);
       setConversationView('WELCOME');
       setActiveTab('chat');
@@ -1743,6 +1749,7 @@ export function WilsyOSIntelligenceDock({
       });
       if (scopeAtStart !== dockScopeRef.current) return;
       setConversationThreads(refreshed);
+      setSessionThreadIds(previous => previous.filter(id => refreshed.some(t => t.id === id)));
       if (!refreshed.find(t => t.id === activeThreadId)) {
         setActiveThreadId(refreshed[0]?.id || null);
       }
@@ -1772,6 +1779,8 @@ export function WilsyOSIntelligenceDock({
         if (active) {
           setConversationThreads(threads);
           setActiveThreadId(threads[0]?.id || null);
+          if (threads[0]?.id) setSessionThreadIds(previous => previous.includes(threads[0].id)
+            ? previous : [...previous, threads[0].id]);
           const restored = threads[0]?.workLocator;
           if (restored?.workspace === 'PROJECTS' && /^prj-[a-f0-9]{48}$/.test(restored.project_id || '')
             && /^ptk-[a-f0-9]{48}$/.test(restored.task_id || '')) {
@@ -2120,6 +2129,7 @@ export function WilsyOSIntelligenceDock({
           if (!requestIsCurrent()) return;
           threadId = fresh.id;
           setActiveThreadId(threadId);
+          setSessionThreadIds(previous => previous.includes(threadId) ? previous : [...previous, threadId]);
           setConversationThreads((prev) => [fresh, ...prev.filter((t) => t.id !== fresh.id)]);
         }
         const afterUser = await persistWilsyAIConversationTurn({
@@ -2821,7 +2831,8 @@ export function WilsyOSIntelligenceDock({
                   {conversationView === 'WELCOME' && !workSurfaceOpen && !isLegalDockRole(authUser?.role)
                     && (activeThread?.messages?.length || 0) === 0 && !errorMessage && !isSubmitting && (
                     <div className={styles.conversationEmptyPrompt}>
-                      <p>What would you like to explore?</p>
+                      <p>{authUser?.id ? welcomeGreeting : 'What would you like to explore?'}</p>
+                      {authUser?.id && <small>What would you like to explore?</small>}
                     </div>
                   )}
                   {conversationView === 'WELCOME' && workSurfaceOpen && !isLegalDockRole(authUser?.role) && isOpen && (
@@ -3464,11 +3475,13 @@ export function WilsyOSIntelligenceDock({
                       .filter(thread => (thread.messages?.length || 0) > 0)
                       .map(thread => describeConversation(thread, query))
                       .filter(thread => thread.matchesQuery && (historyFilter === 'ALL' ||
-                        (historyFilter === 'EOS' ? thread.saved : !thread.saved)))
+                        (historyFilter === 'EOS' ? thread.saved : sessionThreadIds.includes(thread.id))))
                       .sort((a,b) => b.millis - a.millis || a.id.localeCompare(b.id));
                     if (!visible.length) return <div className={styles.historyEmpty}>
-                      <p>{query || historyFilter !== 'ALL'
-                        ? 'No matching conversations.' : 'No conversations yet.'}</p>
+                      <p>{query ? 'No matching conversations.'
+                        : historyFilter === 'SESSION' ? 'No conversations opened in this session yet.'
+                          : historyFilter === 'EOS' ? 'No saved conversations yet.'
+                            : 'No conversations yet.'}</p>
                       <button type="button" onClick={query || historyFilter !== 'ALL'
                         ? () => { setHistorySearch(''); setHistoryFilter('ALL'); } : handleNewThread}>
                         {query || historyFilter !== 'ALL' ? 'Show all' : 'Start conversation'}
@@ -3491,6 +3504,8 @@ export function WilsyOSIntelligenceDock({
                             aria-current={thread.id === activeThreadId ? 'true' : undefined}
                             onClick={() => {
                               setAnimatedAssistantKey(null); setActiveThreadId(thread.id);
+                              setSessionThreadIds(previous => previous.includes(thread.id)
+                                ? previous : [...previous, thread.id]);
                                setWorkSurfaceOpen(false);
                               setConversationView('WELCOME'); setActiveTab('chat');
                               const historical = conversationThreads.find(item => item.id === thread.id)?.workLocator;
@@ -3521,6 +3536,7 @@ export function WilsyOSIntelligenceDock({
                                 const remaining = await deleteWilsyAIConversationThread(thread.id);
                                 if (scope !== dockScopeRef.current) return;
                                 setConversationThreads(remaining);
+                                setSessionThreadIds(previous => previous.filter(id => id !== thread.id));
                                 if (activeThreadId === thread.id) setActiveThreadId(remaining[0]?.id || null);
                               } catch {
                                 if (scope === dockScopeRef.current) setHistoryOperationError('Deletion was not verified by EOS.');
@@ -3542,6 +3558,7 @@ export function WilsyOSIntelligenceDock({
                       });
                       if (scope !== dockScopeRef.current) return;
                       setConversationThreads([fresh]); setActiveThreadId(fresh.id);
+                      setSessionThreadIds([fresh.id]);
                       setWorkSurfaceOpen(false); setConversationView('WELCOME'); setActiveTab('chat');
                     } catch {
                       if (scope === dockScopeRef.current) setHistoryOperationError('Session reset could not be verified.');
@@ -3577,7 +3594,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.62.0-QUIET-CONVERSATION-ENTRY
+ * VERSION: v4.63.0-SESSION-CONTINUITY-AND-GREETING
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
