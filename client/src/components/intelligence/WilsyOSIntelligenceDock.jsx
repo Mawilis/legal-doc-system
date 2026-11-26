@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Intelligence Dock and Movable AI Companion
- * VERSION: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER
+ * VERSION: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE
  * AUTHORITY: WILSY OS Core Governance; Python EOS owns all business authority.
  * EPITOME: Keep contextual intelligence alongside the operator's current work,
  * with a movable/minimizable launcher and preserved source-owned AI contracts.
@@ -14,6 +14,7 @@
  * TENANT BOUNDARY: Current authenticated tenant and principal only.
  * AUTHORITY BOUNDARY: EOS source/IAM own every permission and work item.
  * FINANCIAL AUTHORITY BOUNDARY: Python EOS retains metering, reconciliation and billing.
+ * CHANGELOG: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE summarizes EOS discussion cleanly and supports an explicit full-update read via fresh exact-task EOS readback; message archives retain only bounded comment references and no historical transcript is treated as current source.
  * CHANGELOG: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER distinguishes short EOS answers, governed full briefings, semantic fact rows and independent source footers while keeping saved-transcript provenance and source admission unchanged.
  * CHANGELOG: v4.76.1-FOCUSED-TURN-CHAIN treats the prior exact-task source answer as a verified conversational anchor for compact follow-ups, without extending scope to a different task.
  * CHANGELOG: v4.76.0-FOCUSED-SOURCE-CONVERSATION responds concisely to exact selected-task deadline, owner, approvals, attachments and latest-update questions from freshly validated EOS sources; general Brief keeps full assessment.
@@ -450,6 +451,73 @@ function classifyWilsyFocusedTaskQuestion(value) {
   if (/\b(?:latest|recent|last|newest)\b/.test(question)
     && /\b(?:update|comment|activity|discussion|change)\b/.test(question)) return 'LATEST_UPDATE';
   return 'BRIEFING';
+}
+
+/** Bounded display-only comment summary; never rewrite the EOS original. */
+function summarizeWilsySourceComment(value) {
+  const lines = String(value || '').split(/\r?\n/).map(part => part.trim())
+    .filter(Boolean);
+  const first = lines[0] || '';
+  const withoutMarkup = first.replace(/\*\*/g, '').replace(/^#{1,6}\s+/, '')
+    .replace(/^[-*]\s+/, '');
+  return withoutMarkup.length > 180 ? withoutMarkup.slice(0, 177) + '…' : withoutMarkup;
+}
+
+/**
+ * Live-source disclosure for one exact comment. History and browser UI never
+ * authorize the read: a fresh, complete EOS task/evidence batch is required.
+ */
+function WilsyVerifiedCommentDisclosure({ message, workspaceContext, workLocator, tenantId, principalId }) {
+  const [state, setState] = useState({ status: 'IDLE', text: '' });
+  const stamp = String(message?.content || '').match(
+    /^Source comment reference: (pcm-[a-f0-9]{48}) · ([a-f0-9]{128})$/m);
+  const task = workspaceContext?.state === 'READY'
+    ? workspaceContext.data?.work?.selected_task : null;
+  const scoped = message?.meta?.source === 'PYTHON_EOS'
+    && message.meta.phase === 'SOURCE_VERIFIED_READ_ONLY'
+    && stamp && task && workLocator?.workspace === 'PROJECTS'
+    && workspaceContext.data?.tenant_id === tenantId
+    && workspaceContext.data?.principal_id === principalId
+    && workspaceContext.data?.locator?.workspace === 'PROJECTS'
+    && workspaceContext.data?.locator?.project_id === workLocator.project_id
+    && workspaceContext.data?.locator?.task_id === workLocator.task_id
+    && task.task_id === workLocator.task_id
+    && (!workLocator.task_revision || task.revision === workLocator.task_revision);
+  if (!stamp || message?.role !== 'assistant') return null;
+  const show = async () => {
+    if (!scoped || state.status === 'LOADING') return;
+    setState({ status: 'LOADING', text: '' });
+    try {
+      const { evidence } = await readWilsyTaskBriefing(
+        workLocator.project_id, task, tenantId, principalId,
+        Boolean(workLocator.participant_view));
+      const comment = evidence.comments.items.find(item => item.comment_id === stamp[1]);
+      if (!comment || comment.fingerprint !== stamp[2]
+        || !scoped || comment.body.length > 5000) {
+        throw new Error('SOURCE_COMMENT_CHANGED');
+      }
+      setState({ status: 'READY', text: comment.body });
+    } catch {
+      setState({ status: 'ERROR', text: '' });
+    }
+  };
+  return <div className={styles.verifiedCommentDisclosure}>
+    {scoped && state.status !== 'READY' && <button type="button"
+      className={styles.conversationInlineAction} onClick={show}
+      disabled={state.status === 'LOADING'}>
+      {state.status === 'LOADING' ? 'Verifying EOS comment…' : 'Read full update'}
+    </button>}
+    {!scoped && <p>Reopen the exact task to verify this recorded comment.</p>}
+    {state.status === 'ERROR' && <p role="status">
+      The original update could not be reverified. Refresh the task before retrying.
+    </p>}
+    {state.status === 'READY' && scoped && <details open>
+      <summary>Full EOS project update · source readback</summary>
+      <div className={styles.verifiedCommentFull}>
+        {state.text.replace(/\*\*/g, '')}
+      </div>
+    </details>}
+  </div>;
 }
 
 /** Independently read one current EOS lifecycle event page, never cached chat. */
@@ -1170,6 +1238,9 @@ function WilsyProgressiveAssistantText({ content, animate, onComplete, format = 
           return <p key={index} className={isFocusedAnswer
             ? styles.verifiedFocusedTitle : styles.verifiedReplyTitle}>{line}</p>;
         }
+        // Internal source locator is used only by the independently
+        // reauthorised Read full update action, never shown in the transcript.
+        if (/^Source comment reference: pcm-[a-f0-9]{48} · [a-f0-9]{128}$/.test(line)) return null;
         if (sourceFooter(line)) {
           return <p key={index} className={styles.verifiedSourceFooter}>{line}</p>;
         }
@@ -2307,7 +2378,9 @@ export function WilsyOSIntelligenceDock({
             (a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))[0];
           const latestUpdate = latestComment
             ? '\nLatest recorded comment (' + latestComment.created_at + '): '
-              + latestComment.body.replace(/\s+/g, ' ').slice(0, 350)
+              + summarizeWilsySourceComment(latestComment.body)
+              + '\nSource comment reference: ' + latestComment.comment_id
+              + ' · ' + latestComment.fingerprint
             : '\nNo discussion comments on the verified first page.';
           const pageLine = (name, page) => '\n' + name + ': '
             + page.items.length + (page.has_more ? '+ on first page; more pages require inspection' : ' verified records');
@@ -2357,8 +2430,9 @@ export function WilsyOSIntelligenceDock({
                   : intent === 'LATEST_UPDATE'
                     ? prefix + (latestComment
                       ? 'Latest recorded discussion (' + latestComment.created_at + '): '
-                        + latestComment.body.split(/\r?\n/).map(line => line.trim())
-                          .find(line => line.length > 0)?.replace(/\*\*/g, '').slice(0, 220)
+                        + summarizeWilsySourceComment(latestComment.body)
+                        + '\nSource comment reference: ' + latestComment.comment_id
+                        + ' · ' + latestComment.fingerprint
                         + (evidence.comments.has_more ? '\nMore discussion pages require inspection.' : '')
                       : 'No discussion comments on the verified first page.')
                       + (lastEvent ? '\nLatest lifecycle event: '
@@ -3660,6 +3734,14 @@ export function WilsyOSIntelligenceDock({
                             ))}
                           />
                         ) : msg.content}
+                        {msg.role === 'assistant' && <WilsyVerifiedCommentDisclosure
+                          key={msg.timestamp || idx}
+                          message={msg}
+                          workspaceContext={visibleWorkspaceContext}
+                          workLocator={workLocator}
+                          tenantId={activeTenant?.tenantId || activeTenant?._id || authUser?.tenantId}
+                          principalId={authUser?.id}
+                        />}
                       </div>
                     </div>
                   ))}
@@ -4120,7 +4202,7 @@ export default WilsyOSIntelligenceDock;
  * Durable history is stored only by Python EOS when authenticated, keyed and available; fallback remains session-only.
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: WilsyOSIntelligenceDock.jsx
- * VERSION: v4.77.0-ANSWER-AWARE-SOURCE-RENDERER
+ * VERSION: v4.78.0-READBACK-VERIFIED-COMMENT-DISCLOSURE
  * AUTHORITY BOUNDARY: client projection only; Python EOS owns C1C/C1E truth
  * TENANT POSTURE: authenticated api.js context; C1E state is React memory only
  * FAIL-CLOSED POSTURE: transport errors render bounded status and never fabricate
