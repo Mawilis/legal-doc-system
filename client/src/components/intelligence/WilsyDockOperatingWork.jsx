@@ -1,11 +1,12 @@
 /**
  * TITLE: WILSY OS Permissioned Dock Operating Journey
- * VERSION: v1.9.1-SOURCE-OWNED-ACCEPTANCE-DEFINITION
+ * VERSION: v1.9.2-STRICT-CROSS-SOURCE-INTEGRITY
  * AUTHORITY: WILSY OS Core Governance; Python EOS and Projects own source truth.
  * EPITOME: Advance authorized work through verified commands and editable plan evidence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/intelligence/WilsyDockOperatingWork.jsx
  * COLLABORATION / OWNERSHIP: Intelligence Dock, closed catalog, My Work, Projects.
  * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.9.2-STRICT-CROSS-SOURCE-INTEGRITY validates canonical IDs, fingerprints, event authors/dates, discussion data, attachment scan state and reviewer independence before any source can be counted as verified.
  * CHANGELOG: v1.9.1-SOURCE-OWNED-ACCEPTANCE-DEFINITION shows the exact current EOS task acceptance description and lifecycle separately from evidence counts; a source-verified record or recorded discussion never automatically satisfies source-defined delivery requirements.
  * CHANGELOG: v1.9.0-CROSS-SOURCE-TASK-ACCEPTANCE-ASSESSMENT independently verifies bounded EOS task events, comments, attachment and approval page identities inside the embedded assessment; distinguishes recorded artifacts from certified milestone execution and offers an evidence-driven next action with no invented completion or model authority.
  * CHANGELOG: v1.8.0-ACTIONABLE-IN-TASK-INTELLIGENCE replaces the in-modal source-prose transcript with a compact independently EOS-verified task assessment, explicit incomplete/predecessor risk, and live Activity/Evidence/Approvals navigation; no new AI model, invented completion, or authorization. Other Dock views remain unchanged.
@@ -285,24 +286,45 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
             item?.schema === itemSchema && item.tenant_id === tenantId
             && item.project_id === project && item.task_id === task);
           if (!valid) throw new Error('TASK_ASSESSMENT_SOURCE_INVALID');
-          if (key === 'activity' && page.items.some(item =>
-            !Number.isSafeInteger(item.revision) || item.revision < 1
-            || !['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED'].includes(item.event_type)
-            || !['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status_after))) {
-            throw new Error('TASK_ASSESSMENT_ACTIVITY_INVALID');
-          }
-          if (key === 'evidence' && page.items.some(item =>
-            !/^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
-            || item.state !== 'QUARANTINED'
-            || !['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
-            || Object.hasOwn(item, 'download_url') || Object.hasOwn(item, 'presigned_url'))) {
-            throw new Error('TASK_ASSESSMENT_EVIDENCE_INVALID');
-          }
-          if (key === 'approvals' && page.items.some(item =>
-            !/^par-[a-f0-9]{48}$/.test(item.approval_id || '')
-            || !['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
-            || item.requester_principal_id === item.reviewer_principal_id)) {
-            throw new Error('TASK_ASSESSMENT_APPROVAL_INVALID');
+          const fingerprint = value => /^[a-f0-9]{128}$/.test(value || '');
+          const validItem = item => {
+            if (key === 'activity') return Number.isSafeInteger(item.revision) && item.revision >= 1
+              && typeof item.actor_principal_id === 'string' && !!item.actor_principal_id
+              && Number.isFinite(Date.parse(item.occurred_at))
+              && ['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED'].includes(item.event_type)
+              && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status_after);
+            if (key === 'updates') return /^pcm-[a-f0-9]{48}$/.test(item.comment_id || '')
+              && typeof item.author_principal_id === 'string' && !!item.author_principal_id
+              && typeof item.body === 'string' && item.body.length > 0
+              && Array.isArray(item.mentions) && item.mentions.length <= 10
+              && item.mentions.every(person => typeof person === 'string' && !!person)
+              && fingerprint(item.fingerprint);
+            if (key === 'evidence') return /^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
+              && item.state === 'QUARANTINED' && item.revision === 1
+              && typeof item.filename === 'string' && !!item.filename
+              && ['application/pdf', 'image/png', 'image/jpeg'].includes(item.media_type)
+              && Number.isSafeInteger(item.size_bytes) && item.size_bytes > 0
+              && fingerprint(item.content_sha3_512)
+              && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status)
+              && (item.scan_clearance_status === 'QUARANTINED'
+                ? item.scan_clearance_fingerprint === null
+                : fingerprint(item.scan_clearance_fingerprint))
+              && !['storage_receipt', 'download_url', 'presigned_url'].some(field => Object.hasOwn(item, field));
+            return /^par-[a-f0-9]{48}$/.test(item.approval_id || '')
+              && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status)
+              && typeof item.requester_principal_id === 'string' && !!item.requester_principal_id
+              && typeof item.reviewer_principal_id === 'string' && !!item.reviewer_principal_id
+              && item.requester_principal_id !== item.reviewer_principal_id
+              && typeof item.rationale === 'string' && !!item.rationale
+              && item.revision === (item.status === 'PENDING' ? 1 : 2)
+              && fingerprint(item.fingerprint);
+          };
+          const idOf = item => key === 'activity' ? String(item.revision)
+            : key === 'updates' ? item.comment_id
+              : key === 'evidence' ? item.attachment_id : item.approval_id;
+          if (!page.items.every(validItem)
+            || new Set(page.items.map(idOf)).size !== page.items.length) {
+            throw new Error('TASK_ASSESSMENT_SOURCE_INTEGRITY_INVALID');
           }
           return [key, { state: 'VERIFIED', count: page.items.length,
             hasMore: page.has_more, items: page.items }];
@@ -721,7 +743,7 @@ export default function WilsyDockOperatingWork({ tenantId, principalId, scope, l
 }
 
 // ARTIFACT: WilsyDockOperatingWork.jsx
-// VERSION: v1.9.1-SOURCE-OWNED-ACCEPTANCE-DEFINITION
+// VERSION: v1.9.2-STRICT-CROSS-SOURCE-INTEGRITY
 // AUTHORITY BOUNDARY: presentation and exact-command transport; Python EOS owns truth
 // TENANT POSTURE: exact principal, tenant, capacity and request generation
 // FAIL-CLOSED POSTURE: uncertain outcomes require read-only reconciliation
