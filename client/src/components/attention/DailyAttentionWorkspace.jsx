@@ -1072,10 +1072,9 @@ export default function DailyAttentionWorkspace({
                         Complete
                       </button>}
                       <button type="button" aria-label={'Open details for ' + item.title}
-                        aria-pressed={selectedId === item.id}
-                        onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
+                        onClick={() => open(item)}
                         className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}>
-                        Details
+                        Open task <ExternalLink size={12}/>
                       </button>
                     </div>
                   </WorkTaskBlueprintRow>
