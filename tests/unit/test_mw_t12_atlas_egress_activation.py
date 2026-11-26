@@ -1,5 +1,5 @@
 """TITLE: MW-T12 verified Atlas three-node egress admission certificate.
-VERSION: v1.2.0-CLOUDFORMATION-EFFECTIVE-PARAMETERS
+VERSION: v1.3.0-EXACT-RUNTIME-EGRESS-STATE-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Prove exact reviewed CloudFormation changes, DNS/compute denial,
          no-delete network boundary and independent SG permission readback.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Existing MW-T12 CloudFormation template and fresh
          node DNS admission operator only.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.0-EXACT-RUNTIME-EGRESS-STATE-CERT enforces strict
+           HTTPS-only and exact pre-reviewed grouped Atlas egress modes;
+           denies unexpected destinations, duplicate and IPv6 permission.
 CHANGELOG: v1.2.0-CLOUDFORMATION-EFFECTIVE-PARAMETERS tests independent
            stack-parameter equivalence against real response variants
            with explicit same values and denial of changed VPC/foundation.
@@ -29,6 +32,7 @@ import socket
 import pytest
 
 from tools.eos.ops import mw_t12_atlas_egress_activation as gate
+from tools.eos.ops import mw_t12_runtime_readiness as readiness
 
 
 def _change_set():
@@ -261,8 +265,86 @@ def test_sg_inbound_open_refuses_verification(monkeypatch) -> None:
         gate.verify_egress("wilsy-legal-cert")
 
 
+def _runtime_rule(port: int, *cidrs: str) -> dict:
+    """Model normalized EC2 permission groups without cloud requests."""
+    return {
+        "IpProtocol": "tcp", "FromPort": port, "ToPort": port,
+        "IpRanges": [{"CidrIp": cidr} for cidr in cidrs],
+    }
+
+
+def test_readiness_keeps_original_https_only_network_blocked(monkeypatch) -> None:
+    """Old closed network remains valid metadata, but not Atlas egress."""
+    monkeypatch.setattr(gate, "verify_egress", lambda profile:
+                        pytest.fail("UNEXPECTED_ATLAS_EGRESS_VERIFICATION"))
+    state = readiness.verify_owned_security_group_egress(
+        "synthetic", gate.SG_ID, [_runtime_rule(443, "0.0.0.0/0")],
+    )
+    assert state == "HTTPS_ONLY"
+
+
+def test_readiness_accepts_exact_activated_group_with_reverification(
+    monkeypatch,
+) -> None:
+    """Grouped Atlas rules require DNS review and independent SG reread."""
+    calls = []
+    monkeypatch.setattr(gate, "fresh_dns",
+                        lambda: calls.append("dns") or gate.REVIEWED)
+    monkeypatch.setattr(gate, "verify_egress",
+                        lambda profile: calls.append("group:" + profile))
+    rules = [
+        _runtime_rule(443, "0.0.0.0/0"),
+        _runtime_rule(27017, *gate.REVIEWED),
+    ]
+    assert readiness.verify_owned_security_group_egress(
+        "synthetic", gate.SG_ID, rules,
+    ) == "REVIEWED_ATLAS_NODES"
+    assert calls == ["dns", "group:synthetic"]
+
+
+@pytest.mark.parametrize("rules", [
+    [_runtime_rule(443, "0.0.0.0/0"),
+     _runtime_rule(27017, "0.0.0.0/0")],
+    [_runtime_rule(443, "0.0.0.0/0"),
+     _runtime_rule(27017, *gate.REVIEWED, "8.8.8.8/32")],
+    [_runtime_rule(443, "0.0.0.0/0"),
+     _runtime_rule(27017, gate.REVIEWED[0])],
+    [_runtime_rule(443, "0.0.0.0/0"),
+     _runtime_rule(443, "0.0.0.0/0")],
+    [_runtime_rule(443, "0.0.0.0/0"),
+     {"IpProtocol": "tcp", "FromPort": 27017, "ToPort": 27017,
+      "IpRanges": [{"CidrIp": gate.REVIEWED[0]}],
+      "Ipv6Ranges": [{"CidrIpv6": "::/0"}]}],
+    [{"IpProtocol": "-1", "IpRanges": [{"CidrIp": "0.0.0.0/0"}]}],
+])
+def test_readiness_refuses_broader_or_drifted_rules(monkeypatch, rules) -> None:
+    """No wildcard 27017, extras, duplicates, or alternate transports."""
+    monkeypatch.setattr(gate, "verify_egress", lambda profile:
+                        pytest.fail("MUST_NOT_VERIFY_INVALID_RULES"))
+    with pytest.raises(readiness.ReadinessError,
+                       match="SECURITY_GROUP_EGRESS_DRIFT"):
+        readiness.verify_owned_security_group_egress(
+            "synthetic", gate.SG_ID, rules,
+        )
+
+
+def test_readiness_rejects_changed_node_dns(monkeypatch) -> None:
+    """Exact old IP rules alone do not prove current endpoint identity."""
+    monkeypatch.setattr(gate, "fresh_dns", lambda: gate.REVIEWED[:2] + ("8.8.8.8/32",))
+    monkeypatch.setattr(gate, "verify_egress", lambda profile:
+                        pytest.fail("MUST_NOT_ACCEPT_DNS_DRIFT"))
+    with pytest.raises(readiness.ReadinessError,
+                       match="ATLAS_NODE_DNS_CHANGED_REVIEW_REQUIRED"):
+        readiness.verify_owned_security_group_egress(
+            "synthetic", gate.SG_ID, [
+                _runtime_rule(443, "0.0.0.0/0"),
+                _runtime_rule(27017, *gate.REVIEWED),
+            ],
+        )
+
+
 # ARTIFACT: tests/unit/test_mw_t12_atlas_egress_activation.py
-# VERSION: v1.2.0-CLOUDFORMATION-EFFECTIVE-PARAMETERS
+# VERSION: v1.3.0-EXACT-RUNTIME-EGRESS-STATE-CERT
 # AUTHORITY BOUNDARY: Offline strict DNS/change-set/SG evidence only.
 # TENANT POSTURE: No tenant persistence, identity or production access.
 # FAIL-CLOSED POSTURE: Extra permissions, drift or unknown DNS denied.
