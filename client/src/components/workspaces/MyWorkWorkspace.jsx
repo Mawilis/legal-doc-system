@@ -1013,7 +1013,7 @@ export default function MyWorkWorkspace(props = {}) {
             <UnifiedTaskHeader kind="Task" source={SOURCE_LABELS[selectedItem.source] || selectedItem.source}
               title={selectedItem.title} status={statusLabel(selectedItem)}
               due={formatWorkDue(selectedItem) === 'Not set' ? 'No due date' : 'Due ' + formatWorkDue(selectedItem)}
-              owner={null} onClose={requestClose} closeLabel="Back to work"
+              owner={null} onClose={requestClose} closeRef={closeButtonRef} closeLabel="Back to work"
               primaryControl={taskDetailTab === 'SOURCE'
                 ? <button type="button" onClick={() => setTaskDetailTab('DETAILS')}
                     className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-blue-800">
