@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT
+ * VERSION: v1.28.0-STRATEGY-RETURN-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.28.0-STRATEGY-RETURN-CERT certifies the exact Strategy-originated Projects return action and its absence for ordinary Projects; only presentation routing changes.
  * CHANGELOG: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT asserts the
  *          actual Projects destination and denies alternate My Work routing,
  *          without relying on the portfolio title that is deliberately
@@ -215,6 +216,23 @@ const renderHeadquarters = (initialEntries = ['/'], authValue = auth, tenantIdVa
 );
 
 describe('WILSY Headquarters authenticated shell', () => {
+  it('returns directly from a Strategy-originated Projects task to the existing M04 execution document', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    renderHeadquarters(['/headquarters?section=projects&project=' + project
+      + '&task=' + task + '&returnTo=STRATEGY']);
+    const returnAction = await screen.findByRole('button', { name: 'Back to Strategy execution' });
+    expect(returnAction).toBeVisible();
+    fireEvent.click(returnAction);
+    expect(await screen.findByRole('dialog', { name: /Our Strategy/i })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Back to Strategy execution' })).not.toBeInTheDocument();
+  });
+
+  it('does not display a Strategy return action for ordinary Projects navigation', async () => {
+    renderHeadquarters(['/headquarters?section=projects']);
+    expect(screen.queryByRole('button', { name: 'Back to Strategy execution' })).not.toBeInTheDocument();
+  });
+
   it('shows source-verified project predecessor waiting in the Headquarters preview', async () => {
     const previous = api.get.getMockImplementation();
     api.get.mockImplementation((path, config = {}) => {
@@ -985,7 +1003,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT
+ * VERSION: v1.28.0-STRATEGY-RETURN-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
