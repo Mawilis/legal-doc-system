@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.21.1-LOGIN-WORKER-ISOLATION
+VERSION: v1.21.2-PRIVACY-SAFE-LOGIN-STAGES
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -15,6 +15,7 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
 CHANGELOG:
+  v1.21.2-PRIVACY-SAFE-LOGIN-STAGES: Adds opt-in WILSY_AUTH_TIMING=1 phase timings for admission throttling, credential verification, throttle reset and tenant/MFA evidence. No passwords, emails, user IDs, tokens or tenant identifiers are logged; HTTP responses and enforcement unchanged.
   v1.21.1-LOGIN-WORKER-ISOLATION: Isolates the synchronous tenant-bound login rate-limit, MongoDB identity checks and bcrypt work from the FastAPI event loop through its own worker thread; preserves existing admission, 429/503 semantics and MFA challenge issuance. No credentials are logged, no timeout increased, no identity or IAM mutations added.
   v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION: Delegates synchronous
   MongoDB-backed workspace-bootstrap and module-manifest read composition to
@@ -1385,6 +1386,18 @@ async def login(request: AuthRequest, http_request: Request):
 
 def _login_sync(request: AuthRequest, http_request: Request):
     """Preserve all existing rate-limit, tenant binding and MFA semantics."""
+    # Do not log even hashed identities, tenant names, credentials or challenge
+    # artifacts. Operators can identify slow MongoDB stages by constant name.
+    import time
+    def _measure(phase: str, operation: Any, *args: Any, **kwargs: Any) -> Any:
+        if os.getenv("WILSY_AUTH_TIMING") != "1":
+            return operation(*args, **kwargs)
+        started = time.perf_counter()
+        try:
+            return operation(*args, **kwargs)
+        finally:
+            logger.info("[AUTH_LOGIN_TIMING] phase=%s elapsed_ms=%.1f",
+                phase, (time.perf_counter() - started) * 1000)
     observed_at = datetime.now(timezone.utc)
     peer = http_request.client
     if peer is None or not isinstance(peer.host, str) or not peer.host:
@@ -1395,7 +1408,7 @@ def _login_sync(request: AuthRequest, http_request: Request):
     source_address = peer.host
     rate_gate = PrincipalAuthenticationRateLimit()
     try:
-        rate_gate.require_allowed(
+        _measure("rate_limit_read", rate_gate.require_allowed,
             email=str(request.email),
             source_address=source_address,
             observed_at=observed_at,
@@ -1418,10 +1431,10 @@ def _login_sync(request: AuthRequest, http_request: Request):
 
     try:
         auth_registry = get_auth_registry(None)
-        user = auth_registry.authenticate(request.email, request.password)
+        user = _measure("credential_lookup_verify", auth_registry.authenticate, request.email, request.password)
         if not user:
             try:
-                rate_gate.record_failure(
+                _measure("failure_bucket_write", rate_gate.record_failure,
                     email=str(request.email),
                     source_address=source_address,
                     observed_at=observed_at,
@@ -1448,7 +1461,7 @@ def _login_sync(request: AuthRequest, http_request: Request):
             )
 
         try:
-            rate_gate.record_success(
+            _measure("success_bucket_reset", rate_gate.record_success,
                 email=str(request.email),
                 observed_at=observed_at,
             )
@@ -1462,8 +1475,8 @@ def _login_sync(request: AuthRequest, http_request: Request):
                 detail="Authentication is temporarily unavailable.",
             ) from None
 
-        _require_discovered_tenant_binding(request.tenant_id, user)
-        existing_otp_secret = auth_registry.get_otp_secret(user.id)
+        _measure("tenant_binding", _require_discovered_tenant_binding, request.tenant_id, user)
+        existing_otp_secret = _measure("mfa_factor_read", auth_registry.get_otp_secret, user.id)
 
         # A durable secret with a missing enrollment flag is reconciliation, not
         # first-time setup. Never call get_otp_uri() in this branch: that would
@@ -1966,7 +1979,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.21.1-LOGIN-WORKER-ISOLATION
+# VERSION: v1.21.2-PRIVACY-SAFE-LOGIN-STAGES
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
