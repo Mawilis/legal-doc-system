@@ -1,12 +1,26 @@
-"""HTTP transport for the tenant-neutral global-principal login journey.
-
-VERSION: v1.1.0-BLOCKING-GLOBAL-LOGIN-WORKER-ISOLATION
-CHANGELOG: 2026-11-27 v1.1.0 isolates synchronous global-principal rate-limit,
-credential verification and MongoDB membership selector transaction in a
-bounded Starlette worker thread without changing identity, session, MFA or
-failure authority. No client timeout extension or automatic credential retry.
-Global routes are additive. Legacy tenant-bound endpoints remain mounted and
-unchanged while global session currentness is migrated and certified.
+"""
+TITLE: WILSY OS Global Principal Authentication HTTP Router
+VERSION: v1.1.1-GOVERNED-BLOCKING-GLOBAL-LOGIN-ISOLATION
+AUTHORITY: WILSY OS Global Principal IAM and source-owned session services.
+EPITOME: Secure tenant-neutral credential, membership, operating capacity and
+MFA session admission via existing EOS authorities.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/global_principal_auth_router.py
+COLLABORATION / OWNERSHIP: Global Principal authentication; Python EOS FastAPI.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.1.1-GOVERNED-BLOCKING-GLOBAL-LOGIN-ISOLATION supplies the complete
+sovereign forensic header and footer required by AGENTS.md, with no behavior changes.
+v1.1.0-BLOCKING-GLOBAL-LOGIN-WORKER-ISOLATION offloads synchronous global
+credential, rate-limit and MongoDB membership admission to a bounded Starlette
+worker thread without changing identity, session, MFA or failure authority.
+Global routes are additive. Legacy tenant-bound endpoints remain mounted.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal data in log messages;
+password and MFA verification, rate limits, and denial remain source owned.
+TENANT BOUNDARY: Tenant-specific memberships and capacity selections require
+exact server-verified scope; no aliases or owner fallback.
+AUTHORITY BOUNDARY: This router cannot create tenant grants or bypass
+MFA, membership verification or currentness.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 """
 from __future__ import annotations
 
@@ -877,3 +891,11 @@ async def migrate_legacy_global_mfa_factor(
 
 
 __all__ = ["router"]
+
+# ARTIFACT: tools/eos/api/global_principal_auth_router.py
+# VERSION: v1.1.1-GOVERNED-BLOCKING-GLOBAL-LOGIN-ISOLATION
+# AUTHORITY BOUNDARY: Global Principal authentication, membership and MFA admission only.
+# TENANT POSTURE: Exact current verified membership/capacity, no platform root fallback.
+# FAIL-CLOSED POSTURE: Credential, MFA and source unavailability cannot promote a session.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
