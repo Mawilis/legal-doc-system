@@ -1,5 +1,5 @@
 """TITLE: WILSY authenticated workforce directory projection.
-VERSION: v1.1.1-M03-SINGLE-SOURCE-AGGREGATE
+VERSION: v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL
 AUTHORITY: Existing Python EOS tenant authorization and canonical employee directory read.
 EPITOME: Projects a bounded set of directory-safe employee fields from the
          existing employees source for authenticated HR or platform-employer
@@ -8,12 +8,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr
 COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py at /api/hr/workforce; consumed by Headquarters and HR directory views.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
-  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Reads employee and department measures in one exact-tenant
+  v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL — Adds a separately authorized, strictly exact-tenant, directory-only employee detail read with opaque not-found behavior and bounded identity selectors; reuses the canonical employee projection without employment write or protected file access.
+  v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL — Reads employee and department measures in one exact-tenant
   Mongo aggregation instead of two unsynchronized count/distinct calls.
-  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Adds exact-tenant, current-IAM-authorized workforce Overview
+  v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL — Adds exact-tenant, current-IAM-authorized workforce Overview
   metrics from the canonical employee source. No HR access, departments,
   payroll, employee PII, or separate-source privileges are inferred.
-  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
+  v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
   v1.0.0-PLATFORM-EMPLOYER-DIRECTORY-SCOPE — Adds canonical WILSY platform-employer read authorization while preserving customer HR entitlement, exact tenant query, bounded projection and read-only behavior.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Tenant scope comes only from EOS authorization; directory fields are projected explicitly and sensitive identity, health and financial attributes are excluded.
@@ -186,8 +187,63 @@ async def read_workforce_overview(
     }
 
 
+@router.get("/{employee_id}")
+async def read_workforce_directory_employee(
+    employee_id: str,
+    authorization: TenantAuthorizationContext = Depends(_DIRECTORY_AUTHORITY),
+) -> dict[str, Any]:
+    """Read one directory-safe employee by exact ID within current authorized tenant.
+
+    This is not an employee file or workforce-admission read. Foreign, inactive,
+    deleted and absent employee IDs all return the same opaque 404 response.
+    The same current HR directory IAM and canonical employer-scope gate applies.
+    """
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,179}", employee_id):
+        raise HTTPException(status_code=422, detail="WORKFORCE_EMPLOYEE_ID_INVALID")
+    database = get_database()
+    if database is None:
+        raise HTTPException(status_code=503, detail="Workforce directory source is unavailable.")
+    try:
+        row = database["employees"].find_one(
+            {
+                "tenantId": authorization.tenant_id,
+                "employeeId": employee_id,
+                "isActive": True,
+                "deletedAt": None,
+            },
+            _DIRECTORY_PROJECTION,
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Workforce directory source is unavailable.",
+        ) from error
+    if row is None:
+        raise HTTPException(status_code=404, detail="WORKFORCE_EMPLOYEE_NOT_FOUND")
+    employment = row.get("employment") or {}
+    contact = row.get("contact") or {}
+    if row.get("employeeId") != employee_id:
+        raise HTTPException(status_code=503, detail="Workforce directory source is unavailable.")
+    return {
+        "schema": "WILSY-HR-WORKFORCE-DIRECTORY-DETAIL/V1",
+        "source": "AUTHORISED_HR_EMPLOYEE_REGISTRY",
+        "tenant_id": authorization.tenant_id,
+        "employee": {
+            "employeeId": employee_id,
+            "displayName": row.get("displayName"),
+            "preferredName": row.get("preferredName"),
+            "jobTitle": employment.get("jobTitle"),
+            "department": employment.get("department"),
+            "managerId": employment.get("managerId"),
+            "employmentStatus": employment.get("status"),
+            "workLocation": employment.get("workLocation"),
+            "workEmail": contact.get("workEmail"),
+        },
+    }
+
+
 # ARTIFACT: hr_workforce_directory_router.py
-# VERSION: v1.1.1-M03-SINGLE-SOURCE-AGGREGATE
+# VERSION: v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL
 # AUTHORITY BOUNDARY: Existing EOS tenant authorization gates read-only directory projection; the route grants no employee, principal, membership, IAM, or entitlement authority.
 # TENANT POSTURE: Exact authorized tenant is applied to every employee query; employer alternate pair is canonical-WILSY-only.
 # FAIL-CLOSED POSTURE: Missing database, malformed authorization, or source read failure returns unavailable and never an empty-success projection.
