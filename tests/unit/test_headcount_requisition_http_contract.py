@@ -1,5 +1,5 @@
 """TITLE: WILSY headcount HTTP authority contract certification.
-VERSION: v1.2.1-PLATFORM-EMPLOYER-SCOPE-CERT
+VERSION: v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT
 AUTHORITY: Repository-owned regression certificate for Python EOS route composition.
 EPITOME: Pins mounted route shape, customer HR and exact-WILSY employer IAM pairs,
          least-privilege grants, and the independent headcount maker/checker split.
@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering; certifies headcount_requisition_router.py and existing shared authorization composition.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
-  v1.2.1-PLATFORM-EMPLOYER-SCOPE-CERT — Corrects the release marker so the header, current changelog and end seal agree exactly; behavioral assertions are unchanged.
+  v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT — Certifies bounded real Overview projection and independent
+  HTTP IAM denial before any headcount transaction.
+  v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT — Corrects the release marker so the header, current changelog and end seal agree exactly; behavioral assertions are unchanged.
   v1.2.0-PLATFORM-EMPLOYER-SCOPE-CERT — Verifies exact employer and customer permission pairs are bound to the same headcount routes without changing command semantics.
   v1.1.0-HEADCOUNT-DECISION-ID-FIX-CERT — Certifies decision identifier and maker/checker route contract.
   v1.0.0-HEADCOUNT-HTTP-CERT — Pins authenticated headcount route mount and customer IAM binding.
@@ -18,6 +20,11 @@ AUTHORITY BOUNDARY: Permission metadata and role eligibility do not self-authori
 FINANCIAL AUTHORITY BOUNDARY: No payroll, payment, execution, settlement, or commercial entitlement grant.
 """
 
+from types import SimpleNamespace
+import pytest
+from fastapi import FastAPI, HTTPException
+from fastapi.testclient import TestClient
+from tools.eos.api import headcount_requisition_router as subject
 from tools.eos.api import server
 from tools.eos.api.headcount_requisition_router import (
     _CREATE,
@@ -120,8 +127,65 @@ def test_headcount_maker_and_checker_roles_are_separate() -> None:
         assert permission in ROLE_PERMISSIONS_MAP["HR_DIRECTOR"]
 
 
+def test_paged_overview_is_independently_authorized_and_excludes_private_fields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[_READ] = lambda: SimpleNamespace(tenant_id="TENANT-A")
+    observed = {}
+
+    class Source:
+        def list_overview_page(self, *, tenant_id, limit, offset, session):
+            observed.update(tenant_id=tenant_id, limit=limit, offset=offset)
+            return (SimpleNamespace(
+                requisition_id="REQ-EXAMPLE",
+                position_title="Synthetic Position",
+                department_id="DEPT-1",
+                work_location="Office",
+                headcount=2,
+                status=SimpleNamespace(value="SUBMITTED"),
+                revision=3,
+                business_justification="PRIVATE-BUSINESS-REASON",
+                requested_by_principal_id="PRIVATE-PRINCIPAL",
+            ),), 13
+
+    monkeypatch.setattr(subject, "_transaction", lambda callback: callback(Source(), object()))
+    response = TestClient(app).get(
+        "/hr/headcount-requisitions/overview",
+        params={"limit": 5, "offset": 10, "tenantId": "FOREIGN"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tenant_id"] == "TENANT-A"
+    assert body["source"] == "EOS_HEADCOUNT_REQUISITIONS"
+    assert body["total"] == 13
+    assert body["limit"] == 5 and body["offset"] == 10
+    assert body["hasMore"] is True
+    assert observed == {"tenant_id": "TENANT-A", "limit": 5, "offset": 10}
+    assert "PRIVATE-BUSINESS-REASON" not in response.text
+    assert "PRIVATE-PRINCIPAL" not in response.text
+
+
+def test_headcount_overview_denies_before_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[_READ] = lambda: (_ for _ in ()).throw(
+        HTTPException(status_code=403, detail="HEADCOUNT_READ_DENIED")
+    )
+    monkeypatch.setattr(subject, "_transaction", lambda callback: (_ for _ in ()).throw(
+        AssertionError("UNAUTHORIZED_PERSISTENCE_ACCESS")
+    ))
+    response = TestClient(app).get("/hr/headcount-requisitions/overview")
+    assert response.status_code == 403
+    assert response.json() == {"detail": "HEADCOUNT_READ_DENIED"}
+
+
+
 # ARTIFACT: test_headcount_requisition_http_contract.py
-# VERSION: v1.2.1-PLATFORM-EMPLOYER-SCOPE-CERT
+# VERSION: v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT
 # AUTHORITY BOUNDARY: Regression evidence for existing EOS permission metadata, static grants, exact route pairs, and mounted surface only; it grants no runtime authority.
 # TENANT POSTURE: Customer permissions are tenant-scoped; platform-employer pairs are canonical-WILSY-only through the shared authorization adapter.
 # FAIL-CLOSED POSTURE: Route wiring, role-grant, binding, or scope-contract drift fails this certificate.
