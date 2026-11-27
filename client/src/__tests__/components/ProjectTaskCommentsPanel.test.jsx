@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT
+ * VERSION: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
- * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.\n * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
+ * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.\n * CHANGELOG: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT verifies read-only source-page activity filters and the compact timeline without additional EOS calls or comment mutations.
+ * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
  * CHANGELOG: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT proves
  *          Write update makes the textarea the immediate focused task,
  *          hides the long source history while composing, restores it with
@@ -157,7 +158,7 @@ it('uses consistent compact OS actions without changing authorized commands', as
   expect(availability).toHaveClass('gap-x-4', 'gap-y-3', 'py-4');
   const history = screen.getByLabelText('Verified task activity history');
   expect(history).toHaveClass('pt-4');
-  expect(history.firstElementChild).toHaveClass('gap-x-4', 'gap-y-3', 'pb-4');
+  expect(history.firstElementChild).toHaveClass('gap-3', 'pb-3');
   fireEvent.click(compose);
   expect(screen.getByRole('button', { name: 'Close editor' }))
     .toHaveClass('!min-h-9', '!px-3', '!text-xs');
@@ -165,6 +166,28 @@ it('uses consistent compact OS actions without changing authorized commands', as
   expect(input).toHaveFocus();
   expect(screen.getByRole('region', { name: 'Write a progress update' })).toBeVisible();
   expect(screen.queryByLabelText('Verified task activity history')).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('filters only the verified activity page without refetching or changing immutable comments', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  const reads = api.get.mock.calls.length;
+  fireEvent.click(screen.getByRole('button', { name: 'Changes' }));
+  expect(screen.getByRole('button', { name: 'Changes' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
+  expect(screen.getByText(/No matching verified records on the currently loaded pages/)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Updates' }));
+  expect(screen.getByText('Please verify this dependency.')).toBeVisible();
+  expect(api.get).toHaveBeenCalledTimes(reads);
   expect(api.post).not.toHaveBeenCalled();
 });
 
@@ -441,7 +464,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT
+// VERSION: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
