@@ -40,10 +40,13 @@ class _Collection:
         self.query = query
         return len(self.rows)
 
-    def distinct(self, field: str, query: dict[str, Any]) -> list[str]:
-        assert field == 'employment.department'
-        self.distinct_query = query
-        return list({row.get('employment', {}).get('department') for row in self.rows if row.get('employment', {}).get('department')})
+    def aggregate(self, pipeline: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        assert len(pipeline) == 2
+        assert "$match" in pipeline[0] and "$group" in pipeline[1]
+        self.distinct_query = pipeline[0]["$match"]
+        return ([{"active_employees": len(self.rows),
+                  "departments": list({row.get("employment", {}).get("department")
+                                       for row in self.rows})}] if self.rows else [])
 
     def find(self, query: dict[str, Any], projection: dict[str, int]) -> _Cursor:
         self.query = query
