@@ -1,7 +1,7 @@
 """ASGI certificate for the WILSY OS password-recovery engine.
 
 TITLE: WILSY OS Password Recovery Engine HTTP ASGI Certificate
-VERSION: v1.0.3-RECOVERY-CONTACT-STATUS-HTTP-CERT
+VERSION: v1.0.4-RECOVERY-STATUS-STAGE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the mounted recovery-request and recovery-contact verification
          HTTP boundaries through the canonical FastAPI app without Mongo, SMTP,
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Exercises tools.eos.api.server.app and the R10E auth
                            router with service doubles at orchestration seams.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.3-RECOVERY-CONTACT-STATUS-HTTP-CERT introduces mounted
+CHANGELOG: v1.0.4-RECOVERY-STATUS-STAGE-CERT introduces mounted
            ASGI evidence for generic 202 recovery initiation, strict transport
            schemas, uniform anti-enumeration failure behavior, authenticated
            no-body recovery-email verification issuance, capability-only
@@ -291,6 +291,22 @@ def test_authenticated_status_read_is_independent_of_email_transport(service_dou
     _assert_secret_free(result)
 
 
+def test_status_failure_reports_only_bounded_source_stage(
+    service_doubles, monkeypatch,
+) -> None:
+    def unavailable(identity):
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_LOOKUP_FAILED"
+        )
+    monkeypatch.setattr(auth_router, "_recovery_contact_status_read", unavailable)
+    result = _request("GET", VERIFY_STATUS_PATH)
+    assert result.raised is None
+    assert result.status_code == 503
+    assert result.headers["x-wilsy-recovery-status-stage"] == "CONTACT_SOURCE"
+    assert "RECOVERY_CONTACT_LOOKUP_FAILED" not in result.text
+    _assert_secret_free(result)
+
+
 def test_unverified_current_email_is_explicit_without_smtp(
     service_doubles, monkeypatch,
 ) -> None:
@@ -488,7 +504,7 @@ def test_routes_are_post_only() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_engine_http.py
-# VERSION: v1.0.3-RECOVERY-CONTACT-STATUS-HTTP-CERT
+# VERSION: v1.0.4-RECOVERY-STATUS-STAGE-CERT
 # AUTHORITY BOUNDARY: mounted ASGI transport evidence only
 # TENANT POSTURE: public tenant values are selectors; authenticated route uses identity
 # FAIL-CLOSED POSTURE: malformed/rate/invalid/internal states never become success
