@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE
+ * VERSION: v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH accepts global People query intents and runs text search only through the existing independent, tenant-authorized employee directory source.
  *   v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE reads the new Python EOS workforce Overview with strict tenant/source provenance, renders admitted active headcount and departments and never calls deprecated /hr/snapshot.
  *   v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW places verified actionable People decisions first; replaces oversized lifecycle hero/chain card with a compact employer-aware working header and source-navigation actions. Keeps all source authorization and fail-closed behavior.
  *   v2.9.6-NONADMITTED-PROCESS-NO-FANOUT ensures unconnected onboarding/exit lanes do not issue speculative HR read requests; verified Overview and supported sources retain exact bound reads.
@@ -2869,6 +2870,32 @@ const HrDashboard = () => {
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
 
+  // Global shell owns the search button, People owns its current source reads.
+  // This event is a navigation/query intent, never an authorization grant.
+  useEffect(() => {
+    const openPeopleSearch = (event) => {
+      if (!tenantScopeKey || typeof event?.detail?.query !== 'string') return;
+      const query = event.detail.query.trim().slice(0, 80);
+      if (query.length < 2) return;
+      const sourceShortcuts = {
+        hiring: 'candidates', recruitment: 'candidates',
+        offers: 'offers', workforce: 'employees', employees: 'employees',
+      };
+      const tab = sourceShortcuts[query.toLowerCase()];
+      if (tab) {
+        setSearchTerm('');
+        setActiveTab(tab);
+        return;
+      }
+      // A free-text query is executed only against /api/hr/workforce with
+      // the exact selected tenant and its current EOS read authorization.
+      setSearchTerm(query);
+      setActiveTab('employees');
+    };
+    window.addEventListener('wilsy:people-context-search', openPeopleSearch);
+    return () => window.removeEventListener('wilsy:people-context-search', openPeopleSearch);
+  }, [tenantScopeKey]);
+
   /**
    * @function openMutationModal
    * @description Opens a create/edit form for the active HR process.
@@ -4765,7 +4792,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE
+ * VERSION: v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
