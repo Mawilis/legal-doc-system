@@ -7,8 +7,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/theme/workStatus.js
  * COLLABORATION / OWNERSHIP: ProjectWorkRow, ProjectTasksPanel and HrDashboard.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v1.1.1-STATUS-TEXT-CONTRAST-ENFORCEMENT introduces visibly saturated, contrast-safe EOS status badges and project row lifecycle accents; no status mutation.
- * CHANGELOG: v1.1.1-STATUS-TEXT-CONTRAST-ENFORCEMENT keeps state-derived badge text white and dark backgrounds intact despite inherited workspace typography, while preserving EOS status truth.\n * CHANGELOG: v1.0.3-M03-SECURITY-HEADER-SEAL includes mandatory sovereign security/privacy header metadata with no status behavior changes.
+ * CHANGELOG: v1.1.0-HR01-HIGH-VISIBILITY-STATUS-PALETTE introduces visibly saturated, contrast-safe EOS status badges and project row lifecycle accents; no status mutation.
+ * CHANGELOG: v1.1.1-STATUS-TEXT-CONTRAST-ENFORCEMENT keeps state-derived badge text white and dark backgrounds intact despite inherited workspace typography, while preserving EOS status truth.
+ * CHANGELOG: v1.0.3-M03-SECURITY-HEADER-SEAL includes mandatory sovereign security/privacy header metadata with no status behavior changes.
  * CHANGELOG: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX corrects human label whitespace normalization for task headers.
  * CHANGELOG: v1.0.1-M03-HUMAN-STATUS-LABEL-COMPATIBILITY resolves human-readable task status labels (e.g. In progress) to the same verified EOS semantic tone without changing lifecycle truth.
  * CHANGELOG: v1.0.0-M03-ENTERPRISE-WORK-COLOUR-SEMANTICS maps only verified
