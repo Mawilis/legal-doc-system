@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.6.0-PRIVATE-ATTRIBUTION-LEDGER-CERT
+VERSION: v1.7.0-LIVE-CONSUMER-REVIEW-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.7.0-LIVE-CONSUMER-REVIEW-CERT tests private
+           worksheet reconciliation, incomplete attribution, stale Atlas
+           network fingerprint and strict read-only CLI rejection.
 CHANGELOG: v1.6.0-PRIVATE-ATTRIBUTION-LEDGER-CERT tests local
            exclusive mode 0600 ledger, unknown consumer defaults, no
            overwrite and export-before-fail-closed network decision.
@@ -521,8 +524,69 @@ def test_private_consumer_ledger_created_before_wildcard_denial(
     ] == "0.0.0.0/0"
 
 
+def test_consumer_review_matches_fresh_inventory_without_authority(
+    tmp_path, capsys,
+) -> None:
+    """A current and complete worksheet proves neither IAM nor deletion."""
+    import json
+
+    path = tmp_path / "private.json"
+    entries = [{"cidrBlock": "0.0.0.0/0", "comment": ""}]
+    admission.write_consumer_ledger(entries, str(path))
+    content = json.loads(path.read_text())
+    content["network_entries"][0].update({
+        "consumer": "known test consumer",
+        "consumer_evidence": "local readback documented",
+        "confirmed_by": "reviewer",
+        "independently_tested": True,
+    })
+    path.write_text(json.dumps(content))
+    admission.review_consumer_ledger(entries, str(path))
+    output = capsys.readouterr().out
+    assert "MW_T12_CONSUMER_REVIEW_UNVERIFIED=0" in output
+    assert "MW_T12_CONSUMER_APPROVAL_AUTHORITY=NOT_ESTABLISHED" in output
+    assert "MW_T12_NETWORK_MUTATIONS=ZERO" in output
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="ATLAS_PUBLIC_NETWORK_WILDCARD_PRESENT"):
+        admission.certify_isolated_network(entries)
+
+
+def test_consumer_review_fails_for_all_unattributed_entries(tmp_path) -> None:
+    """An unedited private ledger cannot be mistaken for recovery authority."""
+    path = tmp_path / "private.json"
+    source = [{"cidrBlock": "0.0.0.0/0", "comment": ""}]
+    admission.write_consumer_ledger(source, str(path))
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="CONSUMER_REVIEW_INCOMPLETE"):
+        admission.review_consumer_ledger(source, str(path))
+
+
+def test_consumer_review_rejects_changed_atlas_network_snapshot(
+    tmp_path,
+) -> None:
+    """Even a single changed network invalidates the persisted evidence."""
+    path = tmp_path / "private.json"
+    admission.write_consumer_ledger(
+        [{"cidrBlock": "0.0.0.0/0"}], str(path))
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="CONSUMER_REVIEW_SOURCE_FINGERPRINT_STALE"):
+        admission.review_consumer_ledger(
+            [{"cidrBlock": "8.8.8.8/32"}], str(path))
+
+
+def test_consumer_review_cli_requires_readonly_and_no_mutation(
+    monkeypatch, tmp_path,
+) -> None:
+    """Review flag cannot open a session in non-audit operation."""
+    monkeypatch.setattr(admission, "atlas_session", lambda *args:
+                        pytest.fail("NO_ATLAS_SESSION_ALLOWED"))
+    assert admission.main(["--auth-mode", "service-account",
+                           "--review-consumers",
+                           str(tmp_path / "private.json")]) == 2
+
+
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.6.0-PRIVATE-ATTRIBUTION-LEDGER-CERT
+# VERSION: v1.7.0-LIVE-CONSUMER-REVIEW-CERT
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
