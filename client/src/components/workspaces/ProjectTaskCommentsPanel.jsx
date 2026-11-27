@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.18.2-EXPLICIT-CORRECTION-WINDOW
+ * VERSION: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
  * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.\n * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.\n * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
@@ -221,13 +222,20 @@ function ActivityCommentBody({ value }) {
   if (!long) return <MarkdownText value={source}/>;
   const first = (lines[0] || '').replace(/^(?:#{1,3}\s+|[-*]\s+|\d+\.\s+)/, '')
     .replace(/\*\*/g, '').trim();
-  const introduction = first.length > 160 ? first.slice(0, 157).trimEnd() + '…' : first;
+  const introduction = first.length > 180 ? first.slice(0, 177).trimEnd() + '…' : first;
+  // A real content preview, not a line counter masquerading as a summary.
+  const detail = lines.slice(1).find(line =>
+    !/^(?:#{1,3}\s*|[-*]\s*|\d+\.\s*)?$/.test(line)
+    && !/^(?:\*\*)?(?:completed engineering work|outstanding acceptance|progress|status|evidence)(?:\*\*)?:?$/i.test(line)) || '';
+  const detailPreview = detail.replace(/^(?:#{1,3}\s+|[-*]\s+|\d+\.\s+)/, '')
+    .replace(/\*\*/g, '').trim().slice(0, 150);
   return <div className="min-w-0" data-testid="compact-project-activity-comment">
     {expanded ? <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
       <MarkdownText value={source}/>
     </div> : <div className="mt-2 max-w-full space-y-1">
       <p className="break-words text-sm font-medium leading-6 text-slate-900">{introduction}</p>
-      <p className="text-xs leading-5 text-slate-600">Long update · {lines.length} populated lines · Full source text retained</p>
+      {detailPreview && detailPreview !== introduction &&
+        <p className="line-clamp-2 break-words text-xs leading-5 text-slate-600">{detailPreview}</p>}
     </div>}
     <button type="button" className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
       aria-expanded={expanded} onClick={() => setExpanded(open => !open)}>
@@ -255,6 +263,7 @@ export default function ProjectTaskCommentsPanel({
   const [approvalHasMore, setApprovalHasMore] = useState(false);
   const [attachmentHasMore, setAttachmentHasMore] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
+  const [activityFilter, setActivityFilter] = useState('ALL');
   const [showTaskEvidence, setShowTaskEvidence] = useState(false);
   const [body, setBody] = useState('');
   const [correction, setCorrection] = useState(null);
@@ -513,6 +522,20 @@ export default function ProjectTaskCommentsPanel({
     })) : []),
   ].sort((a, b) => (Date.parse(b.time) || 0) - (Date.parse(a.time) || 0)
     || a.id.localeCompare(b.id));
+  // Filter the verified activity already in memory; do not infer unseen EOS
+  // pages, unread totals or cross-source notification delivery.
+  const activityCategories = [
+    { key: 'ALL', label: 'All activity' },
+    { key: 'COMMENT', label: 'Updates' },
+    { key: 'EVENT', label: 'Changes' },
+    { key: 'APPROVAL', label: 'Decisions' },
+    { key: 'ATTACHMENT', label: 'Files' },
+  ];
+  const categoryOf = entry => entry.type === 'comment' ? 'COMMENT'
+    : entry.type === 'event' ? 'EVENT'
+      : entry.type.startsWith('approval') ? 'APPROVAL' : 'ATTACHMENT';
+  const visibleActivity = activityFilter === 'ALL' ? activity
+    : activity.filter(entry => categoryOf(entry) === activityFilter);
   const displayTime = value => Number.isFinite(Date.parse(value))
     ? new Date(value).toLocaleString() : 'Timestamp not verified';
   const displayActor = id => {
@@ -664,9 +687,8 @@ export default function ProjectTaskCommentsPanel({
       || approvalState === 'READY' || attachmentState === 'READY') && <>
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-b border-slate-200 py-4" aria-label="Verified discussion availability">
-        <p role="status" className="text-xs text-slate-600">
-          {items.length > 0 ? items.length + (hasMore ? '+ comments on this page' : ' comments on this page')
-            : 'No comments on this page'} · task activity
+        <p role="status" className="text-xs text-slate-700">
+          {items.length} verified {items.length === 1 ? 'update' : 'updates'} on this comment page{hasMore ? ' · more EOS pages available' : ''}
         </p>
         {state === 'READY' && contributorEligible && <button type="button" className={ACTIVITY_ACTION_CLASS}
           aria-expanded={showTaskEvidence}
@@ -753,17 +775,25 @@ export default function ProjectTaskCommentsPanel({
       </div>}
       {!showComposer && <>
       <div id="verified-task-comment-history" aria-label="Verified task activity history" className="pt-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pb-4">
-        <p className="text-xs font-semibold text-slate-700">Newest activity first · verified EOS pages</p>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-          {typeof onViewApprovals === 'function' &&
-            <button type="button" className={ACTIVITY_ACTION_CLASS} onClick={onViewApprovals}>Decisions &amp; approvals</button>}
-          {typeof onViewAttachments === 'function' &&
-            <button type="button" className={ACTIVITY_ACTION_CLASS} onClick={onViewAttachments}>Attachments &amp; evidence</button>}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
+        <div role="group" aria-label="Filter verified activity on current EOS pages"
+          className="flex max-w-full flex-wrap items-center gap-1.5">
+          {activityCategories.map(category => <button type="button" key={category.key}
+            aria-pressed={activityFilter === category.key}
+            onClick={() => setActivityFilter(category.key)}
+            className={'min-h-9 rounded-md border px-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+              + (activityFilter === category.key
+                ? 'border-slate-900 bg-slate-900 text-white'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+            {category.label}
+          </button>)}
         </div>
+        <p className="text-xs text-slate-600" role="status">
+          {visibleActivity.length} on verified pages · newest first
+        </p>
       </div>
-      <ol className="mt-3 space-y-2" aria-label="Source-verified task activity newest first">
-        {activity.map(entry => <li className="relative min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm" key={entry.id}>
+      <ol className="space-y-2" aria-label="Source-verified task activity newest first">
+        {visibleActivity.map(entry => <li className="relative min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm" key={entry.id}>
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
             <strong className="min-w-0 break-words text-sm font-semibold text-slate-900">
               {entry.type === 'comment' ? 'Progress update / comment'
@@ -822,8 +852,9 @@ export default function ProjectTaskCommentsPanel({
           {entry.type === 'comment' && entry.item.mentions.length > 0 &&
             <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
         </li>)}
-        {activity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
-          No EOS-verified activity is available on these pages.
+        {visibleActivity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
+          {activityFilter === 'ALL' ? 'No EOS-verified activity is available on these pages.'
+            : 'No matching verified records on the currently loaded pages. Other EOS pages may contain results.'}
         </li>}
       </ol>
       {(eventOffset > 0 || eventHasMore) &&
@@ -875,7 +906,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.18.2-EXPLICIT-CORRECTION-WINDOW
+// VERSION: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
