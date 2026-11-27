@@ -77,7 +77,14 @@ export default function FounderHeadcountStart({ tenantId, admitted, onCreated })
       setStatus({ kind: 'ERROR', text: 'All requisition fields are required.' });
       return;
     }
-    if (!keyRef.current) keyRef.current = issueReplayKey();
+    if (!keyRef.current) {
+      try {
+        keyRef.current = issueReplayKey();
+      } catch {
+        setStatus({ kind: 'ERROR', text: 'Secure command identifier unavailable; no request was sent.' });
+        return;
+      }
+    }
     const requestedTenant = tenantId;
     inFlight.current = true;
     setStatus({ kind: 'PENDING', text: 'Submitting one governed draft requisition…' });
@@ -197,7 +204,14 @@ export function HeadcountDraftSubmit({ tenantId, admitted, requisition, onSubmit
     if (!admitted || inFlight.current || !tenantId
         || !/^REQ-[A-F0-9]{24}$/.test(String(requisition.id))
         || !Number.isSafeInteger(requisition.revision) || requisition.revision < 1) return;
-    if (!keyRef.current) keyRef.current = issueReplayKey();
+    if (!keyRef.current) {
+      try {
+        keyRef.current = issueReplayKey();
+      } catch {
+        setState({ kind: 'ERROR', text: 'Secure command identifier unavailable; no request was sent.' });
+        return;
+      }
+    }
     inFlight.current = true;
     const requestedTenant = tenantId;
     setState({ kind: 'PENDING', text: 'Submitting for independent review…' });
