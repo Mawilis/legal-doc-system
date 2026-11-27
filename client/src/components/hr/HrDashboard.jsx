@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY
+ * VERSION: v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT — Applies scoped, contrast-safe People headings, denied notice and input classes against legacy inherited styling; no IAM override.
  *   v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY — Disables candidate/offer create actions until the selected EOS source has a current verified read, preventing misleading commands on denied or unavailable HR views.
  *   v2.8.2-M03-LIGHT-SESSION-GATES — Removes remaining black legacy unauthenticated/tenant-reverification panels, preserving fail-closed EOS scope semantics.
  *   v2.8.1-M03-SHARED-STATUS-SEMANTICS — Uses the same EOS-derived lifecycle badges as Projects for employee, candidate and offer rows; text remains explicit and unknown states neutral.
@@ -4005,12 +4006,12 @@ const HrDashboard = () => {
 
   return (
     <React.Fragment>
-      <div className="mx-auto flex min-h-[70vh] w-full max-w-[1480px] flex-col bg-slate-50 text-slate-900" data-testid="people-os-workspace" data-source="PYTHON_EOS">
+      <div className={"mx-auto flex min-h-[70vh] w-full max-w-[1480px] flex-col bg-slate-50 text-slate-900 " + styles.peopleSurface} data-testid="people-os-workspace" data-source="PYTHON_EOS">
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">HR &amp; People · Authorized EOS workspace</p>
-              <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">People</h1>
+              <h1 className={styles.peopleHeading + " mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl"}>People</h1>
               <p className="mt-1 text-sm text-slate-600">Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -4040,11 +4041,11 @@ const HrDashboard = () => {
             || shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE
             || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED)
             && <div role={shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'}
-              className={'mb-4 rounded-lg border px-4 py-3 text-sm '
+              className={styles.peopleNotice + ' mb-4 rounded-lg border px-4 py-3 text-sm '
                 + (shownState?.status === HR_READ_STATE.ACCESS_DENIED || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED
                   ? 'border-rose-200 bg-rose-50 text-rose-950'
                   : 'border-amber-200 bg-amber-50 text-amber-950')}>
-              <strong className="block">{!isSourceConnected ? 'Source execution not yet connected'
+              <strong className={styles.peopleNoticeTitle + " block"}>{!isSourceConnected ? 'Source execution not yet connected'
                 : shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'People source access denied'
                 : snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'People summary access denied'
                 : 'People source unavailable'}</strong>
@@ -4058,7 +4059,7 @@ const HrDashboard = () => {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 sm:px-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source-owned operating records</p>
-                <h2 id="people-current-heading" className="mt-1 text-lg font-bold text-slate-950">
+                <h2 id="people-current-heading" className={styles.peopleHeading + " mt-1 text-lg font-bold text-slate-950"}>
                   {peopleModules.find(module => module.id === activeTab)?.title || 'People'}
                 </h2>
                 <p className="mt-1 text-xs text-slate-600">
@@ -4066,10 +4067,10 @@ const HrDashboard = () => {
                 </p>
               </div>
               {isSourceConnected && <div className="flex flex-wrap items-center gap-2">
-                {activeTab === 'employees' && <label className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2">
+                {activeTab === 'employees' && <label className={styles.peopleSearch + " flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2"}>
                   <Search size={16} aria-hidden />
                   <input aria-label="Search workforce" value={searchTerm} onChange={event => setSearchTerm(event.target.value)}
-                    placeholder="Find a person" className="min-w-0 border-0 bg-transparent text-sm outline-none"/>
+                    placeholder="Find a person" className={styles.peopleSearchInput + " min-w-0 border-0 bg-transparent text-sm outline-none"}/>
                 </label>}
                 <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-blue-800 disabled:opacity-50"
                   disabled={isRefreshing || activeDataset.offset === 0} onClick={() => updatePageOffset(false)}>Previous</button>
@@ -4637,7 +4638,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY
+ * VERSION: v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
