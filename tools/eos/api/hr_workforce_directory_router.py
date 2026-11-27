@@ -1,5 +1,5 @@
 """TITLE: WILSY authenticated workforce directory projection.
-VERSION: v1.0.1-PLATFORM-EMPLOYER-DIRECTORY-SCOPE
+VERSION: v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW
 AUTHORITY: Existing Python EOS tenant authorization and canonical employee directory read.
 EPITOME: Projects a bounded set of directory-safe employee fields from the
          existing employees source for authenticated HR or platform-employer
@@ -8,7 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr
 COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py at /api/hr/workforce; consumed by Headquarters and HR directory views.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
-  v1.0.1-PLATFORM-EMPLOYER-DIRECTORY-SCOPE — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
+  v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW — Adds exact-tenant, current-IAM-authorized workforce Overview
+  metrics from the canonical employee source. No HR access, departments,
+  payroll, employee PII, or separate-source privileges are inferred.
+  v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
   v1.0.0-PLATFORM-EMPLOYER-DIRECTORY-SCOPE — Adds canonical WILSY platform-employer read authorization while preserving customer HR entitlement, exact tenant query, bounded projection and read-only behavior.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Tenant scope comes only from EOS authorization; directory fields are projected explicitly and sensitive identity, health and financial attributes are excluded.
@@ -19,6 +22,7 @@ FINANCIAL AUTHORITY BOUNDARY: No payroll execution, payment, settlement or comme
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -125,8 +129,50 @@ async def list_workforce_directory(
     }
 
 
+@router.get("/overview")
+async def read_workforce_overview(
+    authorization: TenantAuthorizationContext = Depends(_DIRECTORY_AUTHORITY),
+) -> dict[str, Any]:
+    """Exact-tenant, permission-bound workforce measures without employee PII.
+
+    This is one source-owned component of People Overview, not an entitlement
+    to read hiring, payroll, leave or employee-case authority.
+    """
+    database = get_database()
+    if database is None:
+        raise HTTPException(status_code=503, detail="Workforce overview source is unavailable.")
+    criteria = {
+        "tenantId": authorization.tenant_id,
+        "isActive": True,
+        "deletedAt": None,
+    }
+    try:
+        collection = database["employees"]
+        active_count = collection.count_documents(criteria)
+        departments = collection.distinct("employment.department", criteria)
+    except Exception as error:
+        raise HTTPException(
+            status_code=503, detail="Workforce overview source is unavailable."
+        ) from error
+    if not isinstance(active_count, int) or active_count < 0 or not isinstance(departments, list):
+        raise HTTPException(status_code=503, detail="Workforce overview source is unavailable.")
+    return {
+        "schema": "WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1",
+        "tenant_id": authorization.tenant_id,
+        "source": "AUTHORISED_HR_EMPLOYEE_REGISTRY",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "metrics": {
+            "active_employees": active_count,
+            "departments": len({
+                value.strip() for value in departments
+                if isinstance(value, str) and value.strip()
+            }),
+        },
+    }
+
+
 # ARTIFACT: hr_workforce_directory_router.py
-# VERSION: v1.0.1-PLATFORM-EMPLOYER-DIRECTORY-SCOPE
+# VERSION: v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW
 # AUTHORITY BOUNDARY: Existing EOS tenant authorization gates read-only directory projection; the route grants no employee, principal, membership, IAM, or entitlement authority.
 # TENANT POSTURE: Exact authorized tenant is applied to every employee query; employer alternate pair is canonical-WILSY-only.
 # FAIL-CLOSED POSTURE: Missing database, malformed authorization, or source read failure returns unavailable and never an empty-success projection.
