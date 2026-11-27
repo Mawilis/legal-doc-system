@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.12.0-GLOBAL-HR-CAPACITY-SESSION-CERT
+ * VERSION: v1.12.1-CROSS-TENANT-HR-PROMOTION-DENIAL
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.authoritative.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and the Python EOS auth router.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: 2026-11-27 v1.12.1-CROSS-TENANT-HR-PROMOTION-DENIAL tests both wrong-role and foreign-tenant EOS readbacks cannot promote an MFA candidate session.
  * CHANGELOG: 2026-11-27 v1.12.0-GLOBAL-HR-CAPACITY-SESSION-CERT certifies EOS-listed HR-capacity selection, MFA-bound admission, exact tenant/capacity readback and rejected role substitution.
  * CHANGELOG: 2026-11-15 v1.11.0-ACCOUNT-EMAIL-PROVENANCE-CERT proves account-only workspaceEmail is EOS sourced while legacy authenticated email compatibility remains unchanged.
  * CHANGELOG: 2026-11-15 v1.10.0-EOS-ONLY-ACCOUNT-EMAIL-CERT proves account menu identity cannot fall back to login or persisted email candidates when EOS omits email.
@@ -267,7 +268,10 @@ describe('authoritative authentication state machine', () => {
     expect(window.localStorage.getItem('wilsy_auth_token')).toBe('hr-global-access-token');
   });
 
-  it('rejects a mismatched EOS workspace role before persisting global HR credentials', async () => {
+  it.each([
+    ['wrong role', 'WILSYTENANT-4CD2FZ4O', 'tenant_owner', 'WILSY_HEADQUARTERS'],
+    ['foreign tenant', 'FOREIGN-TENANT', 'tenant_hr_director', 'PEOPLE_OPERATIONS'],
+  ])('rejects a mismatched EOS workspace (%s) before persisting credentials', async (_case, tenantId, businessRole, workspaceId) => {
     api.post.mockResolvedValueOnce({ data: {
       status: 'MEMBERSHIP_SELECTION_REQUIRED',
       selection_challenge: 'selection-challenge-verified-002',
@@ -288,8 +292,7 @@ describe('authoritative authentication state machine', () => {
       refresh_token: 'refresh-candidate',
     } });
     api.get.mockResolvedValueOnce(workspaceBootstrap({
-      tenantId: 'WILSYTENANT-4CD2FZ4O',
-      businessRole: 'tenant_owner', workspaceId: 'WILSY_HEADQUARTERS',
+      tenantId, businessRole, workspaceId,
     }));
     renderHarness();
     fireEvent.click(screen.getByRole('button', { name: 'begin-hr' }));
@@ -1215,7 +1218,7 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.12.0-GLOBAL-HR-CAPACITY-SESSION-CERT
+ * VERSION: v1.12.1-CROSS-TENANT-HR-PROMOTION-DENIAL
  * AUTHORITY BOUNDARY: deterministic browser projection certificate only; D21B8 branding, workspace principal names and Legal permission provenance are presentation-only and never browser authorization authority
  * CHANGELOG: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT proves explicit bearer routing and
  * abort/currentness while rejecting an unverified MFA candidate as browser
