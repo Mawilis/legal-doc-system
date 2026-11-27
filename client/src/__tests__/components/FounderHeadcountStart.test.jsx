@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS First HR Leadership Headcount Browser Contract
- * VERSION: v1.0.0-FIRST-LEADERSHIP-REPLAY-CERT
+ * VERSION: v1.1.0-FIRST-LEADERSHIP-SUBMIT-CERT
  * AUTHORITY: Synthetic Axios transport; no production EOS or staff records.
  * EPITOME: Verify exact tenant, safe draft creation, readback distinctions,
  *          denied source entry and adverse server provenance.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/FounderHeadcountStart.test.jsx
  * COLLABORATION / OWNERSHIP: FounderHeadcountStart and Python EOS Headcount router.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.1.0-FIRST-LEADERSHIP-SUBMIT-CERT certifies exact-tenant revision-safe draft submission, independent review messaging and denial.
  * CHANGELOG: v1.0.0-FIRST-LEADERSHIP-REPLAY-CERT covers governed draft creation
  *            without any inferred approval, admission or cross-tenant scope.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
@@ -18,7 +19,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import FounderHeadcountStart from '../../components/hr/FounderHeadcountStart';
+import FounderHeadcountStart, { HeadcountDraftSubmit } from '../../components/hr/FounderHeadcountStart';
 import api from '../../services/api';
 
 vi.mock('../../services/api', () => ({
@@ -101,8 +102,50 @@ describe('First HR leadership headcount EOS command', () => {
   });
 });
 
+describe('First HR headcount independent-review submission', () => {
+  const requisition = {
+    id: SOURCE.requisition_id,
+    title: 'HR Director',
+    status: 'DRAFT',
+    revision: 1,
+  };
+
+  it('sends exact revision without making an independent decision', async () => {
+    api.post.mockResolvedValueOnce({ data: { ...SOURCE, status: 'SUBMITTED' } });
+    const refreshed = vi.fn().mockResolvedValue(undefined);
+    render(<HeadcountDraftSubmit tenantId={TENANT} admitted requisition={requisition} onSubmitted={refreshed} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Submit for review' }));
+    await waitFor(() => expect(refreshed).toHaveBeenCalledTimes(1));
+    const [path, body, config] = api.post.mock.calls[0];
+    expect(path).toBe('/hr/headcount-requisitions/' + SOURCE.requisition_id + '/submit');
+    expect(body).toEqual({ expected_revision: 1 });
+    expect(config.headers['X-Tenant-ID']).toBe(TENANT);
+    expect(config.headers['Idempotency-Key']).toEqual(expect.any(String));
+    expect(screen.getByRole('status')).toHaveTextContent('independent decision remains outstanding');
+  });
+
+  it('does not submit when EOS read authority is unverified', () => {
+    render(<HeadcountDraftSubmit tenantId={TENANT} admitted={false} requisition={requisition} />);
+    expect(screen.getByRole('button', { name: 'Submit for review' })).toBeDisabled();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('does not claim acceptance for a foreign or decided response', async () => {
+    api.post.mockResolvedValueOnce({ data: { ...SOURCE, tenant_id: 'foreign', status: 'APPROVED' } });
+    render(<HeadcountDraftSubmit tenantId={TENANT} admitted requisition={requisition} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Submit for review' }));
+    expect(await screen.findByText(/Submission unverified/)).toBeVisible();
+  });
+
+  it('rejects invalid revisions without contacting EOS', () => {
+    render(<HeadcountDraftSubmit tenantId={TENANT} admitted requisition={{ ...requisition, revision: 0 }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Submit for review' }));
+    expect(api.post).not.toHaveBeenCalled();
+  });
+});
+
 /* ARTIFACT: client/src/__tests__/components/FounderHeadcountStart.test.jsx
- * VERSION: v1.0.0-FIRST-LEADERSHIP-REPLAY-CERT
+ * VERSION: v1.1.0-FIRST-LEADERSHIP-SUBMIT-CERT
  * AUTHORITY BOUNDARY: Synthetic browser UI/transport tests only.
  * TENANT POSTURE: Exact tenant scoped request and response.
  * FAIL-CLOSED POSTURE: Unverified, denied and foreign source results never succeed.
