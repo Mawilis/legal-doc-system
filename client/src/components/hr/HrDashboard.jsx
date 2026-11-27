@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET
+ * VERSION: v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE consumes true paginated transactional headcount Overview pages and independently validates exact-tenant provenance and total, preventing the old 200-record cap from appearing complete.
  *   v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET clears tenant-authorized workforce-only search terms on switching to independently authorized hiring/offer/headcount modules.
  *   v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS renders canonical headcount requisition position, department, location, requested seats and status without generic invented 'Remote' or 'Normal' values.
  *   v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH keeps the nonadmitted Overview recovery branch syntactically closed and exclusive from source-admitted work.
@@ -2766,22 +2767,25 @@ const HrDashboard = () => {
       jobOpenings: async () => {
         // Existing canonical governed requisition source; do not call the
         // retired BFF /hr/recruitment/openings prototype route.
-        const response = await api.get('/hr/headcount-requisitions', {
+        const response = await api.get('/hr/headcount-requisitions/overview', {
+          params: { limit: params.limit, offset: params.offset },
           headers: { 'X-Tenant-ID': tenantId },
         });
         const source = response?.data;
-        if (source?.schema !== 'WILSY-HEADCOUNT-REQUISITIONS/V1'
+        if (source?.schema !== 'WILSY-HEADCOUNT-OVERVIEW/V1'
+          || source?.source !== 'EOS_HEADCOUNT_REQUISITIONS'
           || source?.tenant_id !== tenantId || !Array.isArray(source.items)
-          || source.items.some(item => item?.tenant_id !== tenantId
-            || typeof item?.requisition_id !== 'string'
+          || !Number.isSafeInteger(source.total) || source.total < source.items.length
+          || source.limit !== params.limit || source.offset !== params.offset
+          || typeof source.hasMore !== 'boolean'
+          || source.items.some(item => typeof item?.requisition_id !== 'string'
             || typeof item?.position_title !== 'string'
             || !['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'].includes(item?.status))) {
           throw Object.assign(new Error('HR_HEADCOUNT_PROVENANCE_INVALID'),
             { code: 'HR_HEADCOUNT_PROVENANCE_INVALID' });
         }
-        const page = source.items.slice(params.offset, params.offset + params.limit);
         return {
-          items: page.map(item => ({
+          items: source.items.map(item => ({
             id: item.requisition_id,
             title: item.position_title,
             department: item.department_id,
@@ -2790,10 +2794,10 @@ const HrDashboard = () => {
             headcount: item.headcount,
             revision: item.revision,
           })),
-          total: source.items.length,
-          offset: params.offset,
-          limit: params.limit,
-          hasMore: params.offset + page.length < source.items.length,
+          total: source.total,
+          offset: source.offset,
+          limit: source.limit,
+          hasMore: source.hasMore,
         };
       },
       payroll: () => hrService.getPayrollSummary(tenantId, params),
@@ -4851,7 +4855,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET
+ * VERSION: v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
