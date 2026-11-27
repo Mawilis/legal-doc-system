@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.21.2-EXACT-LEGAL-NAME-ALIAS
+ * VERSION: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP
+ * CHANGELOG: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP removes the redundant full-width Headquarters/People breadcrumb strip and delegates its existing return navigation to the People application header, recovering vertical workspace without duplicating tenant identity.
  * CHANGELOG: v4.21.2-EXACT-LEGAL-NAME-ALIAS supports exact authenticated legal_name projection in the employer header and persistent footer without independent tenant lookup.
  * CHANGELOG: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY reads legal employer identity from the exact authenticated global principal tenant projection, preserving independent existing Headquarters mounts without requiring a second tenant provider.
  * CHANGELOG: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER binds dynamic People header and persistent Headquarters footer to the exact authenticated tenant legal identity and reference, never a static Founder name or client-selected tenant.
@@ -420,18 +421,9 @@ body:has(.wilsyHqShell)::after{display:none}
 .wilsyHqShell .hq-content--people-owned .hq-navigation-open{display:none}
 .wilsyHqShell .hq-people-owned{padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:#0a1931!important;min-height:calc(100dvh - 130px);color:#f4f0e6}
 .hq-people-app{min-width:0;background:#0a1931}
-.hq-people-navigation{display:flex;align-items:center;gap:16px;padding:12px clamp(16px,2vw,32px);background:#0c1e38;border-bottom:1px solid #334e78;color:#c4d4e8;font-size:12px}
-.hq-people-navigation button{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;color:#f5d18b;border:1px solid #8a6f3d;background:transparent;font-weight:650}
-.hq-people-navigation button:hover{background:#1d365a}
-.hq-people-navigation button:focus-visible{outline:3px solid #f0ce7b;outline-offset:3px}
-.hq-people-navigation span{font-weight:650;letter-spacing:.03em}
-.hq-people-employer{margin-left:auto;display:flex;align-items:baseline;gap:8px;max-width:min(48%,480px);min-width:0}
-.hq-people-employer strong{color:#fff;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hq-people-employer small{color:#e4c580;white-space:nowrap;font-size:10px}
 .hq-footer-tenant{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .hq-footer-tenant strong{color:#f1f5f9!important;font-weight:750;max-width:280px;overflow:hidden;text-overflow:ellipsis}
 .hq-footer-tenant small{color:#e4c580;font-size:11px}
-@media(max-width:767px){.hq-people-employer{margin-left:0;max-width:100%;flex-wrap:wrap}}
 
 .hq-people-loading{padding:28px;color:#f4f0e6;background:#0e2444}
 .hq-global-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;align-items:center;padding:17px clamp(16px,2vw,32px);background:#0e2444;color:#c4d4e8;border-top:1px solid #334e78;font-size:11px;line-height:1.5}
@@ -1273,17 +1265,9 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
             </>
           ) : section === 'hr-workspace' ? (
             <section className="hq-people-app" aria-label="People operating application" data-workspace-ownership="PEOPLE">
-              <div className="hq-people-navigation">
-                <button type="button" onClick={() => navigateSection('overview')} aria-label="Return to Headquarters">
-                  <ChevronLeft size={16}/> Headquarters
-                </button>
-                <span aria-current="page">People · Hire to Exit</span>
-                {employerName && employerReference && <span className="hq-people-employer" aria-label="Selected authenticated employer">
-                  <strong>{employerName}</strong><small>{employerReference}</small>
-                </span>}
-              </div>
+
               <Suspense fallback={<section role="status" className="hq-people-loading">Verifying the People operating workspace…</section>}>
-                <HRDashboard user={authUser}/>
+                <HRDashboard user={authUser} onReturnToHeadquarters={() => navigateSection('overview')}/>
               </Suspense>
             </section>
           ) : section === 'hiring' ? (
@@ -1845,7 +1829,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.21.2-EXACT-LEGAL-NAME-ALIAS
+ * VERSION: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
