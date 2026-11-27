@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE
+ * VERSION: v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION implements the uploaded Hire-to-Exit prototype's autonomous navigation, compact lifecycle briefing and real source-backed approval work rows without importing sample staff or changing the WILSY logo.
  *   v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE — Unmounts the unconditional black/gold legacy HR profile card, which ignores the supplied isOpen prop; canonical OS account chrome remains authoritative.
  *   v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES — Preserves distinct denied and unavailable notice semantics while making both accessible under legacy HR styles.
  *   v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE — Rejects workforce payloads without canonical EOS provenance and projects only directory-safe fields into browser state; no passthrough of backend employee extras.
@@ -2323,7 +2324,7 @@ const HrDashboard = () => {
   tenantScopeKeyRef.current = tenantScopeKey;
   const previousTenantScopeKeyRef = useRef(tenantScopeKey);
   const user = authUser || {};
-  const [activeTab, setActiveTab] = useState('employees');
+  const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -2803,9 +2804,14 @@ const HrDashboard = () => {
     }
     const requestedScopeKey = tenantScopeKey;
     setIsRefreshing(true);
-    const reads = [fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)];
-    if (activeTab !== 'employees') reads.push(fetchTabData('employees', pageStates.employees, ''));
-    if (!['jobOpenings', 'employees'].includes(activeTab)) reads.push(fetchTabData('jobOpenings', pageStates.jobOpenings, ''));
+    const sourceTab = activeTab === 'overview' ? 'employees' : activeTab;
+    const reads = [fetchSnapshot(), fetchTabData(sourceTab, pageStates[sourceTab], activeTab === 'overview' ? '' : searchTerm)];
+    if (sourceTab !== 'employees') reads.push(fetchTabData('employees', pageStates.employees, ''));
+    if (!['jobOpenings', 'employees'].includes(sourceTab)) reads.push(fetchTabData('jobOpenings', pageStates.jobOpenings, ''));
+    if (activeTab === 'overview') {
+      reads.push(fetchTabData('candidates', pageStates.candidates, ''));
+      reads.push(fetchTabData('offers', pageStates.offers, ''));
+    }
     const outcomes = await Promise.all(reads);
     if (tenantScopeKeyRef.current !== requestedScopeKey) return;
     if (outcomes.some((outcome) => outcome.status === HR_READ_STATE.AUTHENTICATION_REQUIRED)) {
@@ -4005,6 +4011,7 @@ const HrDashboard = () => {
   const shownDataset = isSourceConnected ? activeDataset : EMPTY_DATASET;
   const shownState = isSourceConnected ? activeReadState : null;
   const peopleModules = [
+    { id: 'overview', title: 'Overview' },
     { id: 'employees', title: 'Workforce' },
     { id: 'candidates', title: 'Hiring' },
     { id: 'offers', title: 'Offers' },
@@ -4013,19 +4020,19 @@ const HrDashboard = () => {
     { id: 'performance', title: 'Performance' },
     { id: 'payroll', title: 'Payroll inputs' },
     { id: 'benefits', title: 'Growth' },
-    { id: 'relations', title: 'Employee relations' },
-    { id: 'artifacts', title: 'People documents' },
+    { id: 'relations', title: 'Disciplinary' },
+    { id: 'artifacts', title: 'People Files' },
     { id: 'activity', title: 'Activity & audit' },
   ];
 
   return (
     <React.Fragment>
-      <div className={"mx-auto flex min-h-[70vh] w-full max-w-[1480px] flex-col bg-slate-50 text-slate-900 " + styles.peopleSurface} data-testid="people-os-workspace" data-source="PYTHON_EOS">
-        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+      <div className={styles.peopleSurface} data-testid="people-os-workspace" data-source="PYTHON_EOS">
+        <header className={styles.peopleAppHeader}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">HR &amp; People · Authorized EOS workspace</p>
-              <h1 className={styles.peopleHeading + " mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl"}>People</h1>
+              <p className={styles.eyebrow}>WILSY OS · PEOPLE OPERATING SYSTEM</p>
+              <h1 className={styles.peopleHeading + " mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl"}>People · Hire to Exit</h1>
               <p className="mt-1 text-sm text-slate-600">Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -4038,19 +4045,90 @@ const HrDashboard = () => {
                 onClick={startSourceCommand}><Plus size={15} className="mr-1 inline-block" aria-hidden />{actionLabel}</button>}
             </div>
           </div>
-          <nav className="mt-4 flex gap-1.5 overflow-x-auto pb-1" aria-label="People operating functions">
+          <nav className={styles.peopleNav} aria-label="People operating functions">
             {peopleModules.map(module => {
               const selected = activeTab === module.id;
               return <button type="button" key={module.id} onClick={() => changeTab(module.id)}
                 aria-current={selected ? 'page' : undefined}
-                className={'shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
-                  + (selected ? 'border-blue-700 bg-blue-800 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50')}>
+                className={selected ? styles.peopleNavActive : styles.peopleNavButton}>
                 {module.title}
               </button>;
             })}
           </nav>
         </header>
-        <main className="min-w-0 flex-1 p-4 sm:p-6">
+        <main className={styles.peopleMain + " min-w-0 flex-1"}>
+          {activeTab === 'overview' && (
+            <div className={styles.overview} data-testid="people-lifecycle-overview">
+              <section className={styles.overviewIntro} aria-labelledby="people-lifecycle-heading">
+                <div>
+                  <p className={styles.eyebrow}>PEOPLE LIFECYCLE · GOVERNED WORK</p>
+                  <h2 id="people-lifecycle-heading">Hire to Exit. <em>One Chain.</em></h2>
+                  <p>One person. One authoritative file. Plan → Hire → Onboard → Manage → Pay → Grow → Correct → Exit.</p>
+                  <p>Every decision Maker ≠ Checker. Every record tenant-scoped. Every action audited by its owning EOS service.</p>
+                </div>
+                <aside className={styles.chainIntegrity} aria-label="Employment chain integrity">
+                  <strong>Chain integrity · Source verification required</strong>
+                  <p>Employment admission, IAM grants, payroll execution and offboarding are independently governed. The complete chain is not certified by directory availability alone.</p>
+                </aside>
+              </section>
+              <section aria-labelledby="people-brief-heading" className={styles.overviewSection}>
+                <div className={styles.overviewSectionHead}>
+                  <div><p className={styles.eyebrow}>OVERVIEW · CURRENT SOURCES</p><h3 id="people-brief-heading">People, at a glance</h3></div>
+                  <span>Verified counts only · no sample staff</span>
+                </div>
+                <div className={styles.peopleKpiGrid}>
+                  {[
+                    { title: 'Workforce', state: datasetReadStates.employees, dataset: datasets.employees, action: 'employees', note: 'Current employee directory' },
+                    { title: 'Hiring candidates', state: datasetReadStates.candidates, dataset: datasets.candidates, action: 'candidates', note: 'Source-owned candidate records' },
+                    { title: 'Employment offers', state: datasetReadStates.offers, dataset: datasets.offers, action: 'offers', note: 'Signed-offer governance' },
+                    { title: 'Headcount & roles', state: datasetReadStates.jobOpenings, dataset: datasets.jobOpenings, action: 'jobOpenings', note: 'Approval and position authority' },
+                  ].map(metric => <button key={metric.title} type="button" className={styles.peopleKpi}
+                    onClick={() => changeTab(metric.action)}>
+                    <span>{metric.title}</span>
+                    <strong>{isVerifiedReadState(metric.state) ? metric.dataset.total : 'Unavailable'}</strong>
+                    <small>{metric.note}</small>
+                  </button>)}
+                </div>
+              </section>
+              <section className={styles.overviewSection} aria-labelledby="people-queue-heading">
+                <div className={styles.overviewSectionHead}>
+                  <div><p className={styles.eyebrow}>AUTHORIZED WORK · MAKER ≠ CHECKER</p><h3 id="people-queue-heading">Today queue</h3></div>
+                  <span>Source-owned · Not a task simulation</span>
+                </div>
+                {(() => {
+                  const items = [
+                    ...(isVerifiedReadState(datasetReadStates.offers)
+                      ? datasets.offers.items.filter(item => ['DRAFT', 'SUBMITTED', 'APPROVED'].includes(item.status)).map(item => ({
+                        key: 'offer:' + item.offer_id, title: 'Employment offer · ' + item.offer_id,
+                        detail: 'Status ' + item.status + ' · Independent reviewer and offer authority',
+                        source: 'offers', status: item.status,
+                      })) : []),
+                    ...(isVerifiedReadState(datasetReadStates.candidates)
+                      ? datasets.candidates.items.filter(item => ['SELECTED', 'REFERENCE_CHECK'].includes(item.stage)).map(item => ({
+                        key: 'candidate:' + item.candidate_id, title: 'Candidate · ' + item.candidate_id,
+                        detail: 'Stage ' + item.stage + ' · Candidate evidence and offer readiness',
+                        source: 'candidates', status: item.stage,
+                      })) : []),
+                  ];
+                  if (items.length === 0) return <div className={styles.queueEmpty} role="status">
+                    {['employees', 'candidates', 'offers'].every(key => isVerifiedReadState(datasetReadStates[key]))
+                      ? 'No eligible hiring or offer review items appear in the current authorized source pages.'
+                      : 'The current capacity has not verified a complete People work queue. Unavailable sources are not counted as zero.'}
+                  </div>;
+                  return <div className={styles.peopleQueue}>
+                    {items.map(item => <div key={item.key} className={styles.peopleQueueRow}>
+                      <div><strong>{item.title}</strong><p>{item.detail}</p></div>
+                      <div className={styles.peopleQueueActions}>
+                        <span className={workStatusClasses(item.status)}>{item.status.replaceAll('_', ' ')}</span>
+                        <button type="button" onClick={() => changeTab(item.source)}>Open source <ArrowUpRight size={14} aria-hidden /></button>
+                      </div>
+                    </div>)}
+                  </div>;
+                })()}
+              </section>
+            </div>
+          )}
+          {activeTab !== 'overview' && <React.Fragment>
           {(!isSourceConnected || shownState?.status === HR_READ_STATE.ACCESS_DENIED
             || shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE
             || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED)
@@ -4138,6 +4216,7 @@ const HrDashboard = () => {
             {!isSourceConnected && <p className="p-5 text-sm text-slate-700">
               The next implementation milestone is the certified EOS lifecycle for this function. It cannot be simulated by client state or a static dashboard.</p>}
           </section>
+          </React.Fragment>}
         </main>
         {showArtifactModal && (
           <div className={styles.hrModal} role="dialog" aria-modal="true" aria-label="HR artifact generator">
@@ -4642,7 +4721,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE
+ * VERSION: v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
