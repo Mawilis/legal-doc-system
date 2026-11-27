@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.22.5-PEOPLE-FOOTER-VIEWPORT-GRID
+ * VERSION: v4.22.6-UNIFIED-SYSTEM-FOOTER
+ * CHANGELOG: v4.22.6-UNIFIED-SYSTEM-FOOTER mounts the same shared EOS footer component used by global protected routes without duplicate chrome or additional authority.
  * CHANGELOG: v4.22.5-PEOPLE-FOOTER-VIEWPORT-GRID reserves the shared EOS footer as a non-scroll grid row within the viewport-height Headquarters shell, so the full-height People application cannot clip it. Only the inner workspace scrolls.
  * CHANGELOG: v4.22.4-HR-PROJECTS-NONDESTRUCTIVE-RETURN binds a denied HR Projects action to the existing People route without emitting a capacity-switch event, signing out or changing IAM.
  * CHANGELOG: v4.22.3-ROLE-AWARE-PROJECTS-RECOVERY only labels Owner capacity as Platform owner and routes denied HR Projects access to the existing governed Owner capacity switch.
@@ -206,6 +207,7 @@ import {
 import MyWorkWorkspace from './MyWorkWorkspace.jsx';
 import ProjectsWorkspace from './ProjectsWorkspace.jsx';
 import WilsyWorkDeadlineCalendar from '../chrome/WilsyWorkDeadlineCalendar.jsx';
+import WilsySystemFooter from '../chrome/WilsySystemFooter.jsx';
 import { unifiedMyWorkSourceLabel } from '../../services/unifiedMyWorkProjection.js';
 import { readAttentionSourceActions, completeAttentionSourceWork } from '../../services/attentionFeedClient.js';
 import { isWilsyPlatformTenant, WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
@@ -1348,16 +1350,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           </div>
         </div>
       </div>
-      <footer role="contentinfo" className="hq-global-footer" aria-label="Headquarters operating footer">
-        <span><strong>WILSY OS</strong> · Build. Operate. Grow.</span>
-        <span>{peopleOwnsCanvas ? 'People · Hire to Exit' : 'Headquarters · Enterprise operations'}</span>
-        <span className="hq-footer-tenant" aria-label="Current employer tenant">
-          {employerName && employerReference
-            ? <><strong>{employerName}</strong><small>{employerReference}</small></>
-            : 'Tenant verification pending'}
-        </span>
-        <span>Python Kennel EOS · Source-owned records</span>
-      </footer>
+      <WilsySystemFooter
+        ariaLabel="Headquarters operating footer"
+        surface={peopleOwnsCanvas ? 'People · Hire to Exit' : 'Headquarters · Enterprise operations'}
+        employerName={employerName}
+        employerReference={employerReference}
+      />
       {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={closeOperatingDocument} onOpenWork={() => { closeOperatingDocument(); openMyWork(); }}
         onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects', { fromStrategy: operatingDocumentClass === 'STRATEGY' }); }}
         onOpenProject={(projectId, focus = null) => {
@@ -1838,7 +1836,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.22.5-PEOPLE-FOOTER-VIEWPORT-GRID
+ * VERSION: v4.22.6-UNIFIED-SYSTEM-FOOTER
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
