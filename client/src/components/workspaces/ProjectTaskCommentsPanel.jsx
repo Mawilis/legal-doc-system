@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES
+ * VERSION: v1.20.2-COMPACT-GOVERNED-ACTIVITY
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.20.2-COMPACT-GOVERNED-ACTIVITY keeps secondary filters under explicit disclosure, reduces card spacing, and identifies immutable audited comment corrections without new commands.
  * CHANGELOG: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES preserves accessible category button names independent of changing source-page counts; counts remain visually readable.
  * CHANGELOG: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS introduces page-scoped counts, mine/date filters, order switching, day grouping and natural-language actor events without changing EOS authority.
  * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters and text search over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
@@ -271,6 +272,7 @@ export default function ProjectTaskCommentsPanel({
   const [activityFilter, setActivityFilter] = useState('ALL');
   const [activityQuery, setActivityQuery] = useState('');
   const [activityMineOnly, setActivityMineOnly] = useState(false);
+  const [showAdvancedActivityFilters, setShowAdvancedActivityFilters] = useState(false);
   const [activityDateRange, setActivityDateRange] = useState('ALL');
   const [activitySort, setActivitySort] = useState('NEWEST');
   const [showTaskEvidence, setShowTaskEvidence] = useState(false);
@@ -841,7 +843,19 @@ export default function ProjectTaskCommentsPanel({
           </p>
         </div>
       </div>
-      <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="mb-2 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
+        <button type="button" aria-expanded={showAdvancedActivityFilters}
+          aria-controls="activity-secondary-filters"
+          onClick={() => setShowAdvancedActivityFilters(value => !value)}
+          className={'min-h-9 rounded-md border px-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+            + (showAdvancedActivityFilters || activeSecondaryFilters
+              ? 'border-blue-300 bg-blue-50 text-blue-900'
+              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50')}>
+          {showAdvancedActivityFilters ? 'Hide filters' : 'More filters'}{activeSecondaryFilters ? ' · Active' : ''}
+        </button>
+        <span className="text-[11px] text-slate-600">Source-page filters only</span>
+        <div id="activity-secondary-filters" className={'flex flex-wrap items-center gap-2 '
+          + (showAdvancedActivityFilters ? '' : 'hidden')}>
         <button type="button" aria-pressed={activityMineOnly} onClick={() => setActivityMineOnly(value => !value)}
           className={'min-h-9 rounded-md border px-3 text-xs font-semibold ' + (activityMineOnly
             ? 'border-blue-700 bg-blue-50 text-blue-900' : 'border-slate-300 bg-white text-slate-700')}>
@@ -869,14 +883,14 @@ export default function ProjectTaskCommentsPanel({
           onClick={() => { setActivityMineOnly(false); setActivityDateRange('ALL'); setActivityQuery(''); }}>
           Clear filters
         </button>}
-        <span className="ml-auto text-[11px] text-slate-600">Filters apply only to loaded EOS pages</span>
+        </div>
       </div>
-      <ol className="space-y-2" aria-label="Source-verified task activity">
+      <ol className="space-y-1.5" aria-label="Source-verified task activity">
         {visibleActivity.map((entry, index) => <React.Fragment key={entry.id}>
           {(index === 0 || dayFor(visibleActivity[index - 1].time) !== dayFor(entry.time)) &&
             <li className="border-b border-slate-200 pb-1 pt-2 text-xs font-semibold text-slate-600"
               aria-label={'Activity dated ' + dayFor(entry.time)}>{dayFor(entry.time)}</li>}
-          <li className="relative min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm">
+          <li className="relative min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
             <strong className="min-w-0 break-words text-sm font-semibold text-slate-900">
               {entry.type === 'comment' ? displayActor(entry.actor) + ' posted a progress update'
@@ -914,7 +928,8 @@ export default function ProjectTaskCommentsPanel({
             && Date.now() >= Date.parse(entry.item.created_at)
             && Date.now() - Date.parse(entry.item.created_at) <= 30 * 60 * 1000
             && <button type="button" disabled={busy}
-              className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-xs font-semibold text-blue-800 underline hover:bg-blue-50"
+              className="mt-2 inline-flex min-h-9 items-center rounded-md border border-amber-300 bg-amber-50 px-2.5 text-xs font-semibold text-amber-950 hover:border-amber-500 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700"
+              title="Append a reasoned correction; the original EOS record stays immutable"
               onClick={() => {
                 setCorrection({ comment_id: entry.item.comment_id,
                   fingerprint: entry.item.fingerprint, body: entry.item.body });
@@ -925,7 +940,7 @@ export default function ProjectTaskCommentsPanel({
                 setShowTaskEvidence(false);
                 setError('');
                 command.current = { fingerprint: '', key: '' };
-              }}>Correct entry</button>}
+              }}>Correct entry · audited</button>}
           {entry.type === 'comment' && entry.item.author_principal_id === principalId
             && Number.isFinite(Date.parse(entry.item.created_at))
             && Date.now() - Date.parse(entry.item.created_at) > 30 * 60 * 1000
@@ -989,7 +1004,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES
+// VERSION: v1.20.2-COMPACT-GOVERNED-ACTIVITY
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
