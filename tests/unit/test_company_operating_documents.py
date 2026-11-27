@@ -1,14 +1,15 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.5.4-OWNER-READ-REASON-CERT
+VERSION: v1.5.5-OWNER-READ-REASON-BRANCH-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
 CERTIFICATION / UPDATE DATE: 2026-11-15
-CHANGELOG: v1.5.4-OWNER-READ-REASON-CERT maintains non-disclosing bounded reason for non-owner or synthetic capacity while the existing read-admission contracts stay unchanged.
-CHANGELOG: v1.5.4-OWNER-READ-REASON-CERT independently verifies the read/Projects and optional author/publisher HTTP results for one authenticated selected Owner session with no grants or source reads.
-CHANGELOG: v1.5.4-OWNER-READ-REASON-CERT
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT verifies exact canonical read-denial outcomes only for the synthetic current Owner with independently authorized Projects read.
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT maintains non-disclosing bounded reason for non-owner or synthetic capacity while the existing read-admission contracts stay unchanged.
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT independently verifies the read/Projects and optional author/publisher HTTP results for one authenticated selected Owner session with no grants or source reads.
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT
 tests source-bound Founder Pillar 1 link replay and revoked-proof denial.
 CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
 tests current Founder HTTP lifecycle across draft, submission, immutable
@@ -600,6 +601,48 @@ def test_strategy_live_http_authority_check_separates_required_and_optional(
     }
 
 
+@pytest.mark.parametrize("denial_reason", [
+    "PERMISSION_NOT_GRANTED",
+    "ROLE_ASSIGNMENT_INACTIVE",
+    "BUSINESS_ROLE_INELIGIBLE",
+])
+def test_owner_strategy_http_denial_reason_is_from_canonical_composer(
+    monkeypatch, denial_reason,
+):
+    """Current owner with Projects read receives only bounded exact IAM reason."""
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http.get_current_identity] = lambda: SimpleNamespace(
+        principal_scope="GLOBAL", tenant_id=TENANT,
+        identity_id="synthetic-founder", roles=("tenant_owner",),
+    )
+    app.dependency_overrides[http._STRATEGY_READ_CHECK] = lambda: None
+    app.dependency_overrides[http._PROJECT_DETAIL_CHECK] = lambda: object()
+    app.dependency_overrides[http._PROJECT_LIST_CHECK] = lambda: object()
+    app.dependency_overrides[http._MAY_AUTHOR] = lambda: None
+    app.dependency_overrides[http._MAY_PUBLISH] = lambda: None
+    monkeypatch.setattr(http, "get_role_assignment_repository", lambda: object())
+    monkeypatch.setattr(http, "get_principal_authority_repository", lambda: object())
+    monkeypatch.setattr(http, "get_tenant_membership_repository", lambda: object())
+    def decide(**kwargs):
+        assert kwargs["principal_id"] == "synthetic-founder"
+        assert kwargs["tenant_id"] == TENANT
+        assert kwargs["selected_business_role"] == "tenant_owner"
+        assert kwargs["operation"] == "company_operating_document_read"
+        return SimpleNamespace(
+            authorized=False, reason=SimpleNamespace(value=denial_reason),
+        )
+    monkeypatch.setattr(http, "authorize_tenant_operation", decide)
+    response = TestClient(app).get(
+        "/api/company-operating-documents/STRATEGY/authority-check",
+    )
+    assert response.status_code == 200
+    assert response.json()["document_read"] == "DENIED"
+    assert response.json()["document_read_reason"] == denial_reason
+    assert response.json()["grant_issued"] is False
+
+
 def test_strategy_authority_check_preserves_source_unavailability() -> None:
     app = FastAPI()
     app.include_router(http.router, prefix="/api")
@@ -655,7 +698,7 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.5.4-OWNER-READ-REASON-CERT
+# VERSION: v1.5.5-OWNER-READ-REASON-BRANCH-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.
