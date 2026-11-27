@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS tenant-scoped headcount requisition HTTP commands.
-VERSION: v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW
+VERSION: v1.4.1-M03-SOURCE-STATUS-TYPE-NARROWING
 AUTHORITY: Python EOS tenant authorization and headcount registry composition.
 EPITOME: Exposes exact-tenant requisition read, creation, submission and independent
          decision routes over the canonical transactional headcount registry.
@@ -7,9 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/he
 COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py under /api.
 CERTIFICATION / UPDATE DATE: 2026-11-15.
 CHANGELOG:
-  v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW — Adds role-gated exact-tenant paginated Headcount Overview,
+  v1.4.1-M03-SOURCE-STATUS-TYPE-NARROWING — Narrows the typed source-owned requisition status before
+  serializing the bounded Overview projection; does not change authority.
+  v1.4.1-M03-SOURCE-STATUS-TYPE-NARROWING — Adds role-gated exact-tenant paginated Headcount Overview,
   with source-owned status, transactional total and safe field projection.
-  v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW — Adds an internal, read-only, source-owned
+  v1.4.1-M03-SOURCE-STATUS-TYPE-NARROWING — Adds an internal, read-only, source-owned
   minimal action projection for Unified My Work. It emits no position,
   department, justification, headcount, approver, or requester data and is
   callable only after the aggregate independently admits this route's current
@@ -248,7 +250,7 @@ async def read_headcount_overview(
             "department_id": value.department_id,
             "work_location": value.work_location,
             "headcount": value.headcount,
-            "status": value.status.value,
+            "status": value.status.value if isinstance(value.status, RequisitionStatus) else str(value.status),
             "revision": value.revision,
         } for value in records],
     }
@@ -389,7 +391,7 @@ __all__ = [
 
 
 # ARTIFACT: headcount_requisition_router.py
-# VERSION: v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW
+# VERSION: v1.4.1-M03-SOURCE-STATUS-TYPE-NARROWING
 # AUTHORITY BOUNDARY: Existing exact-tenant EOS IAM; separately assigned platform-employer permissions apply only to canonical WILSY. Customer HR still requires active HR entitlement. No offer acceptance, employee admission, IAM provisioning, payroll, payment, execution, settlement, or entitlement grant.
 # TENANT POSTURE: Authenticated exact tenant scope on every read, command, replay, and aggregate lookup; platform-employer pair selection is exact-WILSY only.
 # FAIL-CLOSED POSTURE: Missing authority, entitlement, stale revision, duplicate replay, transaction failure, or invalid request never reports success.
