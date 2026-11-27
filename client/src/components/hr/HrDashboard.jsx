@@ -4306,7 +4306,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                     const empty = verified && metric.total === 0;
                     return <button key={metric.title} type="button" className={styles.peopleKpi}
                       onClick={() => changeTab(metric.action)}
-                      aria-label={\`\${metric.title}: \${verified ? metric.total : 'not currently verified'}. Open \${metric.note}\`}
+                      aria-label={`${metric.title}: ${verified ? metric.total : 'not currently verified'}. Open ${metric.note}`}
                       style={{minHeight:106,outlineOffset:2,borderStyle:empty ? 'dashed' : 'solid',background:empty ? '#f9fbfe' : '#fff',transition:'border-color 150ms ease,background 150ms ease'}}>
                       <span style={{color:'#243e60'}}>{metric.title}</span>
                       <strong style={{color:'#112f53'}}>{verified ? metric.total : '—'}</strong>
@@ -4358,7 +4358,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                           style={{padding:'7px 11px',borderRadius:7,border:'1px solid #bacadd',fontSize:12,fontWeight:650,
                             background:peopleQueueFilter === filter.id ? '#173c70' : '#fff',
                             color:peopleQueueFilter === filter.id ? '#fff' : '#173c70'}}>
-                          {filter.label}{filter.id === 'all' ? \` · \${items.length}\` : ''}
+                          {filter.label}{filter.id === 'all' ? ` · ${items.length}` : ''}
                         </button>)}
                       </div>
                       {visible.length === 0 ? <div className={styles.queueEmpty} role="status" style={{padding:'16px 18px',borderStyle:'solid'}}>
@@ -4418,7 +4418,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                         : source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED ? 'Sign in required'
                         : 'Verifying';
                       return <button key={source.id} type="button" onClick={() => changeTab(source.id)}
-                        aria-label={\`Open \${source.label} source: \${statusLabel}\`}
+                        aria-label={`Open ${source.label} source: ${statusLabel}`}
                         style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',alignItems:'center',gap:12,
                           padding:'11px 14px',background:'#fff',border:'1px solid #cbd7e6',borderRadius:9,color:'#173457',
                           textAlign:'left',width:'100%',outlineOffset:2}}>
