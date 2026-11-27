@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Unified Task Header
- * VERSION: v1.1.0-SHARED-EOS-STATUS-COLOURS
+ * VERSION: v1.1.1-SHARED-EOS-STATUS-GOVERNANCE
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: One task-detail header used by Projects and My Work without changing
  *          EOS source ownership or granting any task action.
@@ -8,12 +8,14 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel, MyWorkWorkspace and Python EOS
  *                              source-owned task service adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.1.1-SHARED-EOS-STATUS-GOVERNANCE restores the explicit sovereign authority boundary for the shared header without changing UI behavior.
  * CHANGELOG: v1.1.0-SHARED-EOS-STATUS-COLOURS uses the same source-state semantic badge as Projects rows and People on shared task details across My Work, Calendar and Daily Attention.
  * CHANGELOG: v1.0.0-CANONICAL-SOURCE-NEUTRAL-TASK-PRESENTATION establishes one
  *            responsive, accessible task header shared by Projects and My Work.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Presentation-only, no network access or data persistence.
  * TENANT BOUNDARY: Caller independently validates tenant/principal/source scope.
+ * AUTHORITY BOUNDARY: Presentation-only; no task state, permission, grant, or execution authority.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
  */
 import React from 'react';
@@ -47,7 +49,7 @@ export default function UnifiedTaskHeader({
 
 /*
  * ARTIFACT: UnifiedTaskHeader.jsx
- * VERSION: v1.1.0-SHARED-EOS-STATUS-COLOURS
+ * VERSION: v1.1.1-SHARED-EOS-STATUS-GOVERNANCE
  * AUTHORITY BOUNDARY: Shared UI only; all commands remain source-owned.
  * TENANT POSTURE: Caller validates exact tenant, principal and source identity.
  * FAIL-CLOSED POSTURE: No actions or authority created by this presentation component.
