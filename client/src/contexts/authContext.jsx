@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.6.0-GOVERNED-GLOBAL-TENANT-CAPACITY-SELECTION
+ * VERSION: v58.6.1-GLOBAL-TENANT-SESSION-REVOCATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -13,9 +13,10 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: 2026-11-27 v58.6.1-GLOBAL-TENANT-SESSION-REVOCATION routes explicitly selected Global Principal tenant logout to the existing exact-session EOS global revocation endpoint, without altering authority or legacy signout.
  * CHANGELOG: 2026-11-27 v58.6.0-GOVERNED-GLOBAL-TENANT-CAPACITY-SELECTION implements opt-in global tenant membership and business capacity selection through EOS challenge/MFA, with no client-created grants, tenant fallbacks, or session promotion before workspace readback.
  * CHANGELOG: 2026-11-20 v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION accepts only an EOS-source-verified exact Founder institutional title, never an IAM grant or login payload.
- * CHANGELOG: 2026-11-15 v58.6.0-GOVERNED-GLOBAL-TENANT-CAPACITY-SELECTION adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
+ * CHANGELOG: 2026-11-15 v58.6.1-GLOBAL-TENANT-SESSION-REVOCATION adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
  * CHANGELOG: 2026-11-14 v58.2.0-CURRENT-EOS-SESSION-REFRESH adds one in-flight
  *            provider-owned EOS refresh and same-workspace revalidation;
  *            superseded refreshes cannot publish or clear another session.
@@ -1019,6 +1020,11 @@ export const AuthProvider = ({ children }) => {
       throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
     }
 
+    // A transport origin flag selects the proper EOS revocation route only.
+    // It never carries authorization role, permission or tenant authority.
+    const promotedUser = session.globalTenantSession === true
+      ? { ...authoritative.user, globalTenantSession: true }
+      : authoritative.user;
     // Only the READY server-owned projection may establish browser authority.
     anchorCanonicalBearer(candidateToken);
     setActiveTenantTransportId(authoritative.user.tenantId);
@@ -1027,7 +1033,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', candidateToken);
     localStorage.setItem(
       'wilsy_sovereign_user',
-      JSON.stringify(authoritative.user),
+      JSON.stringify(promotedUser),
     );
     localStorage.setItem(
       'wilsy_active_tenant',
@@ -1041,14 +1047,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     setToken(candidateToken);
-    setUser(authoritative.user);
+    setUser(promotedUser);
     setTenant(authoritative.tenant);
     setAuthStage(AUTH_STATES.AUTHENTICATED);
     emitAuthState(AUTH_STATES.AUTHENTICATED);
 
     return {
       token: candidateToken,
-      user: authoritative.user,
+      user: promotedUser,
       tenant: authoritative.tenant,
     };
   }, [ensureCurrent, readWorkspace, tenant]);
@@ -1418,6 +1424,7 @@ export const AuthProvider = ({ children }) => {
           user: { id: data.principal_id, email: targetEmail },
           refreshToken: data.refresh_token,
           expectedBusinessRole: globalSelectedCapacity.role,
+          globalTenantSession: true,
         }, targetEmail, epoch);
         setGlobalMfaChallenge(null);
         setGlobalSelectedCapacity(null);
@@ -1524,7 +1531,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     const previousToken = token;
-    const path = user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout';
+    const path = user?.systemServicesWorkspace || user?.globalTenantSession === true
+      ? '/auth/global/logout' : '/auth/logout';
     invalidateSession();
     setTenant(readPersistedDiscoveredTenant());
     setAuthStage(AUTH_STATES.IDLE);
@@ -1614,7 +1622,7 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.6.0-GOVERNED-GLOBAL-TENANT-CAPACITY-SELECTION
+ * VERSION: v58.6.1-GLOBAL-TENANT-SESSION-REVOCATION
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
