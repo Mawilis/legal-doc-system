@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS First HR Leadership Headcount Command
- * VERSION: v1.1.0-HEADCOUNT-SUBMIT-TO-INDEPENDENT-REVIEW
+ * VERSION: v1.1.1-WEBCRYPTO-REPLAY-IDEMPOTENCY
  * AUTHORITY: Existing Python EOS HeadcountRequisitionRouter only.
  * EPITOME: Source-verified headcount request creation for the first HR Director
  *          and Manager without asserting approval or employee admission.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/FounderHeadcountStart.jsx
  * COLLABORATION / OWNERSHIP: HrDashboard authenticated scope and source readback.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.1.1-WEBCRYPTO-REPLAY-IDEMPOTENCY uses native WebCrypto entropy for replay keys without depending on randomUUID support in embedded browser/test runtimes; no noncryptographic fallback.
  * CHANGELOG: v1.1.0-HEADCOUNT-SUBMIT-TO-INDEPENDENT-REVIEW adds an existing-requisition submit command with revision CAS, exact source response and independent reviewer boundary.
  * CHANGELOG: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK preserves accepted command truth when subsequent list refresh is unavailable; never represents a failed refresh as a failed submission.
  * CHANGELOG: v1.0.0-FOUNDER-FIRST-HR-HEADCOUNT wires a compact governed first-
@@ -29,6 +30,13 @@ const EMPTY = Object.freeze({
   headcount: 1,
   business_justification: '',
 });
+const issueReplayKey = () => {
+  if (!globalThis.crypto || typeof globalThis.crypto.getRandomValues !== 'function') {
+    throw new Error('CRYPTOGRAPHIC_IDEMPOTENCY_UNAVAILABLE');
+  }
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  return 'hr-' + Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+};
 const safeCode = error => {
   const detail = error?.response?.data?.detail;
   const code = typeof detail === 'string' ? detail : error?.response?.status;
@@ -69,7 +77,7 @@ export default function FounderHeadcountStart({ tenantId, admitted, onCreated })
       setStatus({ kind: 'ERROR', text: 'All requisition fields are required.' });
       return;
     }
-    if (!keyRef.current) keyRef.current = crypto.randomUUID();
+    if (!keyRef.current) keyRef.current = issueReplayKey();
     const requestedTenant = tenantId;
     inFlight.current = true;
     setStatus({ kind: 'PENDING', text: 'Submitting one governed draft requisition…' });
@@ -189,7 +197,7 @@ export function HeadcountDraftSubmit({ tenantId, admitted, requisition, onSubmit
     if (!admitted || inFlight.current || !tenantId
         || !/^REQ-[A-F0-9]{24}$/.test(String(requisition.id))
         || !Number.isSafeInteger(requisition.revision) || requisition.revision < 1) return;
-    if (!keyRef.current) keyRef.current = crypto.randomUUID();
+    if (!keyRef.current) keyRef.current = issueReplayKey();
     inFlight.current = true;
     const requestedTenant = tenantId;
     setState({ kind: 'PENDING', text: 'Submitting for independent review…' });
@@ -236,7 +244,7 @@ export function HeadcountDraftSubmit({ tenantId, admitted, requisition, onSubmit
 }
 
 /* ARTIFACT: client/src/components/hr/FounderHeadcountStart.jsx
- * VERSION: v1.1.0-HEADCOUNT-SUBMIT-TO-INDEPENDENT-REVIEW
+ * VERSION: v1.1.1-WEBCRYPTO-REPLAY-IDEMPOTENCY
  * AUTHORITY BOUNDARY: Authenticated EOS draft requisition only.
  * TENANT POSTURE: Verified tenant-bound request and response; never a fallback.
  * FAIL-CLOSED POSTURE: No approval or employee existence inferred.
