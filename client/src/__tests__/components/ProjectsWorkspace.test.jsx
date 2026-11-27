@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.81.0-COMPLETED-SERVER-QUERY-CERT
+ * VERSION: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT
+ * CHANGELOG: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT retains approved 44px mobile action targets and validates actor-based activity semantics without weakening source-history assertions.
  * CHANGELOG: v2.81.0-COMPLETED-SERVER-QUERY-CERT verifies completed-only EOS source query and immutable event metadata across source pagination, retaining task detail and selection semantics.
  * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
  * CHANGELOG: v2.80.1-PORTABLE-CSS-SOURCE-CERT reads exact stylesheet through Vite raw assets rather than Node fs/path built-ins, retaining both CSS rule assertions and supporting local Vitest module loading.
@@ -769,7 +770,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(row.querySelector('details')).toBeNull();
     expect(row.querySelector('.hidden')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'More actions for Compact deliverable' }))
-      .toHaveClass('min-h-9');
+       .toHaveClass('min-h-11', 'md:min-h-9');
   });
 
   it('renders due today, tomorrow and overdue without rewriting the source dates', () => {
@@ -1559,18 +1560,18 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByRole('dialog', { name: /Work details:/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Write update' })).toHaveAttribute('aria-expanded', 'false');
     expect(document.querySelector('[aria-label="Verified task activity history"]')).toBeVisible();
-    expect(await screen.findByText('Work created')).toBeVisible();
-    expect(await screen.findByText('Evidence attached')).toBeVisible();
+    expect(await screen.findByText(/created this work/)).toBeVisible();
+    expect(await screen.findByText(/attached evidence/)).toBeVisible();
     expect(screen.getByText('Recent progress')).toBeVisible();
     const history = document.querySelector('[aria-label="Verified task activity history"]');
-    await waitFor(() => expect(history.querySelectorAll('li')).toHaveLength(5));
-    const entries = [...history.querySelectorAll('li')];
+    await waitFor(() => expect(history.querySelectorAll('li.relative')).toHaveLength(5));
+    const entries = [...history.querySelectorAll('li.relative')];
     expect(entries.map(item => item.textContent)).toEqual([
-      expect.stringContaining('Evidence attached'),
-      expect.stringContaining('Decision · approved'),
+      expect.stringContaining('attached evidence'),
+      expect.stringContaining('recorded a decision · approved'),
       expect.stringContaining('Recent progress'),
-      expect.stringContaining('Approval requested'),
-      expect.stringContaining('Work created'),
+      expect.stringContaining('requested approval'),
+      expect.stringContaining('created this work'),
     ]);
     expect(screen.getAllByRole('button', { name: 'Open governed decision' })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Open governed attachment' })).toBeVisible();
@@ -3008,7 +3009,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.81.0-COMPLETED-SERVER-QUERY-CERT
+ * VERSION: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
