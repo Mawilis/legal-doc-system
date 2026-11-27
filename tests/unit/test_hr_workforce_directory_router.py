@@ -1,3 +1,23 @@
+"""TITLE: WILSY OS authenticated workforce directory and Overview HTTP certificate.
+VERSION: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT
+AUTHORITY: WILSY OS Core Governance; regression evidence only.
+EPITOME: Certifies exact-tenant, independently IAM-bound workforce directory and
+         single-aggregation Overview, denied-before-read, and PII exclusion.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_workforce_directory_router.py
+COLLABORATION / OWNERSHIP: Canonical Python EOS workforce router and its tests.
+CERTIFICATION / UPDATE DATE: 2026-11-27.
+CHANGELOG: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT corrects the single-aggregation test contract and
+           supplies institutional header and sovereign end seal.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic employees only; bank and identity
+                             attributes must never appear in response.
+TENANT BOUNDARY: Exact principal-derived tenant; hostile query/header never
+                 influences authorized Mongo match.
+AUTHORITY BOUNDARY: Tests override dependency for isolated route certification;
+                    production route retains RequireTenantAuthorization.
+FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS exclusively.
+"""
+
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -151,7 +171,10 @@ def test_overview_uses_same_exact_tenant_and_never_exposes_employee_pii(
     assert body["tenant_id"] == "WILSYTENANT-4CD2FZ4O"
     assert body["metrics"] == {"active_employees": 1, "departments": 1}
     assert body["source"] == "AUTHORISED_HR_EMPLOYEE_REGISTRY"
-    assert collection.query == collection.distinct_query == {
+    # Overview now uses a single match/group aggregation; count_documents is
+    # deliberately not called (that would read a second unsynchronized view).
+    assert collection.query is None
+    assert collection.distinct_query == {
         "tenantId": "WILSYTENANT-4CD2FZ4O",
         "isActive": True, "deletedAt": None,
     }
@@ -181,3 +204,12 @@ def test_overview_denied_principal_cannot_read_employee_counts(
     response = TestClient(app).get("/api/hr/workforce/overview")
     assert response.status_code == 403
     assert response.json() == {"detail": "HR_READ_DENIED"}
+
+
+# ARTIFACT: tests/unit/test_hr_workforce_directory_router.py
+# VERSION: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT
+# AUTHORITY BOUNDARY: Regression tests cannot grant HR or tenant IAM authority.
+# TENANT POSTURE: Synthetic exact-tenant cases and explicit cross-scope denial.
+# FAIL-CLOSED POSTURE: Missing source and denied authorization never return employee counts.
+# FINANCIAL EXECUTION AUTHORITY: None; Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
