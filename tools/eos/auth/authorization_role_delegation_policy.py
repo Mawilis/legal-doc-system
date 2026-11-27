@@ -6,14 +6,14 @@ EPITOME: Pure, deterministic, fail-closed tenant-local delegation authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/authorization_role_delegation_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 SECURITY / PRIVACY POSTURE: No persistence, secrets, network, or caller permission trust.
-TENANT BOUNDARY: Inviter assignment and target tenant must match exactly; admission-officer, company-document-reader and Projects Platform Owner grants are confined to the canonical WILSY company tenant.
+TENANT BOUNDARY: Inviter assignment and target tenant must match exactly; admission-officer, company-document-reader and Projects Platform Owner and HR Manager grants are confined to the canonical WILSY company tenant.
 AUTHORITY BOUNDARY: RoleAssignmentAuthority evidence only; no lifecycle mutation.
 FINANCIAL AUTHORITY BOUNDARY: No financial or Kennel execution authority.
 TRANSACTION BOUNDARY: Pure evaluator; caller owns orchestration and sessions.
-CERTIFICATION / UPDATE DATE: 2026-11-14
+CERTIFICATION / UPDATE DATE: 2026-11-27
 CHANGELOG:
     v1.5.0-CANONICAL-FOUNDER-HR-MANAGER-DELEGATION admits a same-tenant ENTERPRISE_ADMIN -> HR_MANAGER invitation edge for the exact canonical WILSY employer only. Existing invitation acceptance, identity and source-role checks still govern issuance; HR_DIRECTOR and payroll/admission roles remain excluded.
-    v1.4.0-WILSY-CONTRIBUTOR-SELF-ADMISSION-EDGE permits    2026-11-22 v1.5.0-CANONICAL-FOUNDER-HR-MANAGER-DELEGATION permits an already ACTIVE same-tenant ENTERPRISE_ADMIN inviter to issue a short-lived invitation for PROJECTS_PARTICIPANT_CONTRIBUTOR only in the canonical WILSY company tenant. The caller must separately verify exact-project contributor participation and recipient identity, accept the invitation and read back active role before any attachment use. No role inheritance or silent grants.
+    2026-11-22 v1.4.0-WILSY-CONTRIBUTOR-SELF-ADMISSION-EDGE permits an already ACTIVE same-tenant ENTERPRISE_ADMIN inviter to issue a short-lived invitation for PROJECTS_PARTICIPANT_CONTRIBUTOR only in the canonical WILSY company tenant. The caller must separately verify exact-project contributor participation and recipient identity, accept the invitation and read back active role before any attachment use. No role inheritance or silent grants.
     2026-11-16 v1.3.0-PROJECTS-PLATFORM-OWNER-DELEGATION permits the existing same-tenant ENTERPRISE_ADMIN delegation path to issue an invitation for the separately assignable Projects Platform Owner role only inside the canonical WILSY company tenant. Invitation acceptance remains required; no direct or automatic assignment occurs.
     2026-11-14 v1.2.0-COMPANY-DOCUMENT-READER-DELEGATION permits only ENTERPRISE_ADMIN to
     delegate COMPANY_DOCUMENT_READER in the canonical WILSY company tenant.
