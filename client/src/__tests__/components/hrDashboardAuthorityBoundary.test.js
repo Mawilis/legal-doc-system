@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION
+ * VERSION: v1.8.7-BOUNDED-INDEPENDENT-PEOPLE-READS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.8.7-BOUNDED-INDEPENDENT-PEOPLE-READS asserts the Overview's independent source reads and strictly selected-source navigation without redundant HR fanout per search keystroke.
  *   v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION certifies the existing safe employee-admission-denial command instead of incorrectly treating its protective text as a legacy UI regression.
  *   v1.8.5-GLOBAL-PEOPLE-SEARCH-CONTEXT-CERT verifies the global header and command overlay switch to functional People navigation rather than retaining generic work search.
  *   v1.8.4-READ-SCOPE-NOT-DECISION-AUTHORITY prevents treating readable submitted requisitions as the current operator's approval grant; command authority remains EOS-owned.
@@ -287,10 +288,12 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(dashboard).toContain('Founder designation alone does not grant HR authority.');
     expect(dashboard).not.toContain('24 / 28 Planned');
     expect(dashboard).not.toContain('Onboard Naledi');
-    expect(dashboard).toContain("const sourceTab = activeTab === 'overview' ? 'employees'");
-    expect(dashboard).toContain("Object.prototype.hasOwnProperty.call(pageStates, activeTab) ? activeTab : null");
-    expect(dashboard).toContain('const reads = sourceTab');
-    expect(dashboard).toContain('if (sourceTab && sourceTab !==');
+    expect(dashboard).toContain("const sourceTab = Object.prototype.hasOwnProperty.call(pageStates, activeTab)");
+    expect(dashboard).toContain("const reads = activeTab === 'overview'");
+    expect(dashboard).toContain("fetchTabData('jobOpenings', pageStates.jobOpenings, '')");
+    expect(dashboard).toContain('? activeTab : null;');
+    expect(dashboard).toContain(': sourceTab ? [fetchTabData(sourceTab, pageStates[sourceTab], searchTerm)] : [];');
+    expect(dashboard).toContain('Each non-Overview lane reads only its own independently authorized');
     expect(dashboard).toContain("id: 'onboarding', title: 'Onboarding'");
     expect(dashboard).toContain("id: 'exit', title: 'Exit'");
   });
@@ -311,7 +314,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION
+ * VERSION: v1.8.7-BOUNDED-INDEPENDENT-PEOPLE-READS
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
