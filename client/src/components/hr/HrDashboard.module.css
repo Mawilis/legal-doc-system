@@ -1363,3 +1363,22 @@
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
+
+
+/* Compact People application chrome: global OS shell already carries the brand. */
+.peopleAppHeader { padding: 7px clamp(12px, 1.5vw, 24px) 0; }
+.peopleToolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 38px; }
+.peopleHeaderIdentity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.peopleTitleGroup { display: flex; align-items: baseline; gap: 10px; min-width: 0; white-space: nowrap; }
+.peopleSurface .peopleTitleGroup .peopleHeading { font-size: 18px; line-height: 1.25; font-weight: 750; margin: 0; }
+.peopleLifecycleLabel { font-size: 12px; font-weight: 500; color: #a9bad1; }
+.peopleToolbarActions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
+.peopleAppHeader .peopleRefreshButton { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; }
+.peopleAppHeader .peopleReturnButton { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; }
+.peopleNav { margin-top: 2px; padding-bottom: 2px; }
+.peopleNavButton, .peopleNavActive { min-height: 34px; padding: 6px 10px; }
+@media (max-width: 620px) {
+  .peopleLifecycleLabel { display: none; }
+  .peopleToolbar { min-height: 38px; }
+  .peopleSurface .peopleTitleGroup .peopleHeading { font-size: 17px; }
+}
