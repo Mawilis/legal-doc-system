@@ -212,10 +212,11 @@ def test_headcount_overview_page_uses_exact_tenant_and_transactional_total():
 
     current = PagedCollection()
     for i in range(5):
-        value = make_requisition()
-        row = value.to_dict()
-        row["requisition_id"] = f"REQ-{i:03d}"
-        current.rows.append(row)
+        template = make_requisition()
+        value = HeadcountRequisition(
+            **{**template.to_dict(), "requisition_id": f"REQ-{i:03d}", "fingerprint": ""}
+        )
+        current.rows.append(value.to_dict())
     foreign = make_requisition("OTHER-TENANT").to_dict()
     current.rows.append(foreign)
     registry = HeadcountRequisitionRegistry(current, Collection())
