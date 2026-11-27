@@ -316,6 +316,25 @@ def test_authenticated_verification_rate_and_internal_failures_are_bounded(servi
     assert "temporarily unavailable" in internal.text.lower()
 
 
+def test_verification_dependency_construction_failure_is_bounded_503(
+    service_doubles, monkeypatch,
+) -> None:
+    """Absent SMTP or trusted origin must fail closed, never leak secrets or 500."""
+    def unavailable_factory():
+        raise RuntimeError("RECOVERY_EMAIL_CONFIGURATION_MISSING")
+
+    monkeypatch.setattr(
+        auth_router, "_recovery_contact_verification_request_service",
+        unavailable_factory,
+    )
+    result = _request("POST", VERIFY_REQUEST_PATH)
+    assert result.raised is None
+    assert result.status_code == 503
+    assert "temporarily unavailable" in result.text.lower()
+    assert "CONFIGURATION_MISSING" not in result.text
+    _assert_secret_free(result)
+
+
 def test_verification_completion_success_is_bodyless_204(service_doubles) -> None:
     _, _, completion = service_doubles
 
