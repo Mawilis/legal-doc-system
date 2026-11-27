@@ -3,20 +3,21 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.3.1-HR01-DENIED-UNAVAILABLE-CONTRAST
+ * Version:        v2.4.0-PROTOTYPE-GROUNDED-PEOPLE-APP
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
- * Change log: 2026-11-27 v2.3.1-HR01-DENIED-UNAVAILABLE-CONTRAST aligns
+ * Change log: 2026-11-27 v2.4.0-PROTOTYPE-GROUNDED-PEOPLE-APP aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.3.1-HR01-DENIED-UNAVAILABLE-CONTRAST
+ * VERSION: v2.4.0-PROTOTYPE-GROUNDED-PEOPLE-APP
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
  * COLLABORATION / OWNERSHIP: HR People workspace and shared WILSY OS design system.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.4.0-PROTOTYPE-GROUNDED-PEOPLE-APP recreates prototype-inspired navy People application layout, compact gold navigation, verified activity and responsive lifecycle overview inside the sole WILSY OS shell.
  * CHANGELOG: v2.3.1-HR01-DENIED-UNAVAILABLE-CONTRAST distinguishes red denied from amber unavailable with readable headlines and text.
  * CHANGELOG: v2.3.0-HR01-SCOPED-CONTRAST-FIX enforces high-contrast notice titles, input/search placeholders and heading colours in the live People view, overriding legacy inherited palette only within People.
  * CHANGELOG: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY removes the legacy black/gold HR modal surface while retaining source-controlled input and button semantics.
@@ -1119,8 +1120,162 @@
   outline-offset: 2px;
 }
 
+
+/* Prototype-grounded People application ownership. The canonical WILSY OS
+   identity/logo lives in the globally mounted shell; People supplies contextual
+   work navigation, actual source records and the employer lifecycle. */
+.peopleSurface {
+  min-height: calc(100dvh - 166px);
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  background: #0a1931 !important;
+  color: #f4f0e6 !important;
+  color-scheme: dark;
+  font-family: Inter, "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+}
+.peopleAppHeader {
+  background: #0a1931;
+  border-bottom: 1px solid #334e78;
+  padding: clamp(15px,2vw,26px) clamp(16px,2.2vw,34px) 10px;
+  color: #f4f0e6;
+}
+.peopleSurface .peopleHeading {
+  color: #f4f0e6 !important;
+  letter-spacing: -.025em;
+}
+.peopleSurface .eyebrow {
+  color: #dfb95f !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.peopleAppHeader p:not(.eyebrow) { color: #b5c5dd; }
+.peopleAppHeader button:not(.peopleNavActive):not(.peopleNavButton) {
+  color: #f4f0e6 !important;
+  background: #173659 !important;
+  border: 1px solid #496482 !important;
+  border-radius: 8px;
+}
+.peopleAppHeader button:focus-visible,
+.peopleSurface button:focus-visible {
+  outline: 3px solid #eac36f !important;
+  outline-offset: 3px;
+}
+.peopleNav {
+  display: flex;
+  gap: 3px;
+  margin-top: 16px;
+  padding: 0 0 7px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #547292 transparent;
+}
+.peopleNavButton,
+.peopleNavActive {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  background: transparent;
+  color: #c5d2e6;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  min-height: 39px;
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.peopleNavButton:hover { color: white; background: #193355; }
+.peopleNavActive {
+  color: #10213e;
+  background: #d2ae67;
+  border-color: #f3d58d;
+  box-shadow: inset 0 0 0 1px #122944;
+}
+.peopleMain {
+  background: #0a1931;
+  flex: 1;
+  padding: 16px clamp(16px,2.2vw,34px) 32px;
+  min-width: 0;
+}
+.overview { display: grid; gap: 24px; max-width: 1600px; margin: 0 auto; }
+.overviewIntro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+  gap: 20px;
+  align-items: stretch;
+  padding: 12px 0 6px;
+}
+.overviewIntro h2 {
+  color: #f4f0e6 !important;
+  font-family: Georgia, serif;
+  font-weight: 650;
+  letter-spacing: -.035em;
+  line-height: 1.16;
+  font-size: clamp(27px, 3vw, 43px);
+  margin: 8px 0;
+}
+.overviewIntro h2 em { color: #d2ae67; }
+.overviewIntro p:not(.eyebrow) {
+  color: #b7c5dc;
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 740px;
+  margin-top: 5px;
+}
+.chainIntegrity {
+  padding: 18px;
+  background: #102742;
+  border: 1px solid #334e78;
+  border-radius: 11px;
+  align-self: stretch;
+}
+.chainIntegrity strong { color: #eac36f !important; font-size: 13px; }
+.chainIntegrity p { margin-top: 11px !important; font-size: 12px !important; }
+.overviewSection { min-width: 0; }
+.overviewSectionHead { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.overviewSectionHead h3 { color:#f4f0e6 !important; font:650 23px/1.2 Georgia,serif; margin-top:4px; }
+.overviewSectionHead>span { color:#a6bbd4; font-size:11px; }
+.peopleKpiGrid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.peopleKpi {
+  display:grid; align-content:space-between; gap:7px; min-width:0; min-height:125px;
+  text-align:left; padding:15px 16px; background:#102742; color:#f4f0e6;
+  border:1px solid #334e78; border-radius:10px;
+}
+.peopleKpi:hover { border-color:#d2ae67; background:#14304f; }
+.peopleKpi>span { color:#b9c9df; font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:.04em; }
+.peopleKpi>strong { color:#f4f0e6 !important; font-size:clamp(18px,2.4vw,27px); font-weight:750; overflow-wrap:anywhere; }
+.peopleKpi>small { color:#a6bbd4; font-size:11px; }
+.peopleQueue {display:grid;gap:10px}
+.peopleQueueRow {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;padding:16px 18px;background:#102742;border:1px solid #334e78;border-radius:10px}
+.peopleQueueRow strong { color:#f4f0e6 !important; font-size:14px; }
+.peopleQueueRow p { color:#a8bad3; font-size:11px; margin-top:6px; }
+.peopleQueueActions {display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.peopleQueueActions button {display:inline-flex;align-items:center;gap:7px;border:1px solid #d2ae67;background:#d2ae67;color:#10213e;font-weight:750;font-size:12px;padding:9px 13px;border-radius:8px}
+.queueEmpty {background:#102742;border:1px solid #334e78;color:#b8c8df;padding:18px;border-radius:10px;font-size:13px;line-height:1.6}
+/* Non-overview operations stay source-first; the old nested bright card no
+   longer introduces an unrelated visual shell inside a dark People app. */
+.peopleMain>section { background:#102742 !important; border:1px solid #334e78 !important; border-radius:11px; color:#f4f0e6; }
+.peopleMain>section>div:first-child {border-bottom:1px solid #334e78 !important}
+.peopleMain>section h2 {color:#f4f0e6 !important}
+.peopleMain>section p {color:#b7c5dc}
+.peopleMain>section thead {background:#173659 !important;color:#e8edf7 !important}
+.peopleMain>section tbody tr {border-color:#334e78}
+.peopleMain>section tbody tr:hover {background:#163354 !important}
+.peopleMain>section tbody td {color:#f4f0e6}
+.peopleMain>section input {color:#10213e !important;background:#fff !important}
+.peopleMain>section button {color:#10213e;background:#d2ae67;border:1px solid #d2ae67;border-radius:8px}
+.peopleMain>section button:disabled {opacity:.5}
+.peopleSurface .peopleSearch {background:#fff !important;color:#334155 !important}
+.peopleSurface .peopleSearchInput {background:#fff !important;color:#0f172a !important}
+.peopleSurface .peopleNotice {color:#881337}
+.peopleSurface .peopleNoticeTitle {color:inherit !important}
+@media(max-width:1000px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.overviewIntro{grid-template-columns:1fr}}
+@media(max-width:600px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.peopleKpi{padding:12px;min-height:105px}.peopleAppHeader{padding:14px 15px 8px}.peopleMain{padding:12px 14px 24px}.peopleQueueRow{align-items:flex-start;padding:14px}.overviewSectionHead h3{font-size:20px}}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.3.1-HR01-DENIED-UNAVAILABLE-CONTRAST
+ * VERSION: v2.4.0-PROTOTYPE-GROUNDED-PEOPLE-APP
  * AUTHORITY BOUNDARY: Presentation only; all commands remain Python EOS-owned.
  * TENANT POSTURE: No tenant or employee state in CSS.
  * FAIL-CLOSED POSTURE: No disabled control or access denial is visually overridden.
