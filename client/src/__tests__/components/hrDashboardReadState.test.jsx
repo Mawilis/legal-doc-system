@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Read-State Runtime Regressions
- * VERSION: v1.8.0-CURRENT-PEOPLE-SOURCE-JOURNEY-CERT
+ * VERSION: v1.8.1-WORKFORCE-DIRECTORY-SEMANTIC-ASSERTIONS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -8,8 +8,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/hrDashboardReadState.test.jsx
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v1.8.0-CURRENT-PEOPLE-SOURCE-JOURNEY-CERT uses current People navigation and canonical workforce provenance; preserves source-readback, custody, 401 and cross-tenant race assertions.
+ * CHANGELOG: v1.8.1-WORKFORCE-DIRECTORY-SEMANTIC-ASSERTIONS uses current People navigation and canonical workforce provenance; preserves source-readback, custody, 401 and cross-tenant race assertions.
  * CHANGELOG:
+ *   v1.8.1-WORKFORCE-DIRECTORY-SEMANTIC-ASSERTIONS checks the canonical Workforce employee button after the tab's table-to-directory migration; existing candidate command, session invalidation, tenant swap and EOS readback checks are preserved.
  *   v1.7.0-EOS-CANDIDATE-EVIDENCE-LOOP — Certifies streamed candidate evidence custody, exact binary digest/size readback, stage-command gating, and stale-scope evidence response rejection.
  *   v1.6.0-EOS-HIRING-COMMAND-LOOP — Certifies source-owned candidate command acknowledgement, exact tenant readback, stable idempotent retry, and no legacy write path.
  *   v1.5.0-CANONICAL-HIRING-READS — Exercises the Python EOS candidate and offer projections, asserts opaque identity display, and prevents local legacy mutations.
@@ -261,7 +262,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
     });
 
     await renderDashboard();
-    expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
     await openLane('Hiring');
     expect(await screen.findByText('CAN-EOS-2026-01')).toBeInTheDocument();
     expect(screen.getByText('REQ-EOS-2026-01')).toBeInTheDocument();
@@ -314,7 +315,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
 
     try {
       await renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
       await openLane('Hiring');
       expect(await screen.findByText(candidate.candidate_id)).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Advance with evidence' }));
@@ -363,7 +364,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
 
     try {
       const view = await renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
       await openLane('Hiring');
       expect(await screen.findByText(candidate.candidate_id)).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Advance with evidence' }));
@@ -411,7 +412,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
 
     try {
       await renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
       await openLane('Hiring');
       expect(await screen.findByText('EOS verified no records for this view.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Create candidate', exact: true }));
@@ -456,7 +457,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
 
     try {
       await renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
       await openLane('Hiring');
       expect(await screen.findByText('EOS verified no records for this view.')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Create candidate', exact: true }));
@@ -504,7 +505,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
     });
 
     await renderDashboard();
-    expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
 
     rejectWorkforce = true;
     mockState.candidateRead.mockReturnValue(pendingCandidate.promise);
@@ -554,14 +555,14 @@ describe('mounted HR dashboard read-state boundaries', () => {
     setAuthenticatedScope('TENANT-HR-B', 'PRINCIPAL-HR-B', 2);
     view.rerender(<HrDashboard />);
     await openLane('Workforce');
-    expect(await screen.findByText('Tenant B Verified Employee')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Tenant B Verified Employee/ })).toBeInTheDocument();
 
     await act(async () => {
       tenantARead.resolve(validPage('Tenant A Late Employee'));
       await tenantARead.promise;
     });
 
-    expect(screen.getByText('Tenant B Verified Employee')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tenant B Verified Employee/ })).toBeInTheDocument();
     expect(screen.queryByText('Tenant A Late Employee')).not.toBeInTheDocument();
     expect(mockState.apiGet).toHaveBeenCalledWith('/hr/workforce', expect.objectContaining({
       headers: { 'X-Tenant-ID': 'TENANT-HR-B' },
@@ -570,7 +571,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
 
   it('rejects an acknowledged candidate when current readback has a different fingerprint', async () => {
     await renderDashboard();
-    expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
     await openLane('Hiring');
     expect(await screen.findByText('EOS verified no records for this view.')).toBeInTheDocument();
     const candidate = {
@@ -597,7 +598,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardReadState.test.jsx
- * VERSION: v1.8.0-CURRENT-PEOPLE-SOURCE-JOURNEY-CERT
+ * VERSION: v1.8.1-WORKFORCE-DIRECTORY-SEMANTIC-ASSERTIONS
  * AUTHORITY BOUNDARY: Mounted UI behavior only; Python EOS owns source and authorization truth.
  * TENANT POSTURE: Synthetic exact tenant/principal scopes; no cross-tenant source data is persisted.
  * FAIL-CLOSED POSTURE: A 401 clears retained HR rows, superseded tenant responses are ignored, and failed readback is not reported as verified success.
