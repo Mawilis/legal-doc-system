@@ -1,3 +1,20 @@
+"""TITLE: WILSY OS headcount requisition registry certification.
+VERSION: v1.1.0-HEADCOUNT-PAGINATED-OVERVIEW-REGRESSION
+AUTHORITY: WILSY OS Core Governance; synthetic tests only.
+EPITOME: Certifies tenant-scoped requisition registry and transactional
+         pagination without creating employee or authorization truth.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_headcount_requisition_registry.py
+COLLABORATION / OWNERSHIP: Python EOS headcount source, registry contract tests.
+CERTIFICATION / UPDATE DATE: 2026-11-27.
+CHANGELOG: v1.1.0-HEADCOUNT-PAGINATED-OVERVIEW-REGRESSION adds source-owned paged Overview test and
+           enforces the sovereign source-header/seal contract.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic requisition records only; no credentials.
+TENANT BOUNDARY: Exact-tenant registry operations, negative foreign-tenant reads.
+AUTHORITY BOUNDARY: Tests do not grant IAM, employment or approval authority.
+FINANCIAL AUTHORITY BOUNDARY: No money movement; Kennel EOS exclusively.
+"""
+
 from datetime import datetime, timezone
 
 import pytest
@@ -231,3 +248,11 @@ def test_headcount_overview_page_uses_exact_tenant_and_transactional_total():
         registry.list_overview_page(tenant_id=TENANT, session=session, offset=-1)
     with pytest.raises(HeadcountRequisitionRegistryError, match="SESSION_REQUIRED"):
         registry.list_overview_page(tenant_id=TENANT, session=None)
+
+# ARTIFACT: tests/unit/test_headcount_requisition_registry.py
+# VERSION: v1.1.0-HEADCOUNT-PAGINATED-OVERVIEW-REGRESSION
+# AUTHORITY BOUNDARY: Regression evidence only; independent EOS maker-checker remains authoritative.
+# TENANT POSTURE: Synthetic exact-tenant and foreign-tenant scenarios.
+# FAIL-CLOSED POSTURE: Invalid pagination, corrupt record and missing transaction session deny.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
