@@ -291,6 +291,20 @@ def test_authenticated_status_read_is_independent_of_email_transport(service_dou
     _assert_secret_free(result)
 
 
+def test_unverified_current_email_is_explicit_without_smtp(
+    service_doubles, monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        auth_router, "_recovery_contact_status_read",
+        lambda identity: "VERIFICATION_REQUIRED",
+    )
+    result = _request("GET", VERIFY_STATUS_PATH)
+    assert result.raised is None
+    assert result.status_code == 200
+    assert json.loads(result.text) == {"status": "VERIFICATION_REQUIRED"}
+    _assert_secret_free(result)
+
+
 def test_recovery_status_read_unavailable_never_becomes_unverified(
     service_doubles, monkeypatch,
 ) -> None:
