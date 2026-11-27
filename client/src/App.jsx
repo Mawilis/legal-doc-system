@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP
+ * VERSION: v20.4.4-PROFILE-WORKSPACE-SWITCHER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,7 +24,8 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
- * CHANGELOG: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
+ * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER moves canonical Founder workspace navigation into the existing account dropdown, with same-capacity navigation and explicit confirmation plus reauthentication for cross-capacity transitions; no role union or IAM escalation.
+ * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
  * CHANGELOG: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS exposes actionable People-only workforce/hiring/offer/headcount module shortcuts in global search overlay without implying cross-domain search authority.
  * CHANGELOG: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE labels global People search as authorized workforce lookup or module navigation, without implying certified cross-domain record indexing.
  * CHANGELOG: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH makes the global navigation search context-aware inside the People application, routing queries to the existing HR-owned search intent without adding global HR data access.
@@ -237,6 +238,9 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const [searchValue, setSearchValue] = useState('');
   const [searchNotice, setSearchNotice] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [requestedWorkspaceSwitch, setRequestedWorkspaceSwitch] = useState(null);
+  const [workspaceSwitchError, setWorkspaceSwitchError] = useState('');
+  const [workspaceSwitchBusy, setWorkspaceSwitchBusy] = useState(false);
   const accountTriggerRef = useRef(null);
   const accountMenuRef = useRef(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -280,6 +284,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? exactChromeText(sessionUser.businessRole || sessionUser.role)
     : '';
   const selectedCapacityLabel = capacityLabel(currentCapacity);
+  const canSwitchFounderWorkspaces = sessionUser?.tenantId === 'WILSYTENANT-4CD2FZ4O'
+    && ['tenant_owner', 'tenant_hr_manager', 'tenant_hr_director'].includes(currentCapacity);
+  const isHrCapacity = currentCapacity === 'tenant_hr_manager'
+    || currentCapacity === 'tenant_hr_director';
+  const isOwnerCapacity = currentCapacity === 'tenant_owner';
   const institutionalTitle = sessionUser?.institutionalDesignation === 'Founder'
     && sessionUser?.tenantId === 'WILSYTENANT-4CD2FZ4O'
     && currentCapacity === 'tenant_owner'
@@ -290,6 +299,40 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const accountScope = sessionUser
     ? `${sessionUser.id}:${sessionUser.tenantId || 'SYSTEM'}:${currentCapacity}:${auth.sessionGeneration ?? ''}`
     : '';
+  // A new capacity must be independently issued by EOS. Do not reuse the
+  // current HR token as Owner or silently terminate a live operator session.
+  const requestFounderWorkspaceSwitch = (destination) => {
+    if (!canSwitchFounderWorkspaces) return;
+    if (destination === 'people' && isHrCapacity) {
+      setUserMenuOpen(false);
+      navigate('/headquarters?section=hr-workspace');
+      return;
+    }
+    if (destination === 'headquarters' && isOwnerCapacity) {
+      setUserMenuOpen(false);
+      navigate('/headquarters');
+      return;
+    }
+    if (!['headquarters', 'people'].includes(destination)) return;
+    setWorkspaceSwitchError('');
+    setRequestedWorkspaceSwitch(destination);
+  };
+  const confirmFounderWorkspaceSwitch = async () => {
+    const destination = requestedWorkspaceSwitch;
+    if (!canSwitchFounderWorkspaces || !['headquarters', 'people'].includes(destination)
+        || workspaceSwitchBusy) return;
+    setWorkspaceSwitchBusy(true);
+    setWorkspaceSwitchError('');
+    try {
+      await onLogout();
+      // An explicit login route is only a presentation destination, never IAM.
+      window.location.assign(destination === 'people' ? '/login?capacity=hr' : '/login');
+    } catch (_error) {
+      setWorkspaceSwitchError('Current-session sign-out could not be confirmed. Switch cancelled.');
+      setWorkspaceSwitchBusy(false);
+    }
+  };
+
   const isSecureChannel = typeof window !== 'undefined'
     && window.location.protocol === 'https:';
 
@@ -315,6 +358,9 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   useEffect(() => {
     setUserMenuOpen(false);
     setNotificationsOpen(false);
+    setRequestedWorkspaceSwitch(null);
+    setWorkspaceSwitchError('');
+    setWorkspaceSwitchBusy(false);
   }, [accountScope]);
 
   useEffect(() => {
@@ -557,6 +603,44 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-300">Selected capacity: {selectedCapacityLabel}</p>}
                 </div>
+                {canSwitchFounderWorkspaces && (
+                  <div className="mt-2 border-b border-white/10 px-1 pb-3" aria-label="Founder workspace switcher">
+                    <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Workspaces</p>
+                    <button type="button" role="menuitem"
+                      onClick={() => requestFounderWorkspaceSwitch('headquarters')} disabled={workspaceSwitchBusy}
+                      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                      <span>Headquarters <span className="block text-xs text-slate-300">Owner operating capacity</span></span>
+                      <span className="text-xs text-slate-300">{isOwnerCapacity ? 'Current' : 'Sign in'}</span>
+                    </button>
+                    <button type="button" role="menuitem"
+                      onClick={() => requestFounderWorkspaceSwitch('people')} disabled={workspaceSwitchBusy}
+                      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                      <span>People · Hire to Exit <span className="block text-xs text-slate-300">HR operating capacity</span></span>
+                      <span className="text-xs text-slate-300">{isHrCapacity ? 'Current' : 'Sign in'}</span>
+                    </button>
+                    {requestedWorkspaceSwitch && (
+                      <div className="mt-2 rounded-lg border border-white/20 bg-slate-800 p-3">
+                        <p className="text-sm font-medium text-white">Switch operating capacity?</p>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-200">
+                          This signs out the current session. You must sign in again and complete MFA
+                          for {requestedWorkspaceSwitch === 'headquarters' ? 'Owner' : 'HR'} authority.
+                          Assigned roles and permissions stay separate.
+                        </p>
+                        {workspaceSwitchError && <p role="alert" className="mt-2 text-xs text-red-200">{workspaceSwitchError}</p>}
+                        <div className="mt-3 flex gap-2">
+                          <button type="button" role="menuitem" disabled={workspaceSwitchBusy}
+                            onClick={() => { setRequestedWorkspaceSwitch(null); setWorkspaceSwitchError(''); }}
+                            className="min-h-10 rounded-md border border-white/30 px-3 text-xs text-white hover:bg-white/10">Cancel</button>
+                          <button type="button" role="menuitem" disabled={workspaceSwitchBusy}
+                            onClick={() => { void confirmFounderWorkspaceSwitch(); }}
+                            className="min-h-10 rounded-md bg-white px-3 text-xs font-semibold text-slate-900 hover:bg-slate-100">
+                            {workspaceSwitchBusy ? 'Signing out…' : 'Continue to secure sign-in'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]"><LogOut size={15}/> Sign out</button>
               </div>
             )}
@@ -1145,7 +1229,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP
+ * VERSION: v20.4.4-PROFILE-WORKSPACE-SWITCHER
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
