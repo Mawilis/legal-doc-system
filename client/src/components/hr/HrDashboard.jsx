@@ -4193,6 +4193,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               <section className={styles.overviewIntro} aria-labelledby="people-lifecycle-heading">
                 <div className={styles.overviewLead}>
                   <h2 id="people-lifecycle-heading">People <em>at work.</em></h2>
+                  <p className={styles.overviewTagline}>Hire to Exit · One governed employee chain, from approved headcount to access revocation.</p>
                   <p className={styles.tenantContext}>Employer · {tenantId}</p>
                 </div>
                 <div className={styles.overviewActions} aria-label="People work navigation">
