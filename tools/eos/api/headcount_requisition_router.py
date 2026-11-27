@@ -1,5 +1,5 @@
 """TITLE: WILSY EOS tenant-scoped headcount requisition HTTP commands.
-VERSION: v1.3.0-SAFE-MY-WORK-PROJECTION
+VERSION: v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW
 AUTHORITY: Python EOS tenant authorization and headcount registry composition.
 EPITOME: Exposes exact-tenant requisition read, creation, submission and independent
          decision routes over the canonical transactional headcount registry.
@@ -7,7 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/he
 COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py under /api.
 CERTIFICATION / UPDATE DATE: 2026-11-15.
 CHANGELOG:
-  v1.3.0-SAFE-MY-WORK-PROJECTION — Adds an internal, read-only, source-owned
+  v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW — Adds role-gated exact-tenant paginated Headcount Overview,
+  with source-owned status, transactional total and safe field projection.
+  v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW — Adds an internal, read-only, source-owned
   minimal action projection for Unified My Work. It emits no position,
   department, justification, headcount, approver, or requester data and is
   callable only after the aggregate independently admits this route's current
@@ -30,7 +32,7 @@ import json
 import uuid
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
@@ -218,6 +220,40 @@ def _project_my_work(
     return _transaction(read)
 
 
+@router.get("/overview")
+async def read_headcount_overview(
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=100000),
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, object]:
+    """Read exact-tenant, role-bound requisition Overview without PII or writes."""
+    records, total = _transaction(
+        lambda registry, session: registry.list_overview_page(
+            tenant_id=context.tenant_id, session=session,
+            limit=limit, offset=offset,
+        )
+    )
+    return {
+        "schema": "WILSY-HEADCOUNT-OVERVIEW/V1",
+        "tenant_id": context.tenant_id,
+        "source": "EOS_HEADCOUNT_REQUISITIONS",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "hasMore": offset + len(records) < total,
+        "items": [{
+            "requisition_id": value.requisition_id,
+            "position_title": value.position_title,
+            "department_id": value.department_id,
+            "work_location": value.work_location,
+            "headcount": value.headcount,
+            "status": value.status.value,
+            "revision": value.revision,
+        } for value in records],
+    }
+
+
 @router.get("")
 async def list_headcount_requisitions(
     context: TenantAuthorizationContext = Depends(_READ),
@@ -353,7 +389,7 @@ __all__ = [
 
 
 # ARTIFACT: headcount_requisition_router.py
-# VERSION: v1.3.0-SAFE-MY-WORK-PROJECTION
+# VERSION: v1.4.0-M03-BOUNDED-HEADCOUNT-OVERVIEW
 # AUTHORITY BOUNDARY: Existing exact-tenant EOS IAM; separately assigned platform-employer permissions apply only to canonical WILSY. Customer HR still requires active HR entitlement. No offer acceptance, employee admission, IAM provisioning, payroll, payment, execution, settlement, or entitlement grant.
 # TENANT POSTURE: Authenticated exact tenant scope on every read, command, replay, and aggregate lookup; platform-employer pair selection is exact-WILSY only.
 # FAIL-CLOSED POSTURE: Missing authority, entitlement, stale revision, duplicate replay, transaction failure, or invalid request never reports success.
