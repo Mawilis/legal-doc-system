@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL
+ * VERSION: v4.20.3-FOOTER-SEMANTIC-LANDMARK
+ * CHANGELOG: v4.20.3-FOOTER-SEMANTIC-LANDMARK declares the persistent Headquarters footer as a named contentinfo landmark so it remains discoverable inside the app's main scroll shell.
  * CHANGELOG: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL reserves a visible shared footer within Headquarters' fixed-height EOS chrome and gives the owned People canvas the bounded scroll rail.
  * CHANGELOG: v4.20.1-PEOPLE-VIEWPORT-CSS-PRECEDENCE moves People-owned layout rules after the base and responsive Headquarters CSS so desktop/mobile shells cannot reinstate the old two-column frame.
  * CHANGELOG: v4.20.0-PEOPLE-OWNED-APPLICATION-CANVAS gives People exclusive application canvas below the canonical global logo and tenant header, adds scoped return navigation and a true Headquarters-wide footer without altering IAM.
@@ -1328,7 +1329,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           </div>
         </div>
       </div>
-      <footer className="hq-global-footer" aria-label="Headquarters operating footer">
+      <footer role="contentinfo" className="hq-global-footer" aria-label="Headquarters operating footer">
         <span><strong>WILSY OS</strong> · Build. Operate. Grow.</span>
         <span>{peopleOwnsCanvas ? 'People · Hire to Exit' : 'Headquarters · Enterprise operations'}</span>
         <span>Python Kennel EOS · Source-owned business records · Authorized tenant context</span>
@@ -1813,7 +1814,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL
+ * VERSION: v4.20.3-FOOTER-SEMANTIC-LANDMARK
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
