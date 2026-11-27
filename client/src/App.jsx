@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.7-ACCOUNT-CONTEXT-DEPTH
+ * VERSION: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES replaces the scrolling accordion with focused account subviews, distinguishes sign-in email from EOS-verified identity, and provides a durable device-only menu density preference without inventing server writes.
  * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
  * CHANGELOG: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE offers a separate Change HR capacity action for a user currently selected as HR Director/Manager; reauthentication remains mandatory before EOS may admit another role.
  * CHANGELOG: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE keeps source-admitted My Work navigation in the account menu when the duplicate Founder floating shortcut is retired; it does not extend access or expose inaccessible work.
@@ -242,6 +243,16 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const [searchNotice, setSearchNotice] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [accountDetail, setAccountDetail] = useState(null);
+  const [profileDensity, setProfileDensity] = useState(() => {
+    try { return window.localStorage.getItem('wilsy:chrome:profile-density') === 'compact' ? 'compact' : 'comfortable'; }
+    catch { return 'comfortable'; }
+  });
+  const updateProfileDensity = (value) => {
+    if (!['compact', 'comfortable'].includes(value)) return;
+    try { window.localStorage.setItem('wilsy:chrome:profile-density', value); }
+    catch { return; }
+    setProfileDensity(value);
+  };
   const [requestedWorkspaceSwitch, setRequestedWorkspaceSwitch] = useState(null);
   const [workspaceSwitchError, setWorkspaceSwitchError] = useState('');
   const [workspaceSwitchBusy, setWorkspaceSwitchBusy] = useState(false);
@@ -270,6 +281,9 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? [exactChromeText(sessionUser.firstName), exactChromeText(sessionUser.lastName)].filter(Boolean).join(' ')
     : '';
   const accountEmail = safeAccountEmail(sessionUser?.workspaceEmail);
+  // The authenticated compatibility field may originate from the credential
+  // candidate: useful for the operator, but not independently EOS-verified.
+  const signInEmail = safeAccountEmail(sessionUser?.email);
   const verifiedTenantId = activeTenant?.tenantId
     || activeTenant?.tenant_id || activeTenant?.id || null;
   const tenantIdentity = sessionUser?.tenantId
@@ -600,19 +614,19 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                     : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
                   items[next]?.focus();
                 }
-              }} className="absolute right-0 top-12 z-50 max-h-[min(76dvh,720px)] w-[min(23rem,calc(100vw-1rem))] overflow-y-auto overscroll-contain rounded-2xl border border-slate-500/35 bg-[#101d32] p-3 text-slate-100 shadow-2xl">
+              }} className="absolute right-0 top-12 z-50 max-h-[min(82dvh,620px)] w-[min(23rem,calc(100vw-1rem))] overflow-y-auto overscroll-contain rounded-2xl border border-slate-500/35 bg-[#101d32] p-3 text-slate-100 shadow-2xl">
                 <div className="flex items-center gap-3 border-b border-white/15 px-2 pb-3">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/40 bg-[#263b5a] text-base font-bold text-amber-100" aria-hidden="true">{initials || <UserRound size={19}/>}</span>
                   <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
-                  {accountEmail && <p className="mt-1 break-all text-xs text-slate-400">{accountEmail}</p>}
+                  {(accountEmail || signInEmail) && <p className="mt-1 break-all text-xs text-slate-200">{accountEmail || signInEmail}{!accountEmail && <span className="block text-[10px] text-amber-200">Sign-in email · verification pending</span>}</p>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-200">Operating as: {selectedCapacityLabel}</p>}
                   <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-200"><ShieldCheck size={13}/> Authenticated · EOS session</p>
                   </div>
                 </div>
-                {canSwitchFounderWorkspaces && (
+                {!accountDetail && canSwitchFounderWorkspaces && (
                   <div className="mt-2 border-b border-white/10 px-1 pb-3" aria-label="Founder workspace switcher">
                     <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Workspaces</p>
                     {currentWorkScope && (
@@ -667,48 +681,65 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                     )}
                   </div>
                 )}
-                <div className="mt-2 border-b border-white/15 px-1 pb-3" aria-label="Account and security">
-                  <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Account &amp; security</p>
-                  {[
-                    { id: 'identity', label: 'My verified profile', sub: 'Identity and employer information' },
-                    { id: 'security', label: 'Security & sessions', sub: 'Current session and sign-in posture' },
-                    { id: 'access', label: 'My access', sub: 'Selected capacity and authority boundary' },
-                    { id: 'preferences', label: 'Personal settings', sub: 'Account preferences and source ownership' },
-                  ].map((item) => (
-                    <button key={item.id} type="button" role="menuitem"
-                      aria-expanded={accountDetail === item.id}
-                      onClick={() => setAccountDetail((previous) => previous === item.id ? null : item.id)}
-                      className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
-                      <span className="min-w-0"><span className="block text-sm font-medium text-white">{item.label}</span><span className="block text-xs text-slate-300">{item.sub}</span></span>
-                      <ChevronDown size={15} className={accountDetail === item.id ? 'shrink-0 rotate-180 text-amber-200' : 'shrink-0 text-slate-300'}/>
+                {accountDetail ? (
+                  <section className="mt-2 px-1 pb-2" aria-label="Account detail">
+                    <button type="button" role="menuitem" onClick={() => setAccountDetail(null)}
+                      className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                      <span aria-hidden="true">←</span> Back to account
                     </button>
-                  ))}
-                  {accountDetail && <section aria-live="polite" aria-label="Account details" className="mx-1 mt-2 rounded-lg border border-slate-500/40 bg-[#172b45] p-3 text-xs leading-5 text-slate-100">
-                    {accountDetail === 'identity' && <>
-                      <p className="font-semibold text-white">Verified account identity</p>
-                      <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1">
-                        <dt className="text-slate-300">Name</dt><dd className="break-words">{displayName || 'Not provided by EOS'}</dd>
-                        <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || 'Not provided by EOS'}</dd>
-                        <dt className="text-slate-300">Employer</dt><dd>{organisationName || 'Not verified'}</dd>
-                        <dt className="text-slate-300">Tenant</dt><dd className="break-all">{currentTenantReference || 'Not verified'}</dd>
-                      </dl>
-                    </>}
-                    {accountDetail === 'security' && <>
-                      <p className="font-semibold text-white">Current session</p>
-                      <p className="mt-1 text-emerald-200">Authenticated with the current EOS workspace session.</p>
-                      <p className="mt-2 text-slate-200">MFA enrollment, device sessions and individual revocation must come from dedicated EOS security sources; this menu does not infer or modify them.</p>
-                    </>}
-                    {accountDetail === 'access' && <>
-                      <p className="font-semibold text-white">Current operating authority</p>
-                      <p className="mt-1">{selectedCapacityLabel || 'Selected capacity not verified'}</p>
-                      <p className="mt-2 text-slate-200">Workspaces are independently admitted by EOS. Owner, HR Director and HR Manager permissions are never combined. Each command is re-authorized server-side.</p>
-                    </>}
-                    {accountDetail === 'preferences' && <>
-                      <p className="font-semibold text-white">Personal settings</p>
-                      <p className="mt-1 text-slate-200">Identity and preference changes require a verified EOS write source. No unsaved browser-only changes are presented as persisted account settings.</p>
-                    </>}
-                  </section>}
-                </div>
+                    <div aria-live="polite" className="rounded-xl border border-slate-500/40 bg-[#172b45] p-3 text-xs leading-5 text-slate-100">
+                      {accountDetail === 'identity' && <>
+                        <p className="mb-2 text-sm font-semibold text-white">Verified profile</p>
+                        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
+                          <dt className="text-slate-300">Name</dt><dd className="break-words">{displayName || 'Not provided by EOS'}</dd>
+                          <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || signInEmail || 'Not supplied'}{!accountEmail && signInEmail && <span className="block text-amber-200">Sign-in email, not independently verified by EOS</span>}</dd>
+                          <dt className="text-slate-300">Employer</dt><dd>{organisationName || 'Not verified'}</dd>
+                          <dt className="text-slate-300">Tenant</dt><dd className="break-all">{currentTenantReference || 'Not verified'}</dd>
+                        </dl>
+                      </>}
+                      {accountDetail === 'security' && <>
+                        <p className="text-sm font-semibold text-white">Security &amp; sessions</p>
+                        <p className="mt-2 text-emerald-200">Current EOS workspace session authenticated.</p>
+                        <p className="mt-2">Sign out revokes the current session through the existing provider flow. Other device sessions, MFA methods and revocation controls require independent EOS evidence.</p>
+                      </>}
+                      {accountDetail === 'access' && <>
+                        <p className="text-sm font-semibold text-white">My access</p>
+                        <p className="mt-2 font-semibold">{selectedCapacityLabel || 'No current operating capacity verified'}</p>
+                        <p className="mt-2">EOS admits each workspace and command independently. HR and Owner privileges cannot be pooled or inherited from this menu.</p>
+                      </>}
+                      {accountDetail === 'preferences' && <>
+                        <p className="text-sm font-semibold text-white">Personal settings</p>
+                        <p className="mt-2 font-semibold">Profile menu density</p>
+                        <div role="group" aria-label="Profile menu density" className="mt-2 flex gap-2">
+                          {['comfortable', 'compact'].map((value) => (
+                            <button key={value} type="button" role="menuitemradio" aria-checked={profileDensity === value}
+                              onClick={() => updateProfileDensity(value)}
+                              className={`min-h-10 flex-1 rounded-lg border px-3 text-xs font-semibold capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${profileDensity === value ? 'border-amber-300 bg-amber-300/15 text-amber-100' : 'border-slate-500 text-white hover:bg-white/10'}`}>
+                              {value}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="mt-3 text-slate-300">This preference is stored on this device only. Editing your authoritative name, contact information or organisation-wide preferences requires an EOS profile-write service.</p>
+                      </>}
+                    </div>
+                  </section>
+                ) : (
+                  <div className="mt-2 border-b border-white/15 px-1 pb-2" aria-label="Account and security">
+                    <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Account &amp; security</p>
+                    {[
+                      ['identity', 'My profile'],
+                      ['security', 'Security & sessions'],
+                      ['access', 'My access'],
+                      ['preferences', 'Personal settings'],
+                    ].map(([id, label]) => (
+                      <button key={id} type="button" role="menuitem"
+                        onClick={() => setAccountDetail(id)}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 text-left text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${profileDensity === 'compact' ? 'min-h-9' : 'min-h-11'}`}>
+                        <span>{label}</span><span className="text-lg text-slate-400" aria-hidden="true">›</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]"><LogOut size={15}/> Sign out</button>
               </div>
             )}
