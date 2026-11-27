@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION
+ * VERSION: v20.4.10-DURABLE-ACCOUNT-EMAIL-PROVENANCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,7 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
- * CHANGELOG: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
+ * CHANGELOG: v20.4.10-DURABLE-ACCOUNT-EMAIL-PROVENANCE formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
  * CHANGELOG: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES replaces the scrolling accordion with focused account subviews, distinguishes sign-in email from EOS-verified identity, and provides a durable device-only menu density preference without inventing server writes.
  * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
  * CHANGELOG: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE offers a separate Change HR capacity action for a user currently selected as HR Director/Manager; reauthentication remains mandatory before EOS may admit another role.
@@ -624,7 +624,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/40 bg-[#263b5a] text-base font-bold text-amber-100" aria-hidden="true">{initials || <UserRound size={19}/>}</span>
                   <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
-                  {(accountEmail || signInEmail) && <p className="mt-1 break-all text-xs text-slate-200">{accountEmail || signInEmail}{!accountEmail && <span className="block text-[10px] text-amber-200">Sign-in email · workspace source unavailable</span>}</p>}
+                  {(accountEmail || signInEmail) && <div className="mt-1 min-w-0"><p className="break-all text-xs text-slate-100">{accountEmail || signInEmail}</p><p className="mt-0.5 text-[10px] text-slate-300">{accountEmail ? 'Account email · EOS credential source' : 'Sign-in email · workspace email not provided'}</p></div>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-200">Operating as: {selectedCapacityLabel}</p>}
@@ -1337,7 +1337,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION
+ * VERSION: v20.4.10-DURABLE-ACCOUNT-EMAIL-PROVENANCE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
