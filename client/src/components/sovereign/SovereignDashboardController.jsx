@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v19.5.0-SINGLE-LIVE-MODULE-MANIFEST-READ
+ * VERSION: v19.5.1-FOUNDER-FLOATING-NAV-DEDUPLICATION
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -19,6 +19,7 @@
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v19.5.1-FOUNDER-FLOATING-NAV-DEDUPLICATION suppresses the duplicate fixed My Work navigation control only for canonical Founder employer workspaces now served by the profile switcher; other tenant navigation remains unchanged, and EOS/IAM are untouched.
  * CHANGELOG: v19.5.0-SINGLE-LIVE-MODULE-MANIFEST-READ defers the
  *            initial independently authorized module-manifest GET by one
  *            microtask, so development effect replay does not send and discard
@@ -1462,7 +1463,8 @@ const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspa
         </div>
       )}
 
-      {!systemServicesWorkspace && dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS && (
+      {!systemServicesWorkspace && dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS
+        && !isWilsyPlatformTenant(user?.tenantId) && (
       <button
         type="button"
         onClick={() => navigate('/my-work')}
@@ -1508,7 +1510,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v19.5.0-SINGLE-LIVE-MODULE-MANIFEST-READ
+ * VERSION: v19.5.1-FOUNDER-FLOATING-NAV-DEDUPLICATION
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback
