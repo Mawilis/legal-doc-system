@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
+ * VERSION: v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH keeps the nonadmitted Overview recovery branch syntactically closed and exclusive from source-admitted work.
  *   v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY displays one actionable access recovery when all current People sources are denied; authorized users see only source-backed work and indicators, never duplicate error cards.
  *   v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS includes independently source-authorized submitted headcount requisitions in the actionable People queue and exposes their read-only governed source view, not a self-approval shortcut.
  *   v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE wires Overview and Headcount read pagination to the existing exact-tenant EOS headcount requisition endpoint, with bounded browser projection and no legacy BFF headcount route.
@@ -4174,13 +4175,13 @@ const HrDashboard = () => {
                   <button type="button" onClick={() => changeTab('offers')}>Employment offers <ArrowUpRight size={15} aria-hidden /></button>
                 </div>
               </section>
-              {!overviewHasAuthorizedSource ? (
+              {!overviewHasAuthorizedSource && (
                 <section className={styles.overviewRecovery} role="status" aria-label="People source admission">
                   <h3>People access requires an authorized operating capacity</h3>
                   <p>The current session cannot verify workforce, hiring or headcount sources. No employee counts or approval decisions are presented as zero. Founder designation alone does not grant HR authority.</p>
                   <button type="button" onClick={() => changeTab('employees')}>Inspect workforce authorization <ArrowUpRight size={14} aria-hidden /></button>
                 </section>
-              ) : <React.Fragment>}
+              )}
               {overviewHasAuthorizedSource && <React.Fragment>
               <section className={styles.overviewSection} aria-labelledby="people-queue-heading">
                 <div className={styles.overviewSectionHead}>
@@ -4845,7 +4846,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
+ * VERSION: v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
