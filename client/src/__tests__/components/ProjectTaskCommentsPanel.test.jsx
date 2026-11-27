@@ -7,7 +7,8 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
- * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.\n * CHANGELOG: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT verifies count, actor text, Mine/date/order filters and clear operations without additional EOS calls.
+ * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.
+ * CHANGELOG: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT verifies count, actor text, Mine/date/order filters and clear operations without additional EOS calls.
  * CHANGELOG: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT verifies read-only source-page activity filters and the compact timeline without additional EOS calls or comment mutations.
  * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
  * CHANGELOG: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT proves
@@ -250,7 +251,7 @@ it('presents long persisted engineering updates as expandable safe activity evid
   });
   mount();
   expect(await screen.findByText('MW-T12 — Nonproduction Python EOS recovery')).toBeVisible();
-  expect(screen.getByText('You')).toBeVisible();
+  expect(screen.getByText('You posted a progress update')).toBeVisible();
   expect(screen.queryByText(principalId)).not.toBeInTheDocument();
   expect(screen.getByRole('list', { name: 'Source-verified task activity newest first' })).toBeVisible();
   const expand = screen.getByRole('button', { name: 'Read full update' });
