@@ -3,11 +3,12 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE
+ * Version:        v2.5.9-HIGH-CONTRAST-COMPACT-PEOPLE-OVERVIEW
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
+ * Change log: 2026-11-27 v2.5.9-HIGH-CONTRAST-COMPACT-PEOPLE-OVERVIEW makes verified source counts readable and actionable on the light canvas: no faded-gold data labels, compact row-like source controls, neutral empty-state review, and responsive keyboard-visible focus. Keeps existing EOS source binding and approved navy/gold navigation.
  * Change log: 2026-11-27 v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE restores continuous light work canvas and high-contrast per-source inspection.\n * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
@@ -1622,8 +1623,137 @@
   .peopleSurface { min-height: max(0px, calc(100dvh - 140px)); }
 }
 
+
+/* v2.5.9 — Operational source data is never gold-on-white.
+   Gold remains a navigation/brand accent only. These buttons are direct EOS
+   source-navigation controls, not static KPI cards. Keep each verified zero
+   legible, and do not imply missing or denied sources are zero. */
+.peopleSurface .overviewSection .eyebrow {
+  color: #354f6e !important;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .065em;
+}
+.peopleSurface .overviewSectionHead {
+  gap: 9px 18px;
+  align-items: end;
+}
+.peopleSurface .overviewSectionHead h3 {
+  color: #142b49 !important;
+  font-size: 18px !important;
+  line-height: 1.28;
+}
+.peopleSurface .overviewSectionHead > span {
+  color: #455c77 !important;
+  font-size: 12px;
+}
+.peopleSurface .peopleKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.peopleSurface .peopleKpiGrid > .peopleKpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  min-height: 88px;
+  padding: 11px 14px;
+  background: #fff !important;
+  color: #142b49 !important;
+  border: 1px solid #cbd7e6 !important;
+  border-radius: 9px;
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+.peopleSurface .peopleKpiGrid > .peopleKpi:hover {
+  background: #eaf2fb !important;
+  border-color: #527ca9 !important;
+}
+.peopleSurface .peopleKpiGrid > .peopleKpi:focus-visible {
+  outline: 3px solid #23568f !important;
+  outline-offset: 2px;
+}
+.peopleSurface .peopleKpi > span {
+  color: #233d5e !important;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.peopleSurface .peopleKpi > strong {
+  color: #102d50 !important;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+.peopleSurface .peopleKpi > small {
+  display: block;
+  color: #405876 !important;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 1 !important;
+}
+.peopleSurface .queueEmpty {
+  padding: 12px 15px;
+  background: #fff !important;
+  color: #354f6e !important;
+  border: 1px solid #cbd7e6 !important;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.peopleSurface .peopleQueueRow {
+  padding: 10px 13px;
+  background: #fff;
+}
+.peopleSurface .peopleQueueRow p {
+  color: #405876;
+  line-height: 1.5;
+}
+@media (max-width: 1020px) {
+  .peopleSurface .peopleKpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  .peopleSurface .overviewSectionHead {
+    align-items: flex-start;
+  }
+  .peopleSurface .peopleKpiGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .peopleSurface .peopleKpiGrid > .peopleKpi {
+    min-height: 66px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 2px;
+    padding: 10px 12px;
+  }
+  .peopleSurface .peopleKpi > strong {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-size: 23px;
+  }
+  .peopleSurface .peopleKpi > small {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE
+ * VERSION: v2.5.9-HIGH-CONTRAST-COMPACT-PEOPLE-OVERVIEW
  * AUTHORITY BOUNDARY: Presentation only; source authorization remains exclusively Python EOS-owned.
  * TENANT POSTURE: No employee or tenant state in CSS; exact tenant boundary unchanged.
  * FAIL-CLOSED POSTURE: Source unavailability, denial and verified results remain distinct.
