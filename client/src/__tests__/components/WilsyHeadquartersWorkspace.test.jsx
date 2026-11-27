@@ -424,7 +424,7 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(footer).toHaveTextContent('Python Kennel EOS');
     const styles = document.querySelector('.wilsyHqShell style').textContent;
     expect(styles).toContain('.wilsyHqShell .hq-layout--people-owned{display:block');
-    expect(styles).toContain('.wilsyHqShell>.hq-global-footer{flex:0 0 auto}');
+    expect(styles).toContain('.wilsyHqShell>.hq-global-footer{flex:0 0 auto;position:relative;z-index:2;min-height:45px;visibility:visible}');
     expect(document.querySelector('.hq-people-navigation')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Return to Headquarters' })).toHaveLength(1);
 
