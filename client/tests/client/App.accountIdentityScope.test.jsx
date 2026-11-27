@@ -97,9 +97,9 @@ describe('Top App Bar account identity scope', () => {
     expect(screen.queryByRole('menuitem', { name: /Personal settings/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('menuitem', { name: /Back to account/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Personal settings/ }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Compact' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /compact/i }));
     expect(window.localStorage.getItem('wilsy:chrome:profile-density')).toBe('compact');
-    expect(screen.getByRole('menuitemradio', { name: 'Compact' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: /compact/i })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('replaces tenant and capacity identity for the same principal without leaking the prior scope', () => {
