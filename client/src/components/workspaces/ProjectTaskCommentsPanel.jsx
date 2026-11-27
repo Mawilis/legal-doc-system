@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS
+ * VERSION: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES preserves accessible category button names independent of changing source-page counts; counts remain visually readable.
  * CHANGELOG: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS introduces page-scoped counts, mine/date filters, order switching, day grouping and natural-language actor events without changing EOS authority.
  * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters and text search over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
  * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.
@@ -818,13 +819,14 @@ export default function ProjectTaskCommentsPanel({
         <div role="group" aria-label="Filter verified activity on current EOS pages"
           className="flex max-w-full flex-wrap items-center gap-1.5">
           {activityCategories.map(category => <button type="button" key={category.key}
+            aria-label={category.label}
             aria-pressed={activityFilter === category.key}
             onClick={() => setActivityFilter(category.key)}
             className={'min-h-9 rounded-md border px-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
               + (activityFilter === category.key
                 ? 'border-slate-900 bg-slate-900 text-white'
                 : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
-            {category.label} <span aria-label={categoryCounts[category.key] + ' on loaded pages'}
+            {category.label} <span aria-hidden="true" title={categoryCounts[category.key] + ' on loaded EOS pages'}
               className="ml-1 text-[10px] tabular-nums opacity-75">{categoryCounts[category.key]}</span>
           </button>)}
         </div>
@@ -987,7 +989,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS
+// VERSION: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
