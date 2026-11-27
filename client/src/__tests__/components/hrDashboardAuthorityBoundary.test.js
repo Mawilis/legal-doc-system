@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.8.9-UNIFIED-PEOPLE-FOOTER-SOURCE-CERT
+ * VERSION: v1.8.10-PEOPLE-OVERVIEW-NONBLOCKING-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,7 +8,8 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.8.9-UNIFIED-PEOPLE-FOOTER-SOURCE-CERT inspects the real shared footer component and its verified employer props instead of hardcoding old inline JSX in Headquarters.
+ *   v1.8.10-PEOPLE-OVERVIEW-NONBLOCKING-CONTRACT reconciles retired overview strings with current source-verified actions and tests nonblocking exact-session shell admission; existing IAM, privacy, provenance and footer assertions remain intact.
+ *   v1.8.10-PEOPLE-OVERVIEW-NONBLOCKING-CONTRACT inspects the real shared footer component and its verified employer props instead of hardcoding old inline JSX in Headquarters.
  *   v1.8.8-ACCEPTED-PEOPLE-AUTHORITY-UX-CERT reconciles accepted compact People chrome, per-source access diagnostics, accessible back ownership and high-contrast status palette.
  *   v1.8.7-BOUNDED-INDEPENDENT-PEOPLE-READS asserts the Overview's independent source reads and strictly selected-source navigation without redundant HR fanout per search keystroke.
  *   v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION certifies the existing safe employee-admission-denial command instead of incorrectly treating its protective text as a legacy UI regression.
@@ -254,15 +255,20 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(dashboard).toContain('data-testid="people-lifecycle-overview"');
     expect(dashboard).toContain('People <em>at work.</em>');
     expect(dashboard).toContain('One governed employee chain');
-    expect(dashboard).toContain('EOS reauthorizes every source decision');
-    expect(dashboard).toContain('SOURCE-OWNED PEOPLE REQUESTS · MAKER ≠ CHECKER');
+    expect(dashboard).toContain('EOS reauthorizes each command');
+    expect(dashboard).toContain("TODAY'S WORK · MAKER ≠ CHECKER");
     expect(dashboard).toContain("isVerifiedReadState(datasetReadStates.offers)");
     expect(dashboard).toContain("isVerifiedReadState(datasetReadStates.candidates)");
-    expect(dashboard).toContain("isVerifiedReadState(metric.state) ? metric.dataset.total : 'Unavailable'");
-    expect(dashboard).toContain('styles.sourceUnverified');
+    expect(dashboard).toContain('const verified = isVerifiedReadState(metric.state)');
+    expect(dashboard).toContain("{verified ? metric.total : '—'}");
+    expect(dashboard).toContain('metric.state?.status === HR_READ_STATE.ACCESS_DENIED');
+    expect(dashboard).toContain('metric.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE');
+    expect(dashboard).toContain('No verified decisions in these source pages');
+    expect(dashboard).toContain('Open Headcount requests');
     expect(dashboard).toContain('Decisions & next actions');
-    expect(dashboard).toContain('Verified workforce & hiring');
-    expect(dashboard.indexOf('Decisions & next actions')).toBeLessThan(dashboard.indexOf('Verified workforce & hiring'));
+    expect(dashboard).toContain('People lifecycle at a glance');
+    expect(dashboard).toContain('Lifecycle coverage');
+    expect(dashboard.indexOf('People lifecycle at a glance')).toBeLessThan(dashboard.indexOf('Decisions & next actions'));
     expect(dashboard).toContain('className={styles.overviewActions}');
     expect(dashboard).toContain('const overviewHasAuthorizedSource = isVerifiedReadState(snapshotReadState)');
     expect(dashboard).toContain("['candidates', 'offers', 'jobOpenings']");
@@ -295,6 +301,9 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(dashboard).toContain("fetchTabData('jobOpenings', pageStates.jobOpenings, '')");
     expect(dashboard).toContain('? activeTab : null;');
     expect(dashboard).toContain(': sourceTab ? [fetchTabData(sourceTab, pageStates[sourceTab], searchTerm)] : [];');
+    expect(dashboard).toContain('tenantScopeKeyRef.current === requestedScopeKey');
+    expect(dashboard).toContain('invalidatedSessionScopeKeyRef.current !== requestedScopeKey');
+    expect(dashboard.indexOf('setLoading(false);', dashboard.indexOf('const loadDashboard = useCallback'))).toBeLessThan(dashboard.indexOf('const outcomes = await Promise.all(reads)'));
     expect(dashboard).toContain('Each non-Overview lane reads only its own independently authorized');
     expect(dashboard).toContain("id: 'onboarding', title: 'Onboarding'");
     expect(dashboard).toContain("id: 'exit', title: 'Exit'");
@@ -320,7 +329,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.8.9-UNIFIED-PEOPLE-FOOTER-SOURCE-CERT
+ * VERSION: v1.8.10-PEOPLE-OVERVIEW-NONBLOCKING-CONTRACT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
