@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Authenticated Projects Workspace
- * VERSION: v2.49.0-EXPLICIT-AUTHORISED-OWNER-RECOVERY
+ * VERSION: v2.50.0-HR-PROJECTS-RETURN-WITHOUT-SIGNOUT
+ * CHANGELOG: v2.50.0-HR-PROJECTS-RETURN-WITHOUT-SIGNOUT replaces the misleading Owner-capacity switch in denied HR Projects with a genuine return to the currently authorized People workspace; no logout, session change or fabricated access.
  * CHANGELOG: v2.49.0-EXPLICIT-AUTHORISED-OWNER-RECOVERY offers a governed Owner capacity switch on HR-specific EOS Projects 403; no project data, role, session or entitlement bypass.
  * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER moves the secondary all-projects navigation into the project views strip, preserving the full project title and verified status in a dedicated header row.
  * CHANGELOG: v2.47.0-STRATEGY-IN-CONTEXT-RETURN Integrates a contextual M04 navigation trail and prominent accessible return action into the Projects operating surface; ordinary Projects unaffected.
@@ -705,7 +706,7 @@ function ProjectAccountabilityPanel({ project, tenantId, principalId, tenantHead
  * @returns {React.ReactElement} Governed project registry and work surface.
  */
 export default function ProjectsWorkspace({ tenantId = null, principalId = null, sessionScope = '', focusProjectId = null, focusTaskId = null, focusAssignedProjectId = null, strategyOrigin = false, onReturnToStrategy = null,
-  onReturnToAttention = null, selectedCapacity = null, onRequestOwnerCapacity = null }) {
+  onReturnToAttention = null, selectedCapacity = null, onReturnToPeople = null }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState(null);
   const [sourceState, setSourceState] = useState('LOADING');
@@ -1629,7 +1630,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
           })()}>Verify project</button>}
       </div>}
       {sourceState === 'LOADING' && <div role="status" className="mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"><LoaderCircle className="mr-2 inline animate-spin" size={15}/>Loading authorized Projects from EOS…</div>}
-      {sourceState === 'DENIED' && <div role="alert" data-project-state="DENIED" className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"><ShieldCheck className="mr-2 inline" size={16}/>{error === 'AUTHENTICATION_REQUIRED' ? 'Your session needs reauthentication before Projects can be read.' : error === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects product entitlement is required for this tenant.' : 'EOS denied Projects access for this principal and selected tenant. No project records or counts are shown.'}{error === 'ACCESS_DENIED' && ['tenant_hr_director', 'tenant_hr_manager'].includes(selectedCapacity) && typeof onRequestOwnerCapacity === 'function' && <div className="mt-3 flex flex-wrap items-center gap-3"><p className="font-medium">You are operating in {selectedCapacity === 'tenant_hr_director' ? 'HR Director' : 'HR Manager'} capacity. Projects may require a separately authorised Owner session.</p><button type="button" onClick={onRequestOwnerCapacity} className="rounded-lg border border-rose-400 bg-white px-4 py-2 font-semibold text-rose-900 hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-700">Switch to Owner capacity</button></div>}</div>}
+      {sourceState === 'DENIED' && <div role="alert" data-project-state="DENIED" className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"><ShieldCheck className="mr-2 inline" size={16}/>{error === 'AUTHENTICATION_REQUIRED' ? 'Your session needs reauthentication before Projects can be read.' : error === 'PROJECTS_ENTITLEMENT_REQUIRED' ? 'An active Projects product entitlement is required for this tenant.' : 'EOS denied Projects access for this principal and selected tenant. No project records or counts are shown.'}{error === 'ACCESS_DENIED' && ['tenant_hr_director', 'tenant_hr_manager'].includes(selectedCapacity) && typeof onReturnToPeople === 'function' && <div className="mt-3 flex flex-wrap items-center gap-3"><p className="font-medium">Projects is not authorised for the current {selectedCapacity === 'tenant_hr_director' ? 'HR Director' : 'HR Manager'} session. Return to your authorised People workspace. To change capacity, use the account menu and complete EOS authentication.</p><button type="button" onClick={onReturnToPeople} className="rounded-lg border border-rose-400 bg-white px-4 py-2 font-semibold text-rose-900 hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-700">Return to People</button></div>}</div>}
       {sourceState === 'UNAVAILABLE' && <div role="alert" data-project-state="UNAVAILABLE" className="mb-3 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
         <div className="flex min-w-0 items-start gap-3"><CircleAlert className="mt-0.5 shrink-0" size={21}/>
           <div><h2 className="font-bold">Projects couldn't load</h2>
@@ -2061,7 +2062,7 @@ export default function ProjectsWorkspace({ tenantId = null, principalId = null,
 }
 
 // ARTIFACT: ProjectsWorkspace.jsx
-// VERSION: v2.49.0-EXPLICIT-AUTHORISED-OWNER-RECOVERY
+// VERSION: v2.50.0-HR-PROJECTS-RETURN-WITHOUT-SIGNOUT
 // AUTHORITY BOUNDARY: authenticated EOS requests and returned source state only; no local project truth
 // TENANT POSTURE: scope changes invalidate late responses and EOS validates the active session tenant
 // FAIL-CLOSED POSTURE: denial, missing entitlement, unavailable source, conflict, invalid readback and stale state remain distinct
