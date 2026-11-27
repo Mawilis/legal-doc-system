@@ -34,10 +34,16 @@ class _Collection:
         self.rows = rows
         self.query: dict[str, Any] | None = None
         self.projection: dict[str, int] | None = None
+        self.distinct_query: dict[str, Any] | None = None
 
     def count_documents(self, query: dict[str, Any]) -> int:
         self.query = query
         return len(self.rows)
+
+    def distinct(self, field: str, query: dict[str, Any]) -> list[str]:
+        assert field == 'employment.department'
+        self.distinct_query = query
+        return list({row.get('employment', {}).get('department') for row in self.rows if row.get('employment', {}).get('department')})
 
     def find(self, query: dict[str, Any], projection: dict[str, int]) -> _Cursor:
         self.query = query
@@ -120,3 +126,55 @@ def test_directory_search_escapes_regular_expression_input(
     )
     assert response.status_code == 200
     assert collection.query["$or"][0]["displayName"]["$regex"] == r"\.\*"
+
+
+def test_overview_uses_same_exact_tenant_and_never_exposes_employee_pii(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    collection = _Collection([{
+        "employeeId": "SYNTH-1", "displayName": "Synthetic Example",
+        "employment": {"department": "Operations"},
+        "financial": {"bankAccount": "NEVER-EXPOSE"},
+        "identification": {"nationalId": "NEVER-EXPOSE"},
+    }])
+    response = _client(monkeypatch, _Database(collection)).get(
+        "/api/hr/workforce/overview",
+        params={"tenantId": "FOREIGN"},
+        headers={"X-Tenant-ID": "FOREIGN"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema"] == "WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1"
+    assert body["tenant_id"] == "WILSYTENANT-4CD2FZ4O"
+    assert body["metrics"] == {"active_employees": 1, "departments": 1}
+    assert body["source"] == "AUTHORISED_HR_EMPLOYEE_REGISTRY"
+    assert collection.query == collection.distinct_query == {
+        "tenantId": "WILSYTENANT-4CD2FZ4O",
+        "isActive": True, "deletedAt": None,
+    }
+    assert "NEVER-EXPOSE" not in response.text
+    assert "Synthetic Example" not in response.text
+
+
+def test_overview_fails_closed_without_database(monkeypatch: pytest.MonkeyPatch) -> None:
+    response = _client(monkeypatch, None).get("/api/hr/workforce/overview")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Workforce overview source is unavailable."
+
+
+def test_overview_denied_principal_cannot_read_employee_counts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from fastapi import HTTPException
+    app = FastAPI()
+    app.include_router(subject.router)
+    app.dependency_overrides[subject._DIRECTORY_AUTHORITY] = lambda: (_ for _ in ()).throw(
+        HTTPException(status_code=403, detail="HR_READ_DENIED")
+    )
+    monkeypatch.setattr(
+        subject, "get_database",
+        lambda: (_ for _ in ()).throw(AssertionError("Unauthorized database access")),
+    )
+    response = TestClient(app).get("/api/hr/workforce/overview")
+    assert response.status_code == 403
+    assert response.json() == {"detail": "HR_READ_DENIED"}
