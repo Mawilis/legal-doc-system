@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.33.1-M04-RETURN-PROGRESS
+ * VERSION: v2.33.2-DOCUMENT-SOURCE-TIMEOUT-DIAGNOSIS
+ * CHANGELOG: v2.33.2-DOCUMENT-SOURCE-TIMEOUT-DIAGNOSIS identifies the 15-second EOS read timeout distinctly from an absent endpoint, without altering document state or authority.
  * CHANGELOG: v2.33.1-M04-RETURN-PROGRESS retains the M04 document shell on a Strategy-origin return and explains the still-pending EOS publication and task verification, rather than showing an empty full-screen spinner or stale execution counts.
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
@@ -569,6 +570,13 @@ const sourceError = failure => {
     ...evidence, kind: 'REVISION_UNAVAILABLE', title: 'Revision unavailable',
     message: 'The requested revision is not available to your current company capacity.',
     next: 'Open the current publication or refresh permitted revision history. This result does not establish that no approved publication exists.',
+  };
+  if (!status && (failure?.code === 'ECONNABORTED' || failure?.code === 'ETIMEDOUT'
+    || /timeout/i.test(String(failure?.message || '')))) return {
+    ...evidence, code: 'COMPANY_DOCUMENT_READ_TIMEOUT', kind: 'UNAVAILABLE',
+    title: 'Document source timed out',
+    message: 'EOS did not return the verified company document within the 15-second request limit. No publication or project record has been changed.',
+    next: 'Check GET /api/company-operating-documents/STRATEGY in Network and the EOS source-read logs before retrying. Do not republish Strategy.',
   };
   if (code === 'COMPANY_DOCUMENT_RESPONSE_INVALID') return {
     ...evidence, kind: 'INVALID_RESPONSE', title: 'Document response could not be verified',
@@ -2638,7 +2646,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.33.1-M04-RETURN-PROGRESS
+// VERSION: v2.33.2-DOCUMENT-SOURCE-TIMEOUT-DIAGNOSIS
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
