@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT
+ * VERSION: v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE — Asserts both canonical Project task row and lifecycle chart use the same semantic source-status contract as People.
  *   v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT — Certifies unified People surface, no wrong logo or black/gold chrome, read-only future modules and shared status semantics.
  *   v1.3.1-HR-STRICT-PAGE-CONTRACT — Aligns the regression assertion with the normalizer that requires source pagination metadata before verification.
  *   v1.3.0-HR-STRICT-PAGE-CONTRACT — Requires source pagination metadata before a workforce response can become verified data or verified empty.
@@ -31,8 +32,12 @@ import { workStatusTone, workStatusColor, workStatusClasses } from '../../theme/
 
 const ROOT = process.cwd();
 const dashboardPath = path.join(ROOT, 'src/components/hr/HrDashboard.jsx');
+const projectRowPath = path.join(ROOT, 'src/components/workspaces/ProjectWorkRow.jsx');
+const projectTasksPath = path.join(ROOT, 'src/components/workspaces/ProjectTasksPanel.jsx');
 const servicePath = path.join(ROOT, 'src/services/hrService.js');
 const dashboard = fs.readFileSync(dashboardPath, 'utf8');
+const projectRow = fs.readFileSync(projectRowPath, 'utf8');
+const projectTasks = fs.readFileSync(projectTasksPath, 'utf8');
 const service = fs.readFileSync(servicePath, 'utf8');
 
 const forbiddenDashboardCalls = [
@@ -193,13 +198,15 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(workStatusColor('BLOCKED')).toBe('#b91c1c');
     expect(workStatusClasses('APPROVED')).toContain('text-green-900');
     expect(dashboard).toContain('workStatusClasses(value)');
+    expect(projectRow).toContain('workStatusClasses(pendingStatus !== null');
+    expect(projectTasks).toContain('workStatusColor(status)');
   });
 
 });
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT
+ * VERSION: v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
