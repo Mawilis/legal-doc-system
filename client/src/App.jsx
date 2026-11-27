@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE
+ * VERSION: v20.4.7-ACCOUNT-CONTEXT-DEPTH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
  * CHANGELOG: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE offers a separate Change HR capacity action for a user currently selected as HR Director/Manager; reauthentication remains mandatory before EOS may admit another role.
  * CHANGELOG: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE keeps source-admitted My Work navigation in the account menu when the duplicate Founder floating shortcut is retired; it does not extend access or expose inaccessible work.
  * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER moves canonical Founder workspace navigation into the existing account dropdown, with same-capacity navigation and explicit confirmation plus reauthentication for cross-capacity transitions; no role union or IAM escalation.
@@ -240,6 +241,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const [searchValue, setSearchValue] = useState('');
   const [searchNotice, setSearchNotice] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [accountDetail, setAccountDetail] = useState(null);
   const [requestedWorkspaceSwitch, setRequestedWorkspaceSwitch] = useState(null);
   const [workspaceSwitchError, setWorkspaceSwitchError] = useState('');
   const [workspaceSwitchBusy, setWorkspaceSwitchBusy] = useState(false);
@@ -359,6 +361,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
 
   useEffect(() => {
     setUserMenuOpen(false);
+    setAccountDetail(null);
     setNotificationsOpen(false);
     setRequestedWorkspaceSwitch(null);
     setWorkspaceSwitchError('');
@@ -597,13 +600,17 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                     : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
                   items[next]?.focus();
                 }
-              }} className="absolute right-0 top-12 z-50 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-white/10 bg-[#101d32] p-3 shadow-2xl">
-                <div className="border-b border-white/10 px-2 pb-3">
-                  <p className="font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
+              }} className="absolute right-0 top-12 z-50 max-h-[min(76dvh,720px)] w-[min(23rem,calc(100vw-1rem))] overflow-y-auto overscroll-contain rounded-2xl border border-slate-500/35 bg-[#101d32] p-3 text-slate-100 shadow-2xl">
+                <div className="flex items-center gap-3 border-b border-white/15 px-2 pb-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/40 bg-[#263b5a] text-base font-bold text-amber-100" aria-hidden="true">{initials || <UserRound size={19}/>}</span>
+                  <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
                   {accountEmail && <p className="mt-1 break-all text-xs text-slate-400">{accountEmail}</p>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
-                  {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-300">Selected capacity: {selectedCapacityLabel}</p>}
+                  {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-200">Operating as: {selectedCapacityLabel}</p>}
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-200"><ShieldCheck size={13}/> Authenticated · EOS session</p>
+                  </div>
                 </div>
                 {canSwitchFounderWorkspaces && (
                   <div className="mt-2 border-b border-white/10 px-1 pb-3" aria-label="Founder workspace switcher">
@@ -660,6 +667,48 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                     )}
                   </div>
                 )}
+                <div className="mt-2 border-b border-white/15 px-1 pb-3" aria-label="Account and security">
+                  <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Account &amp; security</p>
+                  {[
+                    { id: 'identity', label: 'My verified profile', sub: 'Identity and employer information' },
+                    { id: 'security', label: 'Security & sessions', sub: 'Current session and sign-in posture' },
+                    { id: 'access', label: 'My access', sub: 'Selected capacity and authority boundary' },
+                    { id: 'preferences', label: 'Personal settings', sub: 'Account preferences and source ownership' },
+                  ].map((item) => (
+                    <button key={item.id} type="button" role="menuitem"
+                      aria-expanded={accountDetail === item.id}
+                      onClick={() => setAccountDetail((previous) => previous === item.id ? null : item.id)}
+                      className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                      <span className="min-w-0"><span className="block text-sm font-medium text-white">{item.label}</span><span className="block text-xs text-slate-300">{item.sub}</span></span>
+                      <ChevronDown size={15} className={accountDetail === item.id ? 'shrink-0 rotate-180 text-amber-200' : 'shrink-0 text-slate-300'}/>
+                    </button>
+                  ))}
+                  {accountDetail && <section aria-live="polite" aria-label="Account details" className="mx-1 mt-2 rounded-lg border border-slate-500/40 bg-[#172b45] p-3 text-xs leading-5 text-slate-100">
+                    {accountDetail === 'identity' && <>
+                      <p className="font-semibold text-white">Verified account identity</p>
+                      <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1">
+                        <dt className="text-slate-300">Name</dt><dd className="break-words">{displayName || 'Not provided by EOS'}</dd>
+                        <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || 'Not provided by EOS'}</dd>
+                        <dt className="text-slate-300">Employer</dt><dd>{organisationName || 'Not verified'}</dd>
+                        <dt className="text-slate-300">Tenant</dt><dd className="break-all">{currentTenantReference || 'Not verified'}</dd>
+                      </dl>
+                    </>}
+                    {accountDetail === 'security' && <>
+                      <p className="font-semibold text-white">Current session</p>
+                      <p className="mt-1 text-emerald-200">Authenticated with the current EOS workspace session.</p>
+                      <p className="mt-2 text-slate-200">MFA enrollment, device sessions and individual revocation must come from dedicated EOS security sources; this menu does not infer or modify them.</p>
+                    </>}
+                    {accountDetail === 'access' && <>
+                      <p className="font-semibold text-white">Current operating authority</p>
+                      <p className="mt-1">{selectedCapacityLabel || 'Selected capacity not verified'}</p>
+                      <p className="mt-2 text-slate-200">Workspaces are independently admitted by EOS. Owner, HR Director and HR Manager permissions are never combined. Each command is re-authorized server-side.</p>
+                    </>}
+                    {accountDetail === 'preferences' && <>
+                      <p className="font-semibold text-white">Personal settings</p>
+                      <p className="mt-1 text-slate-200">Identity and preference changes require a verified EOS write source. No unsaved browser-only changes are presented as persisted account settings.</p>
+                    </>}
+                  </section>}
+                </div>
                 <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]"><LogOut size={15}/> Sign out</button>
               </div>
             )}
