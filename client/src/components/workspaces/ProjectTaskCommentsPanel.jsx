@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.20.2-COMPACT-GOVERNED-ACTIVITY
+ * VERSION: v1.20.3-STABLE-ADVANCED-FILTER-LABEL
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.20.3-STABLE-ADVANCED-FILTER-LABEL keeps the advanced-filter control accessible name stable when filters become active; source counts and active indicators remain visually available.
  * CHANGELOG: v1.20.2-COMPACT-GOVERNED-ACTIVITY keeps secondary filters under explicit disclosure, reduces card spacing, and identifies immutable audited comment corrections without new commands.
  * CHANGELOG: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES preserves accessible category button names independent of changing source-page counts; counts remain visually readable.
  * CHANGELOG: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS introduces page-scoped counts, mine/date filters, order switching, day grouping and natural-language actor events without changing EOS authority.
@@ -845,6 +846,7 @@ export default function ProjectTaskCommentsPanel({
       </div>
       <div className="mb-2 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
         <button type="button" aria-expanded={showAdvancedActivityFilters}
+          aria-label={showAdvancedActivityFilters ? 'Hide filters' : 'More filters'}
           aria-controls="activity-secondary-filters"
           onClick={() => setShowAdvancedActivityFilters(value => !value)}
           className={'min-h-9 rounded-md border px-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
@@ -1004,7 +1006,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.20.2-COMPACT-GOVERNED-ACTIVITY
+// VERSION: v1.20.3-STABLE-ADVANCED-FILTER-LABEL
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
