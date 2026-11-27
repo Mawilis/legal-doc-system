@@ -1,5 +1,5 @@
 """TITLE: MW-T12 exact Atlas temporary source-network admission unit certificate.
-VERSION: v1.5.0-HERMETIC-OAUTH-TRANSPORT-CERT
+VERSION: v1.6.0-PRIVATE-ATTRIBUTION-LEDGER-CERT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Certify Atlas source-IP admission and task-owned rollback fail
          closed on wildcard, ownership drift, concurrency and unauthorized task.
@@ -7,6 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: tools/eos/ops/mw_t12_atlas_access_admission.py;
          existing exact ECS identity and CloudFormation safety controls.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.6.0-PRIVATE-ATTRIBUTION-LEDGER-CERT tests local
+           exclusive mode 0600 ledger, unknown consumer defaults, no
+           overwrite and export-before-fail-closed network decision.
 CHANGELOG: v1.5.0-HERMETIC-OAUTH-TRANSPORT-CERT isolates
            the optional HTTP transport with mock-only modules, avoiding
            external network access or undeclared runtime test dependencies.
@@ -454,8 +457,72 @@ def test_oauth_service_account_isolation_only_refuses_mutations(
         assert admission.main(args) == 2
 
 
+def test_private_consumer_ledger_preserves_unknown_owners(tmp_path, capsys) -> None:
+    """Export observed addresses locally without inferring a consumer."""
+    import json
+    import stat
+
+    path = tmp_path / "consumer-audit.json"
+    rows = [
+        {"cidrBlock": "0.0.0.0/0", "comment": ""},
+        {"ipAddress": "8.8.8.8", "comment": ""},
+    ]
+    admission.write_consumer_ledger(rows, str(path))
+    data = json.loads(path.read_text())
+    assert data["source_fingerprint_sha3_512"] == (
+        admission.network_fingerprint(rows)
+    )
+    assert data["audit_only"] is True
+    assert len(data["network_entries"]) == 2
+    assert all(not entry["consumer"]
+               and not entry["consumer_evidence"]
+               and not entry["removal_approved"]
+               for entry in data["network_entries"])
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert "0.0.0.0/0" not in capsys.readouterr().out
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="CONSUMER_LEDGER_DESTINATION_NOT_PRIVATE_NEW_FILE"):
+        admission.write_consumer_ledger(rows, str(path))
+
+
+def test_private_consumer_ledger_forbids_relative_path(tmp_path) -> None:
+    """A ledger must have a deliberately chosen private absolute destination."""
+    with pytest.raises(admission.NetworkAdmissionError,
+                       match="CONSUMER_LEDGER_DESTINATION_NOT_PRIVATE_NEW_FILE"):
+        admission.write_consumer_ledger([], "mw-t12-consumers.json")
+
+
+def test_private_consumer_ledger_refuses_without_readonly_audit(monkeypatch) -> None:
+    """Export cannot be combined with implicit authenticated mutations."""
+    monkeypatch.setattr(admission, "atlas_session", lambda *args:
+                        pytest.fail("MUST_NOT_AUTHENTICATE"))
+    assert admission.main(["--consumer-ledger", "/tmp/wilsy-mwt12.json"]) == 2
+
+
+def test_private_consumer_ledger_created_before_wildcard_denial(
+    monkeypatch, tmp_path,
+) -> None:
+    """Operator can prepare remediation evidence while refusing isolation."""
+    import json
+
+    class Client:
+        def close(self):
+            pass
+
+    destination = tmp_path / "owners.json"
+    monkeypatch.setattr(admission, "atlas_session", lambda *args: Client())
+    monkeypatch.setattr(admission, "inventory",
+                        lambda client: [{"cidrBlock": "0.0.0.0/0"}])
+    assert admission.main(["--auth-mode", "service-account",
+                           "--certify-isolation", "--consumer-ledger",
+                           str(destination)]) == 2
+    assert json.loads(destination.read_text())["network_entries"][0][
+        "network"
+    ] == "0.0.0.0/0"
+
+
 # ARTIFACT: tests/unit/test_mw_t12_atlas_access_admission.py
-# VERSION: v1.5.0-HERMETIC-OAUTH-TRANSPORT-CERT
+# VERSION: v1.6.0-PRIVATE-ATTRIBUTION-LEDGER-CERT
 # AUTHORITY BOUNDARY: Mocked Atlas /32 admission only; no cloud mutation.
 # TENANT POSTURE: No real tenant, MongoDB or credential access.
 # FAIL-CLOSED POSTURE: Wildcard, shared ownership and changed state denied.
