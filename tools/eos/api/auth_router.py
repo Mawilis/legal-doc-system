@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.21.5-GLOBAL-DURABLE-WORKSPACE-EMAIL
+VERSION: v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -15,9 +15,10 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
 CHANGELOG:
-  v1.21.5-GLOBAL-DURABLE-WORKSPACE-EMAIL: Workspace bootstrap reads authenticated Global Principal account email from the exact durable PrincipalCredentialRepository rather than optional JWT display metadata. Missing credential email fails closed without inventing contact verification.
-  v1.21.5-GLOBAL-DURABLE-WORKSPACE-EMAIL: Classifies authenticated recovery status 503 failures into bounded source-stage headers and code-only server logging without identity or email exposure.
-  v1.21.5-GLOBAL-DURABLE-WORKSPACE-EMAIL: Adds independently authenticated SMTP-free recovery-contact evidence read, with bounded source-unavailable responses and no client-supplied email.
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Tenant-bound workspace bootstrap rereads the exact active AuthRegistry principal and tenant before returning durable account email; missing or divergent evidence fails closed and sign-in/JWT metadata never masquerades as account proof. No role, IAM, MFA, tenant or recovery-contact mutation.
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Workspace bootstrap reads authenticated Global Principal account email from the exact durable PrincipalCredentialRepository rather than optional JWT display metadata. Missing credential email fails closed without inventing contact verification.
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Classifies authenticated recovery status 503 failures into bounded source-stage headers and code-only server logging without identity or email exposure.
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Adds independently authenticated SMTP-free recovery-contact evidence read, with bounded source-unavailable responses and no client-supplied email.
   v1.21.2-PRIVACY-SAFE-LOGIN-STAGES: Adds opt-in WILSY_AUTH_TIMING=1 phase timings for admission throttling, credential verification, throttle reset and tenant/MFA evidence. No passwords, emails, user IDs, tokens or tenant identifiers are logged; HTTP responses and enforcement unchanged.
   v1.21.1-LOGIN-WORKER-ISOLATION: Isolates the synchronous tenant-bound login rate-limit, MongoDB identity checks and bcrypt work from the FastAPI event loop through its own worker thread; preserves existing admission, 429/503 semantics and MFA challenge issuance. No credentials are logged, no timeout increased, no identity or IAM mutations added.
   v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION: Delegates synchronous
@@ -442,14 +443,31 @@ def _workspace_principal_profile(
 def _workspace_durable_account_email(
     identity: SovereignIdentity, projection: Any,
 ) -> str | None:
-    """Read Global Principal email from its current canonical credential.
+    """Read the current principal's durable sign-in email, not JWT metadata.
 
-    A tenant session retains its existing bootstrap projection. Global session
-    identity.email is JWT display metadata only and is not an authoritative
-    email source. The credential reread never creates a verified-contact claim.
+    Legacy TENANT identities use the exact AuthRegistry user/tenant record;
+    GLOBAL identities use the existing PrincipalCredentialRepository. Neither
+    path asserts independent mailbox or recovery-contact verification.
     """
     if getattr(identity, "principal_scope", None) != "GLOBAL":
-        return projection.email
+        try:
+            user = get_auth_registry(None).get_user_by_id(projection.principal_id)
+        except Exception as error:
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_UNAVAILABLE"
+            ) from error
+        if (
+            user is None
+            or getattr(user, "id", None) != projection.principal_id
+            or getattr(user, "tenantId", None) != projection.tenant_id
+            or not isinstance(getattr(user, "email", None), str)
+            or not str(user.email).strip()
+            or str(user.email) != str(user.email).strip()
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_INVALID"
+            )
+        return str(user.email)
     try:
         from tools.eos.auth.principal_credential_repository import (
             PrincipalCredentialRepository,
@@ -2104,7 +2122,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.21.5-GLOBAL-DURABLE-WORKSPACE-EMAIL
+# VERSION: v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
