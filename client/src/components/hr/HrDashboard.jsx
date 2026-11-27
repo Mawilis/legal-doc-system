@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.1-M03-SHARED-STATUS-SEMANTICS
+ * VERSION: v2.8.2-M03-LIGHT-SESSION-GATES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.2-M03-LIGHT-SESSION-GATES — Removes remaining black legacy unauthenticated/tenant-reverification panels, preserving fail-closed EOS scope semantics.
  *   v2.8.1-M03-SHARED-STATUS-SEMANTICS — Uses the same EOS-derived lifecycle badges as Projects for employee, candidate and offer rows; text remains explicit and unknown states neutral.
  *   v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE — Retires the nested legacy black/gold HR chrome and wrong logo, uses existing OS shell and source-backed People rows, preserves Python EOS hiring commands, and blocks unconnected modules from simulated mutations.
  *   v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE — States that institutional offer signing does not prove candidate identity, removes the misleading candidate-signature claim, and explains why source ACCEPTED status is not verified candidate consent or employment.
@@ -3964,10 +3965,10 @@ const HrDashboard = () => {
   const currentPage = Math.floor((activeDataset.offset || 0) / (activeDataset.limit || DEFAULT_PAGE.limit)) + 1;
 
   if (!tenantScopeKey || snapshotReadState.status === HR_READ_STATE.AUTHENTICATION_REQUIRED || activeReadState.status === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
-    return <main role="status" className="min-h-[40vh] rounded-2xl border border-amber-300/20 bg-slate-950 p-8 text-amber-100"><h1 className="text-xl font-semibold">Authentication required</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">The current principal and tenant session must be revalidated by Python EOS before HR data can be displayed.</p></main>;
+    return <main role="status" className="min-h-[40vh] rounded-xl border border-amber-200 bg-amber-50 p-6 text-slate-950"><h1 className="text-xl font-semibold">Authentication required</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">The current principal and tenant session must be revalidated by Python EOS before HR data can be displayed.</p></main>;
   }
   if (dataScopeKey !== tenantScopeKey && !loading) {
-    return <main role="status" className="min-h-[40vh] rounded-2xl border border-white/10 bg-slate-950 p-8 text-slate-200"><h1 className="text-xl font-semibold">Verifying current HR workspace</h1><p className="mt-3 text-sm text-slate-400">The previous principal or tenant view is not carried into this session.</p></main>;
+    return <main role="status" className="min-h-[40vh] rounded-xl border border-slate-200 bg-white p-6 text-slate-900"><h1 className="text-xl font-semibold">Verifying current HR workspace</h1><p className="mt-3 text-sm text-slate-600">The previous principal or tenant view is not carried into this session.</p></main>;
   }
   if (loading) {
     return (
@@ -4635,7 +4636,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.1-M03-SHARED-STATUS-SEMANTICS
+ * VERSION: v2.8.2-M03-LIGHT-SESSION-GATES
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
