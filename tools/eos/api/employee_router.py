@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authenticated Employee Directory HTTP Boundary
-VERSION: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL
+VERSION: v1.1.2-M03-HR01-LEGACY-SELECTOR-ENFORCED
 AUTHORITY: Python Kennel EOS Global Principal and tenant workforce IAM.
 EPITOME: Read an exact authorized tenant workforce directory without accepting
          caller-selected tenant identity or exposing protected employee files.
@@ -9,7 +9,9 @@ COLLABORATION / OWNERSHIP: Mounted by server.py under /api/employees;
          EmployeeRegistry owns exact tenant persistence; EmployeeEntity is a
          legacy sensitive domain record and MUST NOT be serialized directly.
 CERTIFICATION / UPDATE DATE: 2026-11-27
-CHANGELOG: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL rejects\n         legacy tenantId query selectors explicitly before any employee query.\nCHANGELOG: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL replaces caller tenant query,
+CHANGELOG: v1.1.2-M03-HR01-LEGACY-SELECTOR-ENFORCED rejects explicit
+         legacy tenantId query selectors before reaching the source.
+CHANGELOG: v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY replaces caller tenant query,
          header fallback and GLOBAL_ROOT with current RequireTenantAuthorization,
          reuses existing customer directory and WILSY employer permission pairs,
          restricts responses to verified directory-only fields, and denies
@@ -43,7 +45,7 @@ from ..saas.employee.employee_registry import (
 )
 from ..saas.domain.employee import EmployeeEntity
 
-VERSION = "v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL"
+VERSION = "v1.1.2-M03-HR01-LEGACY-SELECTOR-ENFORCED"
 router = APIRouter(prefix="/api/employees", tags=["Employees"])
 
 _DIRECTORY_READ = RequireTenantAuthorization(
@@ -85,6 +87,7 @@ def _directory_record(employee: EmployeeEntity) -> EmployeeDirectoryRecord:
 
 @router.get("/search", response_model=list[EmployeeDirectoryRecord])
 def search_employees(
+    request: Request,
     q: str = Query(min_length=2, max_length=180),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=100000),
@@ -97,6 +100,8 @@ def search_employees(
     clients must rely on the authenticated exact tenant. Invalid source or
     persistence errors fail closed without cross-tenant existence disclosure.
     """
+    if "tenantId" in request.query_params or "tenant_id" in request.query_params:
+        raise HTTPException(status_code=422, detail="EMPLOYEE_TENANT_SELECTOR_FORBIDDEN")
     try:
         records = registry.search_employees(context.tenant_id, q, limit, offset)
     except EmployeeRegistryBoundaryError as error:
@@ -110,10 +115,13 @@ def search_employees(
 @router.get("/{employee_id}", response_model=EmployeeDirectoryRecord)
 def get_employee(
     employee_id: str,
+    request: Request,
     context: TenantAuthorizationContext = Depends(_DIRECTORY_READ),
     registry: EmployeeRegistry = Depends(get_employee_registry),
 ) -> EmployeeDirectoryRecord:
     """Read one authorized directory record; foreign and missing remain identical."""
+    if "tenantId" in request.query_params or "tenant_id" in request.query_params:
+        raise HTTPException(status_code=422, detail="EMPLOYEE_TENANT_SELECTOR_FORBIDDEN")
     try:
         employee = registry.get_employee_by_id(employee_id, context.tenant_id)
     except EmployeeRegistryBoundaryError as error:
@@ -130,7 +138,7 @@ def get_employee(
 
 
 # ARTIFACT: tools/eos/api/employee_router.py
-# VERSION: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL
+# VERSION: v1.1.2-M03-HR01-LEGACY-SELECTOR-ENFORCED
 # AUTHORITY BOUNDARY: Existing exact tenant employee-directory permissions.
 # TENANT POSTURE: Global Principal authenticated selected tenant only.
 # FAIL-CLOSED POSTURE: Restricted PII excluded; nonadmitted request denied.
