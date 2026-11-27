@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN
+ * VERSION: v20.3.0-AUTHENTICATED-TENANT-CHROME
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.3.0-AUTHENTICATED-TENANT-CHROME displays the exact independently hydrated authenticated tenant legal name and tenant reference in global chrome without accepting client-chosen scope.
  * CHANGELOG: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN routes Daily Attention and calendar selections through the canonical EOS work destination contract. Projects opens its exact project/task view, other admitted sources retain source-owned My Work, forged source identities fail closed; no task command or privilege change.
  * CHANGELOG: v20.14.0-PERSISTENT-HEADQUARTERS-NAVIGATION excludes ephemeral location.key from the stable, identity-bound Headquarters controller key so same-session in-app work navigation no longer forces its subtree to remount. Existing route hooks update the destination; auth/tenant/legal admission gates and EOS work reads remain authoritative.
  * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays EOS-issued Founder title independently from tenant_owner capacity; it never changes workspace authorization.
@@ -262,6 +263,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     : null;
   const organisationName = exactChromeText(tenantIdentity?.legalName)
     || exactChromeText(tenantIdentity?.name);
+  const currentTenantReference = tenantIdentity && sessionUser?.tenantId
+    ? exactChromeText(sessionUser.tenantId) : '';
+  const showTenantContext = Boolean(organisationName && currentTenantReference);
+
   const currentCapacity = sessionUser?.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION'
     ? exactChromeText(sessionUser.businessRole || sessionUser.role)
     : '';
@@ -440,6 +445,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
         <button type="button" onClick={openGlobalSearch} aria-label="Open workspace navigation" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
         <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-3">
+          {showTenantContext && <div className="hidden max-w-[205px] min-w-0 flex-col text-right leading-tight lg:flex" aria-label="Current authenticated tenant" data-testid="global-tenant-context">
+            <span className="truncate text-xs font-semibold text-white" title={organisationName}>{organisationName}</span>
+            <span className="truncate text-[10px] font-medium text-amber-200" title={currentTenantReference}>{currentTenantReference}</span>
+          </div>}
           {hasAuthenticatedSession && !authLoading && (
             <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-emerald-400/25 bg-emerald-500/20 text-emerald-100'}`}>
               <ShieldCheck size={15}/>
@@ -1080,7 +1089,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN
+ * VERSION: v20.3.0-AUTHENTICATED-TENANT-CHROME
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
