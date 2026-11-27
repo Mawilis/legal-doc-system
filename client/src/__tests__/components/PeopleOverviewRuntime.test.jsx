@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.0.3-SOURCE-CLASSIFIED-DENIAL-RUNTIME
+ * VERSION: v1.0.4-ACTIONABLE-PEOPLE-OVERVIEW-CONTRACT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,7 +9,8 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.0.3-SOURCE-CLASSIFIED-DENIAL-RUNTIME verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
+ *   v1.0.4-ACTIONABLE-PEOPLE-OVERVIEW-CONTRACT asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
+ *   v1.0.4-ACTIONABLE-PEOPLE-OVERVIEW-CONTRACT verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
  *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
@@ -240,13 +241,19 @@ describe('production People Overview source contracts', () => {
   it('renders an EOS-proven workforce number and uses no legacy HR snapshot source', async () => {
     renderDashboard();
     expect(await screen.findByText('Decisions & next actions')).toBeInTheDocument();
-    expect(screen.getByText('Verified workforce & hiring')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'People lifecycle at a glance' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Lifecycle coverage' })).toBeInTheDocument();
     await waitFor(() => expect(mockState.apiGet).toHaveBeenCalledWith(
       '/hr/workforce/overview', expect.objectContaining({
         headers: { 'X-Tenant-ID': 'TENANT-HR-A' },
       })
     ));
-    await waitFor(() => expect(screen.getByText('Current active employees · EOS')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', {
+      name: /Active workforce: 1\. Open Employee authority/,
+    })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Open Workforce source: Source verified/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open Headcount source: Source verified/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open Headcount requests/ })).toBeInTheDocument();
     expect(mockState.apiGet.mock.calls.some(([path]) => path === '/hr/snapshot')).toBe(false);
     expect(mockState.apiGet.mock.calls.some(([path]) => path === '/hr/headcount-requisitions/overview')).toBe(true);
   });
@@ -282,7 +289,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.0.3-SOURCE-CLASSIFIED-DENIAL-RUNTIME
+ * VERSION: v1.0.4-ACTIONABLE-PEOPLE-OVERVIEW-CONTRACT
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
