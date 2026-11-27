@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES
+ * VERSION: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
  * CHANGELOG: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES replaces the scrolling accordion with focused account subviews, distinguishes sign-in email from EOS-verified identity, and provides a durable device-only menu density preference without inventing server writes.
  * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
  * CHANGELOG: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE offers a separate Change HR capacity action for a user currently selected as HR Director/Manager; reauthentication remains mandatory before EOS may admit another role.
@@ -126,6 +127,7 @@
 import React, { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
+import RecoveryContactSecurityControl from './components/account/RecoveryContactSecurityControl.jsx';
 import { isWilsyPlatformTenant, WILSY_PLATFORM_LOGO_SRC } from './components/os/wilsyDashboardChromeConfig.js';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
@@ -227,8 +229,11 @@ const accountInitials = (name) => name
 const capacityLabel = (value) => {
   const capacity = exactChromeText(value);
   if (!capacity || !/^[A-Za-z0-9_-]+$/.test(capacity)) return '';
-  const words = capacity.replace(/^tenant_/i, '').replace(/[_-]+/g, ' ').toLocaleLowerCase();
-  return words ? words[0].toLocaleUpperCase() + words.slice(1) : '';
+  return capacity.replace(/^tenant_/i, '').split(/[_-]+/).filter(Boolean)
+    .map((word) => {
+      const lower = word.toLocaleLowerCase();
+      return lower === 'hr' ? 'HR' : lower.charAt(0).toLocaleUpperCase() + lower.slice(1);
+    }).join(' ');
 };
 
 export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceReleased = true }) => {
@@ -700,7 +705,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                       {accountDetail === 'security' && <>
                         <p className="text-sm font-semibold text-white">Security &amp; sessions</p>
                         <p className="mt-2 text-emerald-200">Current EOS workspace session authenticated.</p>
-                        <p className="mt-2">Sign out revokes the current session through the existing provider flow. Other device sessions, MFA methods and revocation controls require independent EOS evidence.</p>
+                        <p className="mt-2">Sign out revokes the current session through the existing provider flow. Other device sessions and MFA methods require independent EOS evidence.</p>
+                        <div className="mt-3">
+                          <RecoveryContactSecurityControl key={accountScope} compact email={accountEmail || signInEmail} />
+                        </div>
+                        <p className="mt-2 text-slate-300">Recovery email verification proves mailbox control for password recovery; it does not certify your general account email or grant another role.</p>
                       </>}
                       {accountDetail === 'access' && <>
                         <p className="text-sm font-semibold text-white">My access</p>
