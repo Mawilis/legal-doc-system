@@ -423,7 +423,7 @@ __all__ = [
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: password_recovery_contact_verification_request_service.py
-# VERSION: v1.0.0-R10E20-RECOVERY-CONTACT-VERIFICATION-REQUEST
+# VERSION: v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK
 # AUTHORITY BOUNDARY: authenticated current-email verification issuance only
 # TENANT POSTURE: exact ACCESS tenant/principal + durable user binding
 # FAIL-CLOSED POSTURE: mismatch, rate, persistence, or delivery failure rejects
