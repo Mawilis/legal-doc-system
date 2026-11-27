@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW
+ * VERSION: v2.9.6-NONADMITTED-PROCESS-NO-FANOUT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.9.6-NONADMITTED-PROCESS-NO-FANOUT ensures unconnected onboarding/exit lanes do not issue speculative HR read requests; verified Overview and supported sources retain exact bound reads.
  *   v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW avoids four decorative unavailable KPI cards when all People sources are denied; one source-verification message replaces unverified numbers.
  *   v2.9.4-EXPLICIT-ONBOARDING-EXIT-NAV brings Onboarding and Exit into the prototype's lifecycle navigation while withholding noncertified source actions and avoiding speculative API reads.
  *   v2.9.3-CANONICAL-ONE-MAIN-LANDMARK uses a named People application region inside the existing Headquarters main landmark, avoiding nested main elements without changing source ownership.
@@ -2810,11 +2811,13 @@ const HrDashboard = () => {
     }
     const requestedScopeKey = tenantScopeKey;
     setIsRefreshing(true);
-    const sourceTab = activeTab === 'overview' || !Object.prototype.hasOwnProperty.call(pageStates, activeTab)
-      ? 'employees' : activeTab;
-    const reads = [fetchSnapshot(), fetchTabData(sourceTab, pageStates[sourceTab], activeTab === 'overview' ? '' : searchTerm)];
-    if (sourceTab !== 'employees') reads.push(fetchTabData('employees', pageStates.employees, ''));
-    if (!['jobOpenings', 'employees'].includes(sourceTab)) reads.push(fetchTabData('jobOpenings', pageStates.jobOpenings, ''));
+    const sourceTab = activeTab === 'overview' ? 'employees'
+      : Object.prototype.hasOwnProperty.call(pageStates, activeTab) ? activeTab : null;
+    const reads = sourceTab
+      ? [fetchSnapshot(), fetchTabData(sourceTab, pageStates[sourceTab], activeTab === 'overview' ? '' : searchTerm)]
+      : [];
+    if (sourceTab && sourceTab !== 'employees') reads.push(fetchTabData('employees', pageStates.employees, ''));
+    if (sourceTab && !['jobOpenings', 'employees'].includes(sourceTab)) reads.push(fetchTabData('jobOpenings', pageStates.jobOpenings, ''));
     if (activeTab === 'overview') {
       reads.push(fetchTabData('candidates', pageStates.candidates, ''));
       reads.push(fetchTabData('offers', pageStates.offers, ''));
@@ -4743,7 +4746,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW
+ * VERSION: v2.9.6-NONADMITTED-PROCESS-NO-FANOUT
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
