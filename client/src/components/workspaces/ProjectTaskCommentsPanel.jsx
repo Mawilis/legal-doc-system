@@ -16,7 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
- * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
+ * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters and text search over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
  * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.\n * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.\n * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
@@ -264,6 +264,7 @@ export default function ProjectTaskCommentsPanel({
   const [attachmentHasMore, setAttachmentHasMore] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const [activityFilter, setActivityFilter] = useState('ALL');
+  const [activityQuery, setActivityQuery] = useState('');
   const [showTaskEvidence, setShowTaskEvidence] = useState(false);
   const [body, setBody] = useState('');
   const [correction, setCorrection] = useState(null);
@@ -534,8 +535,17 @@ export default function ProjectTaskCommentsPanel({
   const categoryOf = entry => entry.type === 'comment' ? 'COMMENT'
     : entry.type === 'event' ? 'EVENT'
       : entry.type.startsWith('approval') ? 'APPROVAL' : 'ATTACHMENT';
-  const visibleActivity = activityFilter === 'ALL' ? activity
-    : activity.filter(entry => categoryOf(entry) === activityFilter);
+  const activityTerm = activityQuery.trim().toLocaleLowerCase();
+  const visibleActivity = activity.filter(entry => {
+    if (activityFilter !== 'ALL' && categoryOf(entry) !== activityFilter) return false;
+    if (!activityTerm) return true;
+    const searchable = entry.type === 'comment' ? entry.item.body
+      : entry.type === 'attachment' ? entry.item.filename
+        : entry.type === 'approval-request' ? entry.item.rationale
+          : entry.type === 'approval-decision' ? entry.item.decision_rationale
+            : [entry.item.event_type, entry.item.status_after].filter(Boolean).join(' ');
+    return typeof searchable === 'string' && searchable.toLocaleLowerCase().includes(activityTerm);
+  });
   const displayTime = value => Number.isFinite(Date.parse(value))
     ? new Date(value).toLocaleString() : 'Timestamp not verified';
   const displayActor = id => {
@@ -788,9 +798,16 @@ export default function ProjectTaskCommentsPanel({
             {category.label}
           </button>)}
         </div>
-        <p className="text-xs text-slate-600" role="status">
-          {visibleActivity.length} on verified pages · newest first
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="verified-activity-page-search">Search verified activity on loaded pages</label>
+          <input id="verified-activity-page-search" type="search" value={activityQuery}
+            onChange={event => setActivityQuery(event.target.value)}
+            placeholder="Find on these pages"
+            className="min-h-9 w-44 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-900 placeholder:text-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"/>
+          <p className="text-xs text-slate-600" role="status">
+            {visibleActivity.length} matching · newest first
+          </p>
+        </div>
       </div>
       <ol className="space-y-2" aria-label="Source-verified task activity newest first">
         {visibleActivity.map(entry => <li className="relative min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm" key={entry.id}>
