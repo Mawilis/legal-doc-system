@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS
+ * VERSION: v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET clears tenant-authorized workforce-only search terms on switching to independently authorized hiring/offer/headcount modules.
  *   v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS renders canonical headcount requisition position, department, location, requested seats and status without generic invented 'Remote' or 'Normal' values.
  *   v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH keeps the nonadmitted Overview recovery branch syntactically closed and exclusive from source-admitted work.
  *   v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY displays one actionable access recovery when all current People sources are denied; authorized users see only source-backed work and indicators, never duplicate error cards.
@@ -2903,6 +2904,7 @@ const HrDashboard = () => {
    * @collaboration HR navigation must change the business process, not repaint the same list.
    */
   const changeTab = (tabId) => {
+    if (tabId !== 'employees') setSearchTerm('');
     setActiveTab(tabId);
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
@@ -4849,7 +4851,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS
+ * VERSION: v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
