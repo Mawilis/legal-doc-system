@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.2-HQ-HOME-ROUTE-RESET
+ * VERSION: v4.20.0-PEOPLE-OWNED-APPLICATION-CANVAS
+ * CHANGELOG: v4.20.0-PEOPLE-OWNED-APPLICATION-CANVAS gives People exclusive application canvas below the canonical global logo and tenant header, adds scoped return navigation and a true Headquarters-wide footer without altering IAM.
  * CHANGELOG: v4.19.2-HQ-HOME-ROUTE-RESET restores Headquarters Home and releases stale Projects/task focus when the canonical logo navigates to /headquarters. No EOS/IAM change.
  * CHANGELOG: v4.19.1-HQ-EXACT-TASK-NAVIGATION prevents a verified Headquarters task from switching to My assigned projects, clearing inherited assigned-view routing while retaining canonical project/task identifiers.
  * CHANGELOG: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS Delegates the Strategy-origin return into the canonical Projects context rather than leaving a detached Headquarters link; no changes to EOS authority.
@@ -252,6 +253,25 @@ const navigationGroups = [
 ];
 
 const HEADQUARTERS_STYLES = `
+
+/* Enterprise application ownership: People claims the full workspace below
+   the global identity/search bar, without a nested framed Headquarters card. */
+.hq-layout--people-owned{display:block;min-height:0}
+.hq-layout--people-owned>.hq-sidebar{display:none}
+.hq-content--people-owned{padding:0!important;min-width:0;overflow:visible}
+.hq-content--people-owned .hq-navigation-open{display:none}
+.hq-people-owned{padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:#0a1931!important;min-height:calc(100dvh - 130px);color:#f4f0e6}
+.hq-people-app{min-width:0;background:#0a1931}
+.hq-people-navigation{display:flex;align-items:center;gap:16px;padding:12px clamp(16px,2vw,32px);background:#0c1e38;border-bottom:1px solid #334e78;color:#c4d4e8;font-size:12px}
+.hq-people-navigation button{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;color:#f5d18b;border:1px solid #8a6f3d;background:transparent;font-weight:650}
+.hq-people-navigation button:hover{background:#1d365a}
+.hq-people-navigation button:focus-visible{outline:3px solid #f0ce7b;outline-offset:3px}
+.hq-people-navigation span{font-weight:650;letter-spacing:.03em}
+.hq-people-loading{padding:28px;color:#f4f0e6;background:#0e2444}
+.hq-global-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;align-items:center;padding:17px clamp(16px,2vw,32px);background:#0e2444;color:#c4d4e8;border-top:1px solid #334e78;font-size:11px;line-height:1.5}
+.hq-global-footer strong{font-weight:800;color:#f0ce7b;letter-spacing:.05em}
+@media(max-width:767px){.hq-people-navigation{padding:10px 14px;flex-wrap:wrap}.hq-global-footer{padding:14px}.hq-people-owned{min-height:calc(100dvh - 180px)}}
+
 .wilsyHqShell{--hq-ink:#101e42;--hq-blue:#075bff;--hq-border:#d8e1f1;color:var(--hq-ink);background:#f5f7fc;font-family:Inter,Arial,sans-serif;font-size:13px;min-height:calc(100dvh - 72px)}
 .wilsyHqShell *{box-sizing:border-box}.wilsyHqShell button{cursor:pointer}.wilsyHqShell button:disabled{cursor:not-allowed;opacity:.5}.wilsyHqShell button:focus-visible,.wilsyHqShell input:focus-visible,.wilsyHqShell textarea:focus-visible{outline:3px solid #5a8bff;outline-offset:2px}
 .hq-layout{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:calc(100dvh - 72px)}.hq-sidebar{background:linear-gradient(160deg,#112b50,#07172f);color:#dce7fc;display:flex;flex-direction:column;overflow:auto;position:relative;border-right:1px solid #263d60;padding:16px 0 12px}.hq-sidebar-title{padding:0 18px 14px;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#91aad3}.hq-nav{display:grid;gap:2px}.hq-nav-button{display:flex;align-items:center;gap:11px;width:100%;border:0;border-left:4px solid transparent;text-align:left;background:transparent;color:inherit;min-height:39px;padding:9px 14px;font-size:12px;font-weight:500;white-space:normal}.hq-nav-button:hover{background:#ffffff0d}.hq-nav-button[aria-current=page]{background:linear-gradient(90deg,#a27a37c9,#b1914b50);border-left-color:#ffd47b;color:white;font-weight:650}.hq-nav-button svg{width:18px;flex-shrink:0}.hq-nav-button .hq-nav-badge{margin-left:auto;border-radius:12px;background:#0061ff;color:white;padding:1px 6px;font-size:10px}.hq-nav-divider{border-top:1px solid #ffffff20;margin:10px 15px}.hq-sidebar-footer{margin-top:auto;padding:14px 16px 0;font-size:10px;line-height:1.7;color:#93adcf}.hq-sidebar-footer strong{color:white}.hq-mobile-menu{display:none}.hq-content{min-width:0;overflow:visible;padding:12px}.hq-subworkspace{background:#080f1d;color:#e2e8f0;border-radius:10px;min-height:0;padding:16px}.hq-overview{display:grid;grid-template-columns:minmax(310px,1.28fr) minmax(245px,1fr) minmax(226px,.76fr);gap:12px;align-items:start}.hq-panel{background:white;border:1px solid var(--hq-border);border-radius:10px;box-shadow:0 2px 7px #16335d08;padding:13px;min-width:0}.hq-panel h2{font-size:14px;font-weight:750;letter-spacing:-.025em;margin:0;line-height:1.25}.hq-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.hq-panel-heading h2{display:flex;align-items:center;gap:6px}.hq-panel-heading button,.hq-text-button{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--hq-blue);font-weight:650;border:0;background:transparent;padding:0;white-space:nowrap}.hq-muted{font-size:10px;color:#6b7894;line-height:1.5;margin:7px 0 0}.hq-hero{grid-column:1/3;position:relative;overflow:hidden;min-height:184px;border-radius:11px;background:#143b70;display:flex;align-items:center;padding:23px;color:white}.hq-hero-art{position:absolute;inset:0;background-image:linear-gradient(90deg,#082750ed 0%,#0b2b58b8 42%,#08275012 83%),url('/brand/wilsy-headquarters-campus-v1.png');background-position:62% 52%;background-size:cover}.hq-hero-copy{position:relative;z-index:1}.hq-hero h1{font-size:clamp(28px,2.85vw,43px);font-weight:750;letter-spacing:-.035em;margin:0;line-height:1.12}.hq-hero h2{color:#ffcf65;font-size:clamp(13px,1.4vw,21px);font-weight:700;margin:5px 0 10px;letter-spacing:-.02em}.hq-hero p{font-size:13px;margin:0 0 12px}.hq-hero button,.hq-strategy button{display:inline-flex;align-items:center;gap:7px;border:1px solid #e4b852;background:#ffc95b;color:#10213e;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:650}.hq-hero .hq-mission-button{position:absolute;right:20px;bottom:22px;z-index:2;background:#102744e8;color:#ffcf65;border:1px solid #e4b852;min-height:32px}.hq-illustration-label{position:absolute;right:10px;bottom:8px;background:#071c3fa8;border-radius:3px;padding:2px 4px;color:#e6edff;font-size:8px}.hq-glance{grid-column:3;grid-row:1;min-height:184px;padding:13px}.hq-glance>h2{font-size:16px;margin-bottom:11px}.hq-glance-row{display:flex;align-items:center;gap:8px;min-height:33px;font-size:11px}.hq-glance-row svg{color:#0b285b}.hq-glance-row strong{margin-left:auto;font-size:13px}.hq-source-note{font-size:9px;color:#6b7894;margin-top:4px}.hq-source-note p{margin-top:5px}.hq-source-note summary{cursor:pointer}.hq-kpis{grid-column:1/3;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.hq-kpi{display:flex;align-items:center;gap:10px;background:linear-gradient(130deg,white,#fafbff);border:1px solid var(--hq-border);border-radius:9px;padding:12px 10px;text-align:left;min-width:0;min-height:80px;transition:box-shadow .15s,border-color .15s,transform .15s}.hq-kpi:hover{border-color:#93b4ff;box-shadow:0 4px 14px #075bff0c;transform:translateY(-1px)}.hq-kpi>span:last-child{display:grid;gap:1px;min-width:0}.hq-kpi small{font-size:10px;color:var(--hq-ink);font-weight:600}.hq-kpi strong{font-size:22px;line-height:1.15;letter-spacing:-.035em}.hq-kpi strong.hq-kpi-label{font-size:13px;line-height:1.7}.hq-kpi em{font-size:9px;color:var(--hq-blue);font-style:normal;display:flex;align-items:center;gap:2px}.hq-round{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:white}.hq-blue{background:linear-gradient(135deg,#19a4ff,#0055ec)}.hq-purple{background:linear-gradient(135deg,#b86fff,#7622d9)}.hq-green{background:linear-gradient(135deg,#23c985,#009645)}.hq-orange{background:linear-gradient(135deg,#ffc866,#fc8d24)}.hq-teal{background:linear-gradient(135deg,#52d8d5,#009b9f)}
@@ -962,10 +982,11 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     }));
   };
 
+  const peopleOwnsCanvas = section === 'hr-workspace' && !showMyWork;
   return (
     <main className="wilsyHqShell" data-wilsy-headquarters="operating-workspace" data-company-purpose={platformOwnerWorkspace ? 'PLATFORM_OWNER' : undefined}>
       <style>{HEADQUARTERS_STYLES}</style>
-      <div className={`hq-layout${desktopNavigationOpen ? '' : ' hq-layout--navigation-collapsed'}`}>
+      <div className={`hq-layout${desktopNavigationOpen ? '' : ' hq-layout--navigation-collapsed'}${peopleOwnsCanvas ? ' hq-layout--people-owned' : ''}`}>
         <aside className="hq-sidebar">
           <button type="button" className="hq-mobile-menu" aria-expanded={mobileMenuOpen} aria-controls="hq-navigation" onClick={() => setMobileMenuOpen((value) => !value)}><span>WILSY Headquarters</span><Menu size={18}/></button>
           <div className="hq-sidebar-title"><span>{platformOwnerWorkspace ? 'Platform owner workspace' : 'Company workspace'}</span><button type="button" className="hq-navigation-collapse" aria-label="Collapse Headquarters navigation" aria-expanded="true" onClick={() => setDesktopNavigationOpen(false)}><ChevronLeft size={15}/></button></div>
@@ -1009,10 +1030,10 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           <div className="hq-sidebar-footer"><strong>WILSY OS</strong><div>{kernelMetricValue(kennelHealth)} · EOS kernel API</div><div>{kennelHealth?.version || 'Version unavailable'}</div></div>
         </aside>
 
-        <div className="hq-content">
+        <div className={peopleOwnsCanvas ? "hq-content hq-content--people-owned" : "hq-content"}>
           {!desktopNavigationOpen && <button type="button" className="hq-navigation-open" aria-label="Open Headquarters navigation" aria-expanded="false" onClick={() => setDesktopNavigationOpen(true)}><Menu size={15}/> Show navigation</button>}
 
-          <div className={section === 'overview' && !showMyWork ? '' : 'hq-subworkspace'}>
+          <div className={peopleOwnsCanvas ? "hq-subworkspace hq-people-owned" : section === 'overview' && !showMyWork ? '' : 'hq-subworkspace'}>
           {showMyWork ? (
             <MyWorkWorkspace focusWorkItem={myWorkFocusItem} />
           ) : section === 'overview' && calendarOpen ? (
@@ -1215,9 +1236,17 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
               </section>
             </>
           ) : section === 'hr-workspace' ? (
-            <Suspense fallback={<section role="status" className="rounded-2xl border border-white/10 bg-[#101a2a] p-6 text-sm text-amber-200">Loading the canonical HR workspace…</section>}>
-              <HRDashboard user={authUser}/>
-            </Suspense>
+            <section className="hq-people-app" aria-label="People operating application" data-workspace-ownership="PEOPLE">
+              <div className="hq-people-navigation">
+                <button type="button" onClick={() => navigateSection('overview')} aria-label="Return to Headquarters">
+                  <ChevronLeft size={16}/> Headquarters
+                </button>
+                <span aria-current="page">People · Hire to Exit</span>
+              </div>
+              <Suspense fallback={<section role="status" className="hq-people-loading">Verifying the People operating workspace…</section>}>
+                <HRDashboard user={authUser}/>
+              </Suspense>
+            </section>
           ) : section === 'hiring' ? (
             <HeadcountRequisitionWorkspace
               loading={requisitionsLoading || requisitionsScope !== workScope}
@@ -1287,6 +1316,11 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           </div>
         </div>
       </div>
+      <footer className="hq-global-footer" aria-label="Headquarters operating footer">
+        <span><strong>WILSY OS</strong> · Build. Operate. Grow.</span>
+        <span>{peopleOwnsCanvas ? 'People · Hire to Exit' : 'Headquarters · Enterprise operations'}</span>
+        <span>Python Kennel EOS · Source-owned business records · Authorized tenant context</span>
+      </footer>
       {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={closeOperatingDocument} onOpenWork={() => { closeOperatingDocument(); openMyWork(); }}
         onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects', { fromStrategy: operatingDocumentClass === 'STRATEGY' }); }}
         onOpenProject={(projectId, focus = null) => {
@@ -1767,7 +1801,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.19.2-HQ-HOME-ROUTE-RESET
+ * VERSION: v4.20.0-PEOPLE-OWNED-APPLICATION-CANVAS
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
