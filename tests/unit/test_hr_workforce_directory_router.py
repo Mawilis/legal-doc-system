@@ -7,8 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Canonical Python EOS workforce router and its tests.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
 CHANGELOG: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
-CHANGELOG: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
-CHANGELOG: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT corrects the single-aggregation test contract and
+CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
+CHANGELOG: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT corrects the single-aggregation test contract and
            supplies institutional header and sovereign end seal.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic employees only; bank and identity
