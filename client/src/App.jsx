@@ -25,7 +25,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
  * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER moves canonical Founder workspace navigation into the existing account dropdown, with same-capacity navigation and explicit confirmation plus reauthentication for cross-capacity transitions; no role union or IAM escalation.
- * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
+ * CHANGELOG: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
  * CHANGELOG: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS exposes actionable People-only workforce/hiring/offer/headcount module shortcuts in global search overlay without implying cross-domain search authority.
  * CHANGELOG: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE labels global People search as authorized workforce lookup or module navigation, without implying certified cross-domain record indexing.
  * CHANGELOG: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH makes the global navigation search context-aware inside the People application, routing queries to the existing HR-owned search intent without adding global HR data access.
