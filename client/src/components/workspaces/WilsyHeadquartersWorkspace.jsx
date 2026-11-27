@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.22.2-PERSISTENT-VIEWPORT-FOOTER
+ * VERSION: v4.22.3-ROLE-AWARE-PROJECTS-RECOVERY
+ * CHANGELOG: v4.22.3-ROLE-AWARE-PROJECTS-RECOVERY only labels Owner capacity as Platform owner and routes denied HR Projects access to the existing governed Owner capacity switch.
  * CHANGELOG: v4.22.2-PERSISTENT-VIEWPORT-FOOTER reserves the shared EOS footer at the viewport boundary without relying on nested People scroll height; internal canvas remains independently scrollable.
  * CHANGELOG: v4.22.1-DELETE-RETIRED-BREADCRUMB-MOBILE-RULE removes the last mobile-only breadcrumb style and obsolete extra-height assumption from the owned People canvas.
  * CHANGELOG: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP removes the redundant full-width Headquarters/People breadcrumb strip and delegates its existing return navigation to the People application header, recovering vertical workspace without duplicating tenant identity.
@@ -517,7 +518,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   const employerReference = verifiedEmployer ? workTenantId : null;
 
   const workScope = currentUnifiedMyWorkScope(auth, workTenantId);
-  const platformOwnerWorkspace = Boolean(workScope && isWilsyPlatformTenant(workTenantId));
+  const platformOwnerWorkspace = Boolean(workScope && isWilsyPlatformTenant(workTenantId) && operatingCapacity === 'tenant_owner');
   // A deep-link selects a pre-existing workspace view, not IAM or module
   // admission authority. The Operations form and API enforce their own grants.
   const sectionFromUrl = new URLSearchParams(location.search).get('section');
@@ -1293,7 +1294,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
             />
           ) : section === 'projects' ? (
             <>
-              <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}
+              <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} selectedCapacity={operatingCapacity} onRequestOwnerCapacity={() => window.dispatchEvent(new Event('wilsy:request-owner-capacity'))} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}
                 strategyOrigin={new URLSearchParams(location.search).get('returnTo') === 'STRATEGY'}
                 onReturnToAttention={location.state?.attentionReturn
                   && typeof location.state.attentionReturn.pathname === 'string'
@@ -1834,7 +1835,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.22.2-PERSISTENT-VIEWPORT-FOOTER
+ * VERSION: v4.22.3-ROLE-AWARE-PROJECTS-RECOVERY
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
