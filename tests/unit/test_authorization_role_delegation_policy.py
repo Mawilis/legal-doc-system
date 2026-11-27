@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authorization-Role Delegation Certificate.
-VERSION: v1.6.0-CANONICAL-FOUNDER-HR-MANAGER-GRANT-CERT
+VERSION: v1.7.0-FOUNDER-HR-DIRECTOR-DELEGATION-CERT
 AUTHORITY: Direct certificate of explicit GD1 grant law.
 EPITOME: Certifies the explicit authorization-role delegation graph, exact WILSY-only admission-officer issuance, and fail-closed boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_authorization_role_delegation_policy.py
@@ -11,6 +11,7 @@ FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 TRANSACTION BOUNDARY: No transaction ownership.
 CERTIFICATION / UPDATE DATE: 2026-11-27
 CHANGELOG:
+    2026-11-27 v1.7.0-FOUNDER-HR-DIRECTOR-DELEGATION-CERT certifies the separately governed canonical HR_DIRECTOR invitation edge, ordinary tenant and alternate inviter denial; no employee admission authority.
     2026-11-27 v1.6.0-CANONICAL-FOUNDER-HR-MANAGER-GRANT-CERT proves exact canonical Enterprise Admin -> HR Manager invitation eligibility and cross-tenant, inactive, and HR Director denial.
     2026-11-22 v1.5.0-WILSY-PROJECT-CONTRIBUTOR-DELEGATION-CERT certifies exact WILSY-only Enterprise Admin invite of a narrow PROJECTS_PARTICIPANT_CONTRIBUTOR role and denies cross-tenant, revoked, other inviter or grant-free paths.
     2026-11-16 v1.4.0-PROJECTS-PLATFORM-OWNER-DELEGATION-CERT verifies the dedicated Projects role invitation edge is Enterprise-Admin-only and WILSY-tenant-only, with acceptance required before assignment.
@@ -48,6 +49,7 @@ EXPECTED = {
     ("ENTERPRISE_ADMIN", "PROJECTS_PLATFORM_OWNER"),
     ("ENTERPRISE_ADMIN", "PROJECTS_PARTICIPANT_CONTRIBUTOR"),
     ("ENTERPRISE_ADMIN", "HR_MANAGER"),
+    ("ENTERPRISE_ADMIN", "HR_DIRECTOR"),
 }
 
 def assignment(role="ENTERPRISE_ADMIN", tenant="t1", status=RoleAssignmentStatus.ACTIVE):
@@ -70,6 +72,29 @@ def test_tenant_and_lifecycle_boundaries():
     assert not evaluate_authorization_role_grant(assignment(status=RoleAssignmentStatus.REVOKED), "t1", "AUDITOR").allowed
 
 
+def test_hr_director_delegation_requires_exact_company_and_live_admin() -> None:
+    allowed = evaluate_authorization_role_grant(
+        assignment(tenant=WILSY_COMPANY_TENANT_ID),
+        WILSY_COMPANY_TENANT_ID, "HR_DIRECTOR",
+    )
+    assert allowed.allowed is True
+    for tenant in ("t1", "customer-tenant"):
+        result = evaluate_authorization_role_grant(
+            assignment(tenant=tenant), tenant, "HR_DIRECTOR",
+        )
+        assert result.allowed is False
+        assert result.denial_code is AuthorizationRoleGrantDenialCode.GRANT_NOT_PERMITTED
+    for role in ("AUDITOR", "HR_MANAGER"):
+        assert not evaluate_authorization_role_grant(
+            assignment(role=role, tenant=WILSY_COMPANY_TENANT_ID),
+            WILSY_COMPANY_TENANT_ID, "HR_DIRECTOR",
+        ).allowed
+    assert not evaluate_authorization_role_grant(
+        assignment(tenant=WILSY_COMPANY_TENANT_ID, status=RoleAssignmentStatus.REVOKED),
+        WILSY_COMPANY_TENANT_ID, "HR_DIRECTOR",
+    ).allowed
+
+
 def test_hr_manager_invitation_only_for_canonical_employer() -> None:
     """Permission eligibility is not an assignment or an accepted invitation."""
     authorized = evaluate_authorization_role_grant(
@@ -90,7 +115,7 @@ def test_hr_manager_invitation_only_for_canonical_employer() -> None:
         assignment(tenant=WILSY_COMPANY_TENANT_ID, status=RoleAssignmentStatus.REVOKED),
         WILSY_COMPANY_TENANT_ID, "HR_MANAGER",
     ).allowed
-    assert not evaluate_authorization_role_grant(
+    assert evaluate_authorization_role_grant(
         assignment(tenant=WILSY_COMPANY_TENANT_ID),
         WILSY_COMPANY_TENANT_ID, "HR_DIRECTOR",
     ).allowed
@@ -192,7 +217,7 @@ def test_company_reader_edge_is_explicit_tenant_local_and_non_possessory():
     assert "company_operating_document:publish" not in ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"]
 
 # ARTIFACT: test_authorization_role_delegation_policy.py
-# VERSION: v1.6.0-CANONICAL-FOUNDER-HR-MANAGER-GRANT-CERT
+# VERSION: v1.7.0-FOUNDER-HR-DIRECTOR-DELEGATION-CERT
 # AUTHORITY BOUNDARY: certificate only; no authority grant or assignment is created
 # TENANT POSTURE: platform-only Projects delegation is confined to the canonical WILSY company tenant
 # FAIL-CLOSED POSTURE: non-WILSY and unlisted delegation edges deny
