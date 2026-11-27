@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.9.4-EXPLICIT-ONBOARDING-EXIT-NAV
+ * VERSION: v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW avoids four decorative unavailable KPI cards when all People sources are denied; one source-verification message replaces unverified numbers.
  *   v2.9.4-EXPLICIT-ONBOARDING-EXIT-NAV brings Onboarding and Exit into the prototype's lifecycle navigation while withholding noncertified source actions and avoiding speculative API reads.
  *   v2.9.3-CANONICAL-ONE-MAIN-LANDMARK uses a named People application region inside the existing Headquarters main landmark, avoiding nested main elements without changing source ownership.
  *   v2.9.2-OVERVIEW-AUTHORITY-AND-TENANT-CONTEXT surfaces an explicit current HR-authority denial and exact selected employer context on the prototype-grounded Overview without bypassing authorization.
@@ -4093,7 +4094,8 @@ const HrDashboard = () => {
                   <div><p className={styles.eyebrow}>OVERVIEW · CURRENT SOURCES</p><h3 id="people-brief-heading">People, at a glance</h3></div>
                   <span>Verified counts only · no sample staff</span>
                 </div>
-                <div className={styles.peopleKpiGrid}>
+                {['employees', 'candidates', 'offers', 'jobOpenings'].some(key => isVerifiedReadState(datasetReadStates[key]))
+                  ? <div className={styles.peopleKpiGrid}>
                   {[
                     { title: 'Workforce', state: datasetReadStates.employees, dataset: datasets.employees, action: 'employees', note: 'Current employee directory' },
                     { title: 'Hiring candidates', state: datasetReadStates.candidates, dataset: datasets.candidates, action: 'candidates', note: 'Source-owned candidate records' },
@@ -4106,6 +4108,9 @@ const HrDashboard = () => {
                     <small>{metric.note}</small>
                   </button>)}
                 </div>
+                  : <div className={styles.sourceUnverified} role="status">
+                    No current People indicators are authorized for this capacity. Select an eligible operating capacity to verify source-owned headcount, hiring and workforce information.
+                  </div>}
               </section>
               <section className={styles.overviewSection} aria-labelledby="people-queue-heading">
                 <div className={styles.overviewSectionHead}>
@@ -4738,7 +4743,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.9.4-EXPLICIT-ONBOARDING-EXIT-NAV
+ * VERSION: v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
