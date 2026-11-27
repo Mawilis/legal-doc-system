@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT
+ * VERSION: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
- * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.\n * CHANGELOG: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT verifies read-only source-page activity filters and the compact timeline without additional EOS calls or comment mutations.
+ * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.\n * CHANGELOG: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT verifies count, actor text, Mine/date/order filters and clear operations without additional EOS calls.
+ * CHANGELOG: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT verifies read-only source-page activity filters and the compact timeline without additional EOS calls or comment mutations.
  * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
  * CHANGELOG: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT proves
  *          Write update makes the textarea the immediate focused task,
@@ -192,7 +193,19 @@ it('filters only the verified activity page without refetching or changing immut
   expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
   fireEvent.change(search, { target: { value: 'verify this dependency' } });
   expect(screen.getByText('Please verify this dependency.')).toBeVisible();
-  expect(api.get).toHaveBeenCalledTimes(reads);
+  const initialReads = api.get.mock.calls.length;
+  expect(screen.getByRole('button', { name: 'Updates' })).toHaveTextContent('1');
+  expect(screen.getByRole('button', { name: 'All activity' })).toHaveTextContent('1');
+  fireEvent.click(screen.getByRole('button', { name: 'Mine only' }));
+  expect(screen.getByRole('button', { name: 'Mine only' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByText('You posted a progress update')).toBeVisible();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Sort verified activity' }), {
+    target: { value: 'OLDEST' },
+  });
+  expect(screen.getByText(/matching · oldest first/)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+  expect(screen.getByRole('button', { name: 'Mine only' })).toHaveAttribute('aria-pressed', 'false');
+  expect(api.get).toHaveBeenCalledTimes(initialReads);
   expect(api.post).not.toHaveBeenCalled();
 });
 
@@ -447,7 +460,7 @@ it('keeps source-verified task lifecycle visible when comment EOS is unavailable
     throw new Error('Optional activity source unavailable');
   });
   mount();
-  expect(await screen.findByText('Lifecycle transition')).toBeVisible();
+  expect(await screen.findByText('You changed this work')).toBeVisible();
   expect(screen.getAllByRole('alert').some(node => node.textContent.includes('HTTP 503'))).toBe(true);
   expect(screen.getByRole('button', { name: 'Retry comments' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Write update' })).not.toBeInTheDocument();
@@ -469,7 +482,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT
+// VERSION: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
