@@ -1,12 +1,13 @@
 """TITLE: WILSY OS authenticated workforce directory and Overview HTTP certificate.
-VERSION: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT
+VERSION: v1.2.0-M03-WORKFORCE-DETAIL-CERT
 AUTHORITY: WILSY OS Core Governance; regression evidence only.
 EPITOME: Certifies exact-tenant, independently IAM-bound workforce directory and
          single-aggregation Overview, denied-before-read, and PII exclusion.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_workforce_directory_router.py
 COLLABORATION / OWNERSHIP: Canonical Python EOS workforce router and its tests.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
-CHANGELOG: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT corrects the single-aggregation test contract and
+CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
+CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT corrects the single-aggregation test contract and
            supplies institutional header and sovereign end seal.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic employees only; bank and identity
@@ -67,6 +68,14 @@ class _Collection:
         return ([{"active_employees": len(self.rows),
                   "departments": list({row.get("employment", {}).get("department")
                                        for row in self.rows})}] if self.rows else [])
+
+    def find_one(self, query: dict[str, Any], projection: dict[str, int]) -> dict[str, Any] | None:
+        self.query = query
+        self.projection = projection
+        for row in self.rows:
+            if row.get("employeeId") == query.get("employeeId"):
+                return row
+        return None
 
     def find(self, query: dict[str, Any], projection: dict[str, int]) -> _Cursor:
         self.query = query
@@ -206,8 +215,69 @@ def test_overview_denied_principal_cannot_read_employee_counts(
     assert response.json() == {"detail": "HR_READ_DENIED"}
 
 
+def test_workforce_detail_is_exact_tenant_and_directory_safe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Detail uses existing IAM dependency and never serializes protected files."""
+    collection = _Collection([{
+        "employeeId": "EMP-1",
+        "displayName": "Synthetic Worker",
+        "employment": {
+            "jobTitle": "Engineer", "department": "Operations",
+            "managerId": "EMP-2", "status": "ACTIVE",
+        },
+        "contact": {"workEmail": "synthetic@example.invalid"},
+        "financial": {"bankAccount": "HIDDEN"},
+        "identification": {"nationalId": "HIDDEN"},
+    }])
+    response = _client(monkeypatch, _Database(collection)).get(
+        "/api/hr/workforce/EMP-1",
+        headers={"X-Tenant-ID": "UNTRUSTED-OTHER-TENANT"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema"] == "WILSY-HR-WORKFORCE-DIRECTORY-DETAIL/V1"
+    assert body["tenant_id"] == "WILSYTENANT-4CD2FZ4O"
+    assert body["source"] == "AUTHORISED_HR_EMPLOYEE_REGISTRY"
+    assert body["employee"]["employeeId"] == "EMP-1"
+    assert body["employee"]["jobTitle"] == "Engineer"
+    assert "financial" not in response.text
+    assert "identification" not in response.text
+    assert "HIDDEN" not in response.text
+    assert collection.query == {
+        "tenantId": "WILSYTENANT-4CD2FZ4O",
+        "employeeId": "EMP-1", "isActive": True, "deletedAt": None,
+    }
+    assert collection.projection == subject._DIRECTORY_PROJECTION
+
+
+def test_workforce_detail_not_found_is_opaque(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing employee identity and another tenant's absent identity are indistinguishable."""
+    collection = _Collection([])
+    response = _client(monkeypatch, _Database(collection)).get(
+        "/api/hr/workforce/EMP-UNKNOWN",
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "WORKFORCE_EMPLOYEE_NOT_FOUND"
+    assert collection.query["tenantId"] == "WILSYTENANT-4CD2FZ4O"
+
+
+def test_workforce_detail_rejects_unsafe_identifier(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Malformed IDs fail before any persistence operation."""
+    collection = _Collection([])
+    response = _client(monkeypatch, _Database(collection)).get(
+        "/api/hr/workforce/EMP%20INVALID",
+    )
+    assert response.status_code == 422
+    assert collection.query is None
+
+
 # ARTIFACT: tests/unit/test_hr_workforce_directory_router.py
-# VERSION: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT
+# VERSION: v1.2.0-M03-WORKFORCE-DETAIL-CERT
 # AUTHORITY BOUNDARY: Regression tests cannot grant HR or tenant IAM authority.
 # TENANT POSTURE: Synthetic exact-tenant cases and explicit cross-scope denial.
 # FAIL-CLOSED POSTURE: Missing source and denied authorization never return employee counts.
