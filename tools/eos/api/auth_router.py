@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION
+VERSION: v1.21.1-LOGIN-WORKER-ISOLATION
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -13,8 +13,9 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION / UPDATE DATE: 2026-11-24.
+CERTIFICATION / UPDATE DATE: 2026-11-27.
 CHANGELOG:
+  v1.21.1-LOGIN-WORKER-ISOLATION: Isolates the synchronous tenant-bound login rate-limit, MongoDB identity checks and bcrypt work from the FastAPI event loop through its own worker thread; preserves existing admission, 429/503 semantics and MFA challenge issuance. No credentials are logged, no timeout increased, no identity or IAM mutations added.
   v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION: Delegates synchronous
   MongoDB-backed workspace-bootstrap and module-manifest read composition to
   FastAPI's worker threads instead of blocking its shared asyncio event loop.
@@ -1373,6 +1374,17 @@ def _require_discovered_tenant_binding(tenant_id: object, user: Any) -> None:
 # ─── LOGIN ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=AuthResponse, response_model_exclude_none=True)
 async def login(request: AuthRequest, http_request: Request):
+    """Run the synchronous legacy credential authority off the ASGI event loop.
+
+    Starlette's bounded worker pool owns the blocking MongoDB and bcrypt
+    execution; this wrapper does not retry or issue an extra login attempt.
+    """
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(_login_sync, request, http_request)
+
+
+def _login_sync(request: AuthRequest, http_request: Request):
+    """Preserve all existing rate-limit, tenant binding and MFA semantics."""
     observed_at = datetime.now(timezone.utc)
     peer = http_request.client
     if peer is None or not isinstance(peer.host, str) or not peer.host:
@@ -1954,7 +1966,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION
+# VERSION: v1.21.1-LOGIN-WORKER-ISOLATION
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
