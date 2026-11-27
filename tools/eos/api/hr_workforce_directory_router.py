@@ -9,13 +9,13 @@ COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py at /api/hr/wo
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
   v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD rejects whitespace-only search parameters before issuing a directory-wide regex query; canonical IAM, explicit projection, bounded list and exact-tenant detail read remain unchanged.
-  v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD — Adds a separately authorized, strictly exact-tenant, directory-only employee detail read with opaque not-found behavior and bounded identity selectors; reuses the canonical employee projection without employment write or protected file access.
-  v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD — Reads employee and department measures in one exact-tenant
+  v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL — Adds a separately authorized, strictly exact-tenant, directory-only employee detail read with opaque not-found behavior and bounded identity selectors; reuses the canonical employee projection without employment write or protected file access.
+  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Reads employee and department measures in one exact-tenant
   Mongo aggregation instead of two unsynchronized count/distinct calls.
-  v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD — Adds exact-tenant, current-IAM-authorized workforce Overview
+  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Adds exact-tenant, current-IAM-authorized workforce Overview
   metrics from the canonical employee source. No HR access, departments,
   payroll, employee PII, or separate-source privileges are inferred.
-  v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
+  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
   v1.0.0-PLATFORM-EMPLOYER-DIRECTORY-SCOPE — Adds canonical WILSY platform-employer read authorization while preserving customer HR entitlement, exact tenant query, bounded projection and read-only behavior.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Tenant scope comes only from EOS authorization; directory fields are projected explicitly and sensitive identity, health and financial attributes are excluded.
