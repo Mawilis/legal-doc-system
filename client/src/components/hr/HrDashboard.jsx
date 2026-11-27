@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES
+ * VERSION: v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE — Unmounts the unconditional black/gold legacy HR profile card, which ignores the supplied isOpen prop; canonical OS account chrome remains authoritative.
  *   v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES — Preserves distinct denied and unavailable notice semantics while making both accessible under legacy HR styles.
  *   v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE — Rejects workforce payloads without canonical EOS provenance and projects only directory-safe fields into browser state; no passthrough of backend employee extras.
  *   v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT — Applies scoped, contrast-safe People headings, denied notice and input classes against legacy inherited styling; no IAM override.
@@ -81,7 +82,7 @@ import api from '../../services/api';
 import * as hrService from '../../services/hrService';
 import { resolveCountryOption, searchSovereignCountries } from '../../data/sovereignCountryRegistry';
 import { exportCSV } from '../../utils/exportHelpers';
-import WilsyProfilePanel, { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
+import { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import styles from './HrDashboard.module.css';
 import { workStatusClasses } from '../../theme/workStatus.js';
@@ -4138,18 +4139,6 @@ const HrDashboard = () => {
               The next implementation milestone is the certified EOS lifecycle for this function. It cannot be simulated by client state or a static dashboard.</p>}
           </section>
         </main>
-        <WilsyProfilePanel
-          isOpen={showProfilePanel}
-          onClose={() => setShowProfilePanel(false)}
-          user={user}
-          activeTenant={activeTenant}
-          access={{ userId: user?.id || user?._id, userRole: user?.role, edition: activeTenant?.edition }}
-          onSignOut={logout}
-          onThemeChange={handleProfileThemeChange}
-          onModeChange={handleProfileModeChange}
-          onProfileAction={handleProfilePanelAction}
-        />
-
         {showArtifactModal && (
           <div className={styles.hrModal} role="dialog" aria-modal="true" aria-label="HR artifact generator">
             <section>
@@ -4653,7 +4642,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES
+ * VERSION: v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
