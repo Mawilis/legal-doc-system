@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN
+ * VERSION: v2.12.1-HQ-RETURN-ICON-IMPORT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.12.1-HQ-RETURN-ICON-IMPORT includes the actual icon dependency required by the new contextual People header return control.
  *   v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN mounts a single accessible compact Headquarters return inside the contextual People application header; removes the need for a duplicate external navigation rail.
  *   v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES bounds Overview to concurrent independently governed sources and every other HR lane to its selected source; search no longer refetches unrelated workforce aggregates.
  *   v2.11.11-READ-SCOPE-NOT-CHECKER-ENTITLEMENT labels tenant-visible submitted requisitions as source-owned requests, not personal approval assignments, because decision authority is rechecked only by the owning EOS command.
@@ -76,6 +77,7 @@ import {
   Briefcase,
   Calendar,
   CheckCircle,
+  ChevronLeft,
   CreditCard,
   Download,
   ArrowUpRight,
@@ -4872,7 +4874,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN
+ * VERSION: v2.12.1-HQ-RETURN-ICON-IMPORT
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
