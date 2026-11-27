@@ -1,15 +1,16 @@
 """WILSY OS authoritative MFA router certificate.
 
 TITLE: Authentication Router Authoritative MFA Certificate
-VERSION: v1.5.1-REQUIRED-ASGI-REQUEST-LOGIN-CERT
+VERSION: v1.6.0-LOGIN-WORKER-ISOLATION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies exact setup, reconciliation, verification, persistence, and
          bounded tenant-discovery behavior without a live database.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_auth_router_authoritative_mfa.py
 COLLABORATION / OWNERSHIP: Exercises tools.eos.api.auth_router with deterministic
                            registry and tenant doubles.
-CERTIFICATION / UPDATE DATE: 2026-09-17
+CERTIFICATION / UPDATE DATE: 2026-11-27
 CHANGELOG:
+  v1.6.0-LOGIN-WORKER-ISOLATION-CERT verifies the asynchronous login route delegates blocking identity and MongoDB admission to a worker thread while preserving the callback and returned response.
   v1.5.1-REQUIRED-ASGI-REQUEST-LOGIN-CERT supplies the remaining direct MFA-reconciliation login Request.
   v1.5.0 supplies concrete Request doubles
   for every direct login invocation and isolates rate-gate behavior by test.
@@ -624,8 +625,35 @@ def test_http_login_fails_closed_when_throttle_authority_is_unavailable(
     assert registry.session_calls == 0
 
 
+def test_login_runs_blocking_auth_on_worker_thread(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Credential admission cannot obstruct the shared ASGI event loop."""
+    import threading
+
+    observed: list[str] = []
+    main_thread = threading.current_thread()
+    expected = SimpleNamespace(status="MFA_REQUIRED")
+    request = AuthRequest(
+        email="person@example.com", password="synthetic-only", tenant_id="TENANT-TEST",
+    )
+    http_request = _http_request()
+
+    def _worker(actual_request: Any, actual_http_request: Any) -> Any:
+        assert actual_request is request
+        assert actual_http_request is http_request
+        assert threading.current_thread() is not main_thread
+        observed.append("worker")
+        return expected
+
+    monkeypatch.setattr(auth_router, "_login_sync", _worker)
+    response = _run(auth_router.login(request, http_request))
+    assert response is expected
+    assert observed == ["worker"]
+
+
 # ARTIFACT: tests/unit/test_auth_router_authoritative_mfa.py
-# VERSION: v1.5.1-REQUIRED-ASGI-REQUEST-LOGIN-CERT
+# VERSION: v1.6.0-LOGIN-WORKER-ISOLATION-CERT
 # AUTHORITY BOUNDARY: deterministic HTTP-state certificate only
 # TENANT POSTURE: unknown aliases fail closed without directory enumeration
 # FAIL-CLOSED POSTURE: persistence uncertainty cannot issue a session
