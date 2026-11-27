@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Tenant Identity Brand Fidelity Certificate
  * WILSY OS — PREMIUM TENANT IDENTITY CERTIFICATE
- * VERSION: v1.9.0-EXPLICIT-HR-CAPACITY-LOGIN-CERT
+ * VERSION: v1.9.1-FAILED-HR-SIGNIN-OWNER-RECOVERY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the bounded discovery/login identity projection, permanent
  *          platform trust mark, and neutral tenant-logo fallback.
@@ -14,6 +14,7 @@
  * COLLABORATION / OWNERSHIP: Exercises TenantDiscovery, SovereignLogin, and
  *                            TenantIdentityCard without network or auth writes.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.9.1-FAILED-HR-SIGNIN-OWNER-RECOVERY-CERT verifies failed global HR login displays EOS denial and offers an explicit return to normal Owner login without password reset.
  * CHANGELOG: v1.9.0-EXPLICIT-HR-CAPACITY-LOGIN-CERT certifies opt-in verified HR capacity selection on the existing login with no legacy login fallback and MFA-only session issuance.
  * CHANGELOG: v1.8.1-OFFICIAL-SQUARE-BRAND-PARITY-CERT binds the platform mark to the
  * latest approved vivid presentation derivative. All tenant-logo, authority,
@@ -217,6 +218,28 @@ describe('premium tenant identity projection', () => {
     }));
   });
 
+  it('shows denied HR global authentication and a one-click Owner sign-in recovery', async () => {
+    locationState.pathname = '/login';
+    locationState.search = '?capacity=hr';
+    beginGlobalCapacityLogin.mockRejectedValueOnce({
+      response: { status: 503, data: { detail: 'GLOBAL_AUTHENTICATION_UNAVAILABLE' } },
+    });
+    render(<MemoryRouter><SovereignLogin /></MemoryRouter>);
+    fireEvent.change(screen.getByLabelText('Work email'), {
+      target: { value: 'founder@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'synthetic-test-secret' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue securely' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('GLOBAL_AUTHENTICATION_UNAVAILABLE');
+    expect(login).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Return to normal Owner sign-in' }));
+    expect(navigate).toHaveBeenCalledWith('/login', expect.objectContaining({
+      replace: true,
+    }));
+  });
+
   it('renders the platform mark and premium identity on login without alias-based branding', () => {
     locationState.pathname = '/login';
     locationState.state = { tenant: verifiedTenant };
@@ -267,7 +290,7 @@ describe('premium tenant identity projection', () => {
 
 /**
  * ARTIFACT: TenantIdentityPremium.test.jsx
- * VERSION: v1.9.0-EXPLICIT-HR-CAPACITY-LOGIN-CERT
+ * VERSION: v1.9.1-FAILED-HR-SIGNIN-OWNER-RECOVERY-CERT
  * AUTHORITY BOUNDARY: deterministic client projection certificate only
  * TENANT POSTURE: no alias-specific logo or inferred legal identity
  * FAIL-CLOSED POSTURE: absent tenant identity is never fabricated
