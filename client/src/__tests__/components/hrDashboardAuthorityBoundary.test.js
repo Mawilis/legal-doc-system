@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE
+ * VERSION: v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST — Guards rendered People headings/error/search contrast and saturated source-owned badges/Project row accents.
  *   v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE — Asserts both canonical Project task row and lifecycle chart use the same semantic source-status contract as People.
  *   v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT — Certifies unified People surface, no wrong logo or black/gold chrome, read-only future modules and shared status semantics.
  *   v1.3.1-HR-STRICT-PAGE-CONTRACT — Aligns the regression assertion with the normalizer that requires source pagination metadata before verification.
@@ -195,18 +196,31 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(workStatusTone('PENDING')).toBe('caution');
     expect(workStatusTone('unrecognized_eos_status')).toBe('neutral');
     expect(workStatusColor('DONE')).toBe('#15803d');
-    expect(workStatusColor('BLOCKED')).toBe('#b91c1c');
-    expect(workStatusClasses('APPROVED')).toContain('text-green-900');
+    expect(workStatusColor('BLOCKED')).toBe('#be3640');
+    expect(workStatusClasses('APPROVED')).toContain('bg-emerald-700 text-white');
     expect(dashboard).toContain('workStatusClasses(value)');
     expect(projectRow).toContain('workStatusClasses(pendingStatus !== null');
+    expect(projectRow).toContain('workStatusAccentClass(item.status)');
     expect(projectTasks).toContain('workStatusColor(status)');
+  });
+
+  it('prevents inherited HR palette from hiding the error title or workforce search', () => {
+    const css = fs.readFileSync(path.join(ROOT, 'src/components/hr/HrDashboard.module.css'), 'utf8');
+    expect(dashboard).toContain('styles.peopleNoticeTitle');
+    expect(dashboard).toContain('styles.peopleSearchInput');
+    expect(dashboard).toContain('styles.peopleHeading');
+    expect(css).toContain('.peopleSurface .peopleNoticeTitle');
+    expect(css).toContain('color: #881337 !important');
+    expect(css).toContain('.peopleSurface .peopleSearchInput::placeholder');
+    expect(css).toContain('color: #475569 !important');
+    expect(css).toContain('.peopleSurface .peopleSearch:focus-within');
   });
 
 });
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE
+ * VERSION: v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
