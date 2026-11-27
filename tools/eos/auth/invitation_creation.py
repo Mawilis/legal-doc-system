@@ -10,7 +10,8 @@ AUTHORITY BOUNDARY: Invitation creation only; no admission or membership mutatio
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 TRANSACTION BOUNDARY: Caller-owned Mongo transaction.
 CERTIFICATION / UPDATE DATE: 2026-11-27
-CHANGELOG: v1.0.0 establishes A2 ordinary invitation creation authority.
+CHANGELOG: v1.1.0-FOUNDER-SELF-BOUND-HR-DIRECTOR-INVITE requires exact ACTIVE Founder designation, canonical tenant and self-recipient for the temporary HR Director invitation, preserving source invitation transactions and all independent decisions.
+           v1.0.0 establishes A2 ordinary invitation creation authority.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
 from dataclasses import dataclass
