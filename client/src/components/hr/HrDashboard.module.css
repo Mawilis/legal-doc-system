@@ -1382,3 +1382,44 @@
   .peopleToolbar { min-height: 38px; }
   .peopleSurface .peopleTitleGroup .peopleHeading { font-size: 17px; }
 }
+
+/* v2.5.4 — Keep every People tab, including the selected tab, within one rail. */
+.peopleAppHeader .peopleNav {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin: 4px 0 6px;
+  padding: 4px;
+  border: 1px solid #526787;
+  border-radius: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scroll-padding-inline: 5px;
+}
+.peopleAppHeader .peopleNavButton,
+.peopleAppHeader .peopleNavActive {
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 34px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 7px;
+  box-shadow: none;
+  line-height: 20px;
+}
+.peopleAppHeader .peopleNavActive {
+  background: #d2ae67;
+  border: 1px solid #f3d58d;
+  color: #10213e;
+  font-weight: 750;
+}
+.peopleAppHeader .peopleNavActive:hover { background: #e3bc74; }
+.peopleAppHeader .peopleNavActive:focus-visible {
+  outline: 2px solid #fff3d2 !important;
+  outline-offset: -3px;
+}
