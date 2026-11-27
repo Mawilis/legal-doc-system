@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ
+ * VERSION: v2.18.2-BOUNDED-WORKFORCE-SEARCH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,13 +12,14 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.18.2-BOUNDED-WORKFORCE-SEARCH exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -2386,6 +2387,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [workforceDetail, setWorkforceDetail] = useState(null);
   const [workforceDetailStatus, setWorkforceDetailStatus] = useState('IDLE');
   const workforceDetailSequenceRef = useRef(0);
+  const [workforceSearchDraft, setWorkforceSearchDraft] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -2487,6 +2489,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     if (previousTenantScopeKeyRef.current === tenantScopeKey) return;
     previousTenantScopeKeyRef.current = tenantScopeKey;
     setDataScopeKey(null);
+    setSearchTerm('');
+    setWorkforceSearchDraft('');
     setSelectedWorkforceEmployeeId(null);
     workforceDetailSequenceRef.current += 1;
     setWorkforceDetail(null);
@@ -2963,6 +2967,24 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     loadDashboard();
   }, [loadDashboard]);
 
+  // The text box remains responsive while EOS only receives a settled query.
+  // Search is always executed server-side against the current authorized tenant.
+  useEffect(() => {
+    if (activeTab !== 'employees' || workforceSearchDraft === searchTerm) return undefined;
+    const handle = window.setTimeout(() => {
+      setSelectedWorkforceEmployeeId(null);
+      workforceDetailSequenceRef.current += 1;
+      setWorkforceDetail(null);
+      setWorkforceDetailStatus('IDLE');
+      setPageStates(previous => ({
+        ...previous,
+        employees: { ...previous.employees, offset: 0 },
+      }));
+      setSearchTerm(workforceSearchDraft);
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [activeTab, workforceSearchDraft, searchTerm]);
+
   /**
    * @function changeTab
    * @description Opens a specific HR operating lane.
@@ -2975,7 +2997,10 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     setSelectedWorkforceEmployeeId(null);
     setWorkforceDetail(null);
     setWorkforceDetailStatus('IDLE');
-    if (tabId !== 'employees') setSearchTerm('');
+    if (tabId !== 'employees') {
+      setSearchTerm('');
+      setWorkforceSearchDraft('');
+    }
     setActiveTab(tabId);
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
@@ -3051,11 +3076,13 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       const tab = sourceShortcuts[query.toLowerCase()];
       if (tab) {
         setSearchTerm('');
+        setWorkforceSearchDraft('');
         setActiveTab(tab);
         return;
       }
       // A free-text query is executed only against /api/hr/workforce with
       // the exact selected tenant and its current EOS read authorization.
+      setWorkforceSearchDraft(query);
       setSearchTerm(query);
       setActiveTab('employees');
     };
@@ -4578,16 +4605,13 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               <div className={styles.workforceToolbar}>
                 <label className={styles.workforceSearch}>
                   <Search size={17} aria-hidden="true" />
-                  <input aria-label="Search workforce" type="search" value={searchTerm}
+                  <input aria-label="Search workforce" type="search" value={workforceSearchDraft}
                     placeholder="Search name, employee ID, role or department"
                     maxLength={80} autoComplete="off"
-                    onChange={event => {
-                      setSelectedWorkforceEmployeeId(null);
-                      setSearchTerm(event.target.value);
-                      setPageStates(previous => ({...previous, employees: {...previous.employees, offset: 0}}));
-                    }} />
+                    onChange={event => setWorkforceSearchDraft(event.target.value)} />
                 </label>
-                {searchTerm && <button type="button" onClick={() => {
+                {workforceSearchDraft && <button type="button" onClick={() => {
+                  setWorkforceSearchDraft('');
                   setSearchTerm('');
                   setSelectedWorkforceEmployeeId(null);
                   setPageStates(previous => ({...previous, employees: {...previous.employees, offset: 0}}));
@@ -4613,15 +4637,16 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
             </div>}
             {isVerifiedReadState(shownState) && shownDataset.items.length === 0 && <div className={styles.workforceEmpty} role="status">
               <div>
-                <strong>{searchTerm.trim().length >= 2 ? 'No matching employees' : shownDataset.total === 0 ? 'Your workforce directory is ready' : 'No records on this page'}</strong>
-                <p>{searchTerm.trim().length >= 2
+                <strong>{workforceSearchDraft.trim().length >= 2 ? 'No matching employees' : shownDataset.total === 0 ? 'Your workforce directory is ready' : 'No records on this page'}</strong>
+                <p>{workforceSearchDraft.trim().length >= 2
                   ? 'The authorized source returned no records for this search. Clear your query to return to the full directory.'
                   : shownDataset.total === 0
                   ? 'EOS verified no active employees for this employer. Start with a governed headcount request; employee admission requires separate identity and workforce approval.'
                   : 'This page is empty although the source reports existing records. Return to the first page or refresh.'}</p>
               </div>
-              {searchTerm.trim().length >= 2
-                ? <button type="button" onClick={() => {setSearchTerm('');setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));}}>Clear search</button>
+              {workforceSearchDraft.trim().length >= 2
+                ? <button type="button" onClick={() => {setWorkforceSearchDraft('');
+                  setSearchTerm('');setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));}}>Clear search</button>
                 : shownDataset.total === 0
                 ? <button type="button" onClick={() => changeTab('jobOpenings')}>Open headcount requests <ArrowUpRight size={15} aria-hidden /></button>
                 : <button type="button" onClick={() => setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}))}>First page</button>}
@@ -5260,7 +5285,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ
+ * VERSION: v2.18.2-BOUNDED-WORKFORCE-SEARCH
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
