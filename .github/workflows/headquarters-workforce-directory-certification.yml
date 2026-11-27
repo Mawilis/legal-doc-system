@@ -1,11 +1,14 @@
 # TITLE: WILSY OS Headquarters Workforce Directory Certification
-# VERSION: v1.0.0-BOUNDED-CLIENT-RUNNER
+# VERSION: v1.1.0-M03-HR01-EMPLOYEE-HTTP-SECURITY-CERT
 # AUTHORITY: WILSY OS Core Governance; certification only.
 # EPITOME: Certifies workforce authorization, synthetic UI, and disposable Mongo
 #          without expanding real tenant or project assignment authority.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/headquarters-workforce-directory-certification.yml
 # COLLABORATION / OWNERSHIP: Python EOS workforce authority and Headquarters client.
-# CERTIFICATION / UPDATE DATE: 2026-11-17
+# CERTIFICATION / UPDATE DATE: 2026-11-27
+# CHANGELOG: v1.1.0-M03-HR01-EMPLOYEE-HTTP-SECURITY-CERT adds exact
+#            employee registry/router code and authenticated HTTP boundary
+#            regression tests to the current replica-backed workforce gate.
 # CHANGELOG: v1.0.0-BOUNDED-CLIENT-RUNNER bounds the existing Vitest
 #            certificate to one worker and 15-second individual test deadlines,
 #            matching certified Daily Execution runner; assertions are unchanged.
@@ -21,6 +24,9 @@ on:
   pull_request:
     paths:
       - "tools/eos/api/hr_workforce_directory_router.py"
+      - "tools/eos/api/employee_router.py"
+      - "tools/eos/saas/employee/employee_registry.py"
+      - "tests/unit/test_m03_hr01_employee_scope.py"
       - "tools/eos/api/server.py"
       - "tools/eos/auth/permission_namespace.py"
       - "tools/eos/auth/roles.py"
@@ -79,13 +85,16 @@ jobs:
         run: |
           python -m py_compile \
             tools/eos/api/hr_workforce_directory_router.py \
+            tools/eos/api/employee_router.py \
+            tools/eos/saas/employee/employee_registry.py \
             tools/eos/api/server.py \
             tools/eos/auth/permission_namespace.py \
             tools/eos/auth/roles.py \
             tools/eos/auth/tenant_authorization.py \
             tools/eos/auth/tenant_authority_policy.py \
             tests/unit/test_hr_workforce_directory_router.py \
-            tests/unit/test_hr_workforce_directory_authority.py
+            tests/unit/test_hr_workforce_directory_authority.py \
+            tests/unit/test_m03_hr01_employee_scope.py
       - name: Run focused workforce policy, HTTP and real-Mongo authorization tests
         run: |
           python -m pytest -q \
@@ -113,7 +122,7 @@ jobs:
         run: npm run build
 
 # ARTIFACT: headquarters-workforce-directory-certification.yml
-# VERSION: v1.0.0-BOUNDED-CLIENT-RUNNER
+# VERSION: v1.1.0-M03-HR01-EMPLOYEE-HTTP-SECURITY-CERT
 # AUTHORITY BOUNDARY: Workflow asserts existing IAM and UI; no grants.
 # TENANT POSTURE: Synthetic tests and disposable Mongo only.
 # FAIL-CLOSED POSTURE: Tests and build remain mandatory.
