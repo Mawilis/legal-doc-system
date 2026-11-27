@@ -1,8 +1,9 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.33.3-STRATEGY-HTTP-DENIAL-CLASSIFICATION
- * CHANGELOG: v2.33.3-STRATEGY-HTTP-DENIAL-CLASSIFICATION uses the current authenticated HTTP authority check after a Strategy 403 to distinguish denied read from a later document-stage denial; source failures remain failures and IAM remains unchanged.
- * CHANGELOG: v2.33.3-STRATEGY-HTTP-DENIAL-CLASSIFICATION identifies the 15-second EOS read timeout distinctly from an absent endpoint, without altering document state or authority.
+ * VERSION: v2.33.4-OWNER-STRATEGY-READ-REASON
+ * CHANGELOG: v2.33.4-OWNER-STRATEGY-READ-REASON displays only the bounded server-authoritative Strategy denial reason for eligible Owner check and keeps permission and document states unchanged.
+ * CHANGELOG: v2.33.4-OWNER-STRATEGY-READ-REASON uses the current authenticated HTTP authority check after a Strategy 403 to distinguish denied read from a later document-stage denial; source failures remain failures and IAM remains unchanged.
+ * CHANGELOG: v2.33.4-OWNER-STRATEGY-READ-REASON identifies the 15-second EOS read timeout distinctly from an absent endpoint, without altering document state or authority.
  * CHANGELOG: v2.33.1-M04-RETURN-PROGRESS retains the M04 document shell on a Strategy-origin return and explains the still-pending EOS publication and task verification, rather than showing an empty full-screen spinner or stale execution counts.
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
@@ -1518,7 +1519,11 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
               : 'Strategy read was denied in the current HTTP session.';
             const projects = evidence.project_list === 'AUTHORIZED'
               ? ' Projects list is independently authorised.' : ' Projects list is also denied.';
-            issue.next = stage + projects + ' Optional editing and publishing roles remain separate. No access or publication state has been changed.';
+            const reason = typeof evidence.document_read_reason === 'string'
+              && /^(?:[A-Z][A-Z0-9_]{2,80})$/.test(evidence.document_read_reason)
+              && evidence.document_read_reason !== 'NOT_DISCLOSED'
+              ? ' EOS reason: ' + evidence.document_read_reason + '.' : '';
+            issue.next = stage + projects + reason + ' Optional editing and publishing roles remain separate. No access or publication state has been changed.';
           }
         } catch {
           // Keep the original 403; never turn failed diagnostics into success.
@@ -2677,7 +2682,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.33.3-STRATEGY-HTTP-DENIAL-CLASSIFICATION
+// VERSION: v2.33.4-OWNER-STRATEGY-READ-REASON
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
