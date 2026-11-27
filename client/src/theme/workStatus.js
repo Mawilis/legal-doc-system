@@ -1,17 +1,19 @@
 /**
  * TITLE: WILSY OS Shared Source-Owned Work Status Semantics
- * VERSION: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX
+ * VERSION: v1.0.3-M03-SECURITY-HEADER-SEAL
  * AUTHORITY: WILSY OS client presentation only; EOS retains lifecycle truth.
  * EPITOME: One colour and accessible class vocabulary for Projects, People and
  *          subsequently My Work, Strategy, Calendar and Daily Attention.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/theme/workStatus.js
  * COLLABORATION / OWNERSHIP: ProjectWorkRow, ProjectTasksPanel and HrDashboard.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.0.3-M03-SECURITY-HEADER-SEAL includes mandatory sovereign security/privacy header metadata with no status behavior changes.
  * CHANGELOG: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX corrects human label whitespace normalization for task headers.
  * CHANGELOG: v1.0.1-M03-HUMAN-STATUS-LABEL-COMPATIBILITY resolves human-readable task status labels (e.g. In progress) to the same verified EOS semantic tone without changing lifecycle truth.
  * CHANGELOG: v1.0.0-M03-ENTERPRISE-WORK-COLOUR-SEMANTICS maps only verified
  *          statuses; unknown states remain neutral, never imply completion.
  * COMPLIANCE: AGENTS.md; WCAG 2.2 AA.
+ * SECURITY / PRIVACY POSTURE: Source-state values only; no user PII, tokens, data persistence or browser storage.
  * TENANT BOUNDARY: Presentation-only, no tenant records or IAM.
  * AUTHORITY BOUNDARY: Visuals cannot authorize source actions.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
@@ -88,7 +90,7 @@ export function workStatusClasses(status) {
 }
 
 // ARTIFACT: client/src/theme/workStatus.js
-// VERSION: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX
+// VERSION: v1.0.3-M03-SECURITY-HEADER-SEAL
 // AUTHORITY BOUNDARY: No status writes or authorization inferred from colour.
 // TENANT POSTURE: Presentation token contract only.
 // FAIL-CLOSED POSTURE: Unknown statuses remain neutral.
