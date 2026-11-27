@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES
+ * VERSION: v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN mounts a single accessible compact Headquarters return inside the contextual People application header; removes the need for a duplicate external navigation rail.
  *   v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES bounds Overview to concurrent independently governed sources and every other HR lane to its selected source; search no longer refetches unrelated workforce aggregates.
  *   v2.11.11-READ-SCOPE-NOT-CHECKER-ENTITLEMENT labels tenant-visible submitted requisitions as source-owned requests, not personal approval assignments, because decision authority is rechecked only by the owning EOS command.
  *   v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION maps global contextual People search shortcuts to the real authorized hiring, offers, workforce and paginated headcount lanes without cross-source record indexing.
@@ -2312,7 +2313,7 @@ const buildHrWorkspace = ({ activeTab, snapshot, datasets, datasetReadStates, sn
  * @returns {JSX.Element} HR operating dashboard.
  * @collaboration Wilson mandated HR must become a usable business operating surface, not a static data table.
  */
-const HrDashboard = () => {
+const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const { activeTenant, authorityMismatch } = useTenants();
   const auth = useAuth() || {};
   const { user: authUser, logout } = auth;
@@ -4141,10 +4142,19 @@ const HrDashboard = () => {
       <div className={styles.peopleSurface} data-testid="people-os-workspace" data-source="PYTHON_EOS">
         <header className={styles.peopleAppHeader}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className={styles.eyebrow}>WILSY OS · PEOPLE OPERATING SYSTEM</p>
-              <h1 className={styles.peopleHeading + " mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl"}>People · Hire to Exit</h1>
-              <p className="mt-1 text-sm text-slate-600">Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit</p>
+            <div className={styles.peopleHeaderIdentity}>
+              {typeof onReturnToHeadquarters === 'function' && (
+                <button type="button" className={styles.peopleReturnButton}
+                  aria-label="Return to Headquarters" title="Return to Headquarters"
+                  onClick={onReturnToHeadquarters}>
+                  <ChevronLeft size={18} aria-hidden="true" />
+                </button>
+              )}
+              <div className="min-w-0">
+                <p className={styles.eyebrow}>WILSY OS · PEOPLE OPERATING SYSTEM</p>
+                <h1 className={styles.peopleHeading + " mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl"}>People · Hire to Exit</h1>
+                <p className="mt-1 text-sm text-slate-600">Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit</p>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
@@ -4862,7 +4872,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES
+ * VERSION: v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
