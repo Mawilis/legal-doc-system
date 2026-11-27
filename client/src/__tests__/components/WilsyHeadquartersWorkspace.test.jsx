@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR
+ * VERSION: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT proves the redundant breadcrumb strip is absent, the People application owns exactly one working back control and authenticated employer identity remains in the shared footer.
  * CHANGELOG: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR locates the visible contextual employer container directly in the authenticated Headquarters DOM while retaining positive and foreign-tenant denial tests.
  * CHANGELOG: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT verifies current tenant legal identity in People header/footer and denies presentation of a foreign tenant's legal name under the selected authenticated session.
  * CHANGELOG: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT certifies the source-owned People application layout, contextual return and bounded shared Headquarters footer at the original operating route.
@@ -116,7 +117,12 @@ vi.mock('../../components/workspaces/MyWorkWorkspace.jsx', () => ({
   ),
 }));
 vi.mock('../../components/hr/HrDashboard.jsx', () => ({
-  default: () => <section><h2>Canonical HR operating workspace</h2></section>,
+  default: ({ onReturnToHeadquarters }) => (
+    <section>
+      <button type="button" aria-label="Return to Headquarters" onClick={onReturnToHeadquarters}>Back</button>
+      <h2>Canonical HR operating workspace</h2>
+    </section>
+  ),
 }));
 const exactTenant = 'TENANT-HQ-SOURCE-CERT';
 const exactPrincipal = 'PRINCIPAL-HQ-SOURCE-CERT';
@@ -419,6 +425,9 @@ describe('WILSY Headquarters authenticated shell', () => {
     const styles = document.querySelector('.wilsyHqShell style').textContent;
     expect(styles).toContain('.wilsyHqShell .hq-layout--people-owned{display:block');
     expect(styles).toContain('.wilsyHqShell>.hq-global-footer{flex:0 0 auto}');
+    expect(document.querySelector('.hq-people-navigation')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Return to Headquarters' })).toHaveLength(1);
+
     fireEvent.click(screen.getByRole('button', { name: 'Return to Headquarters' }));
     expect(await screen.findByRole('heading', { name: 'WILSY Headquarters' })).toBeTruthy();
     expect(layout).not.toHaveClass('hq-layout--people-owned');
@@ -431,10 +440,9 @@ describe('WILSY Headquarters authenticated shell', () => {
     };
     renderHeadquarters(['/headquarters?section=hr-workspace'], tenantBoundAuth);
     expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
-    const employer = document.querySelector('.hq-people-employer');
-    expect(employer).not.toBeNull();
-    expect(employer).toHaveTextContent('Verified Test Employer Ltd');
-    expect(employer).toHaveTextContent(exactTenant);
+    expect(document.querySelector('.hq-people-navigation')).toBeNull();
+    expect(document.querySelector('.hq-people-employer')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Return to Headquarters' })).toHaveLength(1);
     const footer = screen.getByRole('contentinfo', { name: 'Headquarters operating footer' });
     expect(footer).toHaveTextContent('Verified Test Employer Ltd');
     expect(footer).toHaveTextContent(exactTenant);
@@ -1078,7 +1086,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR
+ * VERSION: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
