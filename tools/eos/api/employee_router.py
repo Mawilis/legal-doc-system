@@ -1,131 +1,138 @@
-# -*- coding: utf-8 -*-
+"""TITLE: WILSY OS Authenticated Employee Directory HTTP Boundary
+VERSION: v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY
+AUTHORITY: Python Kennel EOS Global Principal and tenant workforce IAM.
+EPITOME: Read an exact authorized tenant workforce directory without accepting
+         caller-selected tenant identity or exposing protected employee files.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/employee_router.py
+COLLABORATION / OWNERSHIP: Mounted by server.py under /api/employees;
+         TenantAuthorizationHTTP owns current principal/tenant/capacity/IAM;
+         EmployeeRegistry owns exact tenant persistence; EmployeeEntity is a
+         legacy sensitive domain record and MUST NOT be serialized directly.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY replaces caller tenant query,
+         header fallback and GLOBAL_ROOT with current RequireTenantAuthorization,
+         reuses existing customer directory and WILSY employer permission pairs,
+         restricts responses to verified directory-only fields, and denies
+         legacy tenantId query input.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Salary, identity numbers, banking, personal contacts,
+         addresses, date of birth, emergency contacts and HR files never leave
+         this surface. No PII or raw error logging.
+TENANT BOUNDARY: Exact tenant from authenticated selected membership only,
+         enforced independently by IAM and EmployeeRegistry query predicate.
+AUTHORITY BOUNDARY: Current HR workforce directory read entitlement and IAM
+         required; separate WILSY platform employer permission (no root bypass).
+TRANSACTION BOUNDARY: Read-only existing kernel database, no writes or indexes.
+FINANCIAL AUTHORITY BOUNDARY: Directory read grants no pay or release authority.
 """
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN EMPLOYEE ROUTER (FASTAPI)                                                                   ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ FILE:           tools/eos/api/employee_router.py                                                               ║
-║ VERSION:        V1.0.3-SOVEREIGN-FIX                                                                           ║
-║ AUTHORITY:      Wilsy OS Core Governance | Wilson Khanyezi                                                     ║
-║ EPITOME:        Biblical Worth Billions | No Child's Place | Production-Ready Architecture                     ║
-║ CLASSIFICATION: Institutional Archive / Restricted                                                             ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                         ║
-║   • Wilson Khanyezi (CEO/Lead Architect) – Mandated zero-loss security architecture.                           ║
-║   • AI Engineering – 2026-08-25: Enforced Pydantic v2 Strict Optional Routing (default=None).                  ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
-║ INTEGRATION:   Mounted in server.py; consumed by frontend at /api/employees/search.                            ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-"""
-
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query, Header
-from typing import Any, Dict, List, Optional
-import logging
-import os
-import traceback
+from typing import Any
 
-from ..saas.employee.employee_registry import get_employee_registry, EmployeeRegistry
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, ConfigDict
+
+from .tenant_authorization_http import (
+    RequireTenantAuthorization,
+    TenantAuthorizationContext,
+)
+from ..saas.employee.employee_registry import (
+    EmployeeRegistry,
+    EmployeeRegistryBoundaryError,
+    get_employee_registry,
+)
 from ..saas.domain.employee import EmployeeEntity
 
-# ─── Logging ──────────────────────────────────────────────────────────────────
-logger = logging.getLogger(__name__)
-DEBUG_MODE = os.getenv("WILSY_MODEL_DEBUG", "0") == "1"
-
-def _log_error(exc: Exception, context: str, tenant_id: str = "GLOBAL_ROOT") -> None:
-    """Logs runtime exceptions securely based on environment variables."""
-    if DEBUG_MODE:
-        logger.error(f"[ERROR] {context} | tenant: {tenant_id} | {exc}\n{traceback.format_exc()}")
-    else:
-        logger.error(f"[ERROR] {context} | tenant: {tenant_id} | {exc}")
-
-def _telemetry(tenant_id: str, category: str, event: str, source: str, metadata: Optional[dict] = None) -> None:
-    """Records sovereign compliance telemetry and audit logs."""
-    if metadata is None:
-        metadata = {}
-    logger.info(f"[TELEMETRY] {tenant_id} | {category} | {event} | {source} | {metadata}")
-
-# ─── Router ──────────────────────────────────────────────────────────────────
+VERSION = "v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY"
 router = APIRouter(prefix="/api/employees", tags=["Employees"])
 
-# ─── Endpoints ──────────────────────────────────────────────────────────────
+_DIRECTORY_READ = RequireTenantAuthorization(
+    "hr:employee_directory:read",
+    "hr_employee_directory_read",
+    platform_employer_permission_id="platform_employer:employee_directory:read",
+    platform_employer_operation="platform_employer_employee_directory_read",
+)
 
-@router.get("/search", response_model=List[Dict[str, Any]])
-async def search_employees(
-    q: str = Query(..., min_length=2, description="Search query (at least 2 characters)"),
-    tenantId: Optional[str] = Query(default=None, description="Tenant ID (optional; if omitted, uses header or GLOBAL_ROOT)"),
-    x_tenant_id: Optional[str] = Header(default=None, alias="X-Tenant-ID"),
-    x_tenant_id_alt: Optional[str] = Header(default=None, alias="x-tenant-id"),
+
+class EmployeeDirectoryRecord(BaseModel):
+    """Public directory-safe employee fields for authorized workforce readers.
+
+    No source write, salary, bank, national identity, protected HR document,
+    personal contact, or arbitrary metadata fields are admitted in this model.
+    """
+    model_config = ConfigDict(extra="forbid")
+    employeeId: str
+    displayName: str
+    jobTitle: str
+    department: str
+    managerId: str | None
+    employmentStatus: str
+    isActive: bool
+
+
+def _directory_record(employee: EmployeeEntity) -> EmployeeDirectoryRecord:
+    """Explicit minimal projection; never call EmployeeEntity.to_dict() in HTTP."""
+    return EmployeeDirectoryRecord(
+        employeeId=employee.employeeId,
+        displayName=employee.displayName,
+        jobTitle=employee.jobTitle,
+        department=employee.department,
+        managerId=employee.managerId,
+        employmentStatus=employee.status,
+        isActive=employee.isActive,
+    )
+
+
+@router.get("/search", response_model=list[EmployeeDirectoryRecord])
+def search_employees(
+    q: str = Query(min_length=2, max_length=180),
     limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    offset: int = Query(default=0, ge=0, le=100000),
+    context: TenantAuthorizationContext = Depends(_DIRECTORY_READ),
     registry: EmployeeRegistry = Depends(get_employee_registry),
-):
+) -> list[EmployeeDirectoryRecord]:
+    """Search only the selected tenant's directory through active HR read IAM.
+
+    A deprecated caller tenantId query parameter is not used to resolve scope;
+    clients must rely on the authenticated exact tenant. Invalid source or
+    persistence errors fail closed without cross-tenant existence disclosure.
     """
-    Search for employees by name, email, or employee ID.
-    Tenant is resolved from query param `tenantId`, header `X-Tenant-ID`, or defaults to GLOBAL_ROOT.
-    Returns a list of employee objects in camelCase.
-    """
-    # Initialise to avoid Pylance "possibly unbound" warning
-    resolved_tenant = "GLOBAL_ROOT"
     try:
-        # Resolve tenant: query > header > GLOBAL_ROOT
-        resolved_tenant = tenantId or x_tenant_id or x_tenant_id_alt or "GLOBAL_ROOT"
-
-        employees = registry.search_employees(
-            tenant_id=resolved_tenant,
-            query=q,
-            limit=limit,
-            offset=offset,
-        )
-        # Convert to dict using to_dict() which returns camelCase
-        result = [emp.to_dict() for emp in employees]
-        _telemetry(resolved_tenant, "EMPLOYEE", "SEARCH", "employee_router", {"query": q, "count": len(result)})
-        return result
-    except Exception as e:
-        _log_error(e, "EMPLOYEE_SEARCH", resolved_tenant)
+        records = registry.search_employees(context.tenant_id, q, limit, offset)
+    except EmployeeRegistryBoundaryError as error:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during employee search",
-        )
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=error.args[0],
+        ) from None
+    return [_directory_record(record) for record in records]
 
-@router.get("/{employee_id}", response_model=Dict[str, Any])
-async def get_employee(
+
+@router.get("/{employee_id}", response_model=EmployeeDirectoryRecord)
+def get_employee(
     employee_id: str,
-    tenantId: Optional[str] = Query(default=None, description="Tenant ID (optional; uses header or GLOBAL_ROOT)"),
-    x_tenant_id: Optional[str] = Header(default=None, alias="X-Tenant-ID"),
-    x_tenant_id_alt: Optional[str] = Header(default=None, alias="x-tenant-id"),
+    context: TenantAuthorizationContext = Depends(_DIRECTORY_READ),
     registry: EmployeeRegistry = Depends(get_employee_registry),
-):
-    """
-    Get a single employee by employeeId.
-    Tenant is resolved from query param `tenantId`, header `X-Tenant-ID`, or defaults to GLOBAL_ROOT.
-    """
-    resolved_tenant = "GLOBAL_ROOT"
+) -> EmployeeDirectoryRecord:
+    """Read one authorized directory record; foreign and missing remain identical."""
     try:
-        resolved_tenant = tenantId or x_tenant_id or x_tenant_id_alt or "GLOBAL_ROOT"
-
-        employee = registry.get_employee_by_id(employee_id, resolved_tenant)
-        if not employee:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
-        _telemetry(resolved_tenant, "EMPLOYEE", "GET", "employee_router", {"employee_id": employee_id})
-        return employee.to_dict()
-    except HTTPException:
-        raise
-    except Exception as e:
-        _log_error(e, "EMPLOYEE_GET", resolved_tenant)
+        employee = registry.get_employee_by_id(employee_id, context.tenant_id)
+    except EmployeeRegistryBoundaryError as error:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error retrieving employee",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=error.args[0],
+        ) from None
+    if employee is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="EMPLOYEE_NOT_FOUND",
         )
+    return _directory_record(employee)
 
-"""
-════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS EMPLOYEE ROUTER
-════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT — V1.0.3-SOVEREIGN-FIX
-Fixes:           Pydantic Optional validation bug resolved using default=None.
-Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Health Posture:  GREEN – ready for production.
-════════════════════════════════════════════════════════════════════════════════
-"""
+
+# ARTIFACT: tools/eos/api/employee_router.py
+# VERSION: v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY
+# AUTHORITY BOUNDARY: Existing exact tenant employee-directory permissions.
+# TENANT POSTURE: Global Principal authenticated selected tenant only.
+# FAIL-CLOSED POSTURE: Restricted PII excluded; nonadmitted request denied.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
