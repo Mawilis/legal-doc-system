@@ -1,12 +1,13 @@
 """TITLE: WILSY OS authenticated workforce directory and Overview HTTP certificate.
-VERSION: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT
+VERSION: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT
 AUTHORITY: WILSY OS Core Governance; regression evidence only.
 EPITOME: Certifies exact-tenant, independently IAM-bound workforce directory and
          single-aggregation Overview, denied-before-read, and PII exclusion.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_workforce_directory_router.py
 COLLABORATION / OWNERSHIP: Canonical Python EOS workforce router and its tests.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
-CHANGELOG: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
+CHANGELOG: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT certifies bounded, PII-free exact-tenant observed department distribution and source-unavailable failure, without asserting approved organization authority.
+CHANGELOG: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
 CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
 CHANGELOG: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT corrects the single-aggregation test contract and
            supplies institutional header and sovereign end seal.
@@ -290,8 +291,77 @@ def test_workforce_detail_rejects_unsafe_identifier(
     assert collection.query is None
 
 
+def test_observed_workforce_organization_is_own_tenant_and_pii_free(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Organization is source-owned distribution, never approved positions."""
+    class OrganizationCollection:
+        def __init__(self) -> None:
+            self.pipeline = None
+
+        def aggregate(self, pipeline):
+            self.pipeline = pipeline
+            return [
+                {"_id": "Engineering", "active_employees": 3},
+                {"_id": "Operations", "active_employees": 2},
+                {"_id": None, "active_employees": 1},
+            ]
+
+    collection = OrganizationCollection()
+    response = _client(monkeypatch, _Database(collection)).get(
+        "/api/hr/workforce/organization",
+        headers={"X-Tenant-ID": "UNTRUSTED-TENANT"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tenant_id"] == "WILSYTENANT-4CD2FZ4O"
+    assert body["status"] == "OBSERVED_EMPLOYEE_DISTRIBUTION"
+    assert body["active_employees"] == 6
+    assert body["department_count"] == 2
+    assert body["unassigned_employees"] == 1
+    assert body["departments"] == [
+        {"name": "Engineering", "active_employees": 3},
+        {"name": "Operations", "active_employees": 2},
+    ]
+    assert collection.pipeline[0]["$match"] == {
+        "tenantId": "WILSYTENANT-4CD2FZ4O",
+        "isActive": True,
+        "deletedAt": None,
+    }
+    assert collection.pipeline[-1] == {"$limit": 201}
+    assert "workEmail" not in response.text
+    assert "bankAccount" not in response.text
+
+
+def test_observed_workforce_organization_fails_closed_on_oversize(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An incomplete grouped distribution must never appear as verified."""
+    class OversizedCollection:
+        def aggregate(self, pipeline):
+            return [
+                {"_id": f"Department-{index}", "active_employees": 1}
+                for index in range(201)
+            ]
+
+    response = _client(monkeypatch, _Database(OversizedCollection())).get(
+        "/api/hr/workforce/organization"
+    )
+    assert response.status_code == 503
+    assert response.json()["detail"] == "WORKFORCE_ORGANIZATION_BOUND_EXCEEDED"
+
+
+def test_observed_workforce_organization_requires_database(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unavailable database is never represented as a verified empty chart."""
+    response = _client(monkeypatch, None).get("/api/hr/workforce/organization")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "WORKFORCE_ORGANIZATION_SOURCE_UNAVAILABLE"
+
+
 # ARTIFACT: tests/unit/test_hr_workforce_directory_router.py
-# VERSION: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT
+# VERSION: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT
 # AUTHORITY BOUNDARY: Regression tests cannot grant HR or tenant IAM authority.
 # TENANT POSTURE: Synthetic exact-tenant cases and explicit cross-scope denial.
 # FAIL-CLOSED POSTURE: Missing source and denied authorization never return employee counts.
