@@ -3,20 +3,21 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY
+ * Version:        v2.3.0-HR01-SCOPED-CONTRAST-FIX
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
- * Change log: 2026-11-27 v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY aligns
+ * Change log: 2026-11-27 v2.3.0-HR01-SCOPED-CONTRAST-FIX aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY
+ * VERSION: v2.3.0-HR01-SCOPED-CONTRAST-FIX
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
  * COLLABORATION / OWNERSHIP: HR People workspace and shared WILSY OS design system.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.3.0-HR01-SCOPED-CONTRAST-FIX enforces high-contrast notice titles, input/search placeholders and heading colours in the live People view, overriding legacy inherited palette only within People.
  * CHANGELOG: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY removes the legacy black/gold HR modal surface while retaining source-controlled input and button semantics.
  * COMPLIANCE: AGENTS.md; WCAG 2.2 AA; POPIA section 19.
  * SECURITY / PRIVACY POSTURE: Styles contain no secrets, employee data or persisted business state.
@@ -1051,8 +1052,68 @@
   color: #0f172a;
 }
 
+
+/* HR01: scoped final-render contrast, explicitly survives legacy HR and
+   inherited application input/heading rules without affecting the OS logo. */
+.peopleSurface {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  color-scheme: light;
+  min-width: 0;
+}
+.peopleSurface .peopleHeading {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+  line-height: 1.25;
+}
+.peopleSurface .peopleNotice {
+  color: #881337 !important;
+  background: #fff1f2 !important;
+  border: 1px solid #fda4af !important;
+  border-left: 5px solid #be123c !important;
+}
+.peopleSurface .peopleNoticeTitle {
+  color: #881337 !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+}
+.peopleSurface .peopleNotice p {
+  color: #881337 !important;
+  opacity: 1 !important;
+}
+.peopleSurface .peopleSearch {
+  background: #fff !important;
+  border: 1px solid #94a3b8 !important;
+  color: #334155 !important;
+  min-width: min(260px, 100%);
+  min-height: 44px;
+}
+.peopleSurface .peopleSearch svg { color: #334155 !important; flex-shrink: 0; }
+.peopleSurface .peopleSearchInput {
+  background: #fff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #1e40af !important;
+  opacity: 1 !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100%;
+  padding: 0 !important;
+  min-height: 26px;
+}
+.peopleSurface .peopleSearchInput::placeholder {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  opacity: 1 !important;
+}
+.peopleSurface .peopleSearch:focus-within {
+  outline: 2px solid #1d4ed8 !important;
+  outline-offset: 2px;
+}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY
+ * VERSION: v2.3.0-HR01-SCOPED-CONTRAST-FIX
  * AUTHORITY BOUNDARY: Presentation only; all commands remain Python EOS-owned.
  * TENANT POSTURE: No tenant or employee state in CSS.
  * FAIL-CLOSED POSTURE: No disabled control or access denial is visually overridden.
