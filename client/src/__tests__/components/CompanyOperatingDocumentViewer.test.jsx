@@ -300,7 +300,7 @@ describe('governed company document experience', () => {
     expect(screen.getByText(/not an EOS-published revision/)).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Prepare approved v1.1.0' })).not.toBeInTheDocument();
     expect(api.get.mock.calls.at(-1)[0]).toBe('/company-operating-documents/MISSION');
-    expect(api.get.mock.calls.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer synthetic-only' });
+    expect(api.get.mock.calls.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': scope.tenantId });
   });
   it('renders only source-approved content with authority and accessible contents', async () => {
     api.get.mockResolvedValue({ data: view(record()) }); render(wrap());
@@ -445,7 +445,7 @@ describe('governed company document experience', () => {
     expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
     await act(async () => late.resolve({ data: view(record()) }));
     expect(screen.queryByText('Synthetic source content only.')).not.toBeInTheDocument();
-    expect(api.get.mock.calls.at(-1)[1].headers.Authorization).toBe('Bearer synthetic-next');
+    expect(api.get.mock.calls.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': next.user.tenantId });
   });
   it('does not retain content when the document classification changes', async () => {
     api.get.mockResolvedValue({ data: view(record()) }); const mounted = render(wrap());
