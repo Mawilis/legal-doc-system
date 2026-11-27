@@ -3,20 +3,21 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT
+ * Version:        v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
- * Change log: 2026-11-27 v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT aligns
+ * Change log: 2026-11-27 v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT
+ * VERSION: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
  * COLLABORATION / OWNERSHIP: HR People workspace and shared WILSY OS design system.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS retains navy OS context header and gold navigation while matching Headquarters light operational canvas, compact hierarchy and accessible source-owned work rows.
  * CHANGELOG: v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT renders one legible source-unverified status instead of decorative empty executive metric cards when EOS has admitted none.
  * CHANGELOG: v2.4.1-CURRENT-EMPLOYER-AUTHORITY-BANNER displays distinct nonleaking HR source denial in the lifecycle Overview with a safe route to source details and selected-tenant context.
  * CHANGELOG: v2.4.0-PROTOTYPE-GROUNDED-PEOPLE-APP recreates prototype-inspired navy People application layout, compact gold navigation, verified activity and responsive lifecycle overview inside the sole WILSY OS shell.
@@ -1283,8 +1284,63 @@
 @media(max-width:1000px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.overviewIntro{grid-template-columns:1fr}}
 @media(max-width:600px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.peopleKpi{padding:12px;min-height:105px}.peopleAppHeader{padding:14px 15px 8px}.peopleMain{padding:12px 14px 24px}.peopleQueueRow{align-items:flex-start;padding:14px}.overviewSectionHead h3{font-size:20px}}
 
+
+/* WILSY enterprise work surface: global shell navy, operational content light.
+   One shared visual language for Founder, People, Projects and future tenants.
+   Gold denotes selected navigation or primary action, not fabricated status. */
+.peopleSurface{background:#f5f7fb!important;color:#162b4b!important;color-scheme:light}
+.peopleAppHeader{background:#0d213e!important;color:#f8fafc!important;padding:12px clamp(16px,2.2vw,34px) 0}
+.peopleAppHeader .peopleHeading{color:#fff!important;font-size:18px!important;letter-spacing:-.015em}
+.peopleAppHeader p:not(.eyebrow){color:#d1dbee!important;font-size:12px}
+.peopleAppHeader .eyebrow{color:#e7c576!important;font-size:10px}
+.peopleAppHeader button:not(.peopleNavActive):not(.peopleNavButton){background:#193759!important;color:#f8fafc!important;border-color:#496482!important}
+.peopleNav{margin-top:9px}
+.peopleMain{background:#f5f7fb!important;color:#172d4c;padding:22px clamp(16px,2.2vw,34px) 30px}
+.overview{gap:21px;max-width:1600px}
+.overviewIntro{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:0 0 6px;border-bottom:1px solid #e2e8f0}
+.overviewIntro h2{font-family:Inter,ui-sans-serif,system-ui,sans-serif!important;font-size:clamp(23px,2vw,31px)!important;color:#102744!important;line-height:1.15;margin:5px 0!important;letter-spacing:-.035em}
+.overviewIntro h2 em{color:#a57721!important;font-style:normal}
+.overviewIntro p:not(.eyebrow){color:#536581!important;margin-top:4px;font-size:12px;line-height:1.5}
+.overviewIntro .eyebrow,.overviewSection .eyebrow{color:#8b641d!important}
+.overviewIntro .tenantContext{font-size:11px!important;color:#405b7b!important;font-weight:700!important}
+.overviewActions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.overviewActions button{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 11px;border:1px solid #b9c9de;border-radius:8px;background:white;color:#173c74;font-size:12px;font-weight:750}
+.overviewActions button:hover{background:#e9f1fc;border-color:#2d66ac}
+.overviewSectionHead h3{font:750 19px/1.25 Inter,ui-sans-serif,system-ui,sans-serif!important;color:#102744!important}
+.overviewSectionHead>span{color:#526783}
+.peopleKpiGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.peopleKpi{background:#fff;color:#102744;border:1px solid #d8e1ee;box-shadow:0 1px 2px rgb(15 23 42 / .03);min-height:104px;padding:14px}
+.peopleKpi:hover{background:#f1f6fd;border-color:#4e80b9}
+.peopleKpi>span{color:#536781}
+.peopleKpi>strong{color:#123b6d!important;font-size:clamp(18px,2vw,24px)}
+.peopleKpi>small{color:#677991}
+.peopleQueueRow{background:#fff;border-color:#d8e1ee;padding:12px 15px}
+.peopleQueueRow strong{color:#102744!important}
+.peopleQueueRow p{color:#64748b}
+.peopleQueueActions button{background:#19488c;border-color:#19488c;color:#fff}
+.peopleQueueActions button:hover{background:#123969}
+.queueEmpty,.sourceUnverified{background:#fff;border:1px dashed #b9c9de;color:#4a5f7b;border-radius:9px;padding:16px 18px}
+.overviewAuthority{background:#fff1f2;border-color:#f4aab4;border-left-color:#c42e4a;color:#881337}
+.overviewAuthority strong{color:#881337!important}
+.overviewAuthority p{color:#881337!important}
+.overviewAuthority button{background:#fff;color:#173c74;border-color:#a6b9d3}
+.overviewAuthority button:hover{background:#edf4ff}
+.peopleMain>section{background:#fff!important;border-color:#d8e1ee!important;color:#172d4c}
+.peopleMain>section>div:first-child{border-bottom-color:#e2e8f0!important}
+.peopleMain>section h2{color:#102744!important}
+.peopleMain>section p{color:#536781!important}
+.peopleMain>section thead{background:#eef3f9!important;color:#334b6b!important}
+.peopleMain>section tbody tr{border-color:#e2e8f0}
+.peopleMain>section tbody tr:hover{background:#f1f6fd!important}
+.peopleMain>section tbody td{color:#172d4c}
+.peopleMain>section button{color:#173c74;background:white;border-color:#b9c9de}
+.peopleMain>section button:hover{background:#edf4ff}
+.peopleMain>section input{color:#102744!important;background:#fff!important}
+@media(max-width:1000px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.peopleMain{padding:16px 14px 24px}.overviewIntro{align-items:flex-start}.overviewActions{width:100%}.overviewActions button{flex:1 1 auto}.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT
+ * VERSION: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS
  * AUTHORITY BOUNDARY: Presentation only; all commands remain Python EOS-owned.
  * TENANT POSTURE: No tenant or employee state in CSS.
  * FAIL-CLOSED POSTURE: No disabled control or access denial is visually overridden.
