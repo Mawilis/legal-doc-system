@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT
+ * VERSION: v1.13.2-COMPACT-GOVERNED-ACTIVITY-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
  * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.
+ * CHANGELOG: v1.13.2-COMPACT-GOVERNED-ACTIVITY-CERT verifies optional secondary filter disclosure and visibly audited correction affordance.
  * CHANGELOG: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT checks stable button names with counts 0 and 1 to prevent accessibility/search regressions.
  * CHANGELOG: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT verifies count, actor text, Mine/date/order filters and clear operations without additional EOS calls.
  * CHANGELOG: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT verifies read-only source-page activity filters and the compact timeline without additional EOS calls or comment mutations.
@@ -201,6 +202,9 @@ it('filters only the verified activity page without refetching or changing immut
   const initialReads = api.get.mock.calls.length;
   expect(screen.getByRole('button', { name: 'Updates' })).toHaveTextContent('1');
   expect(screen.getByRole('button', { name: 'All activity' })).toHaveTextContent('1');
+  expect(screen.getByRole('button', { name: 'More filters' })).toHaveAttribute('aria-expanded', 'false');
+  fireEvent.click(screen.getByRole('button', { name: 'More filters' }));
+  expect(screen.getByRole('button', { name: 'Hide filters' })).toHaveAttribute('aria-expanded', 'true');
   fireEvent.click(screen.getByRole('button', { name: 'Mine only' }));
   expect(screen.getByRole('button', { name: 'Mine only' })).toHaveAttribute('aria-pressed', 'true');
   expect(screen.getByText('You posted a progress update')).toBeVisible();
@@ -317,7 +321,7 @@ it('offers the original author a reasoned append-only correction with current EO
   });
   mount();
   expect(await screen.findByText(/mistakenly written on MW-T09/)).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Correct entry' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Correct entry · audited' }));
   expect(screen.getByText(/original stays in EOS/i)).toBeVisible();
   const reason = screen.getByRole('textbox', { name: 'Reason for correction' });
   fireEvent.change(reason, { target: { value: 'Posted under MW-T09 instead of MW-T11' } });
@@ -342,7 +346,7 @@ it('hides correction actions after the 30-minute source window', async () => {
   });
   mount();
   expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
-  expect(screen.queryByRole('button', { name: 'Correct entry' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Correct entry · audited' })).not.toBeInTheDocument();
   expect(screen.getByText(/Correction window closed/)).toBeVisible();
   expect(api.post).not.toHaveBeenCalled();
 });
@@ -364,7 +368,7 @@ it('refuses a stale or foreign original correction without issuing an EOS write'
   });
   mount();
   expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Correct entry' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Correct entry · audited' }));
   fireEvent.change(screen.getByRole('textbox', { name: 'Reason for correction' }), {
     target: { value: 'Wrong attribution in this task' },
   });
@@ -487,7 +491,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT
+// VERSION: v1.13.2-COMPACT-GOVERNED-ACTIVITY-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
