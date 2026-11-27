@@ -1,10 +1,13 @@
 """TITLE: WILSY OS M03 HR01 Tenant-Scope and Directory Projection Regression
-VERSION: v1.1.0-M03-HR01-AUTHENTICATED-HTTP-BOUNDARY-CERT
+VERSION: v1.2.0-M03-HR01-CANONICAL-ROUTER-SINGLETON-CERT
 AUTHORITY: WILSY OS Python EOS HR workforce security certification.
 EPITOME: Check exact tenant source reads, reserved alias denial and PII redaction.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_m03_hr01_employee_scope.py
 COLLABORATION / OWNERSHIP: Read-only tests for employee registry and HTTP projection.
 CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.2.0-M03-HR01-CANONICAL-ROUTER-SINGLETON-CERT
+         certifies the legacy employee public router is unmounted and the
+         independently governed HR workforce router remains mounted.
 CHANGELOG: v1.1.0-M03-HR01-AUTHENTICATED-HTTP-BOUNDARY-CERT adds
          actual FastAPI route invocation with session-selected tenant,
          no synthetic unverified employees and explicit legacy selector denial.
@@ -19,6 +22,7 @@ FINANCIAL AUTHORITY BOUNDARY: No payment, payroll, release or settlement.
 from __future__ import annotations
 
 from types import SimpleNamespace
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
@@ -29,7 +33,7 @@ from tools.eos.saas.employee import employee_registry as source
 from tools.eos.api import employee_router as http
 
 
-VERSION = "v1.1.0-M03-HR01-AUTHENTICATED-HTTP-BOUNDARY-CERT"
+VERSION = "v1.2.0-M03-HR01-CANONICAL-ROUTER-SINGLETON-CERT"
 
 
 class FakeCursor:
@@ -227,8 +231,25 @@ def test_directory_http_denied_authority_never_opens_registry():
     assert result.json() == {"detail": "AUTHORIZATION_DENIED"}
 
 
+def test_canonical_workforce_router_is_only_mounted_employee_directory():
+    """Server must not expose overlapping legacy directory API after HR01."""
+    from tools.eos.api import hr_workforce_directory_router as canonical
+
+    assert canonical.router.prefix == "/api/hr/workforce"
+    assert canonical._DIRECTORY_AUTHORITY.permission_id == "hr:employee_directory:read"
+    assert canonical._DIRECTORY_AUTHORITY.platform_employer_permission_id == (
+        "platform_employer:employee_directory:read"
+    )
+    source_text = (
+        Path(__file__).resolve().parents[2] / "tools/eos/api/server.py"
+    ).read_text(encoding="utf-8")
+    assert "app.include_router(hr_workforce_directory_router)" in source_text
+    assert "app.include_router(employee_router)" not in source_text
+    assert "from .employee_router import router as employee_router" not in source_text
+
+
 # ARTIFACT: tests/unit/test_m03_hr01_employee_scope.py
-# VERSION: v1.1.0-M03-HR01-AUTHENTICATED-HTTP-BOUNDARY-CERT
+# VERSION: v1.2.0-M03-HR01-CANONICAL-ROUTER-SINGLETON-CERT
 # AUTHORITY BOUNDARY: Tests do not issue IAM permissions or admit employees.
 # TENANT POSTURE: Synthetic source selectors only.
 # FAIL-CLOSED POSTURE: Legacy root and broad read paths reject.
