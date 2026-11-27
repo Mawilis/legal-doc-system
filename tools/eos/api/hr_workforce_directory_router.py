@@ -1,14 +1,15 @@
 """TITLE: WILSY authenticated workforce directory projection.
-VERSION: v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD
+VERSION: v1.3.0-WORKFORCE-ORGANIZATION-OBSERVED-READ
 AUTHORITY: Existing Python EOS tenant authorization and canonical employee directory read.
 EPITOME: Projects a bounded set of directory-safe employee fields from the
          existing employees source for authenticated HR or platform-employer
          viewers, without creating employment or identity authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr_workforce_directory_router.py
 COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py at /api/hr/workforce; consumed by Headquarters and HR directory views.
-CERTIFICATION / UPDATE DATE: 2026-11-12.
+CERTIFICATION / UPDATE DATE: 2026-11-28.
 CHANGELOG:
-  v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD rejects whitespace-only search parameters before issuing a directory-wide regex query; canonical IAM, explicit projection, bounded list and exact-tenant detail read remain unchanged.
+  v1.3.0-WORKFORCE-ORGANIZATION-OBSERVED-READ adds a bounded exact-tenant, employee-derived department distribution, separately authorized through existing directory IAM. It never asserts approved departments, positions, reporting trees or headcount allocations and fails closed on partial or malformed aggregation.
+  v1.3.0-WORKFORCE-ORGANIZATION-OBSERVED-READ rejects whitespace-only search parameters before issuing a directory-wide regex query; canonical IAM, explicit projection, bounded list and exact-tenant detail read remain unchanged.
   v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL — Adds a separately authorized, strictly exact-tenant, directory-only employee detail read with opaque not-found behavior and bounded identity selectors; reuses the canonical employee projection without employment write or protected file access.
   v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Reads employee and department measures in one exact-tenant
   Mongo aggregation instead of two unsynchronized count/distinct calls.
@@ -191,6 +192,72 @@ async def read_workforce_overview(
     }
 
 
+
+@router.get("/organization")
+async def read_workforce_organization(
+    authorization: TenantAuthorizationContext = Depends(_DIRECTORY_AUTHORITY),
+) -> dict[str, Any]:
+    """Read a tenant-scoped observed departmental distribution, not an approved org chart.
+
+    Reuses existing active-employee directory IAM. Department labels and counts
+    originate exclusively from the canonical employee collection, without
+    positions, invented reporting structure, HR write permission or personal data.
+    The single grouped aggregation is bounded to 201 results, and oversize or
+    malformed data fails closed rather than yielding a partial organizational map.
+    """
+    database = get_database()
+    if database is None:
+        raise HTTPException(status_code=503, detail="WORKFORCE_ORGANIZATION_SOURCE_UNAVAILABLE")
+    criteria = {
+        "tenantId": authorization.tenant_id,
+        "isActive": True,
+        "deletedAt": None,
+    }
+    try:
+        grouped = list(database["employees"].aggregate([
+            {"$match": criteria},
+            {"$group": {
+                "_id": "$employment.department",
+                "active_employees": {"$sum": 1},
+            }},
+            {"$sort": {"_id": 1}},
+            {"$limit": 201},
+        ]))
+    except Exception as error:
+        raise HTTPException(
+            status_code=503, detail="WORKFORCE_ORGANIZATION_SOURCE_UNAVAILABLE"
+        ) from error
+    if len(grouped) > 200:
+        raise HTTPException(status_code=503, detail="WORKFORCE_ORGANIZATION_BOUND_EXCEEDED")
+    departments: list[dict[str, Any]] = []
+    unassigned = 0
+    for entry in grouped:
+        count = entry.get("active_employees")
+        name = entry.get("_id")
+        if not isinstance(count, int) or isinstance(count, bool) or count < 1:
+            raise HTTPException(status_code=503, detail="WORKFORCE_ORGANIZATION_SOURCE_INVALID")
+        if name is None or name == "":
+            unassigned += count
+            continue
+        if not isinstance(name, str) or not name.strip() or len(name) > 180:
+            raise HTTPException(status_code=503, detail="WORKFORCE_ORGANIZATION_SOURCE_INVALID")
+        departments.append({"name": name.strip(), "active_employees": count})
+    if len({entry["name"] for entry in departments}) != len(departments):
+        raise HTTPException(status_code=503, detail="WORKFORCE_ORGANIZATION_SOURCE_INVALID")
+    departments.sort(key=lambda entry: entry["name"].casefold())
+    return {
+        "schema": "WILSY-HR-WORKFORCE-ORGANIZATION/V1",
+        "tenant_id": authorization.tenant_id,
+        "source": "AUTHORISED_HR_EMPLOYEE_REGISTRY",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "status": "OBSERVED_EMPLOYEE_DISTRIBUTION",
+        "department_count": len(departments),
+        "active_employees": sum(entry["active_employees"] for entry in departments) + unassigned,
+        "unassigned_employees": unassigned,
+        "departments": departments,
+    }
+
+
 @router.get("/{employee_id}")
 async def read_workforce_directory_employee(
     employee_id: str,
@@ -247,7 +314,7 @@ async def read_workforce_directory_employee(
 
 
 # ARTIFACT: hr_workforce_directory_router.py
-# VERSION: v1.2.1-WORKFORCE-SEARCH-QUERY-GUARD
+# VERSION: v1.3.0-WORKFORCE-ORGANIZATION-OBSERVED-READ
 # AUTHORITY BOUNDARY: Existing EOS tenant authorization gates read-only directory projection; the route grants no employee, principal, membership, IAM, or entitlement authority.
 # TENANT POSTURE: Exact authorized tenant is applied to every employee query; employer alternate pair is canonical-WILSY-only.
 # FAIL-CLOSED POSTURE: Missing database, malformed authorization, or source read failure returns unavailable and never an empty-success projection.
