@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION
+ * VERSION: v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,10 +12,11 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
  *   v2.13.0-FIRST-HR-LEADERSHIP-REQUEST opens a compact, actual EOS-backed first HR leadership DRAFT requisition in the headcount lane after current authorized source read. Independent approval, candidate admission and IAM grants remain unchanged.
- *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION retains independent workforce/hiring/offer/headcount admission states, distinguishes denied from unavailable, and displays bounded source details without IAM elevation.
+ *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY retains independent workforce/hiring/offer/headcount admission states, distinguishes denied from unavailable, and displays bounded source details without IAM elevation.
  *   v2.12.1-HQ-RETURN-ICON-IMPORT includes the actual icon dependency required by the new contextual People header return control.
  *   v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN mounts a single accessible compact Headquarters return inside the contextual People application header; removes the need for a duplicate external navigation rail.
  *   v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES bounds Overview to concurrent independently governed sources and every other HR lane to its selected source; search no longer refetches unrelated workforce aggregates.
@@ -112,7 +113,7 @@ import { resolveCountryOption, searchSovereignCountries } from '../../data/sover
 import { exportCSV } from '../../utils/exportHelpers';
 import { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
-import FounderHeadcountStart, { HeadcountDraftSubmit } from './FounderHeadcountStart';
+import FounderHeadcountStart, { HeadcountDraftSubmit, HeadcountIndependentDecision } from './FounderHeadcountStart';
 import styles from './HrDashboard.module.css';
 import { workStatusClasses } from '../../theme/workStatus.js';
 
@@ -4404,7 +4405,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                                 admitted={Boolean(tenantScopeKey) && isVerifiedReadState(shownState)}
                                 requisition={item} onSubmitted={() => loadDashboard()} />
                             : activeTab === 'jobOpenings' && item.status === 'SUBMITTED'
-                            ? <span className="text-xs font-semibold text-amber-800">Awaiting independent approval</span>
+                            ? <HeadcountIndependentDecision tenantId={tenantId}
+                                admitted={Boolean(tenantScopeKey) && isVerifiedReadState(shownState)}
+                                requisition={item} onDecided={() => loadDashboard()} />
                             : activeTab === 'jobOpenings' && item.status === 'APPROVED'
                               ? <button type="button" onClick={() => changeTab('candidates')}
                                 className="min-h-9 rounded-md border border-emerald-300 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 hover:bg-emerald-100">
@@ -4934,7 +4937,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION
+ * VERSION: v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
