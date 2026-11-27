@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.16.0-ROW-STATUS-ACCENT-PARITY
+ * VERSION: v1.16.1-SOURCE-STATUS-BADGE-PAINT
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -9,7 +9,7 @@
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG: v1.16.0-ROW-STATUS-ACCENT-PARITY adds an EOS-state-coloured left row rail so Projects visibly conveys the shared palette even when the task table is dense, without replacing selected focus.
- * CHANGELOG: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS renders verified and explicitly pending statuses with the canonical enterprise work colour mapping, while retaining text labels and readback.
+ * CHANGELOG: v1.16.1-SOURCE-STATUS-BADGE-PAINT makes badge fill, border and white text explicit from the shared EOS status tone, preventing missing dynamic Tailwind candidates from producing white-on-white chips.\n * CHANGELOG: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS renders verified and explicitly pending statuses with the canonical enterprise work colour mapping, while retaining text labels and readback.
  * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.
  * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.
  * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
@@ -83,7 +83,7 @@ import React from 'react';
 import { Waypoints, ClipboardList, UserRound } from 'lucide-react';
 import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
 import { workTaskBlueprint } from './WorkTaskBlueprint.jsx';
-import { workStatusClasses, workStatusAccentClass } from '../../theme/workStatus.js';
+import { workStatusClasses, workStatusAccentClass, workStatusTone } from '../../theme/workStatus.js';
 
 const NO_ACTION_CAPABILITIES = Object.freeze({
   canStart: false, canComplete: false, canBlock: false, canCancel: false,
@@ -134,6 +134,17 @@ export default function ProjectWorkRow({
       ? onOpen : undefined} onCreateSubtask={onCreateSubtask}
     onAttachments={onAttachments} onApprovals={onApprovals}
     onActivity={onActivity}/>;
+  // Stable source-status presentation: dynamic utility tokens may not be discovered
+  // by Tailwind's component-only source scan; explicitly paint the verified badge.
+  const badgeTone = workStatusTone(pendingStatus !== null ? pendingStatus : item.status);
+  const badgeBackground = {
+    neutral: '#475569',
+    active: '#1d4ed8',
+    success: '#047857',
+    caution: '#92400e',
+    blocked: '#b91c1c',
+  }[badgeTone];
+  const badgeStyle = { backgroundColor: badgeBackground, borderColor: badgeBackground, color: '#ffffff' };
   const displayName = item.assignee_principal_id && typeof assigneeName === 'function'
     ? assigneeName(item.assignee_principal_id) : null;
   const hasNamedContributor = typeof displayName === 'string' && displayName.trim().length > 0
@@ -221,7 +232,7 @@ export default function ProjectWorkRow({
               </td>
               <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-slate-800'}>
                 <span className={workStatusClasses(pendingStatus !== null
-                  ? pendingStatus : item.status)}>
+                  ? pendingStatus : item.status)} style={badgeStyle}>
                   {statusLabel(pendingStatus !== null ? pendingStatus : item.status)}
                   {pendingStatus !== null ? ' · pending' : ''}
                 </span>
@@ -263,7 +274,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.16.0-ROW-STATUS-ACCENT-PARITY
+// VERSION: v1.16.1-SOURCE-STATUS-BADGE-PAINT
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
