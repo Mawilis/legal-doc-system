@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST
+ * VERSION: v1.5.1-HR01-SOURCE-PROVENANCE-PRIVACY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.5.1-HR01-SOURCE-PROVENANCE-PRIVACY-CERT — Guards canonical EOS workforce provenance and denies passthrough of employee PII into browser state.
  *   v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST — Guards rendered People headings/error/search contrast and saturated source-owned badges/Project row accents.
  *   v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE — Asserts both canonical Project task row and lifecycle chart use the same semantic source-status contract as People.
  *   v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT — Certifies unified People surface, no wrong logo or black/gold chrome, read-only future modules and shared status semantics.
@@ -216,11 +217,24 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(css).toContain('.peopleSurface .peopleSearch:focus-within');
   });
 
+  it('accepts only canonical workforce source payload and keeps PII out of browser state', () => {
+    expect(dashboard).toContain("sourcePage?.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'");
+    expect(dashboard).toContain("'HR_WORKFORCE_PROVENANCE_INVALID'");
+    const mappingStart = dashboard.indexOf('items: sourcePage.items.map(employee => ({');
+    const mappingEnd = dashboard.indexOf('total: sourcePage.total', mappingStart);
+    expect(mappingStart).toBeGreaterThanOrEqual(0);
+    const mapping = dashboard.slice(mappingStart, mappingEnd);
+    expect(mapping).not.toContain('...employee');
+    expect(mapping).not.toContain('bank');
+    expect(mapping).not.toContain('salary');
+    expect(mapping).not.toContain('identityNumber');
+  });
+
 });
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST
+ * VERSION: v1.5.1-HR01-SOURCE-PROVENANCE-PRIVACY-CERT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
