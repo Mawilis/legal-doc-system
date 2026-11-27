@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT
+ * VERSION: v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,6 +9,7 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
  *   v1.7.0-EOS-CANDIDATE-EVIDENCE-LOOP — Certifies streamed candidate evidence custody, exact binary digest/size readback, stage-command gating, and stale-scope evidence response rejection.
  *   v1.6.0-EOS-HIRING-COMMAND-LOOP — Certifies source-owned candidate command acknowledgement, exact tenant readback, stable idempotent retry, and no legacy write path.
@@ -270,8 +271,8 @@ describe('production People Overview source contracts', () => {
     mockState.candidateRead.mockRejectedValue(denied);
     mockState.offerRead.mockRejectedValue(denied);
     renderDashboard();
-    expect(await screen.findByText(/People source access denied for the current operating capacity/)).toBeInTheDocument();
-    expect(await screen.findByText(/No current People indicators are authorized for this capacity/)).toBeInTheDocument();
+    expect(await screen.findByText('People access requires an authorized operating capacity')).toBeInTheDocument();
+    expect(await screen.findByText(/Founder designation alone does not grant HR authority/)).toBeInTheDocument();
     expect(screen.queryByText('0 planned')).not.toBeInTheDocument();
     expect(screen.queryByText('Tenant A Verified Employee')).not.toBeInTheDocument();
   });
@@ -279,7 +280,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT
+ * VERSION: v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
