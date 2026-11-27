@@ -9,7 +9,8 @@
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG: v1.16.0-ROW-STATUS-ACCENT-PARITY adds an EOS-state-coloured left row rail so Projects visibly conveys the shared palette even when the task table is dense, without replacing selected focus.
- * CHANGELOG: v1.16.1-SOURCE-STATUS-BADGE-PAINT makes badge fill, border and white text explicit from the shared EOS status tone, preventing missing dynamic Tailwind candidates from producing white-on-white chips.\n * CHANGELOG: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS renders verified and explicitly pending statuses with the canonical enterprise work colour mapping, while retaining text labels and readback.
+ * CHANGELOG: v1.16.1-SOURCE-STATUS-BADGE-PAINT makes badge fill, border and white text explicit from the shared EOS status tone, preventing missing dynamic Tailwind candidates from producing white-on-white chips.
+ * CHANGELOG: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS renders verified and explicitly pending statuses with the canonical enterprise work colour mapping, while retaining text labels and readback.
  * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.
  * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.
  * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
