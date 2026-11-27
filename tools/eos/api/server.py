@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.58.0-ATTENTION-MANIFEST-HTTP-LATENCY-CERT
+VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -17,7 +17,11 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-11-24
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+  unmounts the overlapping /api/employees legacy HTTP router. The existing
+  /api/hr/workforce route remains the sole governed employee directory read.
+  No employees, IAM grants, documents, or financial authorities are changed.
 CHANGELOG: v1.58.0-ATTENTION-MANIFEST-HTTP-LATENCY-CERT extends
   explicit opt-in, identifier-free request timing to exactly the two remaining
   slow GET boundaries: module manifest and CRM attention command availability.
@@ -143,7 +147,6 @@ from .authority_bridge_router import router as authority_bridge_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, qr_router, router as billing_router
 from .forensic_merkle_router import router as forensic_merkle_router
 from .artifact_pdf_router import router as artifact_pdf_router
-from .employee_router import router as employee_router
 from .errors import register_error_handlers
 from .institutional_pki_router import router as institutional_pki_router
 from .institutional_signer_router import router as institutional_signer_router
@@ -1331,7 +1334,6 @@ class WilsyAPIServer:
         app.include_router(qr_router)
         app.include_router(qr_router, prefix="/api")
 
-        app.include_router(employee_router)
         app.include_router(authority_bridge_router)
 
         # Provider evidence ingress is mounted once at its canonical route.
@@ -1344,7 +1346,7 @@ class WilsyAPIServer:
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
-            "(kernel, auth, role revocation, billing, employees, internal authority, PayShap evidence, legal acceptance, Legal Evidence upload, Legal Storefront public intent, tenant branding, legal matter deadlines).",
+            "(kernel, auth, role revocation, billing, governed workforce directory, internal authority, PayShap evidence, legal acceptance, Legal Evidence upload, Legal Storefront public intent, tenant branding, legal matter deadlines).",
             self.title,
             self.version,
         )
@@ -1358,7 +1360,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.58.0-ATTENTION-MANIFEST-HTTP-LATENCY-CERT
+# VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
