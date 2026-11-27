@@ -3,11 +3,13 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.1.0-CHROME-PARITY
+ * Version:        v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
+ * Change log: 2026-11-27 v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY aligns
+ *             retained governed HR command dialogs to light OS surfaces.
  * Classification: Production Artifact
  * =============================================================================
  */
@@ -956,3 +958,91 @@
 .hrWorkspace {
   min-height: 0;
 }
+
+/* M03 People: retained source-command dialogs use the WILSY workspace surface,
+   not the retired black/gold HR microsite. Existing logo lives in the OS shell. */
+.hrModal {
+  background: rgb(15 23 42 / 0.48);
+  color: #0f172a;
+}
+.hrModal > section {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 24px 80px rgb(15 23 42 / 0.18);
+}
+.hrModal header,
+.hrModal footer {
+  border-color: #e2e8f0;
+}
+.hrModal header h2,
+.hrModal strong,
+.hrModal label,
+.hrModal p {
+  color: #0f172a;
+}
+.hrModal header span,
+.hrModal .artifactTemplatePanel span,
+.hrModal .benefitMathPanel span {
+  color: #1e40af;
+}
+.hrModal header button,
+.hrModal footer button,
+.hrModal input,
+.hrModal select,
+.hrModal textarea {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+.hrModal input:focus-visible,
+.hrModal select:focus-visible,
+.hrModal textarea:focus-visible,
+.hrModal button:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+.hrModal footer button[data-primary='true'] {
+  background: #1e40af;
+  color: #ffffff;
+  border-color: #1e40af;
+}
+.hrModal .benefitMathPanel,
+.hrModal .artifactTemplatePanel,
+.hrModal .addressControl,
+.hrModal .countryControl,
+.hrModal .benefitPackageControl {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+.hrModal .benefitMathPanel strong,
+.hrModal .artifactTemplatePanel strong,
+.hrModal .benefitMathPanel small,
+.hrModal .artifactTemplatePanel small {
+  color: #334155;
+}
+.hrModal .benefitMathPanel b {
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+.hrModal .performanceGraph span {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.hrModal .performanceGraph span::before {
+  background: #2563eb;
+}
+.hrLoading {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* ARTIFACT: client/src/components/hr/HrDashboard.module.css
+ * VERSION: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY
+ * AUTHORITY BOUNDARY: Presentation only; all commands remain Python EOS-owned.
+ * TENANT POSTURE: No tenant or employee state in CSS.
+ * FAIL-CLOSED POSTURE: No disabled control or access denial is visually overridden.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
