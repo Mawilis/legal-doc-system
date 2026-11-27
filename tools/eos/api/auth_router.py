@@ -145,6 +145,7 @@ from ..saas.auth.password_recovery_contact_verification_registry import (
 )
 from ..saas.auth.password_recovery_contact_verification_request_service import (
     RecoveryContactVerificationRequestError,
+    RecoveryContactVerificationRequestResult,
     RecoveryContactVerificationRequestService,
 )
 from ..saas.auth.password_recovery_contact_verification_service import (
@@ -1201,7 +1202,7 @@ async def request_recovery_contact_verification(
     # attempt and the existing rate, token, and revocation semantics.
     from starlette.concurrency import run_in_threadpool
 
-    def issue_verification() -> object:
+    def issue_verification() -> RecoveryContactVerificationRequestResult:
         return _recovery_contact_verification_request_service().request_verification(
             identity=identity,
             observed_at=datetime.now(timezone.utc),
