@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE
+ * VERSION: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE offers a separate Change HR capacity action for a user currently selected as HR Director/Manager; reauthentication remains mandatory before EOS may admit another role.
  * CHANGELOG: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE keeps source-admitted My Work navigation in the account menu when the duplicate Founder floating shortcut is retired; it does not extend access or expose inaccessible work.
  * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER moves canonical Founder workspace navigation into the existing account dropdown, with same-capacity navigation and explicit confirmation plus reauthentication for cross-capacity transitions; no role union or IAM escalation.
  * CHANGELOG: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
@@ -314,13 +315,13 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       navigate('/headquarters');
       return;
     }
-    if (!['headquarters', 'people'].includes(destination)) return;
+    if (!['headquarters', 'people', 'change-hr'].includes(destination)) return;
     setWorkspaceSwitchError('');
     setRequestedWorkspaceSwitch(destination);
   };
   const confirmFounderWorkspaceSwitch = async () => {
     const destination = requestedWorkspaceSwitch;
-    if (!canSwitchFounderWorkspaces || !['headquarters', 'people'].includes(destination)
+    if (!canSwitchFounderWorkspaces || !['headquarters', 'people', 'change-hr'].includes(destination)
         || workspaceSwitchBusy) return;
     setWorkspaceSwitchBusy(true);
     setWorkspaceSwitchError('');
@@ -628,6 +629,14 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                       <span>People · Hire to Exit <span className="block text-xs text-slate-300">HR operating capacity</span></span>
                       <span className="text-xs text-slate-300">{isHrCapacity ? 'Current' : 'Sign in'}</span>
                     </button>
+                    {isHrCapacity && (
+                      <button type="button" role="menuitem" disabled={workspaceSwitchBusy}
+                        onClick={() => requestFounderWorkspaceSwitch('change-hr')}
+                        className="min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                        Change HR capacity
+                        <span className="block text-xs text-slate-300">Select HR Director or HR Manager through EOS and MFA</span>
+                      </button>
+                    )}
                     {requestedWorkspaceSwitch && (
                       <div className="mt-2 rounded-lg border border-white/20 bg-slate-800 p-3">
                         <p className="text-sm font-medium text-white">Switch operating capacity?</p>
@@ -1239,7 +1248,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE
+ * VERSION: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
