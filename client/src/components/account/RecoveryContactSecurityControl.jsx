@@ -3,16 +3,17 @@
  * WILSY OS — RECOVERY CONTACT SECURITY CONTROL
  * ============================================================================
  * TITLE: Authenticated recovery-email verification control
- * VERSION: v1.3.0-VERIFIED-RECOVERY-PLAIN-LANGUAGE
+ * VERSION: v1.3.1-SOVEREIGN-HEADER-CONFORMANCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Lets an authenticated user request verification of the current
  *           durable recovery email without letting the browser nominate an
  *           address, tenant, principal, token, or verified state.
- * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/account/RecoveryContactSecurityControl.jsx
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/account/RecoveryContactSecurityControl.jsx
  * COLLABORATION / OWNERSHIP: api.js owns authenticated transport; Python EOS
  *   re-reads durable principal/email and owns verification/contact authority.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-11-27 v1.3.1-SOVEREIGN-HEADER-CONFORMANCE corrects the canonical path header declaration required by repository integrity; recovery contact runtime semantics remain unchanged.
  *   2026-11-27 v1.3.0 names an EOS-confirmed recovery contact Verified recovery email; all unknown, required and unavailable states retain neutral Recovery email.
  *   2026-11-27 v1.2.0 distinguishes absent EOS routes, authentication and bounded source stages and permits a read-only retry without sending email.
  *   2026-11-27 v1.1.0 reads authenticated status before enabling email issuance, suppresses redundant verification and preserves source-unavailable as a separate state.
@@ -214,7 +215,7 @@ const buttonStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: RecoveryContactSecurityControl.jsx
- * VERSION: v1.3.0-VERIFIED-RECOVERY-PLAIN-LANGUAGE
+ * VERSION: v1.3.1-SOVEREIGN-HEADER-CONFORMANCE
  * AUTHORITY BOUNDARY: authenticated client transport/presentation only
  * TENANT POSTURE: no browser tenant/email authority submitted
  * FAIL-CLOSED POSTURE: only bounded server status updates presentation
