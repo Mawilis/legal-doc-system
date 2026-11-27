@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT
+ * VERSION: v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE — Rejects workforce payloads without canonical EOS provenance and projects only directory-safe fields into browser state; no passthrough of backend employee extras.
  *   v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT — Applies scoped, contrast-safe People headings, denied notice and input classes against legacy inherited styling; no IAM override.
  *   v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY — Disables candidate/offer create actions until the selected EOS source has a current verified read, preventing misleading commands on denied or unavailable HR views.
  *   v2.8.2-M03-LIGHT-SESSION-GATES — Removes remaining black legacy unauthenticated/tenant-reverification panels, preserving fail-closed EOS scope semantics.
@@ -2701,17 +2702,28 @@ const HrDashboard = () => {
           headers: { 'X-Tenant-ID': tenantId }
         });
         const sourcePage = response?.data;
-        if (!sourcePage || !Array.isArray(sourcePage.items)) return sourcePage;
+        if (sourcePage?.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+          || !Array.isArray(sourcePage.items)
+          || sourcePage.items.some(employee => !employee || typeof employee.employeeId !== 'string'
+            || employee.employeeId.length === 0)) {
+          throw Object.assign(new Error('HR_WORKFORCE_PROVENANCE_INVALID'), { code: 'HR_WORKFORCE_PROVENANCE_INVALID' });
+        }
         return {
-          ...sourcePage,
-          items: sourcePage.items.map((employee) => ({
-            ...employee,
+          items: sourcePage.items.map(employee => ({
             id: employee.employeeId,
-            name: employee.displayName || employee.preferredName,
-            email: employee.workEmail,
-            position: employee.jobTitle,
-            status: employee.employmentStatus
-          }))
+            employeeId: employee.employeeId,
+            name: employee.displayName || employee.preferredName || 'Name unavailable',
+            email: employee.workEmail || null,
+            department: employee.department || null,
+            position: employee.jobTitle || null,
+            managerId: employee.managerId || null,
+            status: employee.employmentStatus || null,
+          })),
+          total: sourcePage.total,
+          limit: sourcePage.limit,
+          offset: sourcePage.offset,
+          hasMore: sourcePage.hasMore,
+          source: sourcePage.source,
         };
       },
       candidates: () => hrService.getHiringCandidates(tenantId, params),
@@ -4638,7 +4650,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT
+ * VERSION: v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
