@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY
+ * VERSION: v2.14.0-GLOBAL-HR-OPERATING-CAPACITY-RECOVERY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.14.0-GLOBAL-HR-OPERATING-CAPACITY-RECOVERY exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -187,10 +188,19 @@ const classifyHrReadFailure = (error) => {
   return HR_READ_STATE.SOURCE_UNAVAILABLE;
 };
 const hrReadErrorCode = (error) => {
-  const candidate = error?.code || error?.response?.data?.detail || error?.response?.data?.code;
-  if (typeof candidate === 'string' && /^[A-Z0-9_.:-]{1,100}$/.test(candidate)) return candidate;
+  // Axios ERR_BAD_REQUEST covers every HTTP 4xx and is not an EOS denial
+  // reason. Prefer an exact bounded source code or the actual HTTP status.
+  const detail = error?.response?.data?.detail;
+  const sourceCode = typeof detail === 'object' && detail !== null
+    ? detail.code : detail;
+  const candidates = [sourceCode, error?.response?.data?.code];
+  for (const code of candidates) {
+    if (typeof code === 'string' && /^[A-Z][A-Z0-9_.:-]{2,99}$/.test(code)) return code;
+  }
   const status = error?.response?.status || error?.status;
-  return Number.isInteger(status) ? `HTTP_${status}` : 'HR_SOURCE_UNAVAILABLE';
+  return Number.isInteger(status) ? `HTTP_${status}`
+    : typeof error?.code === 'string' && /^[A-Z][A-Z0-9_]{2,99}$/.test(error.code)
+      ? error.code : 'HR_SOURCE_UNAVAILABLE';
 };
 const unavailableReadState = (previous, errorCode) => ({
   status: HR_READ_STATE.SOURCE_UNAVAILABLE,
@@ -2325,6 +2335,16 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const { activeTenant, authorityMismatch } = useTenants();
   const auth = useAuth() || {};
   const { user: authUser, logout } = auth;
+  const currentCapacity = typeof authUser?.role === 'string'
+    ? authUser.role : null;
+  const isHrOperatingCapacity = currentCapacity === 'tenant_hr_manager'
+    || currentCapacity === 'tenant_hr_director';
+  const enterHrCapacity = async () => {
+    // Logout revokes this exact session through its existing auth provider.
+    // A fresh EOS-listed choice and MFA are mandatory: no header role switch.
+    await logout();
+    window.location.assign('/login?capacity=hr');
+  };
   const authenticatedTenantId = typeof auth.tenantId === 'string'
     && auth.tenantId.trim() === auth.tenantId
     && auth.tenantId.length > 0
@@ -4232,9 +4252,21 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       : 'People sources are not yet verified'}</h3>
                     <p>{overviewSourcePending ? 'Checking the current session and independently governed People sources.'
                       : overviewAuthRequired ? 'Sign in with a current Global Principal session to verify employer data.'
-                      : overviewAccessDenied ? 'One or more People reads were denied by EOS. Select a separately authorized People capacity; Founder designation alone does not grant HR permission.'
+                      : overviewAccessDenied ? `EOS rejected the current People reads. Active session: ${currentCapacity || 'unverified'}. HR Manager/Director assignments require a newly selected Global Principal operating session; Founder designation alone does not grant HR permission.`
                       : 'EOS could not verify the current source reads. Refresh to retry; unavailable is not an empty workforce.'}</p>
                   </div>
+                  {tenantId === 'WILSYTENANT-4CD2FZ4O' && !overviewSourcePending
+                    && !isHrOperatingCapacity && overviewAccessDenied && (
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <button type="button" onClick={enterHrCapacity}
+                        className="min-h-10 rounded-md bg-blue-800 px-4 text-sm font-semibold text-white hover:bg-blue-900">
+                        Enter HR operating capacity
+                      </button>
+                      <span className="text-xs text-slate-600">
+                        Reauthenticate, select a verified HR capacity, then complete MFA
+                      </span>
+                    </div>
+                  )}
                   <div className={styles.overviewSourceChecks} aria-label="People source verification results">
                     {overviewSources.map(source => (
                       <button type="button" key={source.id} onClick={() => changeTab(source.id)}
@@ -4937,7 +4969,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY
+ * VERSION: v2.14.0-GLOBAL-HR-OPERATING-CAPACITY-RECOVERY
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
