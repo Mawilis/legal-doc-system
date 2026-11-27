@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.20.0-EXACT-EOS-HISTORY-BODY
+ * VERSION: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -16,8 +16,8 @@
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
  * CERTIFICATION / UPDATE DATE: 2026-11-25
- * CHANGELOG: v74.20.0-EXACT-EOS-HISTORY-BODY preserves strict encrypted-history PUT payloads and adds Dock/history to the existing tenant transport interlock.
- * CHANGELOG: v74.20.0-EXACT-EOS-HISTORY-BODY extends the
+ * CHANGELOG: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK preserves strict encrypted-history PUT payloads and adds Dock/history to the existing tenant transport interlock.
+ * CHANGELOG: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK extends the
  *            tenant-scope route boundary to query-string and fragment
  *            delimiters so /projects?limit=1 is guarded like /projects.
  *            Keeps the existing fail-closed regression assertion unchanged.
@@ -735,6 +735,9 @@ const requestPasswordRecovery = ({ tenantId, email }) => api.post(
  * @institutional Transport only; requires the existing authenticated bearer and
  *     cannot create verified-contact authority by itself.
  */
+/** SMTP-independent current-principal recovery-contact evidence readback. */
+const getRecoveryContactStatus = () => api.get('/auth/recovery-contact/status');
+
 const requestRecoveryContactVerification = () => api.post(
   '/auth/recovery-contact/request-verification',
   {},
@@ -874,6 +877,7 @@ export default api;
 export {
   requestPasswordRecovery,
   requestRecoveryContactVerification,
+  getRecoveryContactStatus,
   completeRecoveryContactVerification,
   resetPassword,
   getStatements,
@@ -886,7 +890,7 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.20.0-EXACT-EOS-HISTORY-BODY
+ * VERSION: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
