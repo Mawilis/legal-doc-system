@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE
+ * VERSION: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS exposes actionable People-only workforce/hiring/offer/headcount module shortcuts in global search overlay without implying cross-domain search authority.
  * CHANGELOG: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE labels global People search as authorized workforce lookup or module navigation, without implying certified cross-domain record indexing.
  * CHANGELOG: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH makes the global navigation search context-aware inside the People application, routing queries to the existing HR-owned search intent without adding global HR data access.
  * CHANGELOG: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES supports the authorized canonical tenant ID and legal-name projection aliases while retaining exact selected-session tenant equality in global header.
@@ -448,6 +449,16 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     }
   };
 
+  const openPeopleModule = (moduleName) => {
+    if (!isPeopleWorkspace) return;
+    window.dispatchEvent(new CustomEvent('wilsy:people-context-search', {
+      detail: { query: moduleName },
+    }));
+    setSearchOpen(false);
+    setSearchValue('');
+    setSearchNotice('');
+  };
+
   return (
     <div className="min-h-screen bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
       {isPlatformOwnerWorkspace && <style>{'body:has([data-wilsy-platform-owner="true"])::after{display:none!important}'}</style>}
@@ -570,6 +581,14 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                 <button type="button" onClick={() => { navigate('/headquarters'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><Home size={17} className="text-amber-300"/> Headquarters</button>
                 <button type="button" onClick={() => { navigate('/my-work'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><CheckCircle2 size={17} className="text-amber-300"/> My Work</button>
               </div>
+              {isPeopleWorkspace && <div className="mt-3 flex flex-wrap gap-2" aria-label="People module shortcuts">
+                {['Workforce', 'Hiring', 'Offers', 'Headcount'].map(moduleName => (
+                  <button type="button" key={moduleName} onClick={() => openPeopleModule(moduleName)}
+                    className="rounded-lg border border-amber-300/30 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
+                    {moduleName}
+                  </button>
+                ))}
+              </div>}
               <p role={searchNotice ? 'status' : undefined} className="mt-4 text-xs leading-5 text-slate-400">{searchNotice || (isPeopleWorkspace ? 'Queries use the existing authorized workforce directory. No HR records are searched without EOS admission.' : 'Only Headquarters and My Work shortcuts are available here. Permission-filtered record search is not connected.')}</p>
             </div>
           </section>
@@ -1112,7 +1131,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE
+ * VERSION: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
