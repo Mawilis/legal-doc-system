@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER
+ * VERSION: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY
+ * CHANGELOG: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY reads legal employer identity from the exact authenticated global principal tenant projection, preserving independent existing Headquarters mounts without requiring a second tenant provider.
  * CHANGELOG: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER binds dynamic People header and persistent Headquarters footer to the exact authenticated tenant legal identity and reference, never a static Founder name or client-selected tenant.
  * CHANGELOG: v4.20.3-FOOTER-SEMANTIC-LANDMARK declares the persistent Headquarters footer as a named contentinfo landmark so it remains discoverable inside the app's main scroll shell.
  * CHANGELOG: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL reserves a visible shared footer within Headquarters' fixed-height EOS chrome and gives the owned People canvas the bounded scroll rail.
@@ -183,7 +184,6 @@
 import React, { lazy, Suspense, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
-import { useTenants } from '../../contexts/tenantContext.jsx';
 import api from '../../services/api.js';
 import {
   currentUnifiedMyWorkScope,
@@ -476,7 +476,6 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   const navigate = useNavigate();
   const auth = useContext(AuthContext) || {};
   const authUser = auth.user || {};
-  const { activeTenant } = useTenants();
 
   const operatingCapacity = authUser.businessRole || (authUser.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION' ? authUser.role : null);
   const initialNavigation = new URLSearchParams(location.search);
@@ -510,10 +509,11 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   const workTenantId = tenantId || authUser.tenantId;
   // Show only tenant identity from the current, authenticated selection.
   // Tenant metadata is presentation data, never an IAM or source admission.
-  const verifiedEmployer = activeTenant
-    && [activeTenant.tenantId, activeTenant.tenant_id, activeTenant.id]
+  const authorizedTenant = auth.tenant || null;
+  const verifiedEmployer = authorizedTenant
+    && [authorizedTenant.tenantId, authorizedTenant.tenant_id, authorizedTenant.id]
       .some((candidate) => typeof candidate === 'string' && candidate === workTenantId)
-    ? activeTenant : null;
+    ? authorizedTenant : null;
   const employerName = [verifiedEmployer?.legalName, verifiedEmployer?.name]
     .find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() || null;
   const employerReference = verifiedEmployer ? workTenantId : null;
@@ -1844,7 +1844,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER
+ * VERSION: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
