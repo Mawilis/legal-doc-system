@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS
+ * VERSION: v1.16.0-ROW-STATUS-ACCENT-PARITY
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.16.0-ROW-STATUS-ACCENT-PARITY adds an EOS-state-coloured left row rail so Projects visibly conveys the shared palette even when the task table is dense, without replacing selected focus.
  * CHANGELOG: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS renders verified and explicitly pending statuses with the canonical enterprise work colour mapping, while retaining text labels and readback.
  * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.
  * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.
@@ -82,7 +83,7 @@ import React from 'react';
 import { Waypoints, ClipboardList, UserRound } from 'lucide-react';
 import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
 import { workTaskBlueprint } from './WorkTaskBlueprint.jsx';
-import { workStatusClasses } from '../../theme/workStatus.js';
+import { workStatusClasses, workStatusAccentClass } from '../../theme/workStatus.js';
 
 const NO_ACTION_CAPABILITIES = Object.freeze({
   canStart: false, canComplete: false, canBlock: false, canCancel: false,
@@ -179,7 +180,7 @@ export default function ProjectWorkRow({
               }}
               aria-selected={selected}
               className={'cursor-pointer align-middle border-l-[3px] hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
-                + (selected ? 'border-l-blue-700 bg-slate-50 ' : 'border-l-transparent bg-white ')
+                + (selected ? 'border-l-blue-700 bg-slate-50 ' : workStatusAccentClass(item.status) + ' bg-white ')
                 + (density === 'compact' ? 'h-11' : 'h-14')}>
               <td className={density === 'compact' ? 'p-1.5' : 'p-2'}>
                 <input type="checkbox" aria-label={'Select ' + item.title}
@@ -262,7 +263,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS
+// VERSION: v1.16.0-ROW-STATUS-ACCENT-PARITY
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
