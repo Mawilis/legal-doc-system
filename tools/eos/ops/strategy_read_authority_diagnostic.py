@@ -1,9 +1,9 @@
 """Read-only local EOS Strategy IAM reconciliation.
 
 TITLE: WILSY OS Strategy Owner Access Readback
-VERSION: v1.0.0-STRATEGY-OWNER-READ-ONLY-DIAGNOSTIC
+VERSION: v1.0.1-STRATEGY-OWNER-STATIC-POLICY-CHECK
 AUTHORITY: Existing canonical tenant IAM composer; no writes, grants or session issuance.
-EPITOME: Compare Owner Projects vs Strategy under one explicit principal/tenant.
+EPITOME: Compare Owner Projects vs Strategy under one explicit principal/tenant and print exact static capacity eligibility.
 COMPLIANCE: Do not disclose credentials, email, role revision or raw document content.
 TENANT BOUNDARY: Canonical WILSY tenant only; no alias or root fallback.
 FINANCIAL AUTHORITY BOUNDARY: No execution.
@@ -17,6 +17,7 @@ from typing import Final
 from tools.eos.auth.tenant_authorization import authorize_tenant_operation
 from tools.eos.auth.principal_authority_repository import PrincipalAuthorityRepository
 from tools.eos.auth.tenant_membership_repository import TenantMembershipRepository
+from tools.eos.auth.tenant_authority_policy import tenant_role_operation_eligibility
 from tools.eos.auth.tenant_business_role_repository import (
     TenantBusinessRoleRepository,
 )
@@ -28,7 +29,7 @@ from tools.eos.api.tenant_authorization_http import get_role_assignment_reposito
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 from tools.eos.kernel.db import connect_db, get_database
 
-VERSION: Final = "v1.0.0-STRATEGY-OWNER-READ-ONLY-DIAGNOSTIC"
+VERSION: Final = "v1.0.1-STRATEGY-OWNER-STATIC-POLICY-CHECK"
 CAPACITY: Final = "tenant_owner"
 ASSIGNMENTS: Final = (
     "PROJECTS_PLATFORM_OWNER",
@@ -53,7 +54,10 @@ def inspect(principal_id: str) -> dict[str, str]:
         raise RuntimeError("EOS_DATABASE_UNAVAILABLE")
 
     tenant_id = WILSY_COMPANY_TENANT_ID
-    result: dict[str, str] = {}
+    result: dict[str, str] = {
+        "STATIC_OWNER_PROJECT_POLICY": tenant_role_operation_eligibility(CAPACITY, "project_detail"),
+        "STATIC_OWNER_STRATEGY_POLICY": tenant_role_operation_eligibility(CAPACITY, "company_operating_document_read"),
+    }
     role_reader = get_role_assignment_repository()
 
     for label, permission, operation in (
@@ -120,6 +124,6 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # ARTIFACT: tools/eos/ops/strategy_read_authority_diagnostic.py
-# VERSION: v1.0.0-STRATEGY-OWNER-READ-ONLY-DIAGNOSTIC
+# VERSION: v1.0.1-STRATEGY-OWNER-STATIC-POLICY-CHECK
 # AUTHORITY BOUNDARY: pure source inspection; no assignment or grant changes.
 # END OF WILSY OS SOVEREIGN ARTIFACT
