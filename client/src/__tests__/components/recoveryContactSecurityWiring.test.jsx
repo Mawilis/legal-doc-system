@@ -1,8 +1,9 @@
 /**
  * WILSY OS — RECOVERY SECURITY PRODUCT WIRING CERTIFICATE
  * TITLE: Account recovery-contact security wiring direct certificate
- * VERSION: v1.2.0-RECOVERY-STATUS-DIAGNOSIS-CERT
- * CHANGELOG: v1.2.0-RECOVERY-STATUS-DIAGNOSIS-CERT — checks Account Center header/seal version alignment and retains the historical recovery changelog entry.
+ * VERSION: v1.3.0-VERIFIED-RECOVERY-LABEL-CERT
+ * CHANGELOG: v1.3.0-VERIFIED-RECOVERY-LABEL-CERT checks verified-only recovery terminology and retains fail-closed unavailable semantics.
+ * CHANGELOG: v1.3.0-VERIFIED-RECOVERY-LABEL-CERT — checks Account Center header/seal version alignment and retains the historical recovery changelog entry.
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies that authenticated recovery-email verification is reachable
  *          from Account Security while browser presentation cannot nominate
@@ -89,7 +90,8 @@ describe('R10F recovery-contact security product wiring', () => {
       screen.getByText('Your current account email will be verified by the server.'),
     ).toBeInTheDocument();
 
-    expect(await screen.findByText('Current recovery email is already verified.')).toBeInTheDocument();
+    expect(await screen.findByText('Email ownership confirmed by EOS.')).toBeInTheDocument();
+    expect(screen.getByText('Verified recovery email')).toBeInTheDocument();
     expect(getRecoveryContactStatus).toHaveBeenCalledWith();
     expect(requestRecoveryContactVerification).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Verify recovery email' })).not.toBeInTheDocument();
@@ -108,7 +110,7 @@ describe('R10F recovery-contact security product wiring', () => {
       await screen.findByRole('alert'),
     ).toHaveTextContent('Verification requests are temporarily rate-limited.');
     expect(
-      screen.queryByText('Current recovery email is already verified.'),
+      screen.queryByText('Email ownership confirmed by EOS.'),
     ).not.toBeInTheDocument();
   });
 
@@ -116,6 +118,8 @@ describe('R10F recovery-contact security product wiring', () => {
     getRecoveryContactStatus.mockRejectedValue({ response: { status: 503 } });
     render(<RecoveryContactSecurityControl email="operator@example.test" />);
     expect(await screen.findByRole('alert')).toHaveTextContent('Recovery email status unavailable');
+    expect(screen.getByText('Recovery email')).toBeInTheDocument();
+    expect(screen.queryByText('Verified recovery email')).not.toBeInTheDocument();
     expect(requestRecoveryContactVerification).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Verify recovery email' })).not.toBeInTheDocument();
   });
@@ -126,7 +130,7 @@ describe('R10F recovery-contact security product wiring', () => {
     render(<RecoveryContactSecurityControl email="operator@example.test" />);
     expect(await screen.findByRole('alert')).toHaveTextContent('does not expose the recovery status route');
     fireEvent.click(screen.getByRole('button', { name: 'Retry status read' }));
-    expect(await screen.findByText('Current recovery email is already verified.')).toBeInTheDocument();
+    expect(await screen.findByText('Email ownership confirmed by EOS.')).toBeInTheDocument();
     expect(getRecoveryContactStatus).toHaveBeenCalledTimes(2);
     expect(requestRecoveryContactVerification).not.toHaveBeenCalled();
   });
@@ -179,7 +183,7 @@ describe('R10F recovery-contact security product wiring', () => {
 /**
  * WILSY OS SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: recoveryContactSecurityWiring.test.jsx
- * VERSION: v1.2.0-RECOVERY-STATUS-DIAGNOSIS-CERT
+ * VERSION: v1.3.0-VERIFIED-RECOVERY-LABEL-CERT
  * AUTHORITY BOUNDARY: deterministic client presentation/wiring evidence only
  * TENANT POSTURE: no browser tenant/email authority admitted
  * FAIL-CLOSED POSTURE: transport/rate failures never create verified state
