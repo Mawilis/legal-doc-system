@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authenticated Employee Directory HTTP Boundary
-VERSION: v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY
+VERSION: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL
 AUTHORITY: Python Kennel EOS Global Principal and tenant workforce IAM.
 EPITOME: Read an exact authorized tenant workforce directory without accepting
          caller-selected tenant identity or exposing protected employee files.
@@ -9,7 +9,7 @@ COLLABORATION / OWNERSHIP: Mounted by server.py under /api/employees;
          EmployeeRegistry owns exact tenant persistence; EmployeeEntity is a
          legacy sensitive domain record and MUST NOT be serialized directly.
 CERTIFICATION / UPDATE DATE: 2026-11-27
-CHANGELOG: v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY replaces caller tenant query,
+CHANGELOG: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL rejects\n         legacy tenantId query selectors explicitly before any employee query.\nCHANGELOG: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL replaces caller tenant query,
          header fallback and GLOBAL_ROOT with current RequireTenantAuthorization,
          reuses existing customer directory and WILSY employer permission pairs,
          restricts responses to verified directory-only fields, and denies
@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict
 
 from .tenant_authorization_http import (
@@ -43,7 +43,7 @@ from ..saas.employee.employee_registry import (
 )
 from ..saas.domain.employee import EmployeeEntity
 
-VERSION = "v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY"
+VERSION = "v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL"
 router = APIRouter(prefix="/api/employees", tags=["Employees"])
 
 _DIRECTORY_READ = RequireTenantAuthorization(
@@ -130,7 +130,7 @@ def get_employee(
 
 
 # ARTIFACT: tools/eos/api/employee_router.py
-# VERSION: v1.1.0-M03-HR01-IAM-REDACTED-DIRECTORY
+# VERSION: v1.1.1-M03-HR01-EXPLICIT-LEGACY-SCOPE-DENIAL
 # AUTHORITY BOUNDARY: Existing exact tenant employee-directory permissions.
 # TENANT POSTURE: Global Principal authenticated selected tenant only.
 # FAIL-CLOSED POSTURE: Restricted PII excluded; nonadmitted request denied.
