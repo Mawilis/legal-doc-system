@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.8.4-READ-SCOPE-NOT-DECISION-AUTHORITY
+ * VERSION: v1.8.5-GLOBAL-PEOPLE-SEARCH-CONTEXT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.8.5-GLOBAL-PEOPLE-SEARCH-CONTEXT-CERT verifies the global header and command overlay switch to functional People navigation rather than retaining generic work search.
  *   v1.8.4-READ-SCOPE-NOT-DECISION-AUTHORITY prevents treating readable submitted requisitions as the current operator's approval grant; command authority remains EOS-owned.
  *   v1.8.3-TRANSACTIONAL-HEADCOUNT-PAGINATION-CERT guards exact-tenant headcount page provenance, true total and server-owned hasMore rather than client truncation.
  *   v1.8.2-ONE-OVERVIEW-ADMISSION-RECOVERY certifies the single current-capacity denial recovery and real source-admission flags without repeated fake empty metrics.
@@ -273,6 +274,12 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(dashboard).toContain("payload.schema !== 'WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1'");
     expect(dashboard).not.toContain("api.get('/hr/snapshot'");
     expect(dashboard).toContain("'wilsy:people-context-search'");
+    const globalChrome = fs.readFileSync(path.join(ROOT, 'src/App.jsx'), 'utf8');
+    expect(globalChrome).toContain("get('section') === 'hr-workspace'");
+    expect(globalChrome).toContain('Search workforce or open a People module…');
+    expect(globalChrome).toContain("['Workforce', 'Hiring', 'Offers', 'Headcount']");
+    expect(globalChrome).toContain("detail: { query: moduleName }");
+
     expect(dashboard).toContain("setActiveTab('employees')");
     expect(dashboard).toContain('People access requires an authorized operating capacity');
     expect(dashboard).toContain('Founder designation alone does not grant HR authority.');
@@ -302,7 +309,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.8.4-READ-SCOPE-NOT-DECISION-AUTHORITY
+ * VERSION: v1.8.5-GLOBAL-PEOPLE-SEARCH-CONTEXT-CERT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
