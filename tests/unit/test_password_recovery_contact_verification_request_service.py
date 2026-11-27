@@ -184,6 +184,82 @@ def _service(
     return service, verification_registry, contact_registry, auth_registry, rate_gate, delivery
 
 
+def test_global_principal_recovery_status_uses_canonical_credential_not_legacy_auth(
+    monkeypatch,
+) -> None:
+    from tools.eos.auth.principal_authority_repository import (
+        PrincipalAuthorityRepository,
+    )
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+
+    monkeypatch.setattr(
+        PrincipalAuthorityRepository, "get",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, status=PrincipalStatus.ACTIVE,
+        ),
+    )
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, normalized_email=DURABLE_EMAIL,
+        ),
+    )
+    existing = VerifiedRecoveryContact.issue(
+        contact_id="WILSY-RECOVERY-GLOBAL-STATUS-TEST",
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        channel=VerifiedRecoveryContactChannel.EMAIL,
+        address_digest=recovery_address_digest(DURABLE_EMAIL),
+        verified_at=OBSERVED,
+    )
+    auth = _AuthRegistry(_user(email="wrong-legacy@example.test"))
+    contacts = _ContactRegistry(existing)
+    global_identity = _identity().model_copy(
+        update={"principal_scope": "GLOBAL"},
+    )
+    assert read_recovery_contact_status(
+        identity=global_identity, auth_registry=auth,
+        contact_registry=contacts,
+    ) == "VERIFIED"
+    assert auth.revision_reads == []
+    assert auth.user_reads == []
+    assert contacts.lookups == [
+        (TENANT, PRINCIPAL, VerifiedRecoveryContactChannel.EMAIL)
+    ]
+
+
+def test_global_principal_recovery_status_rejects_missing_canonical_credentials(
+    monkeypatch,
+) -> None:
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+    from tools.eos.auth.principal_authority_repository import (
+        PrincipalAuthorityRepository,
+    )
+    monkeypatch.setattr(
+        PrincipalAuthorityRepository, "get",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, status=PrincipalStatus.ACTIVE,
+        ),
+    )
+    def missing_credential(principal_id):
+        raise RuntimeError("GLOBAL_CREDENTIAL_NOT_FOUND")
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        missing_credential,
+    )
+    with pytest.raises(RecoveryContactVerificationRequestError) as rejected:
+        read_recovery_contact_status(
+            identity=_identity().model_copy(update={"principal_scope": "GLOBAL"}),
+            auth_registry=_AuthRegistry(_user()),
+            contact_registry=_ContactRegistry(),
+        )
+    assert rejected.value.code == "RECOVERY_CONTACT_GLOBAL_PRINCIPAL_LOOKUP_FAILED"
+
+
 def test_recovery_status_reads_exact_durable_verified_contact_without_mail() -> None:
     existing = VerifiedRecoveryContact.issue(
         contact_id="WILSY-RECOVERY-CONTACT-STATUS-TEST",
