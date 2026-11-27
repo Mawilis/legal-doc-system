@@ -1,10 +1,21 @@
-"""Caller-transaction durable registry for WILSY headcount requisitions.
-
-The registry persists HR planning evidence only. Its bounded exact-tenant
-Overview page reuses the caller-owned snapshot transaction. Callers own the Mongo session
-and transaction; this module grants no hiring, employee, identity, membership,
-capacity, IAM, payroll, or financial authority.
+"""TITLE: WILSY OS transactional headcount requisition registry.
+VERSION: v1.1.0-M03-BOUNDED-HEADCOUNT-PAGINATION
+AUTHORITY: WILSY OS Core Governance; Python Kennel EOS.
+EPITOME: Persists source-owned headcount requisitions and immutable lifecycle
+         events with caller-owned transactions and exact-tenant paged views.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/hr/headcount_requisition_registry.py
+COLLABORATION / OWNERSHIP: Canonical HR headcount router and its domain state machine.
+CERTIFICATION / UPDATE DATE: 2026-11-27.
+CHANGELOG: v1.1.0-M03-BOUNDED-HEADCOUNT-PAGINATION adds bounded source-owned Overview list and
+           snapshot-consistent total with precise tenant and session scope.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No broader employee PII or payroll data projected.
+TENANT BOUNDARY: All registry queries constrain exact caller-authorized tenant.
+AUTHORITY BOUNDARY: No registry operation creates HR access; HTTP gate remains
+                    RequireTenantAuthorization and caller owns transaction.
+FINANCIAL AUTHORITY BOUNDARY: No payment or payroll execution; Kennel EOS exclusively.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -298,3 +309,12 @@ __all__ = [
     "HeadcountRequisitionRegistryError", "HeadcountRequisitionRegistryConflict",
     "HeadcountRequisitionNotFound",
 ]
+
+
+# ARTIFACT: tools/eos/saas/hr/headcount_requisition_registry.py
+# VERSION: v1.1.0-M03-BOUNDED-HEADCOUNT-PAGINATION
+# AUTHORITY BOUNDARY: Caller-owned transaction, no IAM or employee admission authority.
+# TENANT POSTURE: All current, historical and overview records bound to exact tenant.
+# FAIL-CLOSED POSTURE: Invalid session, paging, source or persistence fails closed.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
