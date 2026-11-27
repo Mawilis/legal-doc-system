@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Project Work Row Actions
- * VERSION: v1.8.2-STATE-ALIGNED-ACTION-PALETTE
+ * VERSION: v1.8.3-DISTINCT-COMMAND-STATUS-PALETTE
  * AUTHORITY: UI-only projection of existing exact-project task commands.
  * EPITOME: One next lifecycle action, a keyboard-complete desktop overflow
  *          menu, and a mobile action sheet with guarded destructive cancel.
@@ -15,6 +15,7 @@
  *          copy-link, graph mutations or independent backend grants.
  * CHANGELOG: v1.8.1-COMPACT-ROW-COMMAND-AFFORDANCES separates action buttons from status indicators with restrained blue-on-light task controls, preserving mobile touch targets and existing EOS capability-gated commands.
  * CHANGELOG: v1.8.2-STATE-ALIGNED-ACTION-PALETTE maps Start/Resume to the active blue target and Complete to the green completed target with theme-resistant, accessible white text; commands remain governed until EOS readback.
+ * CHANGELOG: v1.8.3-DISTINCT-COMMAND-STATUS-PALETTE restores compact gold Start/Resume commands with dark text, keeps green Complete, and reserves blue for the IN_PROGRESS status indicator without changing EOS authorization or readback.
  * CHANGELOG: v1.7.0-COMPACT-ACTION-HIT-TARGETS keeps
  *          primary/overflow controls within a compact 44px row without
  *          reducing the comfortable-mode or mobile-sheet hit targets.
@@ -83,14 +84,16 @@ export default function ProjectWorkRowActions({
     ? canComplete && typeof onComplete === 'function'
     : canStart && typeof onTransition === 'function') ? suggested : null;
   const canChange = ['TODO', 'IN_PROGRESS', 'BLOCKED'].includes(item.status);
-  // Action styling reflects its intended transition, never a claimed EOS result.
-  // Exact project row palette: active blue, verified completion green.
-  // These style declarations remain effective under workspace theme overrides.
-  const primaryBackground = primary?.[1] === 'DONE' ? '#047857' : '#1d4ed8';
+  // Commands are intentionally distinct from source-verified lifecycle badges.
+  // Blue identifies IN_PROGRESS status only; amber/gold identifies Start/Resume
+  // commands and green identifies the Complete command's intended transition.
+  // These colors never imply that EOS has accepted a mutation.
+  const completionCommand = primary?.[1] === 'DONE';
+  const primaryBackground = completionCommand ? '#047857' : '#e9b949';
   const primaryStyle = {
     backgroundColor: primaryBackground,
-    borderColor: primaryBackground,
-    color: '#ffffff',
+    borderColor: completionCommand ? '#047857' : '#a47713',
+    color: completionCommand ? '#ffffff' : '#14243d',
   };
   const close = () => {
     setOpen(false);
@@ -280,7 +283,7 @@ export default function ProjectWorkRowActions({
 }
 
 // ARTIFACT: ProjectWorkRowActions.jsx
-// VERSION: v1.8.2-STATE-ALIGNED-ACTION-PALETTE
+// VERSION: v1.8.3-DISTINCT-COMMAND-STATUS-PALETTE
 // AUTHORITY BOUNDARY: all commands delegated to already-authorized EOS owner panel
 // TENANT POSTURE: no project or principal authority inferred by this surface
 // FAIL-CLOSED POSTURE: status gates and source callbacks preserve EOS readback
