@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: Authoritative Browser Authentication State Certificate
- * VERSION: v1.12.1-CROSS-TENANT-HR-PROMOTION-DENIAL
+ * VERSION: v1.13.0-THREE-PROFILE-SESSION-RECOVERY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Proves exact discovery transport, MFA reconciliation projection,
  *          QR suppression, and durable-session transition in the browser.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/contexts/authContext.authoritative.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider and the Python EOS auth router.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.13.0-THREE-PROFILE-SESSION-RECOVERY-CERT certifies separately filtered Owner/HR options, exact MFA admission, full Owner-Director-Manager-Owner session turnover, no pre-MFA bearer and fail-closed missing Owner capacity.
  * CHANGELOG: 2026-11-27 v1.12.1-CROSS-TENANT-HR-PROMOTION-DENIAL tests both wrong-role and foreign-tenant EOS readbacks cannot promote an MFA candidate session.
  * CHANGELOG: 2026-11-27 v1.12.0-GLOBAL-HR-CAPACITY-SESSION-CERT certifies EOS-listed HR-capacity selection, MFA-bound admission, exact tenant/capacity readback and rejected role substitution.
  * CHANGELOG: 2026-11-15 v1.11.0-ACCOUNT-EMAIL-PROVENANCE-CERT proves account-only workspaceEmail is EOS sourced while legacy authenticated email compatibility remains unchanged.
@@ -155,6 +156,9 @@ function Harness() {
       <span data-testid="authenticated">{String(auth.isAuthenticated)}</span>
       <span data-testid="qr">{auth.qrCodeData || ''}</span>
       <span data-testid="role">{auth.userRole || ''}</span>
+      <button type="button" onClick={() => { void auth.beginGlobalCapacityLogin('person@example.com', 'password', 'WILSYTENANT-4CD2FZ4O', 'owner').catch(() => {}); }}>begin-owner</button>
+      <button type="button" onClick={() => { void auth.selectGlobalCapacity('tenant_hr_manager').catch(() => {}); }}>select-hr-manager</button>
+      <button type="button" onClick={() => { void auth.refreshWorkspace().catch(() => {}); }}>refresh-workspace</button>
       <span data-testid="hr-options">{(auth.globalCapacityOptions || []).map(x => x.role).join(',')}</span>
       <button type="button" onClick={() => { void auth.beginGlobalCapacityLogin('person@example.com', 'password', 'WILSYTENANT-4CD2FZ4O').catch(() => {}); }}>begin-hr</button>
       <button type="button" onClick={() => { void auth.selectGlobalCapacity('tenant_hr_director').catch(() => {}); }}>select-hr-director</button>
@@ -303,6 +307,79 @@ describe('authoritative authentication state machine', () => {
     await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.FAILED));
     expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
     expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+  });
+
+  it('switches Owner to Director to Manager to Owner with separately issued and revalidated sessions', async () => {
+    const tenantId = 'WILSYTENANT-4CD2FZ4O';
+    const capacities = [
+      { business_role: 'tenant_owner', workspace_id: 'WILSY_HEADQUARTERS', capacity_revision: 11 },
+      { business_role: 'tenant_hr_director', workspace_id: 'PEOPLE_OPERATIONS', capacity_revision: 11 },
+      { business_role: 'tenant_hr_manager', workspace_id: 'PEOPLE_OPERATIONS', capacity_revision: 11 },
+    ];
+    renderHarness();
+    for (const [step, role] of ['tenant_owner', 'tenant_hr_director', 'tenant_hr_manager', 'tenant_owner'].entries()) {
+      const workspaceId = role === 'tenant_owner' ? 'WILSY_HEADQUARTERS' : 'PEOPLE_OPERATIONS';
+      api.post.mockResolvedValueOnce({ data: {
+        status: 'MEMBERSHIP_SELECTION_REQUIRED', selection_challenge: 'selection-challenge-' + step,
+        memberships: [{ tenant_id: tenantId, capacities }], next_cursor: null,
+      } }).mockResolvedValueOnce({ data: {
+        status: AUTH_STATES.MFA_REQUIRED, mfa_challenge: 'mfa-challenge-' + step,
+        tenant_id: tenantId, business_role: role, workspace_id: workspaceId,
+      } }).mockResolvedValueOnce({ data: {
+        status: 'AUTHENTICATED', tenant_id: tenantId, business_role: role,
+        principal_id: 'WILSYAUTH-browser-user', access_token: 'profile-access-' + step,
+        refresh_token: 'profile-refresh-' + step,
+      } });
+      api.get.mockResolvedValueOnce(workspaceBootstrap({ tenantId, businessRole: role, workspaceId }));
+      fireEvent.click(screen.getByRole('button', { name: role === 'tenant_owner' ? 'begin-owner' : 'begin-hr' }));
+      await waitFor(() => expect(screen.getByTestId('hr-options')).toHaveTextContent(role));
+      expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+      if (role === 'tenant_owner') expect(screen.getByTestId('hr-options')).not.toHaveTextContent('tenant_hr_');
+      else expect(screen.getByTestId('hr-options')).not.toHaveTextContent('tenant_owner');
+      fireEvent.click(screen.getByRole('button', { name: role === 'tenant_owner' ? 'select-owner-in-hr' : role === 'tenant_hr_director' ? 'select-hr-director' : 'select-hr-manager' }));
+      await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent(AUTH_STATES.MFA_REQUIRED));
+      expect(api.post).toHaveBeenLastCalledWith('/auth/global/select-membership', {
+        selection_challenge: 'selection-challenge-' + step, tenant_id: tenantId, business_role: role,
+      }, expect.any(Object));
+      fireEvent.click(screen.getByRole('button', { name: 'verify-wilsy' }));
+      await waitFor(() => expect(screen.getByTestId('authenticated')).toHaveTextContent('true'));
+      expect(screen.getByTestId('role')).toHaveTextContent(role);
+      expect(screen.getByTestId('tenant-id')).toHaveTextContent(tenantId);
+      expect(screen.getByTestId('workspace-id')).toHaveTextContent(workspaceId);
+      expect(window.localStorage.getItem('wilsy_auth_token')).toBe('profile-access-' + step);
+      api.get.mockResolvedValueOnce(workspaceBootstrap({ tenantId, businessRole: role, workspaceId }));
+      fireEvent.click(screen.getByRole('button', { name: 'refresh-workspace' }));
+      await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/auth/workspace-bootstrap', expect.objectContaining({
+        headers: { Authorization: 'Bearer profile-access-' + step },
+      })));
+      await waitFor(() => expect(screen.getByTestId('stage')).toHaveTextContent('AUTHENTICATED'));
+      api.post.mockResolvedValueOnce({ data: { status: 'SIGNED_OUT' } });
+      fireEvent.click(screen.getByRole('button', { name: 'logout' }));
+      await waitFor(() => expect(api.post).toHaveBeenLastCalledWith('/auth/global/logout', {}, expect.objectContaining({
+        headers: { Authorization: 'Bearer profile-access-' + step },
+      })));
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    }
+    expect(api.post.mock.calls.some(([path]) => path === '/auth/login')).toBe(false);
+  });
+
+  it.each([
+    ['missing', []],
+    ['wrong workspace', [{ business_role: 'tenant_owner', workspace_id: 'PEOPLE_OPERATIONS', capacity_revision: 1 }]],
+    ['negative revision', [{ business_role: 'tenant_owner', workspace_id: 'WILSY_HEADQUARTERS', capacity_revision: -1 }]],
+    ['HR only', [{ business_role: 'tenant_hr_director', workspace_id: 'PEOPLE_OPERATIONS', capacity_revision: 1 }]],
+  ])('does not manufacture Owner capacity when EOS lists %s evidence', async (_case, capacities) => {
+    api.post.mockResolvedValueOnce({ data: {
+      status: 'MEMBERSHIP_SELECTION_REQUIRED', selection_challenge: 'selection-challenge-owner-denied',
+      memberships: [{ tenant_id: 'WILSYTENANT-4CD2FZ4O', capacities }], next_cursor: null,
+    } });
+    renderHarness();
+    fireEvent.click(screen.getByRole('button', { name: 'begin-owner' }));
+    await waitFor(() => expect(screen.getByTestId('error')).toHaveTextContent('NO_ACTIVE_OWNER_CAPACITY_IN_EOS'));
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    expect(window.localStorage.getItem('wilsy_auth_token')).toBeNull();
+    expect(api.post).toHaveBeenCalledTimes(1);
   });
 
   it('starts tenant-neutral global authentication when no tenant is selected', async () => {
@@ -1218,7 +1295,7 @@ describe('authoritative authentication state machine', () => {
 
 /**
  * ARTIFACT: client/tests/contexts/authContext.authoritative.test.jsx
- * VERSION: v1.12.1-CROSS-TENANT-HR-PROMOTION-DENIAL
+ * VERSION: v1.13.0-THREE-PROFILE-SESSION-RECOVERY-CERT
  * AUTHORITY BOUNDARY: deterministic browser projection certificate only; D21B8 branding, workspace principal names and Legal permission provenance are presentation-only and never browser authorization authority
  * CHANGELOG: v1.8.0-CURRENT-CANDIDATE-BEARER-CERT proves explicit bearer routing and
  * abort/currentness while rejecting an unverified MFA candidate as browser

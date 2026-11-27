@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT
+ * VERSION: v1.32.0-CURRENT-DOCUMENT-TRANSPORT-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
- * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.32.0-CURRENT-DOCUMENT-TRANSPORT-CERT verifies document callers supply exact tenant scope while shared API owns the current session bearer, preventing stale Owner/HR bearer overrides.
  * CHANGELOG: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT proves the redundant breadcrumb strip is absent, the People application owns exactly one working back control and authenticated employer identity remains in the shared footer.
  * CHANGELOG: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR locates the visible contextual employer container directly in the authenticated Headquarters DOM while retaining positive and foreign-tenant denial tests.
  * CHANGELOG: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT verifies current tenant legal identity in People header/footer and denies presentation of a foreign tenant's legal name under the selected authenticated session.
@@ -359,7 +360,8 @@ describe('WILSY Headquarters authenticated shell', () => {
       expect(document.querySelector('[data-document-state="FOUNDER_APPROVED_EOS_PENDING"]')).toBeTruthy();
       expect(screen.getByText('NOT YET PUBLISHED')).toBeVisible();
       const read = api.get.mock.calls.find(([path]) => path === '/company-operating-documents/' + classification);
-      expect(read[1].headers).toMatchObject({ 'X-Tenant-ID': exactTenant, Authorization: 'Bearer ' + auth.token });
+      expect(read[1].headers).toMatchObject({ 'X-Tenant-ID': exactTenant });
+      expect(read[1].headers).not.toHaveProperty('Authorization');
       fireEvent.click(screen.getByRole('button', { name: 'Close company document' }));
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     } finally { api.get.mockImplementation(previous); }
@@ -1086,7 +1088,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT
+ * VERSION: v1.32.0-CURRENT-DOCUMENT-TRANSPORT-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.

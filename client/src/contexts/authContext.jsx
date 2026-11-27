@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING
+ * VERSION: v58.7.0-GOVERNED-OWNER-CAPACITY-SELECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -13,6 +13,7 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: 2026-11-27 v58.7.0-GOVERNED-OWNER-CAPACITY-SELECTION admits only EOS-listed Owner capacity in the explicit Owner sign-in group, reusing selected-membership MFA, exact workspace readback, refresh and revocation. HR choices remain independently filtered; no IAM grant is created.
  * CHANGELOG: 2026-11-27 v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING binds Global Principal MFA session promotion to both exact EOS-selected business role and tenant ID before any bearer persistence.
  * CHANGELOG: 2026-11-27 v58.6.2-GLOBAL-TENANT-REFRESH-CONTINUITY retains a non-authoritative global tenant logout-origin marker after same-identity/capacity bootstrap refresh and credential rotation; fresh authority is still EOS verified.
  * CHANGELOG: 2026-11-27 v58.6.1-GLOBAL-TENANT-SESSION-REVOCATION routes explicitly selected Global Principal tenant logout to the existing exact-session EOS global revocation endpoint, without altering authority or legacy signout.
@@ -158,6 +159,7 @@ const LEGACY_BRANDING_KEYS = Object.freeze([
 
 /**
  * @description Closed browser states; only EOS revalidation may establish a session.
+ * @collaboration Login and MFA UI observe these labels through AuthProvider.
  * @institutional State labels grant no identity, membership or permission.
  */
 export const AUTH_STATES = Object.freeze({
@@ -1291,13 +1293,29 @@ export const AuthProvider = ({ children }) => {
   }, [ensureCurrent, invalidateSession, persistSession, tenant]);
 
   /**
-   * Begin an opt-in tenant-neutral login without using the legacy Owner role.
+   * Begin tenant-neutral sign-in for one explicitly requested capacity group.
    * EOS alone enumerates the currently active membership/capacity choices.
    * No challenge, credential or permission is persisted to browser storage.
+   * @description Filter one EOS membership challenge to the requested group.
+   * @collaboration SovereignLogin and the existing selected-capacity MFA flow.
+   * @institutional Group names request presentation choices, never grants;
+   * membership, MFA, session issuance and refresh remain Python EOS owned.
+   * @param {string} email Primary credential input, never logged.
+   * @param {string} password Primary credential input, never persisted here.
+   * @param {string} requiredTenantId Exact server-discovered tenant scope.
+   * @param {'hr'|'owner'} capacityGroup Independently filtered capacity family.
+   * @returns {Promise<Object>} EOS-listed choices and a pending selection state.
+   * @throws {Error} On absent, malformed, foreign or superseded source evidence.
    */
-  const beginGlobalCapacityLogin = useCallback(async (email, password, requiredTenantId) => {
+  const beginGlobalCapacityLogin = useCallback(async (email, password, requiredTenantId, capacityGroup = 'hr') => {
     const expectedTenant = String(requiredTenantId || '').trim();
     if (!expectedTenant) throw new Error('CAPACITY_SELECTION_TENANT_REQUIRED');
+    if (!['hr', 'owner'].includes(capacityGroup)) throw new Error('CAPACITY_SELECTION_GROUP_INVALID');
+    // This group filters server-advertised choices only. EOS must independently
+    // consume its challenge, verify current membership/capacity and require MFA.
+    const expectedWorkspaces = capacityGroup === 'owner'
+      ? { tenant_owner: expectedTenant === 'WILSYTENANT-4CD2FZ4O' ? 'WILSY_HEADQUARTERS' : 'EXECUTIVE_COMMAND_CENTRE' }
+      : { tenant_hr_manager: 'PEOPLE_OPERATIONS', tenant_hr_director: 'PEOPLE_OPERATIONS' };
     const epoch = invalidateSession();
     setLoading(true);
     setError(null);
@@ -1326,9 +1344,11 @@ export const AuthProvider = ({ children }) => {
         for (const membership of memberships) {
           if (membership?.tenant_id !== expectedTenant || !Array.isArray(membership.capacities)) continue;
           for (const capacity of membership.capacities) {
-            if (['tenant_hr_manager', 'tenant_hr_director'].includes(capacity?.business_role)
-                && capacity.workspace_id === 'PEOPLE_OPERATIONS'
-                && Number.isSafeInteger(capacity.capacity_revision)) {
+            if (Object.hasOwn(expectedWorkspaces, capacity?.business_role)
+                && capacity.workspace_id === expectedWorkspaces[capacity.business_role]
+                && Number.isSafeInteger(capacity.capacity_revision)
+                && capacity.capacity_revision >= 0
+                && !options.some(option => option.role === capacity.business_role)) {
               options.push({ tenantId: expectedTenant, role: capacity.business_role });
             }
           }
@@ -1350,7 +1370,8 @@ export const AuthProvider = ({ children }) => {
         memberships = page.data.memberships;
         nextCursor = page.data.next_cursor;
       }
-      if (!options.length) throw new Error('NO_ACTIVE_HR_CAPACITY_IN_EOS');
+      if (!options.length) throw new Error(capacityGroup === 'owner'
+        ? 'NO_ACTIVE_OWNER_CAPACITY_IN_EOS' : 'NO_ACTIVE_HR_CAPACITY_IN_EOS');
       setGlobalTenantSelector({
         challenge: data.selection_challenge,
         options,
@@ -1632,11 +1653,16 @@ export const useAuth = () => {
   return context;
 };
 
+/**
+ * @description Provider-owned context consumed through useAuth.
+ * @collaboration Existing application provider composition.
+ * @institutional Context state is a projection; it grants no server authority.
+ */
 export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING
+ * VERSION: v58.7.0-GOVERNED-OWNER-CAPACITY-SELECTION
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only

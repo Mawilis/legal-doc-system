@@ -1,12 +1,13 @@
 """TITLE: WILSY OS Company Mission and Strategy HTTP Authority.
-VERSION: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON
+VERSION: v1.6.0-FOUNDER-SELECTED-OWNER-BOUNDARY
 AUTHORITY: Existing canonical tenant IAM; source lifecycle/registry own evidence.
 EPITOME: Expose approved company documents and separately authorized author/
 publication commands without reusing Legal agreements, HR files or Founder labels.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/company_operating_document_router.py
 COLLABORATION / OWNERSHIP: Headquarters shared viewer, RequireTenantAuthorization,
 company document lifecycle/registry; explicit operators own index provisioning.
-CERTIFICATION / UPDATE DATE: 2026-11-22
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.6.0-FOUNDER-SELECTED-OWNER-BOUNDARY requires canonical selected Owner capacity for existing Founder Strategy review, revision, ratification and project-link commands. Durable designation and source transactions remain independently mandatory; HR capacities gain no Owner authority.
 CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON adds a bounded read-only reason for denied Strategy read only when the authenticated Owner has separately verified Projects-list authority; no role grant or source write.
 CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON adds a read-only, authenticated check of exact current Strategy read and Projects list/detail admission separately from optional author/publish, without document read, IAM mutation or source fallback.
 CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON
@@ -265,6 +266,16 @@ def _same_actor(candidate: TenantAuthorizationContext | None, base: TenantAuthor
                 and candidate.identity.identity_id == base.identity.identity_id)
 
 
+def _owner_capacity(context: TenantAuthorizationContext) -> bool:
+    """Observe the canonical IAM decision, never a browser/JWT role projection.
+
+    A durable Founder can own several active capacities. Only the Owner
+    decision may use Founder Strategy lifecycle authority; HR sessions remain
+    independent even when the same principal retains its Owner assignment.
+    """
+    return getattr(getattr(context, "decision", None), "business_role", None) == "tenant_owner"
+
+
 def _transaction(context: TenantAuthorizationContext, callback: Callable[..., Any], *, write: bool = False) -> Any:
     if context.tenant_id != WILSY_COMPANY_TENANT_ID:
         raise _error("COMPANY_DOCUMENT_ACCESS_DENIED", 403)
@@ -356,7 +367,7 @@ def read_company_document(
     now = datetime.now(timezone.utc)
     def load(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
         founder = False
-        if classification is CompanyDocumentClass.STRATEGY:
+        if classification is CompanyDocumentClass.STRATEGY and _owner_capacity(context):
             try:
                 founder = read_founder_designation(
                     principal_id=context.identity.identity_id,
@@ -550,6 +561,8 @@ def _write_strategy_project_link(
     response.headers["Cache-Control"] = "no-store"
     if not _same_scope(context, read_context) or not _same_scope(context, project_context):
         raise _error("STRATEGY_LINK_AUTHORITY_MISMATCH", 403)
+    if founder and not _owner_capacity(context):
+        raise _error("STRATEGY_LINK_FOUNDER_OWNER_CAPACITY_REQUIRED", 403)
     if not idempotency_key:
         raise _error("STRATEGY_LINK_IDEMPOTENCY_REQUIRED", 422)
     now = datetime.now(timezone.utc)
@@ -646,7 +659,7 @@ def company_document_history(
     now = datetime.now(timezone.utc)
     def load(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
         founder = False
-        if review and classification is CompanyDocumentClass.STRATEGY:
+        if review and classification is CompanyDocumentClass.STRATEGY and _owner_capacity(context):
             try:
                 founder = read_founder_designation(
                     principal_id=context.identity.identity_id,
@@ -670,6 +683,8 @@ def company_document_history(
 def _command(classification: CompanyDocumentClass, context: TenantAuthorizationContext, action: str,
              payload: dict[str, Any], expected_revision: int, key: str | None, response: Response) -> dict[str, Any]:
     response.headers["Cache-Control"] = "no-store"
+    if action in {"FOUNDER_CREATE_DRAFT", "FOUNDER_SUBMIT", "FOUNDER_RATIFY"} and not _owner_capacity(context):
+        raise _error("COMPANY_DOCUMENT_FOUNDER_OWNER_CAPACITY_REQUIRED", 403)
     if not key:
         raise _error("COMPANY_DOCUMENT_IDEMPOTENCY_REQUIRED", 422)
     now = datetime.now(timezone.utc)
@@ -687,7 +702,7 @@ def founder_strategy_draft(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     context: TenantAuthorizationContext = Depends(_READ),
 ) -> dict[str, Any]:
-    """Founder-specific author command; registry rechecks the durable designation."""
+    """Create an Owner-selected Founder draft; registry rechecks designation in transaction."""
     body = payload.model_dump()
     expected = body.pop("expected_revision")
     return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_CREATE_DRAFT",
@@ -700,7 +715,7 @@ def founder_strategy_submit(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     context: TenantAuthorizationContext = Depends(_READ),
 ) -> dict[str, Any]:
-    """Submit only the same Founder's private Strategy revision."""
+    """Submit only the Owner-selected Founder's own source-verified Strategy revision."""
     return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_SUBMIT",
                     {}, payload.expected_revision, idempotency_key, response)
 
@@ -755,7 +770,7 @@ def publish_company_document(classification: CompanyDocumentClass, payload: Publ
 
 
 # ARTIFACT: company_operating_document_router.py
-# VERSION: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON
+# VERSION: v1.6.0-FOUNDER-SELECTED-OWNER-BOUNDARY
 # AUTHORITY BOUNDARY: Current canonical IAM plus source-owned lifecycle commands.
 # TENANT POSTURE: Exact canonical WILSY company tenant; no root fallback.
 # FAIL-CLOSED POSTURE: Draft privacy, independent approval, indexes and readback required.
