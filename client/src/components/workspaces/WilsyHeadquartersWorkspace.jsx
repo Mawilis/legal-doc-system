@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.22.1-DELETE-RETIRED-BREADCRUMB-MOBILE-RULE
+ * VERSION: v4.22.2-PERSISTENT-VIEWPORT-FOOTER
+ * CHANGELOG: v4.22.2-PERSISTENT-VIEWPORT-FOOTER reserves the shared EOS footer at the viewport boundary without relying on nested People scroll height; internal canvas remains independently scrollable.
  * CHANGELOG: v4.22.1-DELETE-RETIRED-BREADCRUMB-MOBILE-RULE removes the last mobile-only breadcrumb style and obsolete extra-height assumption from the owned People canvas.
  * CHANGELOG: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP removes the redundant full-width Headquarters/People breadcrumb strip and delegates its existing return navigation to the People application header, recovering vertical workspace without duplicating tenant identity.
  * CHANGELOG: v4.21.2-EXACT-LEGAL-NAME-ALIAS supports exact authenticated legal_name projection in the employer header and persistent footer without independent tenant lookup.
@@ -433,7 +434,10 @@ body:has(.wilsyHqShell)::after{display:none}
    space inside that layout; never clip the footer below the scroll boundary. */
 .wilsyHqShell{display:flex;flex-direction:column}
 .wilsyHqShell>.hq-layout{flex:1 1 0;height:auto!important;min-height:0}
-.wilsyHqShell>.hq-global-footer{flex:0 0 auto}
+.wilsyHqShell>.hq-global-footer{flex:0 0 auto;position:relative;z-index:2;min-height:45px;visibility:visible}
+.wilsyHqShell>.hq-layout{max-height:calc(100% - 45px)!important}
+.wilsyHqShell .hq-people-owned{min-height:0!important;height:auto!important}
+.wilsyHqShell>.hq-layout>.hq-content{min-height:0!important}
 .wilsyHqShell .hq-layout--people-owned{min-height:0!important;overflow:hidden!important}
 .wilsyHqShell .hq-content--people-owned{height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
 
