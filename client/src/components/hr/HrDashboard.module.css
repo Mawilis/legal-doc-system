@@ -1471,3 +1471,16 @@
   .peopleSurface .overviewActions { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
   .peopleSurface .overviewActions button { flex: 0 0 auto; }
 }
+
+/* v2.5.6 — Restore the lifecycle explanation without recreating an overview banner. */
+.peopleSurface .overviewIntro .overviewTagline {
+  color: #687b94 !important;
+  font-size: 10px !important;
+  font-weight: 400;
+  line-height: 1.35;
+  margin: 0 !important;
+  max-width: 600px;
+}
+@media (max-width: 760px) {
+  .peopleSurface .overviewIntro .overviewTagline { flex-basis: 100%; }
+}
