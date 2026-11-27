@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.81.3-VISIBLE-SOURCE-REVISION-EVIDENCE-CERT
+ * VERSION: v2.82.0-HR-DENIED-OWNER-RECOVERY-CERT
+ * CHANGELOG: v2.82.0-HR-DENIED-OWNER-RECOVERY-CERT certifies the HR Projects 403 offers an explicit governed Owner switch without rendering projects or granting permissions.
  * CHANGELOG: v2.81.3-VISIBLE-SOURCE-REVISION-EVIDENCE-CERT asserts source revision in the visible event summary rather than colliding with a screen-reader-only revision label.
  * CHANGELOG: v2.81.2-SOURCE-EVENT-REVISION-CASE-CERT preserves exact source revision evidence while matching the new displayed 'Revision' presentation.
  * CHANGELOG: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT retains approved 44px mobile action targets and validates actor-based activity semantics without weakening source-history assertions.
@@ -2953,6 +2954,22 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByText(/0 active/)).not.toBeInTheDocument();
   });
 
+  it('offers governed Owner capacity selection for HR-denied Projects without bypassing EOS', async () => {
+    const onRequestOwnerCapacity = vi.fn();
+    api.get.mockRejectedValue(Object.assign(new Error('denied'), {
+      response: { status: 403, data: { detail: 'ACCESS_DENIED' } },
+    }));
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="hr-denied-owner-recovery"
+      selectedCapacity="tenant_hr_director"
+      onRequestOwnerCapacity={onRequestOwnerCapacity}/>);
+    const action = await screen.findByRole('button', { name: 'Switch to Owner capacity' });
+    expect(screen.getByRole('alert')).toHaveTextContent('HR Director capacity');
+    fireEvent.click(action);
+    expect(onRequestOwnerCapacity).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('No projects in this tenant')).not.toBeInTheDocument();
+  });
+
   it('keeps late list results from a prior tenant/principal/capacity scope out of the new workspace', async () => {
     let resolvePriorList;
     let listCalls = 0;
@@ -3011,7 +3028,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.81.3-VISIBLE-SOURCE-REVISION-EVIDENCE-CERT
+ * VERSION: v2.82.0-HR-DENIED-OWNER-RECOVERY-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
