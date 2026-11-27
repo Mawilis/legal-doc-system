@@ -1,11 +1,14 @@
 """TITLE: MW-T12 disposable MongoDB backup/restore certificate rehearsal.
-VERSION: v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION
+VERSION: v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Run a real synthetic Mongo dump, fault, restore and readback in a
          newly created network-disabled Docker container; never touch EOS.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_disposable_mongo_recovery.py
 COLLABORATION / OWNERSHIP: Python EOS engineering operator / Docker.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL distinguishes synthetic
+           container start, shell, backup export and restore command failure
+           with fixed nonsecret codes; no raw stderr, Mongo or credentials.
 CHANGELOG: v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION provisions explicit
            tmpfs ownership for the official Mongo image, removes the immutable
            root filesystem constraint and reports allowlisted container state
@@ -32,7 +35,7 @@ import sys
 import time
 from typing import Any
 
-VERSION = "v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION"
+VERSION = "v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL"
 IMAGE = "mongo:7"
 
 
@@ -46,16 +49,36 @@ class RecoveryGateError(RuntimeError):
 
 
 def docker(*arguments: str, timeout: int = 35) -> str:
-    """Run Docker without a shell, sanitizing all failure output."""
+    """Run bounded Docker operations; report only allowlisted phase labels.
+
+    Tool stdout/stderr, identifiers, paths and Mongo data must never escape
+    failure handling. The phase code localizes a real failing recovery step
+    without turning source-owned evidence into an unaudited log channel.
+    """
+    operation = arguments[0] if arguments else ""
+    if operation == "exec" and len(arguments) >= 3:
+        phase = {
+            "mongosh": "MONGO_SHELL",
+            "mongodump": "BACKUP_EXPORT",
+            "mongorestore": "BACKUP_RESTORE",
+        }.get(arguments[2], "CONTAINER_EXEC")
+    else:
+        phase = {
+            "run": "CONTAINER_START",
+            "info": "DOCKER_DAEMON",
+            "image": "IMAGE_VERIFY",
+            "inspect": "CONTAINER_INSPECT",
+            "rm": "OWNED_CLEANUP",
+        }.get(operation, "OTHER")
     try:
         result = subprocess.run(
             ["docker", *arguments], check=False, capture_output=True,
             text=True, timeout=timeout,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
-        raise RecoveryGateError("DOCKER_EXECUTION_UNAVAILABLE") from error
+        raise RecoveryGateError("DOCKER_" + phase + "_UNAVAILABLE") from None
     if result.returncode:
-        raise RecoveryGateError("DOCKER_COMMAND_FAILED")
+        raise RecoveryGateError("DOCKER_" + phase + "_FAILED")
     return result.stdout.strip()
 
 
@@ -240,7 +263,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_disposable_mongo_recovery.py
-# VERSION: v1.1.0-DISPOSABLE-MONGO-STARTUP-CORRECTION
+# VERSION: v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL
 # AUTHORITY BOUNDARY: Disposable Mongo component rehearsal only, not EOS recovery.
 # TENANT POSTURE: No canonical or external tenant state is touched.
 # FAIL-CLOSED POSTURE: Any Docker, isolation, backup, fault, restore, readback or cleanup failure denies success.
