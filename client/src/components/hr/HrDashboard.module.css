@@ -3,12 +3,12 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
+ * Version:        v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
- * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
+ * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
  * VERSION: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
@@ -1355,14 +1355,7 @@
 .peopleReturnButton:focus-visible{outline:3px solid #e7c576;outline-offset:3px}
 @media(max-width:640px){.peopleHeaderIdentity{gap:9px}.peopleReturnButton{flex-basis:32px;width:32px;height:32px}}
 
-/* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
- * AUTHORITY BOUNDARY: Presentation only; all commands remain Python EOS-owned.
- * TENANT POSTURE: No tenant or employee state in CSS.
- * FAIL-CLOSED POSTURE: No disabled control or access denial is visually overridden.
- * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
- * END OF WILSY OS SOVEREIGN ARTIFACT
- */
+
 
 
 /* Compact People application chrome: global OS shell already carries the brand. */
@@ -1484,3 +1477,99 @@
 @media (max-width: 760px) {
   .peopleSurface .overviewIntro .overviewTagline { flex-basis: 100%; }
 }
+
+/* v2.5.7 — People operational workspace: compact lead, source truth, no forced navy tail. */
+.peopleSurface {
+  min-height: 0;
+  height: auto;
+  background: #f5f7fb !important;
+}
+.peopleSurface .peopleMain {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding-bottom: 12px;
+}
+.peopleSurface .overviewIntro {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+}
+.peopleSurface .overviewLead {
+  display: flex;
+  flex: 1 1 580px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.peopleSurface .overviewLeadLine {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+}
+.peopleSurface .overviewIntro .overviewTagline {
+  margin: 0 !important;
+  line-height: 1.4;
+  max-width: none;
+}
+.peopleSurface .overviewActions { flex: 0 1 auto; }
+.peopleSurface .overviewActions button {
+  border-color: transparent;
+  background: transparent;
+  min-height: 30px;
+  padding: 4px 6px;
+  font-weight: 650;
+}
+.peopleSurface .overviewActions button:hover,
+.peopleSurface .overviewActions button:focus-visible {
+  background: #e9f1fc;
+  border-color: #b9c9de;
+}
+.peopleSurface .overviewRecovery {
+  display: flex;
+  align-items: stretch;
+  gap: 10px 18px;
+  padding: 12px 15px;
+}
+.peopleSurface .overviewRecoverySummary { flex: 1 1 340px; min-width: 0; }
+.peopleSurface .overviewRecoverySummary h3 { font-size: 14px; line-height: 1.35; }
+.peopleSurface .overviewRecoverySummary p { font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
+.peopleSurface .overviewSourceChecks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 6px;
+  flex: 1 1 380px;
+  min-width: 0;
+}
+.peopleSurface .overviewSourceCheck {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 7px;
+  text-align: left;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid #d4deec;
+  border-radius: 7px;
+  background: #f8fafd;
+  color: #173c74;
+  font-size: 11px;
+}
+.peopleSurface .overviewSourceCheck strong { font-size: 11px; font-weight: 700; }
+.peopleSurface .overviewSourceCheck span { color: #526783; font-size: 10px; grid-column: 1; }
+.peopleSurface .overviewSourceCheck small { color: #526783; grid-column: 1; overflow-wrap: anywhere; font-size: 9px; }
+.peopleSurface .overviewSourceCheck svg { grid-column: 2; grid-row: 1 / span 3; }
+.peopleSurface .overviewSourceCheck:hover { background: #e9f1fc; border-color: #9cb6d6; }
+@media (max-width: 760px) {
+  .peopleSurface .overviewLead { flex-basis: 100%; }
+  .peopleSurface .overviewSourceChecks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ARTIFACT: client/src/components/hr/HrDashboard.module.css
+ * VERSION: v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION
+ * AUTHORITY BOUNDARY: Presentation only; Python EOS retains all HR authorization and source truth.
+ * TENANT POSTURE: No tenant or employee state in CSS.
+ * FAIL-CLOSED POSTURE: Denied, unavailable and pending sources remain visually distinct from verified data.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
