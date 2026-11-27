@@ -1,20 +1,24 @@
 """TITLE: WILSY OS MW-T09 Governed Command HTTP Boundary Certificate
-VERSION: v1.0.3-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
+VERSION: v1.1.0-MW-T09-FASTAPI-AUTHORITY-INPUT-CERT
 AUTHORITY: Synthetic read-only inspection of the canonical Python EOS Projects router.
 EPITOME: Certifies existing create/revise/transition/approval/decision route declarations,
          current IAM, CAS, idempotent registry delegation and read-only receipt authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t09_governed_commands_contract.py
 COLLABORATION / OWNERSHIP: MW-T09 Foundation programme; Projects API/router/registry boundaries.
 CERTIFICATION / UPDATE DATE: 2026-11-26.
+CHANGELOG: v1.1.0-MW-T09-FASTAPI-AUTHORITY-INPUT-CERT exercises all six
+           actual Projects command HTTP routes against forged browser authority
+           and proves strict 422 rejection before any source transaction.
+           Dependency stubs cannot claim authenticated live durability.
 CHANGELOG: v1.0.3-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT restores the mandatory terminal sovereign end seal.\nCHANGELOG: v1.0.2-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT uses the exact TENANT BOUNDARY label required by repository_integrity_guard.\nCHANGELOG: v1.0.1-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT asserts the canonical actual financial fence strings rather than a synthesized phrase.\nCHANGELOG: v1.0.0-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT adds explicit source contract assertions;
            authenticated HTTP, real Mongo and actor-denial tests are separate existing certificates.
 COMPLIANCE: POPIA section 19; GDPR Article 32; WILSY institutional source governance.
-SECURITY / PRIVACY POSTURE: Static AST inspection; no tokens, identities, external requests or database.
+SECURITY / PRIVACY POSTURE: AST and in-process HTTP input checks; no tokens, external requests or database.
 TENANT BOUNDARY: Exact-tenant scope must be admitted by canonical EOS authorization.
 AUTHORITY BOUNDARY: Tests inspect explicit dependent IAM and deny authority inferred from task state.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively; Projects cannot authorize financial execution.
 
-MW-T09 source-owned command wiring: static HTTP boundary regression certificate.
+MW-T09 source-owned command wiring: static and in-process HTTP input certificate.
 This is NOT live authenticated HTTP, MongoDB durability, or release certification.
 END OF WILSY OS SOVEREIGN ARTIFACT
 """
@@ -201,8 +205,84 @@ def test_no_financial_execution_authority_is_issued_by_project_commands():
     assert 'Kennel EOS remains exclusive' in source
     assert 'FINANCIAL EXECUTION AUTHORITY: none' in source
 
+
+@pytest.mark.parametrize(("method", "route", "payload"), [
+    ("post", "/projects/{project}/tasks", {
+        "kind": "TASK", "title": "Governed create",
+        "tenant_id": "forged-tenant",
+    }),
+    ("patch", "/projects/{project}/tasks/{task}", {
+        "title": "Governed edit", "description": "", "expected_revision": 1,
+        "tenant_id": "forged-tenant",
+    }),
+    ("post", "/projects/{project}/tasks/{task}/transition", {
+        "status": "DONE", "expected_revision": 1,
+        "actor_principal_id": "forged-actor",
+    }),
+    ("post", "/projects/{project}/my-project/tasks/{task}/transition", {
+        "status": "DONE", "expected_revision": 1,
+        "financial_execution": True,
+    }),
+    ("post", "/projects/{project}/tasks/{task}/approvals", {
+        "reviewer_principal_id": "synthetic-reviewer",
+        "rationale": "Governed review", "tenant_id": "forged-tenant",
+    }),
+    ("post", "/projects/{project}/my-project/tasks/{task}/approvals/{approval}/decision", {
+        "expected_revision": 1, "decision": "APPROVED",
+        "rationale": "Independent synthetic review",
+        "reviewer_principal_id": "forged-reviewer",
+    }),
+])
+def test_actual_mw_t09_http_routes_reject_forged_browser_authority_before_io(
+    monkeypatch: pytest.MonkeyPatch, method: str, route: str,
+    payload: dict[str, object],
+) -> None:
+    """Real FastAPI route parsing must deny forged authority before source IO.
+
+    Dependency overrides exist only in this fixture to bypass infrastructure
+    and reach Pydantic command admission; the test does not claim a successful
+    authenticated action or a durable database mutation.
+    """
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from tools.eos.api import projects_router
+
+    app = FastAPI()
+    app.include_router(projects_router.router)
+    app.dependency_overrides[projects_router._require_selected_session_tenant] = (
+        lambda: None
+    )
+    app.dependency_overrides[projects_router.require_projects_indexes_ready] = (
+        lambda: None
+    )
+    app.dependency_overrides[projects_router._UPDATE] = lambda: object()
+    app.dependency_overrides[projects_router._PARTICIPANT_CONTRIBUTE] = (
+        lambda: object()
+    )
+    monkeypatch.setattr(
+        projects_router, "_transaction",
+        lambda *args, **kwargs: pytest.fail("REJECTED_PAYLOAD_MUST_NOT_WRITE"),
+    )
+    identifiers = {
+        "project": "prj-" + "a" * 48,
+        "task": "ptk-" + "b" * 48,
+        "approval": "par-" + "c" * 48,
+    }
+    url = route.format(**identifiers)
+    with TestClient(app) as client:
+        response = getattr(client, method)(
+            url, json=payload, headers={
+                "X-Tenant-ID": "synthetic-tenant",
+                "Idempotency-Key": "synthetic-command-1",
+            },
+        )
+    assert response.status_code == 422
+    assert response.headers.get("content-type", "").startswith("application/json")
+    assert "detail" in response.json()
+
+
 # ARTIFACT: test_mw_t09_governed_commands_contract.py
-# VERSION: v1.0.3-MW-T09-SOURCE-COMMAND-BOUNDARY-CERT
+# VERSION: v1.1.0-MW-T09-FASTAPI-AUTHORITY-INPUT-CERT
 # AUTHORITY BOUNDARY: static source inspection only; EOS IAM remains independent
 # TENANT POSTURE: exact tenant and project/task scope checked at runtime
 # FAIL-CLOSED POSTURE: absent route, missing CAS, IAM or replay declarations fail
