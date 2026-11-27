@@ -1,12 +1,13 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.5.2-FOUNDER-PILLAR-LINK-AUTHORITY-CERT
+VERSION: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
 CERTIFICATION / UPDATE DATE: 2026-11-15
-CHANGELOG: v1.5.2-FOUNDER-PILLAR-LINK-AUTHORITY-CERT
+CHANGELOG: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT independently verifies the read/Projects and optional author/publisher HTTP results for one authenticated selected Owner session with no grants or source reads.
+CHANGELOG: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT
 tests source-bound Founder Pillar 1 link replay and revoked-proof denial.
 CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
 tests current Founder HTTP lifecycle across draft, submission, immutable
@@ -564,6 +565,66 @@ def test_enterprise_admin_company_document_read_is_canonical_tenant_fenced():
     ("synthetic-reference", None, 503, "SESSION_SOURCE_UNAVAILABLE"),
     ("synthetic-reference", True, 200, None),
 ])
+@pytest.mark.parametrize("document_allowed,author_allowed,publisher_allowed", [
+    (True, False, False),
+    (False, False, False),
+    (True, True, True),
+])
+def test_strategy_live_http_authority_check_separates_required_and_optional(
+    document_allowed, author_allowed, publisher_allowed,
+):
+    """One verified session reports independent decisions, never grants access."""
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http.get_current_identity] = lambda: SimpleNamespace(
+        principal_scope="GLOBAL", roles=("tenant_owner",),
+    )
+    app.dependency_overrides[http._STRATEGY_READ_CHECK] = lambda: object() if document_allowed else None
+    app.dependency_overrides[http._PROJECT_DETAIL_CHECK] = lambda: object()
+    app.dependency_overrides[http._PROJECT_LIST_CHECK] = lambda: object()
+    app.dependency_overrides[http._MAY_AUTHOR] = lambda: object() if author_allowed else None
+    app.dependency_overrides[http._MAY_PUBLISH] = lambda: object() if publisher_allowed else None
+    response = TestClient(app).get(
+        "/api/company-operating-documents/STRATEGY/authority-check",
+    )
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {
+        "schema": "WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1",
+        "selected_capacity": "tenant_owner",
+        "session_scope": "GLOBAL",
+        "document_read": "AUTHORIZED" if document_allowed else "DENIED",
+        "project_detail": "AUTHORIZED",
+        "project_list": "AUTHORIZED",
+        "document_author": "AUTHORIZED" if author_allowed else "DENIED",
+        "document_publish": "AUTHORIZED" if publisher_allowed else "DENIED",
+        "grant_issued": False,
+        "document_read_performed": False,
+    }
+
+
+def test_strategy_authority_check_preserves_source_unavailability() -> None:
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http.get_current_identity] = lambda: SimpleNamespace(
+        principal_scope="GLOBAL", roles=("tenant_owner",),
+    )
+    def fail_closed():
+        raise http.HTTPException(status_code=503, detail="Authority unavailable.")
+    app.dependency_overrides[http._STRATEGY_READ_CHECK] = fail_closed
+    app.dependency_overrides[http._PROJECT_DETAIL_CHECK] = lambda: object()
+    app.dependency_overrides[http._PROJECT_LIST_CHECK] = lambda: object()
+    app.dependency_overrides[http._MAY_AUTHOR] = lambda: None
+    app.dependency_overrides[http._MAY_PUBLISH] = lambda: None
+    response = TestClient(app).get(
+        "/api/company-operating-documents/STRATEGY/authority-check",
+    )
+    assert response.status_code == 503
+    assert "document_read" not in response.text
+
+
 def test_company_session_boundary_reuses_current_canonical_session(monkeypatch, reference, current, status, code):
     """A missing/stale session differs from unavailable currentness and legal absence."""
     def check(*args):
@@ -592,7 +653,7 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.5.2-FOUNDER-PILLAR-LINK-AUTHORITY-CERT
+# VERSION: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.
