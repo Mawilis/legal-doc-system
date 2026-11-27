@@ -3,18 +3,19 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS positive tenant-product entitlement composition authority.
 
 TITLE: Tenant Product Entitlement Composer
-VERSION: v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT
+VERSION: v1.5.0-FOUNDER-HR-INTERNAL-ENTITLEMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Derive and persist one tenant-product entitlement lineage from an
          exact canonical subscription feature mapping; preserve the exact
-         the exact Founder-perpetual Legal exception and an explicit internal-use Projects entitlement tied to the same canonical Founder subscription.
+         the exact Founder-perpetual Legal exception and internal-use Projects/HR entitlements tied to the same canonical Founder subscription.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/entitlement/tenant_product_entitlement_composer.py
 COLLABORATION / OWNERSHIP: SubscriptionRegistry owns subscription truth; D22A
                             owns product identity; Product Commercial Feature
                             owns mapping metadata; D22B1 owns lifecycle; D22B2
                             owns persistence. This composer correlates them only.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT allows audited Projects entitlement composition only when the shared policy identifies the exact canonical Founder subscription; ordinary tenants still require projects.core.
+CHANGELOG: v1.5.0-FOUNDER-HR-INTERNAL-ENTITLEMENT extends the existing exact perpetual-Founder internal-use policy to the HR product. Ordinary tenants still require hr.core, and IAM remains independently required.
+           v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT allows audited Projects entitlement composition only when the shared policy identifies the exact canonical Founder subscription; ordinary tenants still require projects.core.
            v1.1.0-D22B3-SUBSCRIPTION-TERM-ENFORCEMENT applies the shared
            Founder-perpetual versus ordinary finite billing-period decision
            before entitlement reads or writes. v1.0.0-D22B3 establishes stable
@@ -80,7 +81,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 )
 
 
-VERSION: Final[str] = "v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT"
+VERSION: Final[str] = "v1.5.0-FOUNDER-HR-INTERNAL-ENTITLEMENT"
 ENTITLEMENT_ID_NAMESPACE: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-ID/V1"
 SOURCE_EVIDENCE_SCHEMA: Final[str] = "WILSY-TENANT-PRODUCT-ENTITLEMENT-SOURCE/V1"
 ACTIVATION_EVIDENCE_SCHEMA: Final[str] = (
@@ -469,13 +470,21 @@ def compose_tenant_product_entitlement(
         product is TenantProductId.PROJECTS
         and exact_platform_founder_term
     )
-    founder_exception = founder_legal_perpetual or founder_projects_internal_use
+    founder_hr_internal_use = (
+        product is TenantProductId.HR
+        and exact_platform_founder_term
+    )
+    founder_exception = (
+        founder_legal_perpetual
+        or founder_projects_internal_use
+        or founder_hr_internal_use
+    )
     if mapping.feature_id not in subscription.plan_features and not founder_exception:
         _raise(
             TenantProductEntitlementComposerCommercialError,
             "D22B3_COMMERCIAL_FEATURE_ABSENT",
         )
-    if founder_projects_internal_use:
+    if founder_projects_internal_use or founder_hr_internal_use:
         commercial_authority_kind = "PLATFORM_FOUNDER_INTERNAL_USE"
     elif founder_legal_perpetual:
         commercial_authority_kind = "PLATFORM_FOUNDER_PERPETUAL"
@@ -660,8 +669,8 @@ __all__ = [
 ]
 
 # ARTIFACT: tenant_product_entitlement_composer.py
-# VERSION: v1.4.0-PROJECTS-INTERNAL-USE-ENTITLEMENT
-# AUTHORITY BOUNDARY: positive Legal Operations subscription-to-entitlement composition only; no commercial mutation, reconciliation, IAM, route or classification authority
+# VERSION: v1.5.0-FOUNDER-HR-INTERNAL-ENTITLEMENT
+# AUTHORITY BOUNDARY: positive catalogue-mapped subscription-to-entitlement composition only; no commercial mutation, reconciliation, IAM, route or classification authority
 # TENANT POSTURE: exact tenant-scoped subscription read and entitlement lineage inside one caller-owned transaction
 # FAIL-CLOSED POSTURE: invalid/ambiguous commercial proof, divergent evidence, terminal lifecycle, stale CAS and persistence failures reject
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively
