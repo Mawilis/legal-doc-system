@@ -34,6 +34,10 @@ const { api, sovereignClient } = vi.hoisted(() => ({
 vi.mock('../../src/services/api', () => ({
   default: api,
   setActiveTenantTransportId: vi.fn(),
+  getRecoveryContactStatus: vi.fn().mockResolvedValue({
+    status: 200, data: { status: 'VERIFICATION_REQUIRED' },
+  }),
+  requestRecoveryContactVerification: vi.fn(),
 }));
 vi.mock('../../src/utils/sovereignClient', () => ({ default: sovereignClient }));
 vi.mock('../../src/components/sovereign/SovereignDashboardController.jsx', () => ({
@@ -84,7 +88,7 @@ const renderAccount = (auth) => (
 );
 
 describe('Top App Bar account identity scope', () => {
-  it('formats an EOS HR Director capacity and exposes the existing recovery verification action', () => {
+  it('formats an EOS HR Director capacity and exposes recovery verification only after EOS readback', async () => {
     const hrUser = {
       ...ownerProjection,
       workspaceEmail: 'hr.director@example.test',
@@ -96,7 +100,7 @@ describe('Top App Bar account identity scope', () => {
     expect(screen.getByRole('button', { name: 'Open account menu' })).toHaveTextContent('HR Director capacity');
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Security & sessions/ }));
-    expect(screen.getByRole('button', { name: 'Verify recovery email' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Verify recovery email' })).toBeInTheDocument();
   });
 
   it('keeps profile detail in a focused view and saves only a device-local menu preference', () => {
