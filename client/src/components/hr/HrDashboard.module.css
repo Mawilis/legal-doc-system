@@ -3,20 +3,21 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS
+ * Version:        v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
- * Change log: 2026-11-27 v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS aligns
+ * Change log: 2026-11-27 v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS
+ * VERSION: v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
  * COLLABORATION / OWNERSHIP: HR People workspace and shared WILSY OS design system.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION replaces repeated denied/empty Overview placeholder cards with one accessible source-admission recovery and exact current-capacity explanation.
  * CHANGELOG: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS retains navy OS context header and gold navigation while matching Headquarters light operational canvas, compact hierarchy and accessible source-owned work rows.
  * CHANGELOG: v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT renders one legible source-unverified status instead of decorative empty executive metric cards when EOS has admitted none.
  * CHANGELOG: v2.4.1-CURRENT-EMPLOYER-AUTHORITY-BANNER displays distinct nonleaking HR source denial in the lifecycle Overview with a safe route to source details and selected-tenant context.
@@ -1339,8 +1340,15 @@
 @media(max-width:1000px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.peopleMain{padding:16px 14px 24px}.overviewIntro{align-items:flex-start}.overviewActions{width:100%}.overviewActions button{flex:1 1 auto}.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+.overviewRecovery{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;background:#fff;border:1px solid #d4deec;border-left:4px solid #b38630;padding:18px 20px;border-radius:10px;box-shadow:0 1px 2px rgb(15 23 42 / .04)}
+.overviewRecovery h3{color:#142e4e!important;font-size:16px;font-weight:800;flex:1 1 100%}
+.overviewRecovery p{color:#49627f;font-size:12px;line-height:1.7;flex:1 1 470px;max-width:900px}
+.overviewRecovery button{display:inline-flex;align-items:center;gap:8px;background:#19488c;color:#fff;border:1px solid #19488c;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:750}
+.overviewRecovery button:hover{background:#123969}
+.overviewRecovery button:focus-visible{outline:3px solid #c79b3c;outline-offset:3px}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS
+ * VERSION: v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION
  * AUTHORITY BOUNDARY: Presentation only; all commands remain Python EOS-owned.
  * TENANT POSTURE: No tenant or employee state in CSS.
  * FAIL-CLOSED POSTURE: No disabled control or access denial is visually overridden.
