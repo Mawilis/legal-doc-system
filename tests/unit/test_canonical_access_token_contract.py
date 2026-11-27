@@ -926,6 +926,76 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
     assert "*" not in json.dumps(payload["workspace"]["legalPermissions"])
 
 
+def test_global_workspace_email_reads_canonical_principal_credential(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+    from tools.eos.auth.workspace_bootstrap_projection import (
+        WorkspaceBootstrapProjectionError,
+    )
+
+    projection = SimpleNamespace(
+        principal_id=PRINCIPAL, email=None,
+    )
+    global_identity = SimpleNamespace(
+        principal_scope="GLOBAL", email="forged-display@example.invalid",
+    )
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, normalized_email="canonical@example.test",
+        ),
+    )
+    assert auth_router._workspace_durable_account_email(
+        global_identity, projection,
+    ) == "canonical@example.test"
+    assert auth_router._workspace_durable_account_email(
+        SimpleNamespace(principal_scope="TENANT"), projection,
+    ) is None
+
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        lambda principal_id: SimpleNamespace(
+            principal_id="OTHER-PRINCIPAL", normalized_email="forged@example.test",
+        ),
+    )
+    with pytest.raises(
+        WorkspaceBootstrapProjectionError,
+        match="WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_INVALID",
+    ):
+        auth_router._workspace_durable_account_email(
+            global_identity, projection,
+        )
+
+
+def test_global_workspace_email_source_outage_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+    from tools.eos.auth.workspace_bootstrap_projection import (
+        WorkspaceBootstrapProjectionError,
+    )
+
+    def unavailable(_principal_id):
+        raise RuntimeError("synthetic credential outage")
+
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal", unavailable,
+    )
+    with pytest.raises(
+        WorkspaceBootstrapProjectionError,
+        match="WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_UNAVAILABLE",
+    ):
+        auth_router._workspace_durable_account_email(
+            SimpleNamespace(principal_scope="GLOBAL"),
+            SimpleNamespace(principal_id=PRINCIPAL, email=None),
+        )
+
+
 def test_workspace_principal_profile_is_exact_optional_and_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
