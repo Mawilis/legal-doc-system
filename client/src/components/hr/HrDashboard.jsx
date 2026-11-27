@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE
+ * VERSION: v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES — Preserves distinct denied and unavailable notice semantics while making both accessible under legacy HR styles.
  *   v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE — Rejects workforce payloads without canonical EOS provenance and projects only directory-safe fields into browser state; no passthrough of backend employee extras.
  *   v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT — Applies scoped, contrast-safe People headings, denied notice and input classes against legacy inherited styling; no IAM override.
  *   v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY — Disables candidate/offer create actions until the selected EOS source has a current verified read, preventing misleading commands on denied or unavailable HR views.
@@ -4052,7 +4053,9 @@ const HrDashboard = () => {
           {(!isSourceConnected || shownState?.status === HR_READ_STATE.ACCESS_DENIED
             || shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE
             || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED)
-            && <div role={shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'}
+            && <div data-tone={shownState?.status === HR_READ_STATE.ACCESS_DENIED
+              || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'denied' : 'unavailable'}
+              role={shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'}
               className={styles.peopleNotice + ' mb-4 rounded-lg border px-4 py-3 text-sm '
                 + (shownState?.status === HR_READ_STATE.ACCESS_DENIED || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED
                   ? 'border-rose-200 bg-rose-50 text-rose-950'
@@ -4650,7 +4653,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE
+ * VERSION: v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
