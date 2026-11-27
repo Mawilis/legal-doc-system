@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT
+ * VERSION: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
  * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.
+ * CHANGELOG: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT checks stable button names with counts 0 and 1 to prevent accessibility/search regressions.
  * CHANGELOG: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT verifies count, actor text, Mine/date/order filters and clear operations without additional EOS calls.
  * CHANGELOG: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT verifies read-only source-page activity filters and the compact timeline without additional EOS calls or comment mutations.
  * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
@@ -183,7 +184,10 @@ it('filters only the verified activity page without refetching or changing immut
   mount();
   expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
   const reads = api.get.mock.calls.length;
-  fireEvent.click(screen.getByRole('button', { name: 'Changes' }));
+  // Visible source-page counts must not mutate the accessible filter names.
+  expect(screen.getByRole('button', { name: 'All activity', exact: true })).toHaveTextContent('1');
+  expect(screen.getByRole('button', { name: 'Changes', exact: true })).toHaveTextContent('0');
+  fireEvent.click(screen.getByRole('button', { name: 'Changes', exact: true }));
   expect(screen.getByRole('button', { name: 'Changes' })).toHaveAttribute('aria-pressed', 'true');
   expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
   expect(screen.getByText(/No matching verified records on the currently loaded pages/)).toBeVisible();
@@ -483,7 +487,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT
+// VERSION: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
