@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.18.0-EOS-WORKFORCE-DIRECTORY
+ * VERSION: v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,12 +12,13 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v2.18.0-EOS-WORKFORCE-DIRECTORY builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.18.0-EOS-WORKFORCE-DIRECTORY introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.18.0-EOS-WORKFORCE-DIRECTORY admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.18.0-EOS-WORKFORCE-DIRECTORY makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.18.0-EOS-WORKFORCE-DIRECTORY presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.18.0-EOS-WORKFORCE-DIRECTORY exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -2382,6 +2383,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [peopleQueueFilter, setPeopleQueueFilter] = useState('all');
   const [peopleVerificationHelpOpen, setPeopleVerificationHelpOpen] = useState(false);
   const [selectedWorkforceEmployeeId, setSelectedWorkforceEmployeeId] = useState(null);
+  const [workforceDetail, setWorkforceDetail] = useState(null);
+  const [workforceDetailStatus, setWorkforceDetailStatus] = useState('IDLE');
+  const workforceDetailSequenceRef = useRef(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -2456,6 +2460,10 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     for (const datasetName of Object.keys(DATASET_DEFAULTS)) {
       datasetRequestSequencesRef.current[datasetName] = (datasetRequestSequencesRef.current[datasetName] || 0) + 1;
     }
+    workforceDetailSequenceRef.current += 1;
+    setSelectedWorkforceEmployeeId(null);
+    setWorkforceDetail(null);
+    setWorkforceDetailStatus('IDLE');
     setSnapshot(createEmptySnapshot());
     setSnapshotReadState({ status: HR_READ_STATE.AUTHENTICATION_REQUIRED, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode, revalidating: false });
     setDatasets(DATASET_DEFAULTS);
@@ -2480,6 +2488,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     previousTenantScopeKeyRef.current = tenantScopeKey;
     setDataScopeKey(null);
     setSelectedWorkforceEmployeeId(null);
+    workforceDetailSequenceRef.current += 1;
+    setWorkforceDetail(null);
+    setWorkforceDetailStatus('IDLE');
     hiringCommandKeysRef.current.clear();
     hiringCommandInFlightRef.current = null;
     setShowHiringCommand(false);
@@ -2960,10 +2971,68 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
    * @collaboration HR navigation must change the business process, not repaint the same list.
    */
   const changeTab = (tabId) => {
+    workforceDetailSequenceRef.current += 1;
     setSelectedWorkforceEmployeeId(null);
+    setWorkforceDetail(null);
+    setWorkforceDetailStatus('IDLE');
     if (tabId !== 'employees') setSearchTerm('');
     setActiveTab(tabId);
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
+  };
+
+  /**
+   * @function inspectWorkforceEmployee
+   * @description Fetch one canonical directory-only employee using the same
+   * exact tenant, current IAM and session authority as the workforce page.
+   * No private employee file, admission or compensation read is performed.
+   */
+  const inspectWorkforceEmployee = async (employeeId) => {
+    const requestedScope = tenantScopeKey;
+    const seq = ++workforceDetailSequenceRef.current;
+    setWorkforceDetail(null);
+    if (employeeId === selectedWorkforceEmployeeId) {
+      setSelectedWorkforceEmployeeId(null);
+      setWorkforceDetailStatus('IDLE');
+      return;
+    }
+    if (!requestedScope || !isVerifiedReadState(datasetReadStates.employees)
+      || !datasets.employees.items.some(person => person.employeeId === employeeId)) return;
+    setSelectedWorkforceEmployeeId(employeeId);
+    setWorkforceDetailStatus('PENDING');
+    try {
+      const response = await api.get('/hr/workforce/' + encodeURIComponent(employeeId), {
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      if (seq !== workforceDetailSequenceRef.current || tenantScopeKeyRef.current !== requestedScope
+        || invalidatedSessionScopeKeyRef.current === requestedScope) return;
+      const result = response?.data;
+      const person = result?.employee;
+      if (result?.schema !== 'WILSY-HR-WORKFORCE-DIRECTORY-DETAIL/V1'
+        || result?.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+        || result?.tenant_id !== tenantId || person?.employeeId !== employeeId) {
+        setWorkforceDetailStatus('UNAVAILABLE');
+        return;
+      }
+      setWorkforceDetail({
+        employeeId,
+        name: person.displayName || person.preferredName || null,
+        position: person.jobTitle || null,
+        department: person.department || null,
+        managerId: person.managerId || null,
+        email: person.workEmail || null,
+        status: person.employmentStatus || null,
+        location: person.workLocation || null,
+      });
+      setWorkforceDetailStatus('VERIFIED');
+    } catch (error) {
+      if (seq !== workforceDetailSequenceRef.current || tenantScopeKeyRef.current !== requestedScope) return;
+      if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(requestedScope, hrReadErrorCode(error));
+        return;
+      }
+      setWorkforceDetailStatus(error?.response?.status === 403 ? 'DENIED'
+        : error?.response?.status === 404 ? 'NOT_FOUND' : 'UNAVAILABLE');
+    }
   };
 
   // Global shell owns the search button, People owns its current source reads.
@@ -4563,7 +4632,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 <tbody>
                   {shownDataset.items.map(person => <tr key={person.employeeId}>
                     <td><button type="button" className={styles.workforcePerson} aria-expanded={selectedWorkforceEmployeeId === person.employeeId}
-                      onClick={() => setSelectedWorkforceEmployeeId(current => current === person.employeeId ? null : person.employeeId)}>
+                      onClick={() => void inspectWorkforceEmployee(person.employeeId)}>
                       {person.name || 'Name unavailable'}<small>{person.employeeId}</small>
                     </button></td>
                     <td>{person.position || 'Not recorded'}</td>
@@ -4574,9 +4643,14 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 </tbody>
               </table>
             </div>}
-            {isVerifiedReadState(shownState) && (() => {
-              const selected = shownDataset.items.find(person => person.employeeId === selectedWorkforceEmployeeId);
-              return selected ? <div className={styles.workforceDetails} role="region" aria-label="Employee directory preview">
+            {isVerifiedReadState(shownState) && selectedWorkforceEmployeeId && <div className={styles.workforceDetails} role="region" aria-label="Employee directory preview">
+                {workforceDetailStatus === 'PENDING' && <p role="status" className={styles.workforceSummary}>Verifying this employee's directory details with EOS…</p>}
+                {workforceDetailStatus === 'DENIED' && <p role="alert" className={styles.workforceSummary}>EOS denied this employee detail read for the current session.</p>}
+                {workforceDetailStatus === 'NOT_FOUND' && <p role="status" className={styles.workforceSummary}>This employee is not available in the current authorized directory.</p>}
+                {workforceDetailStatus === 'UNAVAILABLE' && <p role="status" className={styles.workforceSummary}>Employee details could not be verified. No profile is displayed.</p>}
+                {workforceDetailStatus === 'VERIFIED' && workforceDetail && (() => {
+                  const selected = workforceDetail;
+                  return <React.Fragment>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
                   <div><h3>{selected.name || 'Name unavailable'}</h3><p className={styles.workforceSummary}>Directory preview · {selected.employeeId}</p></div>
                   <button type="button" onClick={() => setSelectedWorkforceEmployeeId(null)}>Close preview</button>
@@ -4589,8 +4663,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   <div><dt>Employment status</dt><dd>{selected.status || 'Not verified'}</dd></div>
                 </dl>
                 <p className={styles.workforceSummary} style={{marginTop:14}}>Directory-only preview. Protected employment files, personal identity and compensation require separate EOS authority.</p>
-              </div> : null;
-            })()}
+                  </React.Fragment>;
+                })()}
+              </div>}
           </section>}
           {activeTab !== 'employees' && <section className="rounded-xl border border-slate-200 bg-white" aria-labelledby="people-current-heading">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 sm:px-5">
@@ -5185,7 +5260,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.18.0-EOS-WORKFORCE-DIRECTORY
+ * VERSION: v2.18.1-EXACT-SCOPE-WORKFORCE-DETAIL-READ
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
