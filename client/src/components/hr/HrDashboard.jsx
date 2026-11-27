@@ -3,15 +3,16 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE
+ * VERSION: v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.jsx
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
- * CERTIFICATION / UPDATE DATE: 2026-11-12
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE — Retires the nested legacy black/gold HR chrome and wrong logo, uses existing OS shell and source-backed People rows, preserves Python EOS hiring commands, and blocks unconnected modules from simulated mutations.
  *   v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE — States that institutional offer signing does not prove candidate identity, removes the misleading candidate-signature claim, and explains why source ACCEPTED status is not verified candidate consent or employment.
  *   v2.6.0-EOS-CANDIDATE-EVIDENCE-LOOP — Streams candidate evidence through existing EOS custody, verifies exact-version binary readback and SHA3-512 before enabling a stage transition, and clears candidate bytes on scope invalidation.
  *   v2.5.0-EOS-HIRING-COMMAND-LOOP — Wires candidate intake, evidence-backed transitions, offer preparation and governed offer decisions/sending to existing EOS commands with exact-scope readback.
@@ -75,9 +76,7 @@ import * as hrService from '../../services/hrService';
 import { resolveCountryOption, searchSovereignCountries } from '../../data/sovereignCountryRegistry';
 import { exportCSV } from '../../utils/exportHelpers';
 import WilsyProfilePanel, { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
-import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
-import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
 import styles from './HrDashboard.module.css';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
@@ -3971,232 +3970,148 @@ const HrDashboard = () => {
     );
   }
 
-  const hrChromeLeftRail = (
-    <nav aria-label="HR workspace modules">
-      {HR_TABS.map((tab) => {
-        const TabIcon = tab.icon;
-        const active = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            data-active={active ? 'true' : 'false'}
-            onClick={() => changeTab(tab.id)}
-            title={tab.label}
-          >
-            {TabIcon ? <TabIcon size={15} aria-hidden /> : null}
-            <span>{tab.label}</span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-
-  const hrTenantIdentity = {
-    name: activeTenant?.name || activeTenant?.displayName || activeTenant?.companyName || 'Authenticated workspace',
-    displayName: activeTenant?.name || activeTenant?.displayName || 'Authenticated workspace',
-    logo: activeTenant?.logo || activeTenant?.logoUrl || wilsyLogo,
-    logoUrl: activeTenant?.logo || activeTenant?.logoUrl || wilsyLogo,
-    status: 'TENANT COMMAND',
-    tenantId
+  const isSourceConnected = ['employees', 'candidates', 'offers'].includes(activeTab);
+  const actionLabel = activeTab === 'candidates' ? 'Create candidate'
+    : activeTab === 'offers' ? 'Prepare offer' : null;
+  const startSourceCommand = () => {
+    if (activeTab === 'candidates') beginHiringCommand('candidateCreate');
+    if (activeTab === 'offers') beginHiringCommand('offerCreate');
   };
-
-  const hrStory = 'People operating system — hire, govern, pay, and prove every employee action.';
+  const shownDataset = isSourceConnected ? activeDataset : EMPTY_DATASET;
+  const shownState = isSourceConnected ? activeReadState : null;
+  const peopleModules = [
+    { id: 'employees', title: 'Workforce' },
+    { id: 'candidates', title: 'Hiring' },
+    { id: 'offers', title: 'Offers' },
+    { id: 'jobOpenings', title: 'Headcount & roles' },
+    { id: 'timeoff', title: 'Leave & attendance' },
+    { id: 'performance', title: 'Performance' },
+    { id: 'payroll', title: 'Payroll inputs' },
+    { id: 'benefits', title: 'Growth' },
+    { id: 'relations', title: 'Employee relations' },
+    { id: 'artifacts', title: 'People documents' },
+    { id: 'activity', title: 'Activity & audit' },
+  ];
 
   return (
-    <WilsyOSDashboardChrome
-      dashboardKey="hr"
-      commandLabel="Wilsy OS HR"
-      title="People Operating System"
-      role="HR_OPERATOR"
-      posture="HR_LEDGER"
-      storyMessages={[hrStory]}
-      tenant={hrTenantIdentity}
-      operator={null}
-      leftRail={hrChromeLeftRail}
-      search={{
-        value: hiringSearchDisabled ? '' : searchTerm,
-        onChange: hiringSearchDisabled ? undefined : (event) => setSearchTerm(event.target.value),
-        placeholder: hiringSearchDisabled ? 'EOS hiring search is not available on this page' : 'Search HR ledger…'
-      }}
-      actions={{
-        primaryLabel: activeTab === 'employees' ? 'Employee admission unavailable' : activeTab === 'candidates' ? 'Create candidate' : activeTab === 'offers' ? 'Prepare offer' : (workspace?.primary || 'HR command unavailable'),
-        onPrimaryAction: () => activeTab === 'candidates' ? beginHiringCommand('candidateCreate') : activeTab === 'offers' ? beginHiringCommand('offerCreate') : openMutationModal(),
-        primaryDisabled: Boolean(isRefreshing || activeTab === 'employees'),
-        onLiveSync: () => loadDashboard(),
-        isRefreshing,
-        liveSyncLabel: 'Resync'
-      }}
-      account={{
-        isOpen: showProfilePanel,
-        onOpen: () => setShowProfilePanel(true),
-        onClose: () => setShowProfilePanel(false),
-        user: user || {},
-        label: 'COMMAND',
-        CommandCenterComponent: WilsyAccountCommandCenter
-      }}
-      metrics={[]}
-    >
-
-      <div
-        className={styles.hrShell}
-        data-rail={isRailOpen ? 'open' : 'closed'}
-        data-profile-mode={profileRuntime.mode?.resolvedMode || 'night'}
-        data-profile-accent={profileRuntime.theme?.id || 'sovereign-gold'}
-        style={{
-          '--hr-runtime-accent': profileRuntime.theme?.color || '#d4af37',
-          '--wilsy-os-accent': profileRuntime.theme?.color || '#d4af37',
-          '--wilsy-os-accent-glow': profileRuntime.theme?.glow || '#ffe875',
-          '--wilsy-os-accent-contrast': profileRuntime.theme?.contrast || '#070806',
-          '--wilsy-os-bg': profileRuntime.mode?.background || '#030403',
-          '--wilsy-os-panel': profileRuntime.mode?.panel || 'rgba(14, 16, 12, 0.94)',
-          '--wilsy-os-surface': profileRuntime.mode?.surface || 'rgba(0, 0, 0, 0.72)',
-          '--wilsy-os-ink': profileRuntime.mode?.ink || '#f5f1df',
-          '--wilsy-os-muted': profileRuntime.mode?.muted || 'rgba(245, 241, 223, 0.58)',
-          '--wilsy-os-grid-opacity': profileRuntime.mode?.gridOpacity || '0.08'
-        }}
-      >
-        <main className={styles.hrFrame}>
-          <section className={styles.hrWorkspace}>
-            <section className={styles.hrFeedback} data-tone={feedback.tone}>
-              <strong>{feedback.title}</strong>
-              <span>{feedback.detail}</span>
-              <em>{snapshotReadState.status === HR_READ_STATE.VERIFIED_DATA ? (snapshot.sourceStatus || 'SOURCE_VERIFIED') : snapshotReadState.status}</em>
-              {snapshotReadState.status === HR_READ_STATE.SOURCE_UNAVAILABLE && <div role="status" className="mt-2 flex flex-wrap items-center gap-3 text-xs text-amber-200"><span>{snapshotReadState.lastVerifiedAt ? `Summary source unavailable. Values from ${new Date(snapshotReadState.lastVerifiedAt).toLocaleString()} are not current.` : `Summary source unavailable (${snapshotReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). Counts are withheld.`}</span><button type="button" onClick={fetchSnapshot} disabled={snapshotReadState.revalidating}>Retry summary</button></div>}
-              {snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED && <p role="alert" className="mt-2 text-xs text-red-200">Summary access denied by Python EOS. Summary values are withheld.</p>}
-            </section>
-
-            <section className={styles.hrHero}>
+    <React.Fragment>
+      <div className="mx-auto flex min-h-[70vh] w-full max-w-[1480px] flex-col bg-slate-50 text-slate-900" data-testid="people-os-workspace" data-source="PYTHON_EOS">
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">HR &amp; People · Authorized EOS workspace</p>
+              <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">People</h1>
+              <p className="mt-1 text-sm text-slate-600">Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={() => loadDashboard()} disabled={isRefreshing}>
+                <RefreshCw size={15} className="mr-2 inline-block" aria-hidden />{isRefreshing ? 'Verifying…' : 'Refresh People'}
+              </button>
+              {actionLabel && <button type="button" disabled={isRefreshing || !tenantScopeKey}
+                className="rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={startSourceCommand}><Plus size={15} className="mr-1 inline-block" aria-hidden />{actionLabel}</button>}
+            </div>
+          </div>
+          <nav className="mt-4 flex gap-1.5 overflow-x-auto pb-1" aria-label="People operating functions">
+            {peopleModules.map(module => {
+              const selected = activeTab === module.id;
+              return <button type="button" key={module.id} onClick={() => changeTab(module.id)}
+                aria-current={selected ? 'page' : undefined}
+                className={'shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+                  + (selected ? 'border-blue-700 bg-blue-800 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50')}>
+                {module.title}
+              </button>;
+            })}
+          </nav>
+        </header>
+        <main className="min-w-0 flex-1 p-4 sm:p-6">
+          {(!isSourceConnected || shownState?.status === HR_READ_STATE.ACCESS_DENIED
+            || shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE
+            || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED)
+            && <div role={shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'}
+              className={'mb-4 rounded-lg border px-4 py-3 text-sm '
+                + (shownState?.status === HR_READ_STATE.ACCESS_DENIED || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED
+                  ? 'border-rose-200 bg-rose-50 text-rose-950'
+                  : 'border-amber-200 bg-amber-50 text-amber-950')}>
+              <strong className="block">{!isSourceConnected ? 'Source execution not yet connected'
+                : shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'People source access denied'
+                : snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'People summary access denied'
+                : 'People source unavailable'}</strong>
+              <p className="mt-1">{!isSourceConnected
+                ? 'This function is part of the MW-M03 People lifecycle. Its source-owned commands and approvals are not yet certified in this client. No simulated records or actions are shown.'
+                : shownState?.status === HR_READ_STATE.ACCESS_DENIED || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED
+                  ? 'Python EOS has not authorized the current tenant and operating capacity for this HR read. Select an eligible HR capacity or request the separate workforce permission; Founder status does not bypass IAM.'
+                  : 'Python EOS has not returned a current verified People result. Existing records are not represented as empty or zero.'}</p>
+            </div>}
+          <section className="rounded-xl border border-slate-200 bg-white" aria-labelledby="people-current-heading">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 sm:px-5">
               <div>
-                <span>{workspace.kicker}</span>
-                <h2>{workspace.title}</h2>
-                <p>{workspace.description}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source-owned operating records</p>
+                <h2 id="people-current-heading" className="mt-1 text-lg font-bold text-slate-950">
+                  {peopleModules.find(module => module.id === activeTab)?.title || 'People'}
+                </h2>
+                <p className="mt-1 text-xs text-slate-600">
+                  {isSourceConnected ? 'Current authorized Python EOS records; no demonstration data.' : 'No unverified business data is displayed.'}
+                </p>
               </div>
-              <div className={styles.hrHeroActions}>
-                <label className={styles.hrSearch}>
-                  <Search size={16} />
-                  <input value={hiringSearchDisabled ? '' : searchTerm} onChange={hiringSearchDisabled ? undefined : event => setSearchTerm(event.target.value)} readOnly={hiringSearchDisabled} placeholder={hiringSearchDisabled ? 'EOS hiring search is not available on this page' : 'Search HR ledger...'} />
-                </label>
-                <button type="button" onClick={() => openArtifactGenerator()}>
-                  <FileText size={15} />
-                  Contract / Letter
-                </button>
-              </div>
-            </section>
-
-            <section className={styles.hrArtifactStrip} aria-label="HR artifact shortcuts">
-              {artifactCatalog.slice(0, 4).map(artifact => (
-                <button
-                  type="button"
-                  key={artifact.id}
-                  onClick={() => openArtifactGenerator(null, artifact.id)}
-                >
-                  <FileText size={15} />
-                  <span>{artifact.label}</span>
-                </button>
-              ))}
-            </section>
-
-            <section className={styles.hrKpis}>
-              {workspace.kpis.map(([label, value, detail]) => (
-                <article key={`${activeTab}-${label}`}>
-                  <span>{label}</span>
-                  <strong>{typeof value === 'number' ? formatCount(value) : value}</strong>
-                  <small>{detail}</small>
-                </article>
-              ))}
-            </section>
-
-            <section className={styles.hrGrid}>
-              <div className={styles.hrPanel}>
-                <header>
-                  <div>
-                    <span>Live Ledger</span>
-                    <h3>{activeConfig.label}</h3>
-                  </div>
-                  <div className={styles.hrPager}>
-                    <button type="button" onClick={() => updatePageOffset(false)} disabled={activeDataset.offset === 0 || isRefreshing}>Prev</button>
-                    <span>{currentPage}/{totalPages}</span>
-                    <button type="button" onClick={() => updatePageOffset(true)} disabled={!activeDataset.hasMore || isRefreshing}>Next</button>
-                  </div>
-                </header>
-                {(activeReadState.revalidating || [HR_READ_STATE.PENDING, HR_READ_STATE.SOURCE_UNAVAILABLE, HR_READ_STATE.ACCESS_DENIED].includes(activeReadState.status)) && <div role={activeReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'} className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm"><span>{activeReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied by Python EOS. No rows are displayed for this source.' : activeReadState.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? activeReadState.lastVerifiedAt ? `Source unavailable (${activeReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). Showing last verified results from ${new Date(activeReadState.lastVerifiedAt).toLocaleString()}; current results are not verified.` : `Source unavailable (${activeReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). No verified results are available.` : activeReadState.revalidating && activeReadState.verifiedAt ? `Updating. Results were last verified at ${new Date(activeReadState.verifiedAt).toLocaleString()}.` : 'Checking the authorized HR source…'}</span>{tenantScopeKey && activeReadState.status !== HR_READ_STATE.ACCESS_DENIED && <button type="button" onClick={() => fetchTabData(activeTab, pageStates[activeTab], searchTerm)} disabled={activeReadState.revalidating} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">Retry source read</button>}</div>}
-                <div className={styles.hrTableWrap}>
-                  <table>
-                    <thead>
-                      <tr>
-                        {activeTableColumns.map(header => <th key={header}>{header}</th>)}
-                        <th>Command</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activeDataset.items.map(item => (
-                        <tr key={item.id || item.employeeId || item.candidate_id || item.offer_id || item.requisition_id}>
-                          {renderRowCells(item)}
-                          <td>
-                            {activeTab === 'employees' ? (
-                              <span className="text-xs text-slate-400">Read only</span>
-                            ) : activeTab === 'candidates' ? (
-                              <div className="flex flex-wrap gap-2">
-                                {['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK'].includes(item.stage) && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('candidateTransition', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Advance with evidence</button>}
-                                {item.stage === 'SELECTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerCreate', item)} className="rounded-lg border border-amber-300/30 px-2 py-1 text-xs text-amber-100 disabled:opacity-50">Prepare offer</button>}
-                                {!['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK', 'SELECTED'].includes(item.stage) && <span className="text-xs text-slate-400">Terminal stage</span>}
-                              </div>
-                            ) : activeTab === 'offers' ? (
-                              <div className="grid gap-2">
-                                {item.status === 'DRAFT' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerSubmit', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Submit for approval</button>}
-                                {item.status === 'SUBMITTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerDecision', item)} className="rounded-lg border border-emerald-300/25 px-2 py-1 text-xs text-emerald-100 disabled:opacity-50">Independent decision</button>}
-                                {item.status === 'APPROVED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerSend', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Send approved offer</button>}
-                                {item.status === 'SENT' && <span className="max-w-56 text-xs text-slate-400">Offer sent. Candidate signature-to-identity verification is not configured; acceptance is unavailable.</span>}
-                                {item.status === 'ACCEPTED' && <span className="max-w-56 text-xs text-amber-100">EOS reports ACCEPTED, but candidate identity binding is not certified; this does not prove candidate consent or employment.</span>}
-                                {!['DRAFT', 'SUBMITTED', 'APPROVED', 'SENT', 'ACCEPTED'].includes(item.status) && <span className="text-xs text-slate-400">No command is available for this offer state.</span>}
-                              </div>
-                            ) : (
-                              <>
-                                <button type="button" onClick={() => openMutationModal(activeConfig.modalType, item)}><Edit size={14} /></button>
-                                {activeTab === 'payroll' && <button type="button" onClick={() => generatePayslip(item)}><FileText size={14} /></button>}
-                                {!['payroll', 'artifacts'].includes(activeTab) && <button type="button" onClick={() => deleteRecord(item)}><Trash2 size={14} /></button>}
-                              </>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                      {!activeDataset.items.length && activeReadState.status === HR_READ_STATE.VERIFIED_EMPTY && activeDataset.total === 0 && <tr><td colSpan={6}>{activeTab === 'employees' ? 'No employees recorded.' : ['candidates', 'offers'].includes(activeTab) ? `No ${activeConfig.label.toLowerCase()} recorded by Python EOS.` : `No ${activeConfig.label.toLowerCase()} records recorded.`}</td></tr>}
-                      {!activeDataset.items.length && activeReadState.status === HR_READ_STATE.VERIFIED_DATA && activeDataset.total > 0 && <tr><td colSpan={6}>No records are on this page; the authorized source reports {activeDataset.total} records.</td></tr>}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <aside className={styles.hrPanel}>
-                <header>
-                  <div>
-                    <span>Operating Process</span>
-                    <h3>Next Work</h3>
-                  </div>
-                  <button type="button">{workspace.process.length}</button>
-                </header>
-                <div className={styles.hrProcess}>
-                  {workspace.process.map((step, index) => (
-                    <button key={step} type="button" onClick={() => runProcessStep(step, index)}>
-                      <span>{String(index + 1).padStart(2, '0')}</span>
-                      <strong>{step}</strong>
-                      <small>{activeConfig.label}</small>
-                    </button>
-                  ))}
-                </div>
-                <div className={styles.hrTelemetry}>
-                  <span><Activity size={14} /> HR Telemetry</span>
-                  {hrActivities.length === 0 && <small>No HR telemetry events yet.</small>}
-                  {hrActivities.map((event, index) => (
-                    <small key={`${event.id || event.timestamp || 'hr'}-${index}`}>{event.eventType || 'HR_EVENT'} // {event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : 'LIVE'}</small>
-                  ))}
-                </div>
-              </aside>
-            </section>
+              {isSourceConnected && <div className="flex flex-wrap items-center gap-2">
+                {activeTab === 'employees' && <label className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2">
+                  <Search size={16} aria-hidden />
+                  <input aria-label="Search workforce" value={searchTerm} onChange={event => setSearchTerm(event.target.value)}
+                    placeholder="Find a person" className="min-w-0 border-0 bg-transparent text-sm outline-none"/>
+                </label>}
+                <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-blue-800 disabled:opacity-50"
+                  disabled={isRefreshing || activeDataset.offset === 0} onClick={() => updatePageOffset(false)}>Previous</button>
+                <span className="text-xs text-slate-600">{currentPage}/{totalPages}</span>
+                <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-blue-800 disabled:opacity-50"
+                  disabled={isRefreshing || !activeDataset.hasMore} onClick={() => updatePageOffset(true)}>Next</button>
+              </div>}
+            </div>
+            {isSourceConnected && shownState?.status === HR_READ_STATE.PENDING
+              && <p role="status" className="p-5 text-sm text-slate-600">Verifying authorized People source…</p>}
+            {isSourceConnected && shownState?.status === HR_READ_STATE.VERIFIED_EMPTY
+              && <p role="status" className="p-5 text-sm text-slate-600">EOS verified no records for this view.</p>}
+            {isSourceConnected && isVerifiedReadState(shownState) && shownDataset.items.length > 0
+              && <div className="overflow-x-auto" role="region" aria-label="Verified People records" tabIndex={0}>
+                <table className="w-full min-w-[680px] text-left text-sm">
+                  <thead className="bg-slate-100 text-xs font-semibold text-slate-700"><tr>
+                    {activeTableColumns.map(column => <th key={column} className="px-4 py-3">{column}</th>)}
+                    <th className="px-4 py-3">Authorized action</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {shownDataset.items.map((item, index) => <tr key={item.id || item.employeeId || item.candidate_id || item.offer_id || index}
+                      className="align-middle hover:bg-blue-50/40">
+                      {renderRowCells(item)}
+                      <td className="px-4 py-3">
+                        {activeTab === 'candidates' && ['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK'].includes(item.stage)
+                          ? <button type="button" disabled={hiringCommandState.status === 'PENDING'}
+                            onClick={() => beginHiringCommand('candidateTransition', item)}
+                            className="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">Advance with evidence</button>
+                          : activeTab === 'candidates' && item.stage === 'SELECTED'
+                            ? <button type="button" disabled={hiringCommandState.status === 'PENDING'}
+                              onClick={() => beginHiringCommand('offerCreate', item)}
+                              className="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">Prepare offer</button>
+                            : activeTab === 'offers' && ['DRAFT', 'SUBMITTED', 'APPROVED'].includes(item.status)
+                              ? <button type="button" disabled={hiringCommandState.status === 'PENDING'}
+                                onClick={() => beginHiringCommand(item.status === 'DRAFT' ? 'offerSubmit'
+                                  : item.status === 'SUBMITTED' ? 'offerDecision' : 'offerSend', item)}
+                                className="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">
+                                {item.status === 'DRAFT' ? 'Submit for review'
+                                  : item.status === 'SUBMITTED' ? 'Independent decision' : 'Send approved offer'}
+                              </button> : <span className="text-xs text-slate-500">Read only</span>}
+                      </td>
+                    </tr>)}
+                  </tbody>
+                </table>
+              </div>}
+            {isSourceConnected && shownState?.status === HR_READ_STATE.VERIFIED_DATA
+              && shownDataset.items.length === 0 && <p className="p-5 text-sm text-slate-600">
+                No records on this authorized page. EOS reports {shownDataset.total} total records.</p>}
+            {!isSourceConnected && <p className="p-5 text-sm text-slate-700">
+              The next implementation milestone is the certified EOS lifecycle for this function. It cannot be simulated by client state or a static dashboard.</p>}
           </section>
         </main>
-
         <WilsyProfilePanel
           isOpen={showProfilePanel}
           onClose={() => setShowProfilePanel(false)}
@@ -4704,7 +4619,7 @@ const HrDashboard = () => {
           </div>
         )}
       </div>
-    </WilsyOSDashboardChrome>
+    </React.Fragment>
   );
 };
 
@@ -4712,7 +4627,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE
+ * VERSION: v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
