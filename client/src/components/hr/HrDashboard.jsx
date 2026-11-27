@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW
+ * VERSION: v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE reads the new Python EOS workforce Overview with strict tenant/source provenance, renders admitted active headcount and departments and never calls deprecated /hr/snapshot.
  *   v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW places verified actionable People decisions first; replaces oversized lifecycle hero/chain card with a compact employer-aware working header and source-navigation actions. Keeps all source authorization and fail-closed behavior.
  *   v2.9.6-NONADMITTED-PROCESS-NO-FANOUT ensures unconnected onboarding/exit lanes do not issue speculative HR read requests; verified Overview and supported sources retain exact bound reads.
  *   v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW avoids four decorative unavailable KPI cards when all People sources are denied; one source-verification message replaces unverified numbers.
@@ -2661,8 +2662,24 @@ const HrDashboard = () => {
     snapshotRequestSequenceRef.current = requestSequence;
     setSnapshotReadState((previous) => ({ ...previous, revalidating: true, errorCode: null }));
     try {
-      const response = await api.get('/hr/snapshot', { params: { tenantId }, headers: { 'X-Tenant-ID': tenantId } });
-      const verifiedSnapshot = normalizeSnapshot(response?.data);
+      const response = await api.get('/hr/workforce/overview', { headers: { 'X-Tenant-ID': tenantId } });
+      const payload = response?.data;
+      if (!payload || payload.schema !== 'WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1'
+        || payload.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+        || payload.tenant_id !== tenantId || !payload.metrics
+        || !Number.isSafeInteger(payload.metrics.active_employees) || payload.metrics.active_employees < 0
+        || !Number.isSafeInteger(payload.metrics.departments) || payload.metrics.departments < 0) {
+        throw Object.assign(new Error('HR_OVERVIEW_PROVENANCE_INVALID'),
+          { code: 'HR_OVERVIEW_PROVENANCE_INVALID' });
+      }
+      const verifiedSnapshot = normalizeSnapshot({
+        sourceStatus: 'SOURCE_VERIFIED',
+        summary: { employee: {
+          total: payload.metrics.active_employees,
+          departments: payload.metrics.departments,
+        } },
+        timestamp: payload.generated_at,
+      });
       if (tenantScopeKeyRef.current !== requestedScopeKey || snapshotRequestSequenceRef.current !== requestSequence) return { status: 'SUPERSEDED' };
       const verifiedAt = new Date().toISOString();
       setSnapshot(verifiedSnapshot);
@@ -4134,10 +4151,10 @@ const HrDashboard = () => {
                   <div><p className={styles.eyebrow}>CURRENT SOURCES · VERIFIABLE INDICATORS</p><h3 id="people-brief-heading">Verified workforce & hiring</h3></div>
                   <span>Verified counts only · no sample staff</span>
                 </div>
-                {['employees', 'candidates', 'offers', 'jobOpenings'].some(key => isVerifiedReadState(datasetReadStates[key]))
+                {isVerifiedReadState(snapshotReadState) || ['candidates', 'offers', 'jobOpenings'].some(key => isVerifiedReadState(datasetReadStates[key]))
                   ? <div className={styles.peopleKpiGrid}>
                   {[
-                    { title: 'Workforce', state: datasetReadStates.employees, dataset: datasets.employees, action: 'employees', note: 'Current employee directory' },
+                    { title: 'Workforce', state: snapshotReadState, dataset: { total: snapshot.summary?.employee?.total }, action: 'employees', note: 'Current active employees · EOS' },
                     { title: 'Hiring candidates', state: datasetReadStates.candidates, dataset: datasets.candidates, action: 'candidates', note: 'Source-owned candidate records' },
                     { title: 'Employment offers', state: datasetReadStates.offers, dataset: datasets.offers, action: 'offers', note: 'Signed-offer governance' },
                     { title: 'Headcount & roles', state: datasetReadStates.jobOpenings, dataset: datasets.jobOpenings, action: 'jobOpenings', note: 'Approval and position authority' },
@@ -4748,7 +4765,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW
+ * VERSION: v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
