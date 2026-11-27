@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.6.2-GLOBAL-TENANT-REFRESH-CONTINUITY
+ * VERSION: v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
@@ -13,11 +13,12 @@
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: 2026-11-27 v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING binds Global Principal MFA session promotion to both exact EOS-selected business role and tenant ID before any bearer persistence.
  * CHANGELOG: 2026-11-27 v58.6.2-GLOBAL-TENANT-REFRESH-CONTINUITY retains a non-authoritative global tenant logout-origin marker after same-identity/capacity bootstrap refresh and credential rotation; fresh authority is still EOS verified.
  * CHANGELOG: 2026-11-27 v58.6.1-GLOBAL-TENANT-SESSION-REVOCATION routes explicitly selected Global Principal tenant logout to the existing exact-session EOS global revocation endpoint, without altering authority or legacy signout.
  * CHANGELOG: 2026-11-27 v58.6.0-GOVERNED-GLOBAL-TENANT-CAPACITY-SELECTION implements opt-in global tenant membership and business capacity selection through EOS challenge/MFA, with no client-created grants, tenant fallbacks, or session promotion before workspace readback.
  * CHANGELOG: 2026-11-20 v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION accepts only an EOS-source-verified exact Founder institutional title, never an IAM grant or login payload.
- * CHANGELOG: 2026-11-15 v58.6.2-GLOBAL-TENANT-REFRESH-CONTINUITY adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
+ * CHANGELOG: 2026-11-15 v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
  * CHANGELOG: 2026-11-14 v58.2.0-CURRENT-EOS-SESSION-REFRESH adds one in-flight
  *            provider-owned EOS refresh and same-workspace revalidation;
  *            superseded refreshes cannot publish or clear another session.
@@ -1012,6 +1013,10 @@ export const AuthProvider = ({ children }) => {
         && authoritative.user.role !== session.expectedBusinessRole) {
       throw new Error('AUTHENTICATED_BUSINESS_CAPACITY_MISMATCH');
     }
+    if (session.expectedTenantId
+        && authoritative.user.tenantId !== session.expectedTenantId) {
+      throw new Error('AUTHENTICATED_TENANT_CAPACITY_MISMATCH');
+    }
 
     const discoveredTenantId = String(tenant?.tenantId || '').trim();
     if (
@@ -1432,6 +1437,7 @@ export const AuthProvider = ({ children }) => {
           user: { id: data.principal_id, email: targetEmail },
           refreshToken: data.refresh_token,
           expectedBusinessRole: globalSelectedCapacity.role,
+          expectedTenantId: globalSelectedCapacity.tenantId,
           globalTenantSession: true,
         }, targetEmail, epoch);
         setGlobalMfaChallenge(null);
@@ -1630,7 +1636,7 @@ export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.6.2-GLOBAL-TENANT-REFRESH-CONTINUITY
+ * VERSION: v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only
