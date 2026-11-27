@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.9.6-NONADMITTED-PROCESS-NO-FANOUT
+ * VERSION: v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW places verified actionable People decisions first; replaces oversized lifecycle hero/chain card with a compact employer-aware working header and source-navigation actions. Keeps all source authorization and fail-closed behavior.
  *   v2.9.6-NONADMITTED-PROCESS-NO-FANOUT ensures unconnected onboarding/exit lanes do not issue speculative HR read requests; verified Overview and supported sources retain exact bound reads.
  *   v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW avoids four decorative unavailable KPI cards when all People sources are denied; one source-verification message replaces unverified numbers.
  *   v2.9.4-EXPLICIT-ONBOARDING-EXIT-NAV brings Onboarding and Exit into the prototype's lifecycle navigation while withholding noncertified source actions and avoiding speculative API reads.
@@ -4080,44 +4081,21 @@ const HrDashboard = () => {
                   </div>
                 )}
               <section className={styles.overviewIntro} aria-labelledby="people-lifecycle-heading">
-                <div>
-                  <p className={styles.eyebrow}>PEOPLE LIFECYCLE · GOVERNED WORK</p>
-                  <h2 id="people-lifecycle-heading">Hire to Exit. <em>One Chain.</em></h2>
-                  <p>One person. One authoritative file. Plan → Hire → Onboard → Manage → Pay → Grow → Correct → Exit.</p>
-                  <p>Every decision Maker ≠ Checker. Every record tenant-scoped. Every action audited by its owning EOS service.</p>
-                  <p className={styles.tenantContext}>Selected employer tenant · {tenantId}</p>
+                <div className={styles.overviewLead}>
+                  <p className={styles.eyebrow}>PEOPLE · EMPLOYER OPERATIONS</p>
+                  <h2 id="people-lifecycle-heading">People <em>at work.</em></h2>
+                  <p>Hire to Exit · One governed employee chain, from approved headcount to access revocation.</p>
+                  <p className={styles.tenantContext}>Current employer · {tenantId}</p>
                 </div>
-                <aside className={styles.chainIntegrity} aria-label="Employment chain integrity">
-                  <strong>Chain integrity · Source verification required</strong>
-                  <p>Employment admission, IAM grants, payroll execution and offboarding are independently governed. The complete chain is not certified by directory availability alone.</p>
-                </aside>
-              </section>
-              <section aria-labelledby="people-brief-heading" className={styles.overviewSection}>
-                <div className={styles.overviewSectionHead}>
-                  <div><p className={styles.eyebrow}>OVERVIEW · CURRENT SOURCES</p><h3 id="people-brief-heading">People, at a glance</h3></div>
-                  <span>Verified counts only · no sample staff</span>
+                <div className={styles.overviewActions} aria-label="People work navigation">
+                  <button type="button" onClick={() => changeTab('employees')}>Workforce directory <ArrowUpRight size={15} aria-hidden /></button>
+                  <button type="button" onClick={() => changeTab('candidates')}>Hiring pipeline <ArrowUpRight size={15} aria-hidden /></button>
+                  <button type="button" onClick={() => changeTab('offers')}>Employment offers <ArrowUpRight size={15} aria-hidden /></button>
                 </div>
-                {['employees', 'candidates', 'offers', 'jobOpenings'].some(key => isVerifiedReadState(datasetReadStates[key]))
-                  ? <div className={styles.peopleKpiGrid}>
-                  {[
-                    { title: 'Workforce', state: datasetReadStates.employees, dataset: datasets.employees, action: 'employees', note: 'Current employee directory' },
-                    { title: 'Hiring candidates', state: datasetReadStates.candidates, dataset: datasets.candidates, action: 'candidates', note: 'Source-owned candidate records' },
-                    { title: 'Employment offers', state: datasetReadStates.offers, dataset: datasets.offers, action: 'offers', note: 'Signed-offer governance' },
-                    { title: 'Headcount & roles', state: datasetReadStates.jobOpenings, dataset: datasets.jobOpenings, action: 'jobOpenings', note: 'Approval and position authority' },
-                  ].map(metric => <button key={metric.title} type="button" className={styles.peopleKpi}
-                    onClick={() => changeTab(metric.action)}>
-                    <span>{metric.title}</span>
-                    <strong>{isVerifiedReadState(metric.state) ? metric.dataset.total : 'Unavailable'}</strong>
-                    <small>{metric.note}</small>
-                  </button>)}
-                </div>
-                  : <div className={styles.sourceUnverified} role="status">
-                    No current People indicators are authorized for this capacity. Select an eligible operating capacity to verify source-owned headcount, hiring and workforce information.
-                  </div>}
               </section>
               <section className={styles.overviewSection} aria-labelledby="people-queue-heading">
                 <div className={styles.overviewSectionHead}>
-                  <div><p className={styles.eyebrow}>AUTHORIZED WORK · MAKER ≠ CHECKER</p><h3 id="people-queue-heading">Today queue</h3></div>
+                  <div><p className={styles.eyebrow}>YOUR AUTHORIZED PEOPLE WORK · MAKER ≠ CHECKER</p><h3 id="people-queue-heading">Decisions & next actions</h3></div>
                   <span>Source-owned · Not a task simulation</span>
                 </div>
                 {(() => {
@@ -4151,6 +4129,30 @@ const HrDashboard = () => {
                   </div>;
                 })()}
               </section>
+              <section aria-labelledby="people-brief-heading" className={styles.overviewSection}>
+                <div className={styles.overviewSectionHead}>
+                  <div><p className={styles.eyebrow}>CURRENT SOURCES · VERIFIABLE INDICATORS</p><h3 id="people-brief-heading">Verified workforce & hiring</h3></div>
+                  <span>Verified counts only · no sample staff</span>
+                </div>
+                {['employees', 'candidates', 'offers', 'jobOpenings'].some(key => isVerifiedReadState(datasetReadStates[key]))
+                  ? <div className={styles.peopleKpiGrid}>
+                  {[
+                    { title: 'Workforce', state: datasetReadStates.employees, dataset: datasets.employees, action: 'employees', note: 'Current employee directory' },
+                    { title: 'Hiring candidates', state: datasetReadStates.candidates, dataset: datasets.candidates, action: 'candidates', note: 'Source-owned candidate records' },
+                    { title: 'Employment offers', state: datasetReadStates.offers, dataset: datasets.offers, action: 'offers', note: 'Signed-offer governance' },
+                    { title: 'Headcount & roles', state: datasetReadStates.jobOpenings, dataset: datasets.jobOpenings, action: 'jobOpenings', note: 'Approval and position authority' },
+                  ].map(metric => <button key={metric.title} type="button" className={styles.peopleKpi}
+                    onClick={() => changeTab(metric.action)}>
+                    <span>{metric.title}</span>
+                    <strong>{isVerifiedReadState(metric.state) ? metric.dataset.total : 'Unavailable'}</strong>
+                    <small>{metric.note}</small>
+                  </button>)}
+                </div>
+                  : <div className={styles.sourceUnverified} role="status">
+                    No current People indicators are authorized for this capacity. Select an eligible operating capacity to verify source-owned headcount, hiring and workforce information.
+                  </div>}
+              </section>
+
             </div>
           )}
           {activeTab !== 'overview' && <React.Fragment>
@@ -4746,7 +4748,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.9.6-NONADMITTED-PROCESS-NO-FANOUT
+ * VERSION: v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
