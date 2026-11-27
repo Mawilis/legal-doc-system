@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS First HR Leadership Headcount Command
- * VERSION: v1.0.0-FOUNDER-FIRST-HR-HEADCOUNT
+ * VERSION: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK
  * AUTHORITY: Existing Python EOS HeadcountRequisitionRouter only.
  * EPITOME: Source-verified headcount request creation for the first HR Director
  *          and Manager without asserting approval or employee admission.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/FounderHeadcountStart.jsx
  * COLLABORATION / OWNERSHIP: HrDashboard authenticated scope and source readback.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK preserves accepted command truth when subsequent list refresh is unavailable; never represents a failed refresh as a failed submission.
  * CHANGELOG: v1.0.0-FOUNDER-FIRST-HR-HEADCOUNT wires a compact governed first-
  *            hire requisition composer to existing EOS create, with replay keys
  *            and exact-tenant response validation.
@@ -88,7 +89,18 @@ export default function FounderHeadcountStart({ tenantId, admitted, onCreated })
       });
       setOpen(false);
       keyRef.current = null;
-      if (typeof onCreated === 'function') await onCreated();
+      if (typeof onCreated === 'function') {
+        try {
+          await onCreated();
+        } catch {
+          if (scopeRef.current === requestedTenant) {
+            setStatus({
+              kind: 'ACCEPTED',
+              text: 'EOS accepted the draft, but fresh list readback is unavailable. Refresh before further action.',
+            });
+          }
+        }
+      }
     } catch (error) {
       if (scopeRef.current !== requestedTenant) return;
       setStatus({ kind: 'ERROR', text: 'EOS did not verify the draft: ' + safeCode(error) });
@@ -157,7 +169,7 @@ export default function FounderHeadcountStart({ tenantId, admitted, onCreated })
 }
 
 /* ARTIFACT: client/src/components/hr/FounderHeadcountStart.jsx
- * VERSION: v1.0.0-FOUNDER-FIRST-HR-HEADCOUNT
+ * VERSION: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK
  * AUTHORITY BOUNDARY: Authenticated EOS draft requisition only.
  * TENANT POSTURE: Verified tenant-bound request and response; never a fallback.
  * FAIL-CLOSED POSTURE: No approval or employee existence inferred.
