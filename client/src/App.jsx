@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS
+ * VERSION: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -10,7 +10,7 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Client routing consumes only bounded server
  *                             projections. Authentication tokens, tenant
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
  * CHANGELOG: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS exposes actionable People-only workforce/hiring/offer/headcount module shortcuts in global search overlay without implying cross-domain search authority.
  * CHANGELOG: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE labels global People search as authorized workforce lookup or module navigation, without implying certified cross-domain record indexing.
  * CHANGELOG: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH makes the global navigation search context-aware inside the People application, routing queries to the existing HR-owned search intent without adding global HR data access.
@@ -725,8 +726,21 @@ const SovereignRouter = () => {
     }
   }, [targetPath, location.pathname, navigate]);
 
-  // Loading Screen
-  if (authLoading || (isAuthenticated && (!user || !bootstrapReady || tenantLoading))) {
+  // Initial persisted-session restoration owns the full-screen bootstrap.
+  // During an explicit public login or MFA challenge the mounted form owns
+  // its pending choice/error state; removing it here discards the returned
+  // EOS membership options and leaves the user at a blank retry.
+  const publicAuthenticationInFlight = (
+    ['/login', '/mfa', '/mfa-setup'].includes(location.pathname)
+    && [
+      AUTH_STATES.PRIMARY_AUTHENTICATING,
+      AUTH_STATES.MFA_REQUIRED,
+      AUTH_STATES.MFA_VERIFYING,
+      AUTH_STATES.FAILED,
+    ].includes(authStage)
+  );
+  if ((authLoading && !publicAuthenticationInFlight)
+    || (isAuthenticated && (!user || !bootstrapReady || tenantLoading))) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-black">
         <Loader2 className="w-16 h-16 text-[#D4AF37] animate-spin mb-4" />
@@ -1131,7 +1145,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS
+ * VERSION: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
