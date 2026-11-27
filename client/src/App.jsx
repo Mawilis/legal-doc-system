@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY
+ * VERSION: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,9 +24,10 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH removes the implicit HR Projects-denial event that opened a logout-and-Owner-login prompt; account capacity change remains explicit, EOS governed and MFA bound.
  * CHANGELOG: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY opens the existing confirmation when HR-denied Projects explicitly requests Owner capacity; reauthentication and EOS authorisation remain mandatory.
  * CHANGELOG: v20.4.11-PLAIN-LANGUAGE-ACCOUNT-EMAIL uses human-readable Account email/Sign-in email labels; verification remains separately EOS-owned, never inferred from workspace identity.
- * CHANGELOG: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY labels EOS credential-backed account email separately from sign-in fallback; recovery-contact verification remains an independent source.
+ * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH labels EOS credential-backed account email separately from sign-in fallback; recovery-contact verification remains an independent source.
  * CHANGELOG: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
  * CHANGELOG: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES replaces the scrolling accordion with focused account subviews, distinguishes sign-in email from EOS-verified identity, and provides a durable device-only menu density preference without inventing server writes.
  * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
@@ -343,21 +344,6 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     setWorkspaceSwitchError('');
     setRequestedWorkspaceSwitch(destination);
   };
-  // A Projects denial under HR capacity can request the existing account
-  // switch confirmation. The event never issues tokens or grants permissions.
-  useEffect(() => {
-    const showOwnerSwitch = () => {
-      if (!canSwitchFounderWorkspaces || !isHrCapacity) return;
-      setWorkspaceSwitchError('');
-      setRequestedWorkspaceSwitch('headquarters');
-      setUserMenuOpen(true);
-      setAccountDetail(null);
-      accountTriggerRef.current?.focus();
-    };
-    window.addEventListener('wilsy:request-owner-capacity', showOwnerSwitch);
-    return () => window.removeEventListener('wilsy:request-owner-capacity', showOwnerSwitch);
-  }, [canSwitchFounderWorkspaces, isHrCapacity]);
-
   const confirmFounderWorkspaceSwitch = async () => {
     const destination = requestedWorkspaceSwitch;
     if (!canSwitchFounderWorkspaces || !['headquarters', 'people', 'change-hr'].includes(destination)
@@ -1355,7 +1341,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY
+ * VERSION: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
