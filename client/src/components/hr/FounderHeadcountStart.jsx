@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS First HR Leadership Headcount Command
- * VERSION: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK
+ * VERSION: v1.1.0-HEADCOUNT-SUBMIT-TO-INDEPENDENT-REVIEW
  * AUTHORITY: Existing Python EOS HeadcountRequisitionRouter only.
  * EPITOME: Source-verified headcount request creation for the first HR Director
  *          and Manager without asserting approval or employee admission.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/FounderHeadcountStart.jsx
  * COLLABORATION / OWNERSHIP: HrDashboard authenticated scope and source readback.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.1.0-HEADCOUNT-SUBMIT-TO-INDEPENDENT-REVIEW adds an existing-requisition submit command with revision CAS, exact source response and independent reviewer boundary.
  * CHANGELOG: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK preserves accepted command truth when subsequent list refresh is unavailable; never represents a failed refresh as a failed submission.
  * CHANGELOG: v1.0.0-FOUNDER-FIRST-HR-HEADCOUNT wires a compact governed first-
  *            hire requisition composer to existing EOS create, with replay keys
@@ -168,8 +169,74 @@ export default function FounderHeadcountStart({ tenantId, admitted, onCreated })
   );
 }
 
+/**
+ * Submit an existing EOS draft for independent review. This does not approve,
+ * admit a person or infer that the caller may also decide the requisition.
+ */
+export function HeadcountDraftSubmit({ tenantId, admitted, requisition, onSubmitted }) {
+  const [state, setState] = useState({ kind: 'IDLE', text: '' });
+  const keyRef = useRef(null);
+  const inFlight = useRef(false);
+  const scopeRef = useRef(tenantId);
+  useEffect(() => {
+    scopeRef.current = tenantId;
+    keyRef.current = null;
+    setState({ kind: 'IDLE', text: '' });
+  }, [tenantId, requisition?.id, requisition?.revision]);
+
+  if (!requisition || requisition.status !== 'DRAFT') return null;
+  const submit = async () => {
+    if (!admitted || inFlight.current || !tenantId
+        || !/^REQ-[A-F0-9]{24}$/.test(String(requisition.id))
+        || !Number.isSafeInteger(requisition.revision) || requisition.revision < 1) return;
+    if (!keyRef.current) keyRef.current = crypto.randomUUID();
+    inFlight.current = true;
+    const requestedTenant = tenantId;
+    setState({ kind: 'PENDING', text: 'Submitting for independent review…' });
+    try {
+      const response = await api.post(
+        '/hr/headcount-requisitions/' + encodeURIComponent(requisition.id) + '/submit',
+        { expected_revision: requisition.revision },
+        { headers: { 'X-Tenant-ID': requestedTenant, 'Idempotency-Key': keyRef.current } },
+      );
+      if (scopeRef.current !== requestedTenant) return;
+      const record = response?.data;
+      if (record?.tenant_id !== requestedTenant
+          || record?.requisition_id !== requisition.id
+          || record?.status !== 'SUBMITTED') {
+        throw new Error('HEADCOUNT_SUBMISSION_UNVERIFIED');
+      }
+      setState({ kind: 'ACCEPTED', text: 'Submitted; independent decision remains outstanding.' });
+      keyRef.current = null;
+      if (typeof onSubmitted === 'function') {
+        try {
+          await onSubmitted();
+        } catch {
+          if (scopeRef.current === requestedTenant) {
+            setState({ kind: 'ACCEPTED', text: 'Submission acknowledged; current list refresh unavailable.' });
+          }
+        }
+      }
+    } catch (error) {
+      if (scopeRef.current === requestedTenant) {
+        setState({ kind: 'ERROR', text: 'Submission unverified: ' + safeCode(error) });
+      }
+    } finally {
+      inFlight.current = false;
+    }
+  };
+  return <div className="flex flex-col items-start gap-1">
+    <button type="button" disabled={!admitted || state.kind === 'PENDING'}
+      onClick={submit}
+      className="min-h-9 rounded-md border border-amber-400 bg-amber-50 px-3 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:opacity-50">
+      Submit for review
+    </button>
+    {state.kind !== 'IDLE' && <span role="status" className="text-xs text-slate-700">{state.text}</span>}
+  </div>;
+}
+
 /* ARTIFACT: client/src/components/hr/FounderHeadcountStart.jsx
- * VERSION: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK
+ * VERSION: v1.1.0-HEADCOUNT-SUBMIT-TO-INDEPENDENT-REVIEW
  * AUTHORITY BOUNDARY: Authenticated EOS draft requisition only.
  * TENANT POSTURE: Verified tenant-bound request and response; never a fallback.
  * FAIL-CLOSED POSTURE: No approval or employee existence inferred.
