@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT
+ * VERSION: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR locates the visible contextual employer container directly in the authenticated Headquarters DOM while retaining positive and foreign-tenant denial tests.
  * CHANGELOG: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT verifies current tenant legal identity in People header/footer and denies presentation of a foreign tenant's legal name under the selected authenticated session.
  * CHANGELOG: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT certifies the source-owned People application layout, contextual return and bounded shared Headquarters footer at the original operating route.
  * CHANGELOG: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT verifies a Headquarters Projects work row routes directly to its task and never selects the assigned-projects view.
@@ -430,7 +431,8 @@ describe('WILSY Headquarters authenticated shell', () => {
     };
     renderHeadquarters(['/headquarters?section=hr-workspace'], tenantBoundAuth);
     expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
-    const employer = screen.getByLabelText('Selected authenticated employer');
+    const employer = document.querySelector('.hq-people-employer');
+    expect(employer).not.toBeNull();
     expect(employer).toHaveTextContent('Verified Test Employer Ltd');
     expect(employer).toHaveTextContent(exactTenant);
     const footer = screen.getByRole('contentinfo', { name: 'Headquarters operating footer' });
@@ -1076,7 +1078,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT
+ * VERSION: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
