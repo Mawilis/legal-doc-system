@@ -1196,11 +1196,19 @@ async def request_recovery_contact_verification(
     supplies selectors only; the service re-reads durable principal/email truth.
     """
 
-    try:
-        result = _recovery_contact_verification_request_service().request_verification(
+    # Durable registry reads and encrypted SMTP delivery are synchronous.
+    # Keep them off the shared async EOS event loop, preserving one issuance
+    # attempt and the existing rate, token, and revocation semantics.
+    from starlette.concurrency import run_in_threadpool
+
+    def issue_verification() -> object:
+        return _recovery_contact_verification_request_service().request_verification(
             identity=identity,
             observed_at=datetime.now(timezone.utc),
         )
+
+    try:
+        result = await run_in_threadpool(issue_verification)
     except RecoveryContactVerificationRequestError as error:
         if error.code == "RECOVERY_CONTACT_VERIFICATION_RATE_LIMITED":
             raise HTTPException(
