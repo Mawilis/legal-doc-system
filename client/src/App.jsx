@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.3.0-AUTHENTICATED-TENANT-CHROME
+ * VERSION: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES supports the authorized canonical tenant ID and legal-name projection aliases while retaining exact selected-session tenant equality in global header.
  * CHANGELOG: v20.3.0-AUTHENTICATED-TENANT-CHROME displays the exact independently hydrated authenticated tenant legal name and tenant reference in global chrome without accepting client-chosen scope.
  * CHANGELOG: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN routes Daily Attention and calendar selections through the canonical EOS work destination contract. Projects opens its exact project/task view, other admitted sources retain source-owned My Work, forged source identities fail closed; no task command or privilege change.
  * CHANGELOG: v20.14.0-PERSISTENT-HEADQUARTERS-NAVIGATION excludes ephemeral location.key from the stable, identity-bound Headquarters controller key so same-session in-app work navigation no longer forces its subtree to remount. Existing route hooks update the destination; auth/tenant/legal admission gates and EOS work reads remain authoritative.
@@ -257,11 +258,15 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? [exactChromeText(sessionUser.firstName), exactChromeText(sessionUser.lastName)].filter(Boolean).join(' ')
     : '';
   const accountEmail = safeAccountEmail(sessionUser?.workspaceEmail);
+  const verifiedTenantId = activeTenant?.tenantId
+    || activeTenant?.tenant_id || activeTenant?.id || null;
   const tenantIdentity = sessionUser?.tenantId
-    && String(activeTenant?.tenantId || '') === String(sessionUser.tenantId)
+    && typeof verifiedTenantId === 'string'
+    && verifiedTenantId === sessionUser.tenantId
     ? activeTenant
     : null;
   const organisationName = exactChromeText(tenantIdentity?.legalName)
+    || exactChromeText(tenantIdentity?.legal_name)
     || exactChromeText(tenantIdentity?.name);
   const currentTenantReference = tenantIdentity && sessionUser?.tenantId
     ? exactChromeText(sessionUser.tenantId) : '';
@@ -1089,7 +1094,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.3.0-AUTHENTICATED-TENANT-CHROME
+ * VERSION: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
