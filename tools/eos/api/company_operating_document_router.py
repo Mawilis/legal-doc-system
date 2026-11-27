@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Mission and Strategy HTTP Authority.
-VERSION: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK
+VERSION: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON
 AUTHORITY: Existing canonical tenant IAM; source lifecycle/registry own evidence.
 EPITOME: Expose approved company documents and separately authorized author/
 publication commands without reusing Legal agreements, HR files or Founder labels.
@@ -7,8 +7,9 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/co
 COLLABORATION / OWNERSHIP: Headquarters shared viewer, RequireTenantAuthorization,
 company document lifecycle/registry; explicit operators own index provisioning.
 CERTIFICATION / UPDATE DATE: 2026-11-22
-CHANGELOG: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK adds a read-only, authenticated check of exact current Strategy read and Projects list/detail admission separately from optional author/publish, without document read, IAM mutation or source fallback.
-CHANGELOG: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK
+CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON adds a bounded read-only reason for denied Strategy read only when the authenticated Owner has separately verified Projects-list authority; no role grant or source write.
+CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON adds a read-only, authenticated check of exact current Strategy read and Projects list/detail admission separately from optional author/publish, without document read, IAM mutation or source fallback.
+CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON
 reuses the canonical audited project-link command for the exact durable
 Founder, requiring current project-read authority and Founder source in the
 same Mongo transaction as link creation; no author IAM grant is issued.
@@ -56,6 +57,12 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.api.tenant_authorization_http import (
     OptionalTenantAuthorization, RequireTenantAuthorization, TenantAuthorizationContext,
 )
+from tools.eos.auth.tenant_authorization import authorize_tenant_operation
+from tools.eos.api.tenant_authorization_http import (
+    get_principal_authority_repository,
+    get_tenant_membership_repository,
+    get_role_assignment_repository,
+)
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.saas.auth.auth_registry import AuthRegistry
@@ -79,7 +86,7 @@ from tools.eos.saas.domain.company_operating_document import (
     CompanyOperatingDocumentRevision, instant,
 )
 
-VERSION: Final = "v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK"
+VERSION: Final = "v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON"
 def _require_current_company_session(identity: SovereignIdentity = Depends(get_current_identity)) -> None:
     """Reuse canonical authentication and session authority; never mint a session.
 
@@ -427,8 +434,42 @@ def inspect_strategy_read_authority(
     evidence. Dependency outages continue to fail closed with HTTP 503.
     """
     response.headers["Cache-Control"] = "no-store"
+    # Only an already-authorized Owner Projects session may inspect the
+    # non-PII Strategy denial class. No role or document evidence is returned.
+    reason = "NOT_DISCLOSED"
+    selected = (
+        identity.roles[0]
+        if identity.principal_scope == "GLOBAL" and len(identity.roles) == 1
+        else None
+    )
+    if (
+        selected == "tenant_owner"
+        and identity.tenant_id == WILSY_COMPANY_TENANT_ID
+        and project_list is not None
+        and document_read is None
+    ):
+        try:
+            reader = get_role_assignment_repository()
+            decision = authorize_tenant_operation(
+                principal_id=identity.identity_id,
+                tenant_id=identity.tenant_id,
+                permission_id="company_operating_document:read",
+                operation="company_operating_document_read",
+                principal_repository=get_principal_authority_repository(),
+                membership_repository=get_tenant_membership_repository(),
+                business_role_repository=reader,
+                role_assignment_repository=reader,
+                selected_business_role=selected,
+            )
+            reason = (
+                "INCONSISTENT_HTTP_ADMISSION" if decision.authorized
+                else decision.reason.value
+            )
+        except Exception:
+            reason = "AUTHORITY_SOURCE_UNAVAILABLE"
     return {
         "schema": "WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1",
+        "document_read_reason": reason,
         "selected_capacity": (
             identity.roles[0]
             if identity.principal_scope == "GLOBAL" and len(identity.roles) == 1
@@ -714,7 +755,7 @@ def publish_company_document(classification: CompanyDocumentClass, payload: Publ
 
 
 # ARTIFACT: company_operating_document_router.py
-# VERSION: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK
+# VERSION: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON
 # AUTHORITY BOUNDARY: Current canonical IAM plus source-owned lifecycle commands.
 # TENANT POSTURE: Exact canonical WILSY company tenant; no root fallback.
 # FAIL-CLOSED POSTURE: Draft privacy, independent approval, indexes and readback required.
