@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER prevents duplicate footer at the Owner's default Headquarters landing routes, where the nested workspace owns the footer.
  * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER sends the global logo to the EOS-selected capacity home (Owner Headquarters, HR Director/Manager People), and uses one canonical footer on other protected routes without duplicating the Headquarters footer.
  * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH removes the implicit HR Projects-denial event that opened a logout-and-Owner-login prompt; account capacity change remains explicit, EOS governed and MFA bound.
  * CHANGELOG: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY opens the existing confirmation when HR-denied Projects explicitly requests Owner capacity; reauthentication and EOS authorisation remain mandatory.
@@ -768,7 +769,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       </header>
 
       <div className="min-h-0 flex-1">{children}</div>
-      {location.pathname !== '/headquarters' && (
+      {location.pathname !== '/headquarters' && !(isOwnerCapacity && ['/', '/dashboard'].includes(location.pathname)) && (
         <WilsySystemFooter
           surface={isHrCapacity ? 'People · Hire to Exit' : isOwnerCapacity ? 'Headquarters · Enterprise operations' : 'WILSY OS · Authorized workspace'}
           employerName={showTenantContext ? organisationName : ''}
