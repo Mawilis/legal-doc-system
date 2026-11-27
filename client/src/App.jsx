@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH
+ * VERSION: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE labels global People search as authorized workforce lookup or module navigation, without implying certified cross-domain record indexing.
  * CHANGELOG: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH makes the global navigation search context-aware inside the People application, routing queries to the existing HR-owned search intent without adding global HR data access.
  * CHANGELOG: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES supports the authorized canonical tenant ID and legal-name projection aliases while retaining exact selected-session tenant equality in global header.
  * CHANGELOG: v20.3.0-AUTHENTICATED-TENANT-CHROME displays the exact independently hydrated authenticated tenant legal name and tenant reference in global chrome without accepting client-chosen scope.
@@ -298,7 +299,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const isPeopleWorkspace = location.pathname === '/headquarters'
     && new URLSearchParams(location.search).get('section') === 'hr-workspace';
   const searchContextLabel = isPeopleWorkspace
-    ? 'Search people, hiring and authorized HR work…'
+    ? 'Search workforce or open a People module…'
     : 'Search authorized work or navigate…';
   const currentWorkScope = currentUnifiedMyWorkScope(auth, sessionUser?.tenantId);
   useEffect(() => {
@@ -1111,7 +1112,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH
+ * VERSION: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
