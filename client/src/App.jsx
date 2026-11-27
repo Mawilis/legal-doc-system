@@ -24,7 +24,8 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
- * CHANGELOG: v20.4.10-DURABLE-ACCOUNT-EMAIL-PROVENANCE formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
+ * CHANGELOG: v20.4.10-DURABLE-ACCOUNT-EMAIL-PROVENANCE labels EOS credential-backed account email separately from sign-in fallback; recovery-contact verification remains an independent source.
+ * CHANGELOG: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
  * CHANGELOG: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES replaces the scrolling accordion with focused account subviews, distinguishes sign-in email from EOS-verified identity, and provides a durable device-only menu density preference without inventing server writes.
  * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
  * CHANGELOG: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE offers a separate Change HR capacity action for a user currently selected as HR Director/Manager; reauthentication remains mandatory before EOS may admit another role.
