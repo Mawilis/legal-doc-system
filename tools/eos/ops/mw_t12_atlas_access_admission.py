@@ -1,5 +1,5 @@
 """TITLE: MW-T12 synthetic Atlas temporary source-IP admission.
-VERSION: v1.6.0-PRIVATE-CONSUMER-LEDGER
+VERSION: v1.7.0-LIVE-CONSUMER-REVIEW-RECONCILIATION
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inventory the shared free Atlas test project's network exposure and
          optionally admit exactly one verified ECS task public source IP for
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Read-only AWS ECS/EC2 identity via existing MW-T12
          task admission; Atlas Admin API v2 project-scoped network capability.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.7.0-LIVE-CONSUMER-REVIEW-RECONCILIATION checks
+           a private owner worksheet against freshly authenticated Atlas
+           inventory, rejects stale fingerprints or missing owner evidence,
+           reports only aggregated counts; never authorizes IP deletion.
 CHANGELOG: v1.6.0-PRIVATE-CONSUMER-LEDGER exports an exclusive local
            0600 network attribution ledger from verified Atlas read-only
            inventory, with unknown consumers unverified and source fingerprint
@@ -63,7 +67,7 @@ import re
 
 from tools.eos.ops import mw_t12_task_definition_admission as ecs
 
-VERSION = "v1.6.0-PRIVATE-CONSUMER-LEDGER"
+VERSION = "v1.7.0-LIVE-CONSUMER-REVIEW-RECONCILIATION"
 PROJECT = "668cdbbd975c3c0f05fca20c"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
@@ -343,6 +347,78 @@ def write_consumer_ledger(entries: list[dict], destination: str) -> None:
     print("MW_T12_CONSUMER_ATTRIBUTION_CERTIFIED=FALSE")
 
 
+def review_consumer_ledger(entries: list[dict], source: str) -> None:
+    """Reconcile the private owner worksheet to fresh project inventory.
+
+    This read-only check verifies structural completeness and exact
+    source-network currentness. It cannot independently corroborate supplied
+    consumer identities, authorize Atlas mutation, or certify rollback.
+    """
+    path = Path(source).expanduser()
+    require(path.is_absolute() and path.suffix == ".json"
+            and not path.is_symlink() and path.is_file()
+            and not path.parent.is_symlink(),
+            "CONSUMER_REVIEW_SOURCE_INVALID")
+    try:
+        stat = path.stat()
+        require(stat.st_size <= 1048576 and stat.st_size > 0
+                and stat.st_mode & 0o077 == 0
+                and stat.st_nlink == 1,
+                "CONSUMER_REVIEW_SOURCE_NOT_PRIVATE")
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise NetworkAdmissionError("CONSUMER_REVIEW_SOURCE_UNREADABLE") from None
+    require(isinstance(data, dict)
+            and data.get("schema") == "wilsy.mwt12.atlas.consumer-attribution.v1"
+            and data.get("project") == "legal-doc-test"
+            and data.get("audit_only") is True
+            and isinstance(data.get("network_entries"), list),
+            "CONSUMER_REVIEW_SCHEMA_INVALID")
+    rows = data["network_entries"]
+    require(len(rows) == len(entries) and len(rows) <= 1000
+            and all(isinstance(row, dict) for row in rows),
+            "CONSUMER_REVIEW_NETWORK_COUNT_MISMATCH")
+    fingerprint = network_fingerprint(entries)
+    require(data.get("source_fingerprint_sha3_512") == fingerprint,
+            "CONSUMER_REVIEW_SOURCE_FINGERPRINT_STALE")
+    observed = sorted(entry_ip(row) for row in entries)
+    reviewed = [row.get("network") for row in rows]
+    require(all(isinstance(net, str) for net in reviewed)
+            and sorted(reviewed) == observed
+            and len(set(reviewed)) == len(reviewed),
+            "CONSUMER_REVIEW_NETWORK_SET_MISMATCH")
+    count = 0
+    incomplete = 0
+    for row in rows:
+        require(row.get("independently_tested") is True
+                or row.get("independently_tested") is False,
+                "CONSUMER_REVIEW_FLAGS_INVALID")
+        require(type(row.get("migration_approved")) is bool
+                and type(row.get("removal_approved")) is bool,
+                "CONSUMER_REVIEW_FLAGS_INVALID")
+        # An arbitrary edited worksheet is never trusted as approval. Flag
+        # fields only denote an operator-supplied review, not source authority.
+        fields = ("consumer", "consumer_evidence", "confirmed_by")
+        require(all(isinstance(row.get(field), str)
+                    and len(row[field]) <= 512 for field in fields),
+                "CONSUMER_REVIEW_FIELDS_INVALID")
+        complete = (all(row[field].strip() for field in fields)
+                    and row["independently_tested"] is True)
+        if complete:
+            count += 1
+        else:
+            incomplete += 1
+    print("MW_T12_CONSUMER_REVIEW_FINGERPRINT=FRESH_MATCH")
+    print("MW_T12_CONSUMER_REVIEW_SOURCE_ENTRIES=" + str(len(entries)))
+    print("MW_T12_CONSUMER_REVIEW_DOCUMENTED=" + str(count))
+    print("MW_T12_CONSUMER_REVIEW_UNVERIFIED=" + str(incomplete))
+    print("MW_T12_CONSUMER_APPROVAL_AUTHORITY=NOT_ESTABLISHED")
+    print("MW_T12_NETWORK_MUTATIONS=ZERO")
+    print("MW_T12_ECS_CONNECTIVITY_CERTIFIED=FALSE")
+    print("MW_T12_PERSISTENT_RECOVERY_CERTIFIED=FALSE")
+    require(incomplete == 0, "CONSUMER_REVIEW_INCOMPLETE")
+
+
 def public_source_ip(profile: str, task_arn: str) -> str:
     """Resolve precisely one already-running nonproduction Fargate task's ENI.
 
@@ -558,8 +634,11 @@ def main(argv: list[str] | None = None) -> int:
                         default="api-key",
                         help="Explicit Atlas Admin API authentication mode")
     parser.add_argument("--task-arn", help="Exact running owned Fargate task ARN")
-    parser.add_argument("--consumer-ledger",
+    ledger = parser.add_mutually_exclusive_group()
+    ledger.add_argument("--consumer-ledger",
                         help="New absolute local JSON path; read-only / mode 0600")
+    ledger.add_argument("--review-consumers",
+                        help="Existing private JSON ledger; revalidate against live Atlas")
     parser.add_argument("--certify-isolation", action="store_true",
                         help="Read-only deny of unowned or public Atlas access")
     actions = parser.add_mutually_exclusive_group()
@@ -571,6 +650,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="Exact recorded /32 source IPv4 for owned rollback")
     args = parser.parse_args(argv)
     try:
+        require(not (args.consumer_ledger or args.review_consumers)
+                or args.certify_isolation,
+                "CONSUMER_REVIEW_REQUIRES_READONLY_ISOLATION")
         require(not args.consumer_ledger or args.certify_isolation,
                 "CONSUMER_LEDGER_REQUIRES_READONLY_ISOLATION")
         require(args.auth_mode != "service-account" or (
@@ -594,6 +676,8 @@ def main(argv: list[str] | None = None) -> int:
             audit_entries(entries)
             if args.consumer_ledger:
                 write_consumer_ledger(entries, args.consumer_ledger)
+            if args.review_consumers:
+                review_consumer_ledger(entries, args.review_consumers)
             if args.certify_isolation:
                 certify_isolated_network(entries)
             if args.revoke_owned:
@@ -624,7 +708,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_access_admission.py
-# VERSION: v1.6.0-PRIVATE-CONSUMER-LEDGER
+# VERSION: v1.7.0-LIVE-CONSUMER-REVIEW-RECONCILIATION
 # AUTHORITY BOUNDARY: Exact temporary /32 source add/owned delete only.
 # TENANT POSTURE: Synthetic test database only; no production read/write.
 # FAIL-CLOSED POSTURE: Wildcard add blocked; delete restricted to owned task.
