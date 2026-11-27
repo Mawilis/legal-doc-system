@@ -1,5 +1,5 @@
 # TITLE: Python EOS Runtime Deployment and MW-T12 Secure Metadata Certification
-# VERSION: v1.2.0-MWT12-ATLAS-ISOLATION-CERT
+# VERSION: v1.3.0-MWT12-DISPOSABLE-BACKUP-RESTORE-CI
 # AUTHORITY: WILSY OS Core Governance / AGENTS.md
 # EPITOME: Compile, test and build Python EOS with independently enforced
 #          dormant scoped SSM-backed MW-T12 task-definition regression.
@@ -7,6 +7,10 @@
 # COLLABORATION / OWNERSHIP: Python EOS runtime image; task definition registrar;
 #                            existing MW-T12 tests and CI gates.
 # CERTIFICATION / UPDATE DATE: 2026-11-27
+# CHANGELOG: v1.3.0-MWT12-DISPOSABLE-BACKUP-RESTORE-CI runs an actual
+#            isolated no-network disposable MongoDB backup, fault, restore,
+#            unchanged evidence readback and mandatory owned cleanup on CI.
+#            It does not certify ECS, Atlas restoration or production recovery.
 # CHANGELOG: v1.2.0-MWT12-ATLAS-ISOLATION-CERT adds read-only
 #            Atlas network consumer attribution and wildcard denial tests.
 # CHANGELOG: v1.1.0-MWT12-ATLAS-EGRESS-CERT adds exact grouped
@@ -125,13 +129,17 @@ jobs:
             sleep 2
           done
           TEST_EOS_WORKER_MONGO_URI="mongodb://127.0.0.1:27017/?replicaSet=rs0" python -m pytest -q tests/integration/test_durable_task_queue_real_mongo.py
+      - name: Certify MW-T12 isolated synthetic Mongo backup and restore
+        run: |
+          docker image inspect mongo:7 >/dev/null 2>&1 || docker pull mongo:7
+          python -m tools.eos.ops.mw_t12_disposable_mongo_recovery --run-disposable
       - name: Compile canonical Python EOS application
         run: python -m py_compile tools/eos/api/server.py tools/eos/runtime/durable_task_queue.py tools/eos/runtime/durable_worker_runner.py tools/eos/runtime/durable_worker_runtime.py tools/eos/runtime/compliance_scan_worker.py tools/eos/runtime/compliance_scan_scheduler.py tools/eos/runtime/core_worker_registry.py tools/eos/runtime/core_worker_service.py tools/eos/runtime/worker_process.py
       - name: Build Python-only runtime image
         run: docker build --file Dockerfile.eos --tag wilsy-eos-python:certification .
 
 # ARTIFACT: .github/workflows/eos-python-runtime-deployment-certification.yml
-# VERSION: v1.2.0-MWT12-ATLAS-ISOLATION-CERT
+# VERSION: v1.3.0-MWT12-DISPOSABLE-BACKUP-RESTORE-CI
 # AUTHORITY BOUNDARY: Exact-head Python CI only; no AWS registration or launch.
 # TENANT POSTURE: Disposable Mongo and synthetic IAM only.
 # FAIL-CLOSED POSTURE: Any compile, unit, replica or image build failure denies.
