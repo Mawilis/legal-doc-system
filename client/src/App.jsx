@@ -328,7 +328,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     try {
       await onLogout();
       // An explicit login route is only a presentation destination, never IAM.
-      window.location.assign(destination === 'people' ? '/login?capacity=hr' : '/login');
+      window.location.assign(destination === 'headquarters' ? '/login' : '/login?capacity=hr');
     } catch (_error) {
       setWorkspaceSwitchError('Current-session sign-out could not be confirmed. Switch cancelled.');
       setWorkspaceSwitchBusy(false);
