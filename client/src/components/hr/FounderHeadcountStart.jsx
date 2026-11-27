@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS First HR Leadership Headcount Command
- * VERSION: v1.1.1-WEBCRYPTO-REPLAY-IDEMPOTENCY
+ * VERSION: v1.2.0-INDEPENDENT-HEADCOUNT-DECISION
  * AUTHORITY: Existing Python EOS HeadcountRequisitionRouter only.
  * EPITOME: Source-verified headcount request creation for the first HR Director
  *          and Manager without asserting approval or employee admission.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/FounderHeadcountStart.jsx
  * COLLABORATION / OWNERSHIP: HrDashboard authenticated scope and source readback.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.2.0-INDEPENDENT-HEADCOUNT-DECISION adds EOS-authorized approve/reject with separate decision reason and revision CAS; maker/checker remains strictly source-owned.
  * CHANGELOG: v1.1.1-WEBCRYPTO-REPLAY-IDEMPOTENCY uses native WebCrypto entropy for replay keys without depending on randomUUID support in embedded browser/test runtimes; no noncryptographic fallback.
  * CHANGELOG: v1.1.0-HEADCOUNT-SUBMIT-TO-INDEPENDENT-REVIEW adds an existing-requisition submit command with revision CAS, exact source response and independent reviewer boundary.
  * CHANGELOG: v1.0.1-TRUTHFUL-HR-DRAFT-READBACK preserves accepted command truth when subsequent list refresh is unavailable; never represents a failed refresh as a failed submission.
@@ -257,8 +258,119 @@ export function HeadcountDraftSubmit({ tenantId, admitted, requisition, onSubmit
   </div>;
 }
 
+/**
+ * Existing EOS independent headcount decision; maker/checker is enforced by
+ * the domain, not browser role inference. Never infer Founder self-approval.
+ */
+export function HeadcountIndependentDecision({
+  tenantId, admitted, requisition, onDecided,
+}) {
+  const [open, setOpen] = useState(false);
+  const [decision, setDecision] = useState('APPROVE');
+  const [reason, setReason] = useState('');
+  const [state, setState] = useState({ kind: 'IDLE', text: '' });
+  const keyRef = useRef(null);
+  const inFlight = useRef(false);
+  const scopeRef = useRef(tenantId);
+  useEffect(() => {
+    scopeRef.current = tenantId;
+    keyRef.current = null;
+    setOpen(false);
+    setDecision('APPROVE');
+    setReason('');
+    setState({ kind: 'IDLE', text: '' });
+  }, [tenantId, requisition?.id, requisition?.revision]);
+  if (!requisition || requisition.status !== 'SUBMITTED') return null;
+  const send = async event => {
+    event.preventDefault();
+    if (!admitted || !tenantId || inFlight.current || !reason.trim()
+        || !/^REQ-[A-F0-9]{24}$/.test(String(requisition.id))
+        || !Number.isSafeInteger(requisition.revision) || requisition.revision < 1) return;
+    if (!keyRef.current) {
+      try {
+        keyRef.current = issueReplayKey();
+      } catch {
+        setState({ kind: 'ERROR', text: 'Secure decision identifier unavailable; nothing was submitted.' });
+        return;
+      }
+    }
+    inFlight.current = true;
+    const requestedTenant = tenantId;
+    setState({ kind: 'PENDING', text: 'EOS verifying independent decision authority…' });
+    try {
+      const response = await api.post(
+        '/hr/headcount-requisitions/' + encodeURIComponent(requisition.id) + '/decision',
+        { expected_revision: requisition.revision, decision, reason: reason.trim() },
+        { headers: { 'X-Tenant-ID': requestedTenant, 'Idempotency-Key': keyRef.current } },
+      );
+      if (scopeRef.current !== requestedTenant) return;
+      const data = response?.data;
+      const expectedStatus = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+      if (data?.tenant_id !== requestedTenant || data?.requisition_id !== requisition.id
+          || data?.status !== expectedStatus) throw new Error('HEADCOUNT_DECISION_UNVERIFIED');
+      setState({ kind: 'ACCEPTED', text: 'EOS recorded the independent decision. List revalidation required.' });
+      setOpen(false);
+      keyRef.current = null;
+      if (typeof onDecided === 'function') {
+        try {
+          await onDecided();
+        } catch {
+          if (scopeRef.current === requestedTenant) {
+            setState({ kind: 'ACCEPTED', text: 'Decision recorded; current list refresh unavailable.' });
+          }
+        }
+      }
+    } catch (error) {
+      if (scopeRef.current === requestedTenant) {
+        setState({ kind: 'ERROR', text: 'EOS denied or could not verify decision: ' + safeCode(error) });
+      }
+    } finally {
+      inFlight.current = false;
+    }
+  };
+  const updateDecision = value => {
+    setDecision(value);
+    keyRef.current = null;
+    setState({ kind: 'IDLE', text: '' });
+  };
+  const updateReason = value => {
+    setReason(value);
+    keyRef.current = null;
+    setState({ kind: 'IDLE', text: '' });
+  };
+  return <div className="min-w-[160px]">
+    <button type="button" disabled={!admitted || state.kind === 'PENDING'}
+      aria-expanded={open} onClick={() => setOpen(value => !value)}
+      className="min-h-9 rounded-md border border-amber-400 bg-amber-50 px-3 text-xs font-semibold text-amber-950 disabled:opacity-50">
+      {open ? 'Close decision' : 'Independent decision'}
+    </button>
+    {open && <form onSubmit={send} className="mt-2 grid gap-2 rounded-md border border-slate-300 bg-white p-2">
+      <p className="max-w-xs text-xs text-slate-700">EOS rejects a decision by the requisition creator, including a Founder with both HR capacities.</p>
+      <label className="text-xs font-semibold text-slate-800">Decision
+        <select value={decision} onChange={event => updateDecision(event.target.value)}
+          aria-label="Independent headcount decision"
+          className="mt-1 block min-h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm">
+          <option value="APPROVE">Approve</option>
+          <option value="REJECT">Reject</option>
+        </select>
+      </label>
+      <label className="text-xs font-semibold text-slate-800">Reason
+        <textarea required maxLength={2000} value={reason}
+          onChange={event => updateReason(event.target.value)} rows={2}
+          className="mt-1 block w-full rounded border border-slate-300 p-2 text-sm"
+          aria-label="Independent decision reason"/>
+      </label>
+      <button type="submit" disabled={state.kind === 'PENDING' || !reason.trim()}
+        className="min-h-9 rounded-md bg-blue-800 px-3 text-xs font-semibold text-white disabled:opacity-50">
+        Record decision through EOS
+      </button>
+    </form>}
+    {state.kind !== 'IDLE' && <p role="status" className="mt-1 text-xs text-slate-700">{state.text}</p>}
+  </div>;
+}
+
 /* ARTIFACT: client/src/components/hr/FounderHeadcountStart.jsx
- * VERSION: v1.1.1-WEBCRYPTO-REPLAY-IDEMPOTENCY
+ * VERSION: v1.2.0-INDEPENDENT-HEADCOUNT-DECISION
  * AUTHORITY BOUNDARY: Authenticated EOS draft requisition only.
  * TENANT POSTURE: Verified tenant-bound request and response; never a fallback.
  * FAIL-CLOSED POSTURE: No approval or employee existence inferred.
