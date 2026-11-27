@@ -109,7 +109,7 @@ describe('Top App Bar account identity scope', () => {
     render(renderAccount(auth));
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
     const menu = screen.getByRole('menu', { name: 'Account menu' });
-    expect(menu).toHaveTextContent('Sign-in email · verification pending');
+    expect(menu).toHaveTextContent('Sign-in email · workspace source unavailable');
     fireEvent.click(screen.getByRole('menuitem', { name: /My profile/ }));
     expect(menu).toHaveTextContent('Sign-in email, not independently verified by EOS');
     expect(screen.getByRole('menuitem', { name: /Back to account/ })).toBeInTheDocument();
