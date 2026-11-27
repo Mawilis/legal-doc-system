@@ -10,7 +10,7 @@
  * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
  * ║                                                                                                                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - BILLING NUCLEUS HUD [V68.4.1-GOVERNED-C2-TENANT-BOUNDARY]
+ * 🏛️ WILSY OS - BILLING NUCLEUS HUD [V68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP]
  * ║ TITLE: WILSY OS Billing HUD                                                                                                            ║
  * ║ AUTHORITY: Wilsy OS Core Governance                                                                                                    ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -18,7 +18,7 @@
  * ║           This version introduces foundational UI elements for multi‑payment method support, dunning visibility, and batch operations. ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY                                                                                           ║
+ * ║ VERSION: v68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP                                                                                           ║
  * ║ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/billing/BillingHUD.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
@@ -26,9 +26,9 @@
  * ║ • AI Engineering – V68.3.2: Added paymentMethod state, stubbed DunningStatusBadge, quick action "Send Reminder", and payment history. ║
  * ║ • Compliance: POPIA §19, GDPR §32, SOC2 §CC7.2, ISO 27001                                                                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ CERTIFICATION / UPDATE DATE: 2026-11-10                                                                                                 ║
+ * ║ CERTIFICATION / UPDATE DATE: 2026-11-27                                                                                                 ║
  * ║ COLLABORATION / OWNERSHIP: BillingHUD, invoice-proof client, and authenticated EOS transport owners.                                     ║
- * ║ CHANGELOG: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY completes sovereign header and seal version agreement without behavior change.            ║
+ * ║ CHANGELOG: v68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP requires current HR directory authorization, removes legacy multi-route lookups and fabricated salesperson records.\n * ║ CHANGELOG: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY completes sovereign header and seal version agreement without behavior change.            ║
  * ║ SECURITY / PRIVACY POSTURE: Authenticated Python EOS projections; no caller tenant label grants authority.                            ║
  * ║ TENANT BOUNDARY: Current workspace client billing only; global recipient lookup stays unavailable pending governed C2.                 ║
  * ║ AUTHORITY BOUNDARY: Client projection and command transport only; Python EOS owns authorization and persistence.                        ║
@@ -1227,95 +1227,52 @@ const BillingHUD = ({ user: routeUser = null }) => {
     };
   }, [activeTab, invoiceMode, manualInvoice.tenantId, tenantId]);
 
-  // ─── SALESPERSON EMPLOYEE SEARCH (multi-path + seed — survives 404s) ──
+  // ─── VERIFIED EOS EMPLOYEE DIRECTORY (no cross-tenant or seed fallback) ──
   useEffect(() => {
     const q = salespersonSearch.trim();
-    if (!q || q.length < 2) {
+    if (q.length < 2 || !tenantId) {
       setSalespersonOptions([]);
+      setSalespersonLoading(false);
       return;
     }
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       setSalespersonLoading(true);
-      const headers = { 'X-Tenant-ID': tenantId || 'GLOBAL_ROOT' };
-      const paths = [
-        { path: '/employees/search', params: { q, tenantId, limit: 12 } },
-        { path: '/hr/employees', params: { search: q, q, tenantId, limit: 12 } },
-        { path: '/business/employees', params: { search: q, q, tenantId, limit: 12 } },
-        { path: '/employees', params: { search: q, q, tenantId, limit: 12 } },
-      ];
-      const normalizeEmp = (employee) => ({
-        ...employee,
-        id: employee.id || employee.employeeId || employee._id || employee.userId || '',
-        name:
-          employee.name
-          || employee.displayName
-          || employee.preferredName
-          || (typeof employee.legalName === 'object' ? employee.legalName?.fullName : employee.legalName)
-          || employee.employeeId
-          || '',
-        email: employee.email || employee.contact?.workEmail || employee.contact?.email || '',
-        department: employee.department || employee.employment?.department || '',
-      });
-      const filterLocal = (list) => {
-        const needle = q.toLowerCase();
-        return list
-          .map(normalizeEmp)
-          .filter((e) => e.id || e.name)
-          .filter((e) =>
-            [e.name, e.email, e.department, e.id].join(' ').toLowerCase().includes(needle)
-          )
-          .slice(0, 12);
-      };
-      let found = [];
-      for (const { path: p, params } of paths) {
-        try {
-          if (import.meta.env?.DEV) {
-            console.info('[BILLING-EMPLOYEE-DIR] GET', p, params);
-          }
-          const response = await sovereignClient.get(p, {
-            params,
-            headers,
-            signal: controller.signal,
-          });
-          const data = extractData(response);
-          const employees = Array.isArray(data)
-            ? data
-            : data?.employees || data?.items || data?.results || data?.data || [];
-          if (Array.isArray(employees) && employees.length > 0) {
-            found = filterLocal(employees);
-            if (found.length > 0) break;
-          }
-        } catch (err) {
-          if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
-            setSalespersonLoading(false);
-            return;
-          }
-          if (import.meta.env?.DEV) {
-            console.warn('[BILLING-EMPLOYEE-DIR] fail', p, err?.message || err);
-          }
+      try {
+        // Directory access is a separate, current HR permission; billing grants
+        // no implicit access to employee files or another tenant's workforce.
+        const response = await sovereignClient.get('/employees/search', {
+          params: { q, limit: 12 },
+          headers: { 'X-Tenant-ID': tenantId },
+          signal: controller.signal,
+        });
+        const data = extractData(response);
+        if (!Array.isArray(data)) {
+          setSalespersonOptions([]);
+          return;
         }
+        const needle = q.toLocaleLowerCase();
+        setSalespersonOptions(data
+          .filter(item => item && typeof item.employeeId === 'string'
+            && typeof item.displayName === 'string')
+          .map(item => ({
+            id: item.employeeId,
+            name: item.displayName,
+            email: '',
+            department: typeof item.department === 'string' ? item.department : '',
+          }))
+          .filter(item => [item.id, item.name, item.department]
+            .join(' ').toLocaleLowerCase().includes(needle))
+          .slice(0, 12));
+      } catch (err) {
+        if (err?.name !== 'CanceledError' && err?.name !== 'AbortError'
+          && err?.code !== 'ERR_CANCELED') {
+          // Denied, offline or empty is not an authorization to invent employees.
+          setSalespersonOptions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setSalespersonLoading(false);
       }
-      // Offline / empty directory: seed founder so compose never blocks
-      if (found.length === 0) {
-        const seed = [
-          {
-            id: 'EMP-WILSON-KHANYEZI',
-            name: 'Wilson Khanyezi',
-            email: 'wilson@wilsy.os',
-            department: 'Executive',
-          },
-          {
-            id: 'EMP-WILSY-OPS',
-            name: 'Wilsy Operations',
-            email: 'ops@wilsy.os',
-            department: 'Operations',
-          },
-        ];
-        found = filterLocal(seed);
-      }
-      setSalespersonOptions(found);
-      setSalespersonLoading(false);
     }, 280);
     return () => {
       clearTimeout(timer);
@@ -6395,7 +6352,7 @@ export default BillingHUD;
 
 /**
  * ARTIFACT: client/src/components/billing/BillingHUD.jsx
- * VERSION: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY
+ * VERSION: v68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP
  * AUTHORITY BOUNDARY: Tenant-scoped client billing uses EOS authorization; global recipient selection remains unavailable pending governed C2.
  * TENANT POSTURE: Subscription requests use the exact authenticated workspace tenant; client invoice search carries that same scope.
  * FAIL-CLOSED POSTURE: Platform invoice issue and quick issue cannot proceed without governed cross-tenant directory authority.
