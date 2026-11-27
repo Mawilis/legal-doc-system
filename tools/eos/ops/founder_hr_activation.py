@@ -335,7 +335,7 @@ def activate_founder_hr(
         "hr_manager_capacity": "ACTIVE_DURABLE_READBACK",
         "founder_owner_preserved": bool(current.get("tenant_owner_capacity_active")),
         "employee_admission": "NOT_ISSUED",
-        "hr_director": "ACTIVE_DURABLE_READBACK" if activate_director else "NOT_REQUESTED",
+        "hr_director": "ACTIVE_DURABLE_READBACK" if activate_director else "NOT_ISSUED",
         "independent_self_approval": "NOT_AUTHORIZED",
         "next": "REAUTHENTICATE_AND_VERIFY_FOUR_HR_ROUTES",
         "authenticated_http_verified": False,
