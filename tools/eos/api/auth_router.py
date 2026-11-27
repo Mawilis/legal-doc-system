@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.21.2-PRIVACY-SAFE-LOGIN-STAGES
+VERSION: v1.21.3-RECOVERY-CONTACT-READBACK
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -15,6 +15,7 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
 CHANGELOG:
+  v1.21.3-RECOVERY-CONTACT-READBACK: Adds independently authenticated SMTP-free recovery-contact evidence read, with bounded source-unavailable responses and no client-supplied email.
   v1.21.2-PRIVACY-SAFE-LOGIN-STAGES: Adds opt-in WILSY_AUTH_TIMING=1 phase timings for admission throttling, credential verification, throttle reset and tenant/MFA evidence. No passwords, emails, user IDs, tokens or tenant identifiers are logged; HTTP responses and enforcement unchanged.
   v1.21.1-LOGIN-WORKER-ISOLATION: Isolates the synchronous tenant-bound login rate-limit, MongoDB identity checks and bcrypt work from the FastAPI event loop through its own worker thread; preserves existing admission, 429/503 semantics and MFA challenge issuance. No credentials are logged, no timeout increased, no identity or IAM mutations added.
   v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION: Delegates synchronous
@@ -147,6 +148,7 @@ from ..saas.auth.password_recovery_contact_verification_request_service import (
     RecoveryContactVerificationRequestError,
     RecoveryContactVerificationRequestResult,
     RecoveryContactVerificationRequestService,
+    read_recovery_contact_status,
 )
 from ..saas.auth.password_recovery_contact_verification_service import (
     RecoveryContactVerificationCode,
@@ -1182,6 +1184,41 @@ def _recovery_contact_verification_completion_service(
         contact_registry=contact_registry,
         auth_registry=get_auth_registry(None),
     )
+
+
+def _recovery_contact_status_read(identity: SovereignIdentity) -> str:
+    """Read verified-contact evidence without constructing any mail dependency."""
+    return read_recovery_contact_status(
+        identity=identity,
+        auth_registry=get_auth_registry(None),
+        contact_registry=VerifiedRecoveryContactRegistry(),
+    )
+
+
+@router.get("/recovery-contact/status")
+async def recovery_contact_status(
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> dict[str, str]:
+    """Authenticated, SMTP-independent current-address verification readback.
+
+    No email or address digest is returned. Unknown, stale and unavailable
+    source states are never presented as verified or as an empty result.
+    """
+    from starlette.concurrency import run_in_threadpool
+
+    try:
+        result = await run_in_threadpool(_recovery_contact_status_read, identity)
+    except Exception as error:
+        _log_error(
+            RuntimeError(type(error).__name__),
+            "RECOVERY_CONTACT_STATUS_SOURCE_UNAVAILABLE",
+            tenant_id=identity.tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery email status is temporarily unavailable.",
+        ) from None
+    return {"status": result}
 
 
 @router.post(
