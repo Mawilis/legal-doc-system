@@ -1,5 +1,5 @@
 """TITLE: WILSY headcount HTTP authority contract certification.
-VERSION: v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT
+VERSION: v1.3.1-M03-EXACT-SOURCE-STATUS-CERT
 AUTHORITY: Repository-owned regression certificate for Python EOS route composition.
 EPITOME: Pins mounted route shape, customer HR and exact-WILSY employer IAM pairs,
          least-privilege grants, and the independent headcount maker/checker split.
@@ -7,9 +7,11 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering; certifies headcount_requisition_router.py and existing shared authorization composition.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
-  v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT — Certifies bounded real Overview projection and independent
+  v1.3.1-M03-EXACT-SOURCE-STATUS-CERT — Proves the bounded Overview serializes the actual
+  enum-backed source status, not a synthetic status-string fallback.
+  v1.3.1-M03-EXACT-SOURCE-STATUS-CERT — Certifies bounded real Overview projection and independent
   HTTP IAM denial before any headcount transaction.
-  v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT — Corrects the release marker so the header, current changelog and end seal agree exactly; behavioral assertions are unchanged.
+  v1.3.1-M03-EXACT-SOURCE-STATUS-CERT — Corrects the release marker so the header, current changelog and end seal agree exactly; behavioral assertions are unchanged.
   v1.2.0-PLATFORM-EMPLOYER-SCOPE-CERT — Verifies exact employer and customer permission pairs are bound to the same headcount routes without changing command semantics.
   v1.1.0-HEADCOUNT-DECISION-ID-FIX-CERT — Certifies decision identifier and maker/checker route contract.
   v1.0.0-HEADCOUNT-HTTP-CERT — Pins authenticated headcount route mount and customer IAM binding.
@@ -144,7 +146,7 @@ def test_paged_overview_is_independently_authorized_and_excludes_private_fields(
                 department_id="DEPT-1",
                 work_location="Office",
                 headcount=2,
-                status=SimpleNamespace(value="SUBMITTED"),
+                status=subject.RequisitionStatus.SUBMITTED,
                 revision=3,
                 business_justification="PRIVATE-BUSINESS-REASON",
                 requested_by_principal_id="PRIVATE-PRINCIPAL",
@@ -162,6 +164,7 @@ def test_paged_overview_is_independently_authorized_and_excludes_private_fields(
     assert body["total"] == 13
     assert body["limit"] == 5 and body["offset"] == 10
     assert body["hasMore"] is True
+    assert body["items"][0]["status"] == "SUBMITTED"
     assert observed == {"tenant_id": "TENANT-A", "limit": 5, "offset": 10}
     assert "PRIVATE-BUSINESS-REASON" not in response.text
     assert "PRIVATE-PRINCIPAL" not in response.text
@@ -185,7 +188,7 @@ def test_headcount_overview_denies_before_transaction(
 
 
 # ARTIFACT: test_headcount_requisition_http_contract.py
-# VERSION: v1.3.0-M03-HEADCOUNT-OVERVIEW-HTTP-CERT
+# VERSION: v1.3.1-M03-EXACT-SOURCE-STATUS-CERT
 # AUTHORITY BOUNDARY: Regression evidence for existing EOS permission metadata, static grants, exact route pairs, and mounted surface only; it grants no runtime authority.
 # TENANT POSTURE: Customer permissions are tenant-scoped; platform-employer pairs are canonical-WILSY-only through the shared authorization adapter.
 # FAIL-CLOSED POSTURE: Route wiring, role-grant, binding, or scope-contract drift fails this certificate.
