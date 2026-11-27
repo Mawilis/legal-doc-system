@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP
+ * VERSION: v4.22.1-DELETE-RETIRED-BREADCRUMB-MOBILE-RULE
+ * CHANGELOG: v4.22.1-DELETE-RETIRED-BREADCRUMB-MOBILE-RULE removes the last mobile-only breadcrumb style and obsolete extra-height assumption from the owned People canvas.
  * CHANGELOG: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP removes the redundant full-width Headquarters/People breadcrumb strip and delegates its existing return navigation to the People application header, recovering vertical workspace without duplicating tenant identity.
  * CHANGELOG: v4.21.2-EXACT-LEGAL-NAME-ALIAS supports exact authenticated legal_name projection in the employer header and persistent footer without independent tenant lookup.
  * CHANGELOG: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY reads legal employer identity from the exact authenticated global principal tenant projection, preserving independent existing Headquarters mounts without requiring a second tenant provider.
@@ -436,7 +437,7 @@ body:has(.wilsyHqShell)::after{display:none}
 .wilsyHqShell .hq-layout--people-owned{min-height:0!important;overflow:hidden!important}
 .wilsyHqShell .hq-content--people-owned{height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
 
-@media(max-width:767px){.hq-people-navigation{padding:10px 14px;flex-wrap:wrap}.hq-global-footer{padding:14px}.wilsyHqShell .hq-people-owned{min-height:calc(100dvh - 180px)}}
+@media(max-width:767px){.hq-global-footer{padding:14px}.wilsyHqShell .hq-people-owned{min-height:0}}
 
 
 `;
@@ -1829,7 +1830,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP
+ * VERSION: v4.22.1-DELETE-RETIRED-BREADCRUMB-MOBILE-RULE
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
