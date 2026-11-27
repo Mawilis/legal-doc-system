@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT
+ * VERSION: v1.2.0-OBSERVED-ORGANIZATION-READBACK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,12 +9,13 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
- *   v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
- *   v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
- *   v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
- *   v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
- *   v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
+ *   v1.2.0-OBSERVED-ORGANIZATION-READBACK asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
+ *   v1.2.0-OBSERVED-ORGANIZATION-READBACK confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
+ *   v1.2.0-OBSERVED-ORGANIZATION-READBACK uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
+ *   v1.2.0-OBSERVED-ORGANIZATION-READBACK certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
+ *   v1.2.0-OBSERVED-ORGANIZATION-READBACK verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
+ *   v1.2.0-OBSERVED-ORGANIZATION-READBACK asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
+ *   v1.2.0-OBSERVED-ORGANIZATION-READBACK verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
  *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
@@ -242,6 +243,56 @@ beforeEach(() => {
 });
 
 describe('production People Overview source contracts', () => {
+
+  it('shows verified zero organization truth without manufacturing departments or positions', async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/organization') return Promise.resolve({data: {
+        schema: 'WILSY-HR-WORKFORCE-ORGANIZATION/V1',
+        tenant_id: 'TENANT-HR-A',
+        source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+        status: 'OBSERVED_EMPLOYEE_DISTRIBUTION',
+        active_employees: 0, unassigned_employees: 0,
+        department_count: 0, departments: [],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'), {response: {status: 404}}));
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    expect(await screen.findByRole('heading', {name: 'Organization'})).toBeInTheDocument();
+    await waitFor(() => expect(mockState.apiGet).toHaveBeenCalledWith(
+      '/hr/workforce/organization',
+      expect.objectContaining({headers: {'X-Tenant-ID': 'TENANT-HR-A'}}),
+    ));
+    expect(await screen.findByText(/No department distribution exists/)).toBeInTheDocument();
+    expect(screen.queryByText('Engineering')).not.toBeInTheDocument();
+  });
+
+  it('rejects cross-tenant organization readback rather than showing a foreign department', async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/organization') return Promise.resolve({data: {
+        schema: 'WILSY-HR-WORKFORCE-ORGANIZATION/V1',
+        tenant_id: 'TENANT-HR-B',
+        source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+        status: 'OBSERVED_EMPLOYEE_DISTRIBUTION',
+        active_employees: 7, unassigned_employees: 0,
+        department_count: 1,
+        departments: [{name: 'Foreign Department', active_employees: 7}],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'), {response: {status: 404}}));
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    expect(await screen.findByText(/EOS could not verify the organization distribution/)).toBeInTheDocument();
+    expect(screen.queryByText('Foreign Department')).not.toBeInTheDocument();
+  });
+
+
   it('opens a readable source-backed Workforce directory and verifies an exact-tenant detail before preview', async () => {
     mockState.apiGet.mockImplementation((path) => {
       if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
@@ -344,7 +395,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.1.2-WORKFORCE-SEARCH-SEMANTIC-RESULT
+ * VERSION: v1.2.0-OBSERVED-ORGANIZATION-READBACK
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
