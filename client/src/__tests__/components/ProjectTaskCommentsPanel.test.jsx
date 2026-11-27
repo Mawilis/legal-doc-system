@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.13.2-COMPACT-GOVERNED-ACTIVITY-CERT
+ * VERSION: v1.13.3-STABLE-ADVANCED-FILTER-A11Y-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
  * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.
+ * CHANGELOG: v1.13.3-STABLE-ADVANCED-FILTER-A11Y-CERT asserts that active filter status does not change the exact accessible control name.
  * CHANGELOG: v1.13.2-COMPACT-GOVERNED-ACTIVITY-CERT verifies optional secondary filter disclosure and visibly audited correction affordance.
  * CHANGELOG: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT checks stable button names with counts 0 and 1 to prevent accessibility/search regressions.
  * CHANGELOG: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT verifies count, actor text, Mine/date/order filters and clear operations without additional EOS calls.
@@ -202,7 +203,8 @@ it('filters only the verified activity page without refetching or changing immut
   const initialReads = api.get.mock.calls.length;
   expect(screen.getByRole('button', { name: 'Updates' })).toHaveTextContent('1');
   expect(screen.getByRole('button', { name: 'All activity' })).toHaveTextContent('1');
-  expect(screen.getByRole('button', { name: 'More filters' })).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('button', { name: 'More filters', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('button', { name: 'More filters', exact: true })).toHaveTextContent('Active');
   fireEvent.click(screen.getByRole('button', { name: 'More filters' }));
   expect(screen.getByRole('button', { name: 'Hide filters' })).toHaveAttribute('aria-expanded', 'true');
   fireEvent.click(screen.getByRole('button', { name: 'Mine only' }));
@@ -491,7 +493,7 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.13.2-COMPACT-GOVERNED-ACTIVITY-CERT
+// VERSION: v1.13.3-STABLE-ADVANCED-FILTER-A11Y-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write
