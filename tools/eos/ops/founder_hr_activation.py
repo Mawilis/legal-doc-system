@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Canonical Founder HR Activation Operator
-VERSION: v1.0.0-BOUNDED-FOUNDER-HR-ACTIVATION
+VERSION: v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES
 AUTHORITY: Owner-password/TOTP authenticated local Python EOS orchestration.
 EPITOME: Issue canonical R0 HR entitlement and an independently delegated HR
          Manager role plus active business capacity using source-owned commands.
@@ -8,7 +8,8 @@ COLLABORATION / OWNERSHIP: AuthRegistry authenticates; D22B3 issues entitlement;
                             invitation authorities issue/consume roles; multi
                             business-role repository owns capacity history.
 CERTIFICATION / UPDATE DATE: 2026-11-27
-CHANGELOG: v1.0.0-BOUNDED-FOUNDER-HR-ACTIVATION composes owner-authenticated,
+CHANGELOG: v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES preserves safe typed issuer and local-auth denial codes instead of collapsing every failure into an opaque generic error.
+           v1.0.0-BOUNDED-FOUNDER-HR-ACTIVATION composes owner-authenticated,
            development-only HR entitlement, invitation-based HR_MANAGER role
            and separately versioned tenant_hr_manager capacity issuance.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -69,7 +70,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 from tools.eos.saas.domain.tenant_product_entitlement import TenantProductEntitlementState
 from tools.eos.ops.founder_hr_iam_preflight import inspect_founder_hr_prerequisites
 
-VERSION: Final[str] = "v1.0.0-BOUNDED-FOUNDER-HR-ACTIVATION"
+VERSION: Final[str] = "v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES"
 _IDEMPOTENCY_KEY: Final[str] = "founder-hr-r0-activation-v1"
 _ALLOWED_ENV: Final[frozenset[str]] = frozenset({"development", "dev", "local", "test", "testing"})
 _ENABLE_ENV: Final[str] = "WILSY_FOUNDER_HR_ACTIVATION"
@@ -289,8 +290,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(report, sort_keys=True))
         return 0
     except Exception as error:
-        code = (str(error) if isinstance(error, FounderHRActivationError)
-                else "FOUNDER_HR_ACTIVATION_DENIED_OR_UNAVAILABLE")
+        # Only typed, bounded institutional codes may escape to stdout.
+        bounded = getattr(error, "code", None)
+        if isinstance(error, FounderHRActivationError):
+            code = str(error)
+        elif isinstance(bounded, str) and bounded.isascii() and bounded.replace("_", "").isalnum():
+            code = bounded
+        else:
+            code = "FOUNDER_HR_ACTIVATION_DENIED_OR_UNAVAILABLE"
         print(json.dumps({"status": code, "authenticated_http_verified": False}))
         return 2
     finally:
@@ -302,7 +309,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/founder_hr_activation.py
-# VERSION: v1.0.0-BOUNDED-FOUNDER-HR-ACTIVATION
+# VERSION: v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES
 # AUTHORITY BOUNDARY: Local owner-authenticated orchestration of existing governed sources only.
 # TENANT POSTURE: Canonical Wilsy employer; no customer, global root or alias fallback.
 # FAIL-CLOSED POSTURE: No unverified stage is reported as authenticated EOS HR access.
