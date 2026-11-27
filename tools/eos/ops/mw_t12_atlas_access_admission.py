@@ -1,5 +1,5 @@
 """TITLE: MW-T12 synthetic Atlas temporary source-IP admission.
-VERSION: v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY
+VERSION: v1.6.0-PRIVATE-CONSUMER-LEDGER
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Inventory the shared free Atlas test project's network exposure and
          optionally admit exactly one verified ECS task public source IP for
@@ -8,6 +8,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw
 COLLABORATION / OWNERSHIP: Read-only AWS ECS/EC2 identity via existing MW-T12
          task admission; Atlas Admin API v2 project-scoped network capability.
 CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.6.0-PRIVATE-CONSUMER-LEDGER exports an exclusive local
+           0600 network attribution ledger from verified Atlas read-only
+           inventory, with unknown consumers unverified and source fingerprint
+           pinned; no cloud writes, no assumed ownership or release claims.
 CHANGELOG: v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY adds opt-in
            client-credentials OAuth for existing Atlas Service Accounts,
            limited to read-only project access inventory and isolation audit;
@@ -50,6 +54,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from getpass import getpass
 import ipaddress
@@ -57,7 +63,7 @@ import re
 
 from tools.eos.ops import mw_t12_task_definition_admission as ecs
 
-VERSION = "v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY"
+VERSION = "v1.6.0-PRIVATE-CONSUMER-LEDGER"
 PROJECT = "668cdbbd975c3c0f05fca20c"
 ACCOUNT = "121014832643"
 REGION = "af-south-1"
@@ -278,6 +284,65 @@ def certify_isolated_network(entries: list[dict]) -> None:
     print("MW_T12_ATLAS_BACKUP_RESTORE_CERTIFIED=FALSE")
 
 
+def write_consumer_ledger(entries: list[dict], destination: str) -> None:
+    """Write a private, non-overwriting source ownership review worksheet.
+
+    The local ledger contains real project network addresses and must never
+    be committed to GitHub, shared publicly or treated as an approval.
+    Blank source comments remain explicitly UNATTRIBUTED, not unused.
+    The network hash allows the operator to distinguish this observed set
+    from any later modified Atlas state without leaking addresses to stdout.
+    """
+    path = Path(destination).expanduser()
+    require(path.is_absolute() and path.suffix == ".json"
+            and path.parent.is_dir() and not path.parent.is_symlink()
+            and not path.exists(),
+            "CONSUMER_LEDGER_DESTINATION_NOT_PRIVATE_NEW_FILE")
+    networks = [entry_ip(row) for row in entries]
+    require(len(networks) == len(set(networks)),
+            "CONSUMER_LEDGER_SOURCE_NETWORK_DUPLICATE")
+    content = {
+        "schema": "wilsy.mwt12.atlas.consumer-attribution.v1",
+        "project": "legal-doc-test",
+        "source_fingerprint_sha3_512": network_fingerprint(entries),
+        "observed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "audit_only": True,
+        "network_entries": [{
+            "network": network,
+            "atlas_comment": row.get("comment") or "",
+            "consumer": "",
+            "consumer_evidence": "",
+            "confirmed_by": "",
+            "independently_tested": False,
+            "migration_approved": False,
+            "removal_approved": False,
+        } for network, row in sorted(
+            zip(networks, entries, strict=True), key=lambda item: item[0]
+        )],
+        "warning": (
+            "Unattributed is not unused; do not delete or narrow entries "
+            "without independently verified consumers, change approval, "
+            "and tested rollback. This ledger is never release authority."
+        ),
+    }
+    payload = (json.dumps(content, indent=2, sort_keys=True) + "\n").encode()
+    require(len(payload) <= 1048576, "CONSUMER_LEDGER_TOO_LARGE")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o600)
+        with os.fdopen(descriptor, "wb") as output:
+            output.write(payload)
+    except OSError as exc:
+        raise NetworkAdmissionError(
+            "CONSUMER_LEDGER_WRITE_DENIED"
+        ) from None
+    print("MW_T12_CONSUMER_LEDGER_WRITTEN=PRIVATE_0600")
+    print("MW_T12_CONSUMER_LEDGER_ENTRIES=" + str(len(networks)))
+    print("MW_T12_CONSUMER_ATTRIBUTION_CERTIFIED=FALSE")
+
+
 def public_source_ip(profile: str, task_arn: str) -> str:
     """Resolve precisely one already-running nonproduction Fargate task's ENI.
 
@@ -493,6 +558,8 @@ def main(argv: list[str] | None = None) -> int:
                         default="api-key",
                         help="Explicit Atlas Admin API authentication mode")
     parser.add_argument("--task-arn", help="Exact running owned Fargate task ARN")
+    parser.add_argument("--consumer-ledger",
+                        help="New absolute local JSON path; read-only / mode 0600")
     parser.add_argument("--certify-isolation", action="store_true",
                         help="Read-only deny of unowned or public Atlas access")
     actions = parser.add_mutually_exclusive_group()
@@ -504,6 +571,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="Exact recorded /32 source IPv4 for owned rollback")
     args = parser.parse_args(argv)
     try:
+        require(not args.consumer_ledger or args.certify_isolation,
+                "CONSUMER_LEDGER_REQUIRES_READONLY_ISOLATION")
         require(args.auth_mode != "service-account" or (
             args.certify_isolation and not (args.task_arn or args.admit_six_hours
                                             or args.revoke_owned
@@ -523,6 +592,8 @@ def main(argv: list[str] | None = None) -> int:
         try:
             entries = inventory(client)
             audit_entries(entries)
+            if args.consumer_ledger:
+                write_consumer_ledger(entries, args.consumer_ledger)
             if args.certify_isolation:
                 certify_isolated_network(entries)
             if args.revoke_owned:
@@ -553,7 +624,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/mw_t12_atlas_access_admission.py
-# VERSION: v1.5.0-OAUTH-SERVICE-ACCOUNT-READONLY
+# VERSION: v1.6.0-PRIVATE-CONSUMER-LEDGER
 # AUTHORITY BOUNDARY: Exact temporary /32 source add/owned delete only.
 # TENANT POSTURE: Synthetic test database only; no production read/write.
 # FAIL-CLOSED POSTURE: Wildcard add blocked; delete restricted to owned task.
