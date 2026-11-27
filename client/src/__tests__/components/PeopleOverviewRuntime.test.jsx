@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.1.0-WORKFORCE-DIRECTORY-DETAIL-RUNTIME
+ * VERSION: v1.1.1-WORKFORCE-DIRECTORY-VALID-ID-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,10 +9,11 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.1.0-WORKFORCE-DIRECTORY-DETAIL-RUNTIME certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
- *   v1.1.0-WORKFORCE-DIRECTORY-DETAIL-RUNTIME verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
- *   v1.1.0-WORKFORCE-DIRECTORY-DETAIL-RUNTIME asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
- *   v1.1.0-WORKFORCE-DIRECTORY-DETAIL-RUNTIME verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
+ *   v1.1.1-WORKFORCE-DIRECTORY-VALID-ID-CERT uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
+ *   v1.1.1-WORKFORCE-DIRECTORY-VALID-ID-CERT certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
+ *   v1.1.1-WORKFORCE-DIRECTORY-VALID-ID-CERT verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
+ *   v1.1.1-WORKFORCE-DIRECTORY-VALID-ID-CERT asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
+ *   v1.1.1-WORKFORCE-DIRECTORY-VALID-ID-CERT verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
  *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
@@ -247,13 +248,13 @@ describe('production People Overview source contracts', () => {
         data: { schema: 'WILSY-HEADCOUNT-OVERVIEW/V1', source: 'EOS_HEADCOUNT_REQUISITIONS',
           tenant_id: 'TENANT-HR-A', items: [], total: 0, limit: 12, offset: 0, hasMore: false },
       });
-      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
-      if (path === '/hr/workforce/Tenant%20A%20Verified%20Employee') return Promise.resolve({
+      if (path === '/hr/workforce') return Promise.resolve({ data: { ...validPage('Tenant A Verified Employee').data, items: [{ ...validPage('Tenant A Verified Employee').data.items[0], employeeId: 'EMP-A-001' }] } });
+      if (path === '/hr/workforce/EMP-A-001') return Promise.resolve({
         data: {
           schema: 'WILSY-HR-WORKFORCE-DIRECTORY-DETAIL/V1',
           source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
           tenant_id: 'TENANT-HR-A',
-          employee: { employeeId: 'Tenant A Verified Employee', displayName: 'Tenant A Verified Employee',
+          employee: { employeeId: 'EMP-A-001', displayName: 'Tenant A Verified Employee',
             jobTitle: 'Engineer', department: 'Engineering', managerId: null,
             employmentStatus: 'ACTIVE', workEmail: 'synthetic@example.invalid' },
         },
@@ -266,10 +267,10 @@ describe('production People Overview source contracts', () => {
     const employee = await screen.findByRole('button', { name: /Tenant A Verified Employee/ });
     fireEvent.click(employee);
     await waitFor(() => expect(mockState.apiGet).toHaveBeenCalledWith(
-      '/hr/workforce/Tenant%20A%20Verified%20Employee',
+      '/hr/workforce/EMP-A-001',
       expect.objectContaining({ headers: { 'X-Tenant-ID': 'TENANT-HR-A' } }),
     ));
-    expect(await screen.findByRole('region', { name: 'Employee directory preview' })).toHaveTextContent('Engineer');
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Employee directory preview' })).toHaveTextContent('Engineer'));
     expect(screen.queryByText('bankAccount')).not.toBeInTheDocument();
   });
 
@@ -280,7 +281,7 @@ describe('production People Overview source contracts', () => {
         data: { schema: 'WILSY-HEADCOUNT-OVERVIEW/V1', source: 'EOS_HEADCOUNT_REQUISITIONS',
           tenant_id: 'TENANT-HR-A', items: [], total: 0, limit: 12, offset: 0, hasMore: false },
       });
-      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce') return Promise.resolve({ data: { ...validPage('Tenant A Verified Employee').data, items: [{ ...validPage('Tenant A Verified Employee').data.items[0], employeeId: 'EMP-A-001' }] } });
       return Promise.reject(Object.assign(new Error('denied'), { response: { status: 403 } }));
     });
     renderDashboard();
@@ -342,7 +343,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.1.0-WORKFORCE-DIRECTORY-DETAIL-RUNTIME
+ * VERSION: v1.1.1-WORKFORCE-DIRECTORY-VALID-ID-CERT
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
