@@ -3,11 +3,12 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.6.0-WORKFORCE-DIRECTORY-OPERATING-SURFACE
+ * Version:        v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
+ * Change log: 2026-11-28 v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST fixes the Workforce search icon to high-contrast navy on white, with an explicit stroke override and stable size; no other surface, source or authority changes.
  * Change log: 2026-11-28 v2.6.0-WORKFORCE-DIRECTORY-OPERATING-SURFACE establishes a high-contrast, responsive EOS workforce directory, restrained search and paging toolbar, verified-empty guidance, permission-safe employee detail, and keyboard focus semantics.
  * Change log: 2026-11-27 v2.5.11-LIFECYCLE-SOURCE-HIGH-CONTRAST restores high-contrast navy/slate lifecycle source labels and status on light buttons, with scoped focus/hover styling, without changing approved navigation gold or OS tenant semantics.
  * Change log: 2026-11-27 v2.5.10-OPERATING-SOURCE-INDEX presents the four live EOS sources as a low-height two-column operating index rather than a decorative KPI card grid. Each verified row remains keyboard-operable, with a right-aligned count, readable source description and clear navigation affordance.
@@ -15,7 +16,7 @@
  * Change log: 2026-11-27 v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE restores continuous light work canvas and high-contrast per-source inspection.\n * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.6.0-WORKFORCE-DIRECTORY-OPERATING-SURFACE
+ * VERSION: v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
@@ -1864,6 +1865,14 @@
   border: 1px solid #9eb2ca;
   border-radius: 8px;
 }
+.peopleSurface .workforceSearch > svg {
+  color: #173c70 !important;
+  stroke: #173c70 !important;
+  opacity: 1 !important;
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+}
 .peopleSurface .workforceSearch input {
   flex: 1 1 auto;
   width: 100%;
@@ -2011,7 +2020,7 @@
 }
 
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.6.0-WORKFORCE-DIRECTORY-OPERATING-SURFACE
+ * VERSION: v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST
  * AUTHORITY BOUNDARY: Presentation only; source authorization remains exclusively Python EOS-owned.
  * TENANT POSTURE: No employee or tenant state in CSS; exact tenant boundary unchanged.
  * FAIL-CLOSED POSTURE: Source unavailability, denial and verified results remain distinct.
