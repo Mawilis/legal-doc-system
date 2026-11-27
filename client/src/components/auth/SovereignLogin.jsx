@@ -6,14 +6,15 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Workspace Sign-In
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.9.1-OFFICIAL-SQUARE-BRAND
+ * VERSION: v3.10.0-EXPLICIT-FOUNDER-HR-CAPACITY-CHOICE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/SovereignLogin.jsx
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
- * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v3.10.0-EXPLICIT-FOUNDER-HR-CAPACITY-CHOICE adds a governed, opt-in HR login journey that offers only the canonical employer capacities returned by EOS, before MFA; legacy tenant sign-in stays intact.
  * CHANGELOG: v3.9.1-OFFICIAL-SQUARE-BRAND uses the same official
  * square platform mark. Credential, discovery, MFA and customer identity
  * contracts are preserved; no client-owned authentication authority is added.
@@ -92,7 +93,10 @@ import TenantIdentityCard from './TenantIdentityCard.jsx';
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading, error: authError, tenant, authStage } = useAuth();
+  const { login, beginGlobalCapacityLogin, selectGlobalCapacity, loading, error: authError, tenant, authStage } = useAuth();
+  const hrCapacitySignIn = new URLSearchParams(location.search).get('capacity') === 'hr';
+  const [verifiedOptions, setVerifiedOptions] = useState([]);
+  const [selectedHrRole, setSelectedHrRole] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -104,6 +108,18 @@ export default function SovereignLogin({ onLoginSuccess }) {
     event.preventDefault();
     setError('');
     try {
+      if (hrCapacitySignIn) {
+        const result = await beginGlobalCapacityLogin(
+          email.trim(), password, 'WILSYTENANT-4CD2FZ4O',
+        );
+        if (result.status !== 'CAPACITY_SELECTION_REQUIRED' || !result.options?.length) {
+          throw new Error('HR_CAPACITY_SELECTION_NOT_VERIFIED');
+        }
+        setVerifiedOptions(result.options);
+        setSelectedHrRole('');
+        setPassword('');
+        return;
+      }
       const result = await login(email.trim(), password, resolvedTenant?.tenantId);
       if ([AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED].includes(result.status)) {
         navigate('/mfa', { replace: true, state: { tenant: resolvedTenant } });
@@ -115,6 +131,21 @@ export default function SovereignLogin({ onLoginSuccess }) {
       }
     } catch (loginError) {
       setError(loginError?.response?.data?.detail || loginError?.response?.data?.message || loginError.message || 'Authentication service unavailable.');
+    }
+  };
+
+  const handleCapacityChoice = async (event) => {
+    event.preventDefault();
+    setError('');
+    try {
+      if (!verifiedOptions.some(option => option.tenantId === 'WILSYTENANT-4CD2FZ4O' && option.role === selectedHrRole)) {
+        throw new Error('HR_CAPACITY_NOT_VERIFIED');
+      }
+      const result = await selectGlobalCapacity(selectedHrRole);
+      if (result.status !== AUTH_STATES.MFA_REQUIRED) throw new Error('HR_MFA_CHALLENGE_NOT_VERIFIED');
+      navigate('/mfa', { replace: true, state: { tenant: resolvedTenant, capacity: selectedHrRole } });
+    } catch (selectionError) {
+      setError(selectionError?.response?.data?.detail || selectionError.message || 'Capacity selection denied by EOS');
     }
   };
 
@@ -134,7 +165,26 @@ export default function SovereignLogin({ onLoginSuccess }) {
             <TenantIdentityCard tenant={resolvedTenant} integrated />
           </div>
           <div style={authZoneStyle}>
-            <form onSubmit={handleSubmit} style={formStyle}>
+            {verifiedOptions.length ? (
+              <form onSubmit={handleCapacityChoice} style={formStyle} aria-label="Select verified HR capacity">
+                <p style={subtitleStyle}>Choose the operating capacity independently verified by Python EOS. Your Founder designation and Owner capacity remain unchanged.</p>
+                <label htmlFor="wilsy-hr-capacity" style={labelStyle}>Operating capacity</label>
+                <select id="wilsy-hr-capacity" value={selectedHrRole}
+                  onChange={event => setSelectedHrRole(event.target.value)}
+                  style={inputStyle} required>
+                  <option value="">Select a capacity</option>
+                  {verifiedOptions.map(option => (
+                    <option key={option.role} value={option.role}>
+                      {option.role === 'tenant_hr_director' ? 'HR Director' : 'HR Manager'}
+                    </option>
+                  ))}
+                </select>
+                {(error || authError) && <div role="alert" style={errorStyle}><AlertCircle size={16}/><span>{error || authError}</span></div>}
+                <button type="submit" disabled={loading || !selectedHrRole} style={buttonStyle}>
+                  Continue to MFA
+                </button>
+              </form>}
+            ) : <form onSubmit={handleSubmit} style={formStyle}>
               <label htmlFor="work-email" style={labelStyle}>Work email</label>
               <input id="work-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} style={inputStyle} required />
               <div style={passwordLabelRowStyle}>
@@ -216,7 +266,7 @@ const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.9.1-OFFICIAL-SQUARE-BRAND
+ * VERSION: v3.10.0-EXPLICIT-FOUNDER-HR-CAPACITY-CHOICE
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated
