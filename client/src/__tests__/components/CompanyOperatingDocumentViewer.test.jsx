@@ -445,7 +445,7 @@ describe('governed company document experience', () => {
     expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
     await act(async () => late.resolve({ data: view(record()) }));
     expect(screen.queryByText('Synthetic source content only.')).not.toBeInTheDocument();
-    expect(api.get.mock.calls.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': next.user.tenantId });
+    expect(api.get.mock.calls.at(-1)[1].headers).toEqual({ 'X-Tenant-ID': changed.user.tenantId });
   });
   it('does not retain content when the document classification changes', async () => {
     api.get.mockResolvedValue({ data: view(record()) }); const mounted = render(wrap());
