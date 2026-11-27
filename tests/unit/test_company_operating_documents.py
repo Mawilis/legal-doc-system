@@ -559,12 +559,6 @@ def test_enterprise_admin_company_document_read_is_canonical_tenant_fenced():
     assert decision.reason is TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH
 
 
-@pytest.mark.parametrize("reference,current,status,code", [
-    (None, True, 401, "SESSION_REQUIRED"),
-    ("synthetic-reference", False, 401, "SESSION_STALE"),
-    ("synthetic-reference", None, 503, "SESSION_SOURCE_UNAVAILABLE"),
-    ("synthetic-reference", True, 200, None),
-])
 @pytest.mark.parametrize("document_allowed,author_allowed,publisher_allowed", [
     (True, False, False),
     (False, False, False),
@@ -625,6 +619,12 @@ def test_strategy_authority_check_preserves_source_unavailability() -> None:
     assert "document_read" not in response.text
 
 
+@pytest.mark.parametrize("reference,current,status,code", [
+    (None, True, 401, "SESSION_REQUIRED"),
+    ("synthetic-reference", False, 401, "SESSION_STALE"),
+    ("synthetic-reference", None, 503, "SESSION_SOURCE_UNAVAILABLE"),
+    ("synthetic-reference", True, 200, None),
+])
 def test_company_session_boundary_reuses_current_canonical_session(monkeypatch, reference, current, status, code):
     """A missing/stale session differs from unavailable currentness and legal absence."""
     def check(*args):
