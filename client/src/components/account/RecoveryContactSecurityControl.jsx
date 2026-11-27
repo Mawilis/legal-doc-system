@@ -3,7 +3,7 @@
  * WILSY OS — RECOVERY CONTACT SECURITY CONTROL
  * ============================================================================
  * TITLE: Authenticated recovery-email verification control
- * VERSION: v1.2.0-RECOVERY-STATUS-FAILURE-DIAGNOSIS
+ * VERSION: v1.3.0-VERIFIED-RECOVERY-PLAIN-LANGUAGE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Lets an authenticated user request verification of the current
  *           durable recovery email without letting the browser nominate an
@@ -13,9 +13,10 @@
  *   re-reads durable principal/email and owns verification/contact authority.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-11-27 v1.3.0 names an EOS-confirmed recovery contact Verified recovery email; all unknown, required and unavailable states retain neutral Recovery email.
  *   2026-11-27 v1.2.0 distinguishes absent EOS routes, authentication and bounded source stages and permits a read-only retry without sending email.
  *   2026-11-27 v1.1.0 reads authenticated status before enabling email issuance, suppresses redundant verification and preserves source-unavailable as a separate state.
- *   2026-09-22 v1.2.0-RECOVERY-STATUS-FAILURE-DIAGNOSIS — Adds
+ *   2026-09-22 v1.3.0-VERIFIED-RECOVERY-PLAIN-LANGUAGE — Adds
  *   pending suppression, verification-sent/already-verified states, bounded
  *   429/503 copy, and display-only current-email context.
  * COMPLIANCE: POPIA §19, GDPR §32, SOC2 §CC7.2.
@@ -117,7 +118,7 @@ export default function RecoveryContactSecurityControl({ email = '', compact = f
         <MailCheck size={compact ? 18 : 22} aria-hidden="true" />
         <div>
           <small style={eyebrowStyle}>Password recovery</small>
-          <strong style={titleStyle}>Recovery email</strong>
+          <strong style={titleStyle}>{state === 'verified' ? 'Verified recovery email' : 'Recovery email'}</strong>
         </div>
       </div>
 
@@ -136,7 +137,7 @@ export default function RecoveryContactSecurityControl({ email = '', compact = f
       {state === 'verified' && (
         <div role="status" style={statusStyle}>
           <ShieldCheck size={16} aria-hidden="true" />
-          <span>Current recovery email is already verified.</span>
+          <span>Email ownership confirmed by EOS.</span>
         </div>
       )}
 
@@ -213,7 +214,7 @@ const buttonStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: RecoveryContactSecurityControl.jsx
- * VERSION: v1.2.0-RECOVERY-STATUS-FAILURE-DIAGNOSIS
+ * VERSION: v1.3.0-VERIFIED-RECOVERY-PLAIN-LANGUAGE
  * AUTHORITY BOUNDARY: authenticated client transport/presentation only
  * TENANT POSTURE: no browser tenant/email authority submitted
  * FAIL-CLOSED POSTURE: only bounded server status updates presentation
