@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
+ * VERSION: v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,6 +9,7 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
  *   v1.7.0-EOS-CANDIDATE-EVIDENCE-LOOP — Certifies streamed candidate evidence custody, exact binary digest/size readback, stage-command gating, and stale-scope evidence response rejection.
@@ -228,7 +229,7 @@ beforeEach(() => {
   mockState.jobOpeningCreate.mockReset().mockResolvedValue({ id: 'synthetic-opening-1' });
   mockState.apiGet.mockImplementation((path) => {
     if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
-    if (path === '/hr/headcount-requisitions') return Promise.resolve({ data: { schema: 'WILSY-HEADCOUNT-REQUISITIONS/V1', tenant_id: 'TENANT-HR-A', items: [] } });
+    if (path === '/hr/headcount-requisitions/overview') return Promise.resolve({ data: { schema: 'WILSY-HEADCOUNT-OVERVIEW/V1', source: 'EOS_HEADCOUNT_REQUISITIONS', tenant_id: 'TENANT-HR-A', items: [], total: 0, limit: 12, offset: 0, hasMore: false } });
     if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
     return Promise.reject(Object.assign(new Error('synthetic unavailable source'), { response: { status: 404 } }));
   });
@@ -246,7 +247,7 @@ describe('production People Overview source contracts', () => {
     ));
     await waitFor(() => expect(screen.getByText('Current active employees · EOS')).toBeInTheDocument());
     expect(mockState.apiGet.mock.calls.some(([path]) => path === '/hr/snapshot')).toBe(false);
-    expect(mockState.apiGet.mock.calls.some(([path]) => path === '/hr/headcount-requisitions')).toBe(true);
+    expect(mockState.apiGet.mock.calls.some(([path]) => path === '/hr/headcount-requisitions/overview')).toBe(true);
   });
 
   it('routes a global People query to the independently authorized workforce search', async () => {
@@ -280,7 +281,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
+ * VERSION: v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
