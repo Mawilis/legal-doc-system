@@ -3,7 +3,7 @@
  * WILSY OS — RECOVERY CONTACT SECURITY CONTROL
  * ============================================================================
  * TITLE: Authenticated recovery-email verification control
- * VERSION: v1.0.0-R10E26-RECOVERY-CONTACT-SECURITY-CONTROL
+ * VERSION: v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Lets an authenticated user request verification of the current
  *           durable recovery email without letting the browser nominate an
@@ -13,7 +13,8 @@
  *   re-reads durable principal/email and owns verification/contact authority.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
- *   2026-09-22 v1.0.0-R10E26-RECOVERY-CONTACT-SECURITY-CONTROL — Adds
+ *   2026-11-27 v1.1.0 reads authenticated status before enabling email issuance, suppresses redundant verification and preserves source-unavailable as a separate state.
+ *   2026-09-22 v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK — Adds
  *   pending suppression, verification-sent/already-verified states, bounded
  *   429/503 copy, and display-only current-email context.
  * COMPLIANCE: POPIA §19, GDPR §32, SOC2 §CC7.2.
@@ -25,9 +26,9 @@
  * ============================================================================
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Loader2, MailCheck, ShieldCheck } from 'lucide-react';
-import { requestRecoveryContactVerification } from '../../services/api.js';
+import { getRecoveryContactStatus, requestRecoveryContactVerification } from '../../services/api.js';
 
 const messageForFailure = (status) => {
   if (status === 429) return 'Verification requests are temporarily rate-limited.';
@@ -37,11 +38,26 @@ const messageForFailure = (status) => {
 
 export default function RecoveryContactSecurityControl({ email = '', compact = false }) {
   const [pending, setPending] = useState(false);
-  const [state, setState] = useState('idle');
+  const [state, setState] = useState('loading');
   const [error, setError] = useState('');
 
+  // The first read is an SMTP-independent current-source projection.
+  useEffect(() => {
+    let current = true;
+    getRecoveryContactStatus().then((response) => {
+      if (!current) return;
+      const status = response?.data?.status;
+      setState(status === 'VERIFIED' ? 'verified'
+        : status === 'VERIFICATION_REQUIRED' ? 'required' : 'unavailable');
+    }).catch(() => {
+      if (current) setState('unavailable');
+    });
+    return () => { current = false; };
+  }, []);
+
+
   const requestVerification = async () => {
-    if (pending) return;
+    if (pending || state !== 'required') return;
     setError('');
     setPending(true);
     try {
@@ -89,6 +105,9 @@ export default function RecoveryContactSecurityControl({ email = '', compact = f
         <p style={copyStyle}>Your current account email will be verified by the server.</p>
       )}
 
+      {state === 'loading' && <p role="status" style={copyStyle}>Checking recovery email status with EOS…</p>}
+      {state === 'unavailable' && <p role="alert" style={errorStyle}>Recovery email status unavailable. Verification cannot be started until EOS verifies the current record.</p>}
+      {state === 'required' && <p role="status" style={copyStyle}>No matching verified recovery contact for the current EOS email.</p>}
       {state === 'verified' && (
         <div role="status" style={statusStyle}>
           <ShieldCheck size={16} aria-hidden="true" />
@@ -105,7 +124,7 @@ export default function RecoveryContactSecurityControl({ email = '', compact = f
 
       {error && <p role="alert" style={errorStyle}>{error}</p>}
 
-      <button
+      {state === 'required' && <button
         type="button"
         onClick={requestVerification}
         disabled={pending}
@@ -119,7 +138,7 @@ export default function RecoveryContactSecurityControl({ email = '', compact = f
               ? 'Recheck recovery email'
               : 'Verify recovery email'}
         </span>
-      </button>
+      </button>}
     </section>
   );
 }
@@ -169,7 +188,7 @@ const buttonStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: RecoveryContactSecurityControl.jsx
- * VERSION: v1.0.0-R10E26-RECOVERY-CONTACT-SECURITY-CONTROL
+ * VERSION: v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK
  * AUTHORITY BOUNDARY: authenticated client transport/presentation only
  * TENANT POSTURE: no browser tenant/email authority submitted
  * FAIL-CLOSED POSTURE: only bounded server status updates presentation
