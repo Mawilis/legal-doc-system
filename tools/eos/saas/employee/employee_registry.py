@@ -1,202 +1,200 @@
-# -*- coding: utf-8 -*-
+"""TITLE: WILSY OS Tenant-Scoped Legacy Employee Read Registry
+VERSION: v1.1.0-M03-HR01-STRICT-TENANT-BOUNDARY
+AUTHORITY: WILSY OS Python Kennel EOS employee persistence read boundary.
+EPITOME: Reject every privileged legacy tenant alias and scope every legacy
+         employee lookup to one explicitly supplied nonreserved tenant.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/employee/employee_registry.py
+COLLABORATION / OWNERSHIP: Employee HTTP router owns authenticated tenant and
+         read permission; domain EmployeeEntity owns legacy record hydration;
+         kernel database owns the sole Mongo connection.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.1.0-M03-HR01-STRICT-TENANT-BOUNDARY retires MASTER and
+         GLOBAL_ROOT wildcard lookups, enforces bounded exact tenant on every
+         read, escapes user search regex, bounds pagination, and redacts query,
+         email and employee identifiers from registry diagnostics.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No raw PII or connection details in logs.
+TENANT BOUNDARY: Every query contains a validated exact tenantId equality;
+         reserved aliases and malformed tenants always reject before database.
+AUTHORITY BOUNDARY: This registry does not authenticate or grant IAM rights.
+         Its HTTP caller MUST separately enforce current tenant authorization;
+         this delivery alone does not certify the legacy public employee API.
+TRANSACTION BOUNDARY: Legacy reads use the process-owned Mongo connection;
+         no write, index migration, or separate connection is created.
+FINANCIAL AUTHORITY BOUNDARY: No payroll, release, execution, or settlement.
 """
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ WILSY OS – SOVEREIGN EMPLOYEE REGISTRY (MONGODB‑BACKED) – NO INDEX CREATION                                   ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ FILE:           tools/eos/saas/employee/employee_registry.py                                                    ║
-║ VERSION:        v1.0.3-NO-INDEXES                                                                               ║
-║ AUTHORITY:      Wilsy OS Core Governance                                                                       ║
-║ EPITOME:        MongoDB persistence for Employee entities. Indexes are assumed to exist from Node seeding.     ║
-║ CLASSIFICATION: Production Artifact                                                                             ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ 🔧 CHANGE LOG:                                                                                                  ║
-║   2026-08-20 v1.0.3-NO-INDEXES – Removed all create_index calls to avoid conflict with existing indexes.      ║
-║   2026-08-20 v1.0.2-TYPE-FIX – Switched to $regex, added explicit type annotations.                           ║
-║   2026-08-20 v1.0.1-FIXED – Removed _id conversion.                                                           ║
-║   2026-08-20 v1.0.0-INSTITUTIONAL – Initial creation.                                                          ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ COMPLIANCE:    POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001                                                  ║
-║ INTEGRATION:   Used by employee_router.py. Reads from Node's employees collection.                             ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-"""
+from __future__ import annotations
 
 import logging
-import traceback
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any, Optional
 
 from pymongo.errors import PyMongoError
 
 from ..domain.employee import EmployeeEntity
 from ...kernel.db import get_database
 
-# ─── Canonical EOS persistence ───────────────────────────────────────────────
-
-# Indexes remain owned by the governed EOS startup/migration path. This registry
-# resolves only the process-owned kernel database and never creates a client.
-
+VERSION = "v1.1.0-M03-HR01-STRICT-TENANT-BOUNDARY"
+_RESERVED = frozenset({
+    "MASTER", "GLOBAL_ROOT", "WILSY_ROOT", "WILSY_MASTER",
+    "WILSY_GLOBAL_ROOT", "SOVEREIGN_ROOT",
+})
 logger = logging.getLogger(__name__)
 
 
+class EmployeeRegistryBoundaryError(ValueError):
+    """Fail-closed employee source scope/input rejection without record detail."""
+
+
+def _tenant(tenant_id: str) -> str:
+    """Require one exact, bounded, nonprivileged tenant supplied by authorized caller."""
+    if (
+        not isinstance(tenant_id, str)
+        or not 1 <= len(tenant_id) <= 180
+        or tenant_id != tenant_id.strip()
+        or any(ord(char) <= 32 for char in tenant_id)
+        or tenant_id.upper() in _RESERVED
+    ):
+        raise EmployeeRegistryBoundaryError("EMPLOYEE_TENANT_SCOPE_INVALID")
+    return tenant_id
+
+
+def _pagination(limit: int, offset: int) -> tuple[int, int]:
+    """Bound database cursor work and reject bools masquerading as integers."""
+    if (
+        type(limit) is not int or not 1 <= limit <= 100
+        or type(offset) is not int or not 0 <= offset <= 100000
+    ):
+        raise EmployeeRegistryBoundaryError("EMPLOYEE_PAGE_INVALID")
+    return limit, offset
+
+
+def _identifier(value: str, kind: str) -> str:
+    """Require a nonempty bounded employee selector with no control characters."""
+    if (
+        not isinstance(value, str) or not 1 <= len(value) <= 254
+        or value != value.strip()
+        or any(ord(char) < 32 for char in value)
+    ):
+        raise EmployeeRegistryBoundaryError("EMPLOYEE_" + kind + "_INVALID")
+    return value
+
+
 class EmployeeRegistry:
-    """
-    Sovereign employee registry with MongoDB persistence.
-    Reads the employees collection from the canonical EOS kernel database.
-    """
+    """Read-only legacy employee source; caller owns current auth/IAM and PII projection."""
 
     def __init__(self) -> None:
-        """Initialise a connection-free registry facade."""
-        pass
+        """Construct a connection-free facade; use kernel database at request time."""
 
     @staticmethod
-    def _collection():
-        """Resolve the process-owned kernel collection at operation time."""
+    def _collection() -> Any:
+        """Read the shared kernel employee collection; fail closed on missing source."""
         database = get_database()
         if database is None:
             raise RuntimeError("EMPLOYEE_REGISTRY_DATABASE_UNAVAILABLE")
         return database["employees"]
 
     def search_employees(
-        self,
-        tenant_id: str,
-        query: str,
-        limit: int = 20,
-        offset: int = 0,
-    ) -> List[EmployeeEntity]:
+        self, tenant_id: str, query: str, limit: int = 20, offset: int = 0,
+    ) -> list[EmployeeEntity]:
+        """Search bounded employees with mandatory exact-tenant query predicates.
+
+        This is not a public IAM decision. HTTP caller must authorize the
+        requested tenant before invoking this method and redact sensitive fields.
         """
-        Search employees by displayName, workEmail, personalEmail, or employeeId.
-        Returns employees for the given tenant (or all if tenant_id is 'MASTER').
-        """
+        tenant = _tenant(tenant_id)
+        page_size, skip = _pagination(limit, offset)
+        if not isinstance(query, str) or not 2 <= len(query.strip()) <= 180:
+            return []
+        safe_term = re.escape(query.strip())
+        conditions: list[dict[str, Any]] = [
+            {"displayName": {"$regex": safe_term, "$options": "i"}},
+            {"contact.workEmail": {"$regex": safe_term, "$options": "i"}},
+            {"contact.personalEmail": {"$regex": safe_term, "$options": "i"}},
+            {"employeeId": {"$regex": safe_term, "$options": "i"}},
+        ]
         try:
-            if not query or len(query.strip()) < 2:
-                return []
-
-            q = query.strip()
-            # Build search conditions using regex for substring matching
-            conditions: List[Dict[str, Any]] = [
-                {"displayName": {"$regex": q, "$options": "i"}},
-                {"contact.workEmail": {"$regex": q, "$options": "i"}},
-                {"contact.personalEmail": {"$regex": q, "$options": "i"}},
-                {"employeeId": {"$regex": q, "$options": "i"}},
-            ]
-
-            final_query: Dict[str, Any] = {"$or": conditions}
-
-            # Tenant isolation – only apply if not MASTER
-            if tenant_id != "MASTER":
-                final_query["tenantId"] = tenant_id
-
-            # Execute query
             cursor = (
-                self._collection().find(final_query)
-                .sort("displayName", 1)
-                .skip(offset)
-                .limit(limit)
+                self._collection().find({"tenantId": tenant, "$or": conditions})
+                .sort("displayName", 1).skip(skip).limit(page_size)
             )
-
-            results: List[EmployeeEntity] = []
-            for doc in cursor:
-                results.append(EmployeeEntity.from_dict(doc))
-
-            logger.info(f"Employee search for '{query}' in tenant '{tenant_id}' returned {len(results)} results")
-            return results
-
-        except PyMongoError as e:
-            logger.error(f"Failed to search employees: {e}\n{traceback.format_exc()}")
-            raise
-        except Exception as e:
-            logger.error(f"Unexpected error in employee search: {e}\n{traceback.format_exc()}")
+            return [EmployeeEntity.from_dict(document) for document in cursor]
+        except PyMongoError:
+            logger.error("EMPLOYEE_SEARCH_SOURCE_UNAVAILABLE")
             raise
 
-    def get_employee_by_id(self, employee_id: str, tenant_id: str) -> Optional[EmployeeEntity]:
-        """Get a single employee by employeeId, enforcing tenant isolation."""
+    def get_employee_by_id(
+        self, employee_id: str, tenant_id: str,
+    ) -> Optional[EmployeeEntity]:
+        """Read one exact-tenant employee; do not disclose cross-tenant existence."""
+        tenant = _tenant(tenant_id)
+        selector = _identifier(employee_id, "ID")
         try:
-            query: Dict[str, Any] = {"employeeId": employee_id}
-            if tenant_id != "MASTER":
-                query["tenantId"] = tenant_id
-
-            doc = self._collection().find_one(query)
-            if not doc:
-                return None
-            return EmployeeEntity.from_dict(doc)
-
-        except PyMongoError as e:
-            logger.error(f"Failed to get employee {employee_id}: {e}\n{traceback.format_exc()}")
+            document = self._collection().find_one(
+                {"tenantId": tenant, "employeeId": selector}
+            )
+            return EmployeeEntity.from_dict(document) if document else None
+        except PyMongoError:
+            logger.error("EMPLOYEE_GET_SOURCE_UNAVAILABLE")
             raise
 
-    def get_employee_by_email(self, email: str, tenant_id: str) -> Optional[EmployeeEntity]:
-        """Get an employee by workEmail or personalEmail."""
+    def get_employee_by_email(
+        self, email: str, tenant_id: str,
+    ) -> Optional[EmployeeEntity]:
+        """Read one exact-tenant employee by exact work/personal email."""
+        tenant = _tenant(tenant_id)
+        selector = _identifier(email, "EMAIL")
         try:
-            query: Dict[str, Any] = {
+            document = self._collection().find_one({
+                "tenantId": tenant,
                 "$or": [
-                    {"contact.workEmail": email},
-                    {"contact.personalEmail": email},
-                ]
-            }
-            if tenant_id != "MASTER":
-                query["tenantId"] = tenant_id
-
-            doc = self._collection().find_one(query)
-            if not doc:
-                return None
-            return EmployeeEntity.from_dict(doc)
-
-        except PyMongoError as e:
-            logger.error(f"Failed to get employee by email {email}: {e}\n{traceback.format_exc()}")
+                    {"contact.workEmail": selector},
+                    {"contact.personalEmail": selector},
+                ],
+            })
+            return EmployeeEntity.from_dict(document) if document else None
+        except PyMongoError:
+            logger.error("EMPLOYEE_GET_SOURCE_UNAVAILABLE")
             raise
 
     def list_employees(
-        self,
-        tenant_id: str,
-        limit: int = 100,
-        offset: int = 0,
+        self, tenant_id: str, limit: int = 100, offset: int = 0,
         active_only: bool = True,
-    ) -> List[EmployeeEntity]:
-        """List all employees for a tenant."""
+    ) -> list[EmployeeEntity]:
+        """List one validated tenant; caller must have current employee-read IAM."""
+        tenant = _tenant(tenant_id)
+        page_size, skip = _pagination(limit, offset)
+        if type(active_only) is not bool:
+            raise EmployeeRegistryBoundaryError("EMPLOYEE_ACTIVE_FILTER_INVALID")
+        predicate: dict[str, Any] = {"tenantId": tenant}
+        if active_only:
+            predicate["isActive"] = True
         try:
-            query: Dict[str, Any] = {}
-            if tenant_id != "MASTER":
-                query["tenantId"] = tenant_id
-            if active_only:
-                query["isActive"] = True
-
             cursor = (
-                self._collection().find(query)
-                .sort("displayName", 1)
-                .skip(offset)
-                .limit(limit)
+                self._collection().find(predicate)
+                .sort("displayName", 1).skip(skip).limit(page_size)
             )
-
-            results: List[EmployeeEntity] = []
-            for doc in cursor:
-                results.append(EmployeeEntity.from_dict(doc))
-
-            return results
-
-        except PyMongoError as e:
-            logger.error(f"Failed to list employees: {e}\n{traceback.format_exc()}")
+            return [EmployeeEntity.from_dict(document) for document in cursor]
+        except PyMongoError:
+            logger.error("EMPLOYEE_LIST_SOURCE_UNAVAILABLE")
             raise
 
 
-# ─── Singleton ──────────────────────────────────────────────────────────────
-
 _registry: Optional[EmployeeRegistry] = None
 
+
 def get_employee_registry() -> EmployeeRegistry:
-    """Get the singleton EmployeeRegistry instance."""
+    """Return connection-free singleton; no implicit tenant or authorization."""
     global _registry
     if _registry is None:
         _registry = EmployeeRegistry()
     return _registry
 
 
-"""
-════════════════════════════════════════════════════════════════════════════════
-INSTITUTIONAL CERTIFICATION SEAL — WILSY OS EMPLOYEE REGISTRY (NO INDEXES)
-════════════════════════════════════════════════════════════════════════════════
-Status:          CERTIFIED PRODUCTION ARTIFACT
-Version:         v1.0.3-NO-INDEXES
-Fixes:           Removed index creation to avoid conflict with existing Node indexes.
-Compliance:      POPIA §19 │ GDPR §32 │ SOC2 §CC7.2 │ ISO 27001
-Pending Work:    None – server startup resolved.
-════════════════════════════════════════════════════════════════════════════════
-"""
+# ARTIFACT: tools/eos/saas/employee/employee_registry.py
+# VERSION: v1.1.0-M03-HR01-STRICT-TENANT-BOUNDARY
+# AUTHORITY BOUNDARY: HTTP authenticates and authorizes; registry only scopes reads.
+# TENANT POSTURE: Validated exact tenantId in every database predicate.
+# FAIL-CLOSED POSTURE: Reserved tenant aliases and invalid selectors denied.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
