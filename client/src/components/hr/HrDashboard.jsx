@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.12.4-SOURCE-AUTHORITY-TRANSPARENCY
+ * VERSION: v2.13.0-FIRST-HR-LEADERSHIP-REQUEST
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,7 +12,8 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v2.12.4-SOURCE-AUTHORITY-TRANSPARENCY retains independent workforce/hiring/offer/headcount admission states, distinguishes denied from unavailable, and displays bounded source details without IAM elevation.
+ *   v2.13.0-FIRST-HR-LEADERSHIP-REQUEST opens a compact, actual EOS-backed first HR leadership DRAFT requisition in the headcount lane after current authorized source read. Independent approval, candidate admission and IAM grants remain unchanged.
+ *   v2.13.0-FIRST-HR-LEADERSHIP-REQUEST retains independent workforce/hiring/offer/headcount admission states, distinguishes denied from unavailable, and displays bounded source details without IAM elevation.
  *   v2.12.1-HQ-RETURN-ICON-IMPORT includes the actual icon dependency required by the new contextual People header return control.
  *   v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN mounts a single accessible compact Headquarters return inside the contextual People application header; removes the need for a duplicate external navigation rail.
  *   v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES bounds Overview to concurrent independently governed sources and every other HR lane to its selected source; search no longer refetches unrelated workforce aggregates.
@@ -109,6 +110,7 @@ import { resolveCountryOption, searchSovereignCountries } from '../../data/sover
 import { exportCSV } from '../../utils/exportHelpers';
 import { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
+import FounderHeadcountStart from './FounderHeadcountStart';
 import styles from './HrDashboard.module.css';
 import { workStatusClasses } from '../../theme/workStatus.js';
 
@@ -4364,6 +4366,13 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   disabled={isRefreshing || !activeDataset.hasMore} onClick={() => updatePageOffset(true)}>Next</button>
               </div>}
             </div>
+            {activeTab === 'jobOpenings' && <div className="border-t border-slate-200 px-4 py-3">
+              <FounderHeadcountStart
+                tenantId={tenantId}
+                admitted={Boolean(tenantScopeKey) && isVerifiedReadState(shownState)}
+                onCreated={() => loadDashboard()}
+              />
+            </div>}
             {isSourceConnected && shownState?.status === HR_READ_STATE.PENDING
               && <p role="status" className="p-5 text-sm text-slate-600">Verifying authorized People source…</p>}
             {isSourceConnected && shownState?.status === HR_READ_STATE.VERIFIED_EMPTY
@@ -4912,7 +4921,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.12.4-SOURCE-AUTHORITY-TRANSPARENCY
+ * VERSION: v2.13.0-FIRST-HR-LEADERSHIP-REQUEST
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
