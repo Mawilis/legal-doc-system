@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION
+ * VERSION: v2.9.1-PEOPLE-LIFECYCLE-ICON-AND-NAV-FIX
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.9.1-PEOPLE-LIFECYCLE-ICON-AND-NAV-FIX restores the required actual source-navigation icon import and correct Overview transition title.
  *   v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION implements the uploaded Hire-to-Exit prototype's autonomous navigation, compact lifecycle briefing and real source-backed approval work rows without importing sample staff or changing the WILSY logo.
  *   v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE — Unmounts the unconditional black/gold legacy HR profile card, which ignores the supplied isOpen prop; canonical OS account chrome remains authoritative.
  *   v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES — Preserves distinct denied and unavailable notice semantics while making both accessible under legacy HR styles.
@@ -58,6 +59,7 @@ import {
   CheckCircle,
   CreditCard,
   Download,
+  ArrowUpRight,
   Edit,
   Globe2,
   Heart,
@@ -2838,7 +2840,7 @@ const HrDashboard = () => {
    */
   const changeTab = (tabId) => {
     setActiveTab(tabId);
-    pushFeedback({ tone: 'ready', title: `${getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
+    pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
 
   /**
@@ -4721,7 +4723,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION
+ * VERSION: v2.9.1-PEOPLE-LIFECYCLE-ICON-AND-NAV-FIX
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
