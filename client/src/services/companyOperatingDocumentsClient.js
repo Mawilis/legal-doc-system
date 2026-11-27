@@ -1,12 +1,16 @@
 /**
  * TITLE: WILSY OS Company Operating Document Client Contract
- * VERSION: v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION
+ * VERSION: v1.2.2-CURRENT-SESSION-BEARER-TRANSPORT
  * AUTHORITY: Python EOS owns content, publication and command authorization.
  * EPITOME: Validate current Mission/Strategy source views and command receipts
  *          without treating a Founder label, draft or acknowledgement as policy.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/services/companyOperatingDocumentsClient.js
  * COLLABORATION / OWNERSHIP: Shared CompanyOperatingDocumentViewer; existing api.js transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-14
+ * CHANGELOG: v1.2.2-CURRENT-SESSION-BEARER-TRANSPORT
+ *           uses the current EOS bearer from the shared api.js transport
+ *           rather than pinning a possibly stale view token after capacity
+ *           switching; independent tenant and IAM checks remain unchanged.
  * CHANGELOG: v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION
  *           admits EOS's exact Founder project-link action token; the
  *           project relationship itself remains a separate source API.
@@ -14,7 +18,7 @@
  *           recognizes strict Strategy-only Founder author/submit/ratify
  *           actions and the exact server-owned self-ratification reference.
  *           All commands still require authenticated EOS readback.
- * CHANGELOG: 2026-11-14 v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION adds a scoped
+ * CHANGELOG: 2026-11-14 v1.2.2-CURRENT-SESSION-BEARER-TRANSPORT adds a scoped
  *           Founder-session evidence adapter through the existing authenticated
  *           api.js instance; no raw fetch, credential store or admission bypass.
  *           v1.0.0-SCOPED-COMPANY-DOCUMENT-TRANSPORT adds exact scoped no-store
@@ -45,7 +49,11 @@ function options(scope, { token, signal } = {}) {
   if (!scope?.tenantId || !scope?.principalId || typeof token !== 'string' || !token.trim()) {
     throw new Error('COMPANY_DOCUMENT_AUTHENTICATED_SCOPE_REQUIRED');
   }
-  return { headers: { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + token },
+  // Do not pin a second bearer from a mounted document view. Capacity
+  // switching and refresh promote the current EOS session through api.js;
+  // an older view token can otherwise silently override the Owner bearer.
+  // api.js supplies the current bearer and verified tenant transport scope.
+  return { headers: { 'X-Tenant-ID': scope.tenantId },
     forceNetworkRetry: true, ...(signal ? { signal } : {}) };
 }
 function recordValid(record, classification, tenantId) {
@@ -169,7 +177,7 @@ export async function commandCompanyDocument(classification, scope, action, payl
 }
 
 // ARTIFACT: companyOperatingDocumentsClient.js
-// VERSION: v1.2.1-FOUNDER-STRATEGY-LINK-ACTION-VALIDATION
+// VERSION: v1.2.2-CURRENT-SESSION-BEARER-TRANSPORT
 // AUTHORITY BOUNDARY: Validated transport only; EOS owns approval/publication.
 // TENANT POSTURE: Exact requested tenant/principal; no persisted content cache.
 // FAIL-CLOSED POSTURE: Draft/publication/scope mismatch never renders as official.
