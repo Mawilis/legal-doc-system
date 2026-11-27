@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES
+ * VERSION: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH makes the global navigation search context-aware inside the People application, routing queries to the existing HR-owned search intent without adding global HR data access.
  * CHANGELOG: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES supports the authorized canonical tenant ID and legal-name projection aliases while retaining exact selected-session tenant equality in global header.
  * CHANGELOG: v20.3.0-AUTHENTICATED-TENANT-CHROME displays the exact independently hydrated authenticated tenant legal name and tenant reference in global chrome without accepting client-chosen scope.
  * CHANGELOG: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN routes Daily Attention and calendar selections through the canonical EOS work destination contract. Projects opens its exact project/task view, other admitted sources retain source-owned My Work, forged source identities fail closed; no task command or privilege change.
@@ -292,6 +293,13 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   // The exact AuthProvider session generation, selected capacity and both role
   // revisions partition this optional badge. It is active-work evidence, never
   // an unread-notification count or browser permission authority.
+  // The global command bar follows the mounted business application.
+  // A People query is handed to its existing independently authorized source.
+  const isPeopleWorkspace = location.pathname === '/headquarters'
+    && new URLSearchParams(location.search).get('section') === 'hr-workspace';
+  const searchContextLabel = isPeopleWorkspace
+    ? 'Search people, hiring and authorized HR work…'
+    : 'Search authorized work or navigate…';
   const currentWorkScope = currentUnifiedMyWorkScope(auth, sessionUser?.tenantId);
   useEffect(() => {
     if (location.state?.reopenDailyAttention !== true || !currentWorkScope) return;
@@ -425,8 +433,17 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       setSearchOpen(false);
       setSearchValue('');
       setSearchNotice('');
+    } else if (isPeopleWorkspace && query.length >= 2) {
+      window.dispatchEvent(new CustomEvent('wilsy:people-context-search', {
+        detail: { query: searchValue.trim() },
+      }));
+      setSearchOpen(false);
+      setSearchValue('');
+      setSearchNotice('');
     } else {
-      setSearchNotice('No matching workspace shortcut. Choose Headquarters or My Work.');
+      setSearchNotice(isPeopleWorkspace
+        ? 'Enter at least two characters to search authorized People records.'
+        : 'No matching workspace shortcut. Choose Headquarters or My Work.');
     }
   };
 
@@ -444,7 +461,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
 
         <button type="button" onClick={openGlobalSearch} aria-label="Open workspace navigation" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
           <Search size={16} className="text-[#435575]"/>
-          <span className="flex-1">Search authorized work or navigate…</span>
+          <span className="flex-1">{searchContextLabel}</span>
           <kbd className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] text-slate-500">⌘ K / Ctrl K</kbd>
         </button>
         <button type="button" onClick={openGlobalSearch} aria-label="Open workspace navigation" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
@@ -539,10 +556,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       {searchOpen && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="wilsy-global-search-title" className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#101d32] shadow-2xl">
-            <h2 id="wilsy-global-search-title" className="sr-only">Workspace navigation</h2>
+            <h2 id="wilsy-global-search-title" className="sr-only">{isPeopleWorkspace ? 'People search' : 'Workspace navigation'}</h2>
             <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#d7ad43]">
               <Search size={19} className="text-amber-300"/>
-              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} aria-label="Workspace destination" placeholder="Headquarters or My Work" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
+              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} aria-label={isPeopleWorkspace ? "Search authorized People" : "Workspace destination"} placeholder={isPeopleWorkspace ? "Employee name, role, or People workflow" : "Headquarters or My Work"} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
               <kbd className="rounded border border-white/10 px-2 py-1 text-[10px] text-slate-400">ESC</kbd>
               <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}><X size={17}/></button>
             </form>
@@ -552,7 +569,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                 <button type="button" onClick={() => { navigate('/headquarters'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><Home size={17} className="text-amber-300"/> Headquarters</button>
                 <button type="button" onClick={() => { navigate('/my-work'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><CheckCircle2 size={17} className="text-amber-300"/> My Work</button>
               </div>
-              <p role={searchNotice ? 'status' : undefined} className="mt-4 text-xs leading-5 text-slate-400">{searchNotice || 'Only Headquarters and My Work shortcuts are available here. Permission-filtered record search is not connected.'}</p>
+              <p role={searchNotice ? 'status' : undefined} className="mt-4 text-xs leading-5 text-slate-400">{searchNotice || (isPeopleWorkspace ? 'Queries use the existing authorized workforce directory. No HR records are searched without EOS admission.' : 'Only Headquarters and My Work shortcuts are available here. Permission-filtered record search is not connected.')}</p>
             </div>
           </section>
         </div>
@@ -1094,7 +1111,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES
+ * VERSION: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
