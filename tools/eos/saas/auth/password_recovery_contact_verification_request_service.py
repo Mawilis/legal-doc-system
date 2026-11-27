@@ -175,24 +175,61 @@ def read_recovery_contact_status(
         raise RecoveryContactVerificationRequestError(
             "RECOVERY_CONTACT_PRINCIPAL_NOT_ACTIVE"
         )
-    try:
-        auth_registry.get_credential_revision(identity.tenant_id, identity.identity_id)
-        user = auth_registry.get_user_by_id(identity.identity_id)
-    except Exception as error:
+    if identity.principal_scope == "GLOBAL":
+        # Global Principal sessions are authenticated using the global
+        # PrincipalCredentialRepository, not tenant-scoped legacy AuthRegistry.
+        # Never derive the address from a JWT, browser or legacy user lookup.
+        from tools.eos.auth.principal_credential_repository import (
+            PrincipalCredentialRepository,
+        )
+        from tools.eos.auth.principal_authority_repository import (
+            PrincipalAuthorityRepository,
+        )
+        try:
+            principal = PrincipalAuthorityRepository.get(identity.identity_id)
+            credential = PrincipalCredentialRepository.get_by_principal(
+                identity.identity_id
+            )
+        except Exception as error:
+            raise RecoveryContactVerificationRequestError(
+                "RECOVERY_CONTACT_GLOBAL_PRINCIPAL_LOOKUP_FAILED"
+            ) from error
+        if (
+            principal.principal_id != identity.identity_id
+            or principal.status is not PrincipalStatus.ACTIVE
+            or credential.principal_id != identity.identity_id
+        ):
+            raise RecoveryContactVerificationRequestError(
+                "RECOVERY_CONTACT_PRINCIPAL_BINDING_MISMATCH"
+            )
+        current_email = credential.normalized_email
+    elif identity.principal_scope in (None, "TENANT"):
+        try:
+            auth_registry.get_credential_revision(
+                identity.tenant_id, identity.identity_id
+            )
+            user = auth_registry.get_user_by_id(identity.identity_id)
+        except Exception as error:
+            raise RecoveryContactVerificationRequestError(
+                "RECOVERY_CONTACT_PRINCIPAL_LOOKUP_FAILED"
+            ) from error
+        if (
+            user is None
+            or user.id != identity.identity_id
+            or user.tenantId != identity.tenant_id
+        ):
+            raise RecoveryContactVerificationRequestError(
+                "RECOVERY_CONTACT_PRINCIPAL_BINDING_MISMATCH"
+            )
+        current_email = user.email
+    else:
         raise RecoveryContactVerificationRequestError(
-            "RECOVERY_CONTACT_PRINCIPAL_LOOKUP_FAILED"
-        ) from error
-    if (
-        user is None
-        or user.id != identity.identity_id
-        or user.tenantId != identity.tenant_id
-    ):
-        raise RecoveryContactVerificationRequestError(
-            "RECOVERY_CONTACT_PRINCIPAL_BINDING_MISMATCH"
+            "RECOVERY_CONTACT_IDENTITY_SCOPE_INVALID"
         )
     try:
-        current_email = normalize_recovery_email(user.email)
-        address_digest = recovery_address_digest(current_email)
+        address_digest = recovery_address_digest(
+            normalize_recovery_email(current_email)
+        )
     except Exception as error:
         raise RecoveryContactVerificationRequestError(
             "RECOVERY_CONTACT_EMAIL_INVALID"
