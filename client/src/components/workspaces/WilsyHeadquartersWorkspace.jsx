@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY
+ * VERSION: v4.21.2-EXACT-LEGAL-NAME-ALIAS
+ * CHANGELOG: v4.21.2-EXACT-LEGAL-NAME-ALIAS supports exact authenticated legal_name projection in the employer header and persistent footer without independent tenant lookup.
  * CHANGELOG: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY reads legal employer identity from the exact authenticated global principal tenant projection, preserving independent existing Headquarters mounts without requiring a second tenant provider.
  * CHANGELOG: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER binds dynamic People header and persistent Headquarters footer to the exact authenticated tenant legal identity and reference, never a static Founder name or client-selected tenant.
  * CHANGELOG: v4.20.3-FOOTER-SEMANTIC-LANDMARK declares the persistent Headquarters footer as a named contentinfo landmark so it remains discoverable inside the app's main scroll shell.
@@ -514,7 +515,7 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
     && [authorizedTenant.tenantId, authorizedTenant.tenant_id, authorizedTenant.id]
       .some((candidate) => typeof candidate === 'string' && candidate === workTenantId)
     ? authorizedTenant : null;
-  const employerName = [verifiedEmployer?.legalName, verifiedEmployer?.name]
+  const employerName = [verifiedEmployer?.legalName, verifiedEmployer?.legal_name, verifiedEmployer?.name]
     .find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() || null;
   const employerReference = verifiedEmployer ? workTenantId : null;
 
@@ -1844,7 +1845,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY
+ * VERSION: v4.21.2-EXACT-LEGAL-NAME-ALIAS
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
