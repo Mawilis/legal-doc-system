@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Project Work Execution Panel
- * VERSION: v1.75.1-IMMUTABLE-COMPLETION-ORDER
+ * VERSION: v1.76.0-CANONICAL-WORK-COLOUR-CHART
  * AUTHORITY: Python EOS Projects task and participant HTTP APIs exclusively.
  * EPITOME: Real task, subtask, milestone and dependency actions with durable
  *          EOS readback, selected project scope and no synthetic task state.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTasksPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts the authorized owner
  *          detail; api.js supplies session transport; EOS owns task commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.76.0-CANONICAL-WORK-COLOUR-CHART shares EOS lifecycle colours with Projects work rows and HR People, including red Blocked and green Done; retains status text and source-owned transitions.
  * CHANGELOG: v1.75.1-IMMUTABLE-COMPLETION-ORDER preserves server-derived chronological sorting across the displayed verified completed batch instead of accidentally re-sorting by due date.
  * CHANGELOG: v1.75.0-GOVERNED-COMPLETED-HISTORY-SEARCH loads a separate IAM-gated EOS completed query with source-side title and contributor filtering, immutable completion chronology, safe paging and exact reply envelope verification. Active/All keep their canonical existing source list and task mutation boundaries.
  * CHANGELOG: v1.74.0-EOS-COMPLETED-WORK-LIFECYCLE-VIEWS adds accessible Active/Completed/All view controls over the current source-verified task page; terminal Done and Cancelled leave the default action list without deletion, selection resets across views, and existing EOS pagination and details remain authoritative.
@@ -363,6 +364,7 @@ import { CalendarDays, CheckCircle2, CirclePause, ClipboardList, LoaderCircle, P
 import api from '../../services/api.js';
 import ProjectTaskCommentsPanel from './ProjectTaskCommentsPanel.jsx';
 import ProjectWorkRow from './ProjectWorkRow.jsx';
+import { workStatusColor } from '../../theme/workStatus.js';
 import ProjectNotesPanel from './ProjectNotesPanel.jsx';
 import ProjectTaskApprovalsPanel from './ProjectTaskApprovalsPanel.jsx';
 import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
@@ -2289,10 +2291,7 @@ export default function ProjectTasksPanel({
         <div className="mt-4 space-y-2">
           {counts.map(({ status, count }) => {
             const percent = chartTotal ? Math.round(100 * count / chartTotal) : 0;
-            const color = ({
-              TODO: '#64748b', IN_PROGRESS: '#2563eb', BLOCKED: '#c2410c',
-              DONE: '#15803d', CANCELLED: '#475569',
-            })[status];
+            const color = workStatusColor(status);
             return <button key={status} type="button"
               aria-label={'Filter work to ' + label(status) + ': ' + count + ' of ' + chartTotal + ' verified on page'}
               aria-pressed={workStatus === status} onClick={() => setWorkStatus(current => current === status ? 'ALL' : status)}
@@ -2692,7 +2691,7 @@ export default function ProjectTasksPanel({
 }
 
 // ARTIFACT: ProjectTasksPanel.jsx
-// VERSION: v1.75.1-IMMUTABLE-COMPLETION-ORDER
+// VERSION: v1.76.0-CANONICAL-WORK-COLOUR-CHART
 // AUTHORITY BOUNDARY: EOS-verified owner task commands; no local state authority
 // TENANT POSTURE: exact session tenant/principal/project readback, no fallback
 // FAIL-CLOSED POSTURE: invalid data, denied commands and uncertain source stay visible
