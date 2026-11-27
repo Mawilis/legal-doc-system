@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Canonical Founder HR Activation Operator
-VERSION: v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES
+VERSION: v1.1.0-OPTIONAL-FOUNDER-HR-DIRECTOR-BOOTSTRAP
 AUTHORITY: Owner-password/TOTP authenticated local Python EOS orchestration.
 EPITOME: Issue canonical R0 HR entitlement and an independently delegated HR
          Manager role plus active business capacity using source-owned commands.
@@ -8,7 +8,8 @@ COLLABORATION / OWNERSHIP: AuthRegistry authenticates; D22B3 issues entitlement;
                             invitation authorities issue/consume roles; multi
                             business-role repository owns capacity history.
 CERTIFICATION / UPDATE DATE: 2026-11-27
-CHANGELOG: v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES preserves safe typed issuer and local-auth denial codes instead of collapsing every failure into an opaque generic error.
+CHANGELOG: v1.1.0-OPTIONAL-FOUNDER-HR-DIRECTOR-BOOTSTRAP adds a separate, explicitly requested Founder HR Director invitation and multi-capacity issuance with fresh Owner/MFA verification; independent decisions and employee admission remain separate.
+           v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES preserves safe typed issuer and local-auth denial codes instead of collapsing every failure into an opaque generic error.
            v1.0.0-BOUNDED-FOUNDER-HR-ACTIVATION composes owner-authenticated,
            development-only HR entitlement, invitation-based HR_MANAGER role
            and separately versioned tenant_hr_manager capacity issuance.
@@ -70,7 +71,7 @@ from tools.eos.saas.entitlement.tenant_product_entitlement_registry import (
 from tools.eos.saas.domain.tenant_product_entitlement import TenantProductEntitlementState
 from tools.eos.ops.founder_hr_iam_preflight import inspect_founder_hr_prerequisites
 
-VERSION: Final[str] = "v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES"
+VERSION: Final[str] = "v1.1.0-OPTIONAL-FOUNDER-HR-DIRECTOR-BOOTSTRAP"
 _IDEMPOTENCY_KEY: Final[str] = "founder-hr-r0-activation-v1"
 _ALLOWED_ENV: Final[frozenset[str]] = frozenset({"development", "dev", "local", "test", "testing"})
 _ENABLE_ENV: Final[str] = "WILSY_FOUNDER_HR_ACTIVATION"
@@ -225,7 +226,81 @@ def _activate_manager_capacity(identity: SovereignIdentity, client: Any, db: Any
         session.with_transaction(callback)
 
 
-def activate_founder_hr(identity: SovereignIdentity, client: Any, db: Any) -> dict[str, object]:
+def _activate_director_assignment(identity: SovereignIdentity, db: Any) -> None:
+    """Admit only a self-bound Founder HR Director invitation under existing IAM."""
+    _activate_role_assignment(identity, db, "HR_DIRECTOR")
+
+
+def _activate_role_assignment(identity: SovereignIdentity, db: Any, role_id: str) -> None:
+    """Use institutional invitation issue/accept with exact active-role replay."""
+    if role_id not in ("HR_MANAGER", "HR_DIRECTOR"):
+        raise FounderHRActivationError("FOUNDER_HR_ROLE_NOT_SUPPORTED")
+    try:
+        existing = RoleAssignmentRepository.resolve(
+            identity.identity_id, identity.tenant_id, role_id, db["role_assignments"],
+        )
+    except RoleAssignmentNotFoundError:
+        existing = None
+    if existing is not None:
+        if existing.status is not RoleAssignmentStatus.ACTIVE:
+            raise FounderHRActivationError("FOUNDER_HR_ROLE_CONFLICT")
+        return
+    invitation = create_invitation(
+        identity=identity, tenant_id=identity.tenant_id,
+        recipient_principal_id=identity.identity_id, authorization_role_id=role_id,
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+    )
+    admit_invited_member(
+        identity=identity, invitation_id=invitation.invitation.invitation_id,
+        capability=invitation.capability,
+    )
+    granted = RoleAssignmentRepository.resolve(
+        identity.identity_id, identity.tenant_id, role_id, db["role_assignments"],
+    )
+    if granted.status is not RoleAssignmentStatus.ACTIVE:
+        raise FounderHRActivationError("FOUNDER_HR_ROLE_READBACK_FAILED")
+
+
+def _activate_director_capacity(identity: SovereignIdentity, client: Any, db: Any) -> None:
+    """Write separate HR Director capacity history only after exact authority."""
+    TenantBusinessRoleRepository.ensure_multi_capacity_indexes(db)
+    with client.start_session() as session:
+        def callback(tx: Any) -> None:
+            _require_active_owner(identity, db, session=tx)
+            assigned = RoleAssignmentRepository.resolve(
+                identity.identity_id, identity.tenant_id,
+                "HR_DIRECTOR", db["role_assignments"], session=tx,
+            )
+            if assigned.status is not RoleAssignmentStatus.ACTIVE:
+                raise FounderHRActivationError("FOUNDER_HR_DIRECTOR_ROLE_REQUIRED")
+            current = db["tenant_business_role_assignments"].find_one(
+                {"principal_id": identity.identity_id, "tenant_id": identity.tenant_id,
+                 "business_role": "tenant_hr_director"},
+                {"_id": 0, "status": 1}, session=tx,
+            )
+            if current is not None:
+                if current.get("status") != "ACTIVE":
+                    raise FounderHRActivationError("FOUNDER_HR_DIRECTOR_CAPACITY_CONFLICT")
+                return
+            capacity = TenantBusinessRoleAuthority(
+                principal_id=identity.identity_id,
+                tenant_id=identity.tenant_id,
+                business_role="tenant_hr_director",
+                status=TenantBusinessRoleStatus.ACTIVE,
+                revision=0,
+                effective_at=datetime.now(timezone.utc),
+                revoked_at=None,
+            )
+            TenantBusinessRoleRepository.record_capacity_revision(
+                capacity, None, db, session=tx,
+            )
+        session.with_transaction(callback)
+
+
+def activate_founder_hr(
+    identity: SovereignIdentity, client: Any, db: Any, *,
+    activate_director: bool = False,
+) -> dict[str, object]:
     """Perform governed stages and return no PII or false browser attestation.
 
     Partial durable stages can safely be resumed: entitlement uses source
@@ -237,11 +312,21 @@ def activate_founder_hr(identity: SovereignIdentity, client: Any, db: Any) -> di
     _issue_hr_entitlement(identity, client, db)
     _activate_manager_assignment(identity, db)
     _activate_manager_capacity(identity, client, db)
+    if activate_director:
+        # Separate delegation and role: Director is not automatically inferred
+        # from the Founder designation or the HR Manager activation.
+        _activate_director_assignment(identity, db)
+        _activate_director_capacity(identity, client, db)
     current = inspect_founder_hr_prerequisites(db, identity.tenant_id)
     if not current.get("hr_manager_capacity_active") or not current.get(
         "hr_manager_authorization_role_active"
     ):
         raise FounderHRActivationError("FOUNDER_HR_IAM_READBACK_FAILED")
+    if activate_director and (
+        not current.get("hr_director_capacity_active")
+        or not current.get("hr_director_authorization_role_active")
+    ):
+        raise FounderHRActivationError("FOUNDER_HR_DIRECTOR_IAM_READBACK_FAILED")
     return {
         "schema": "WILSY-FOUNDER-HR-ACTIVATION/V1",
         "tenant": "CANONICAL_WILSY_EMPLOYER",
@@ -250,7 +335,8 @@ def activate_founder_hr(identity: SovereignIdentity, client: Any, db: Any) -> di
         "hr_manager_capacity": "ACTIVE_DURABLE_READBACK",
         "founder_owner_preserved": bool(current.get("tenant_owner_capacity_active")),
         "employee_admission": "NOT_ISSUED",
-        "hr_director": "NOT_ISSUED",
+        "hr_director": "ACTIVE_DURABLE_READBACK" if activate_director else "NOT_REQUESTED",
+        "independent_self_approval": "NOT_AUTHORIZED",
         "next": "REAUTHENTICATE_AND_VERIFY_FOUR_HR_ROUTES",
         "authenticated_http_verified": False,
     }
@@ -261,10 +347,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Governed canonical Founder HR activation")
     parser.add_argument("--tenant-id", required=True)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--activate-director", action="store_true", help="Separately request transitional Founder HR Director IAM authority")
     args = parser.parse_args(argv)
     if args.tenant_id != WILSY_COMPANY_TENANT_ID:
         parser.error("Canonical Wilsy employer only")
     from tools.eos.kernel.db import connect_db, disconnect_db, get_client, get_database
+    if args.activate_director and not args.apply:
+        parser.error("--activate-director requires --apply and authenticated local Owner")
     if not args.apply:
         from tools.eos.ops.founder_hr_iam_preflight import main as preflight_main
         return preflight_main(["--tenant-id", args.tenant_id])
@@ -286,7 +375,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             registry=AuthRegistry(), tenant_id=args.tenant_id,
         )
         # A preflight is not itself the source of authorization.
-        report = activate_founder_hr(identity, client, db)
+        report = activate_founder_hr(identity, client, db, activate_director=args.activate_director)
         print(json.dumps(report, sort_keys=True))
         return 0
     except Exception as error:
@@ -309,7 +398,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 # ARTIFACT: tools/eos/ops/founder_hr_activation.py
-# VERSION: v1.0.1-STABLE-HR-OPERATOR-DENIAL-CODES
+# VERSION: v1.1.0-OPTIONAL-FOUNDER-HR-DIRECTOR-BOOTSTRAP
 # AUTHORITY BOUNDARY: Local owner-authenticated orchestration of existing governed sources only.
 # TENANT POSTURE: Canonical Wilsy employer; no customer, global root or alias fallback.
 # FAIL-CLOSED POSTURE: No unverified stage is reported as authenticated EOS HR access.
