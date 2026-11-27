@@ -1,7 +1,7 @@
 """Direct certificate for the D22B3 tenant-product entitlement composer.
 
 TITLE: Tenant Product Entitlement Composer Direct Certificate
-VERSION: v1.1.0-PROJECTS-FOUNDER-INTERNAL-ENTITLEMENT-CERT
+VERSION: v1.2.0-FOUNDER-HR-ENTITLEMENT-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certify deterministic lineage, canonical commercial proof, derived
          evidence, lifecycle replay/closure and caller transaction ownership.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Bounded dependency doubles exercise D22B3 composition;
                             real Mongo is certified separately.
 CERTIFICATION / UPDATE DATE: 2026-10-09
-CHANGELOG: v1.1.0-PROJECTS-FOUNDER-INTERNAL-ENTITLEMENT-CERT proves exact-Founder-only Projects internal-use entitlement composition and ordinary tenant feature enforcement.
+CHANGELOG: v1.2.0-FOUNDER-HR-ENTITLEMENT-CERT certifies exact Founder HR exception, ordinary HR feature gate, and non-Founder denial.
+           v1.1.0-PROJECTS-FOUNDER-INTERNAL-ENTITLEMENT-CERT proves exact-Founder-only Projects internal-use entitlement composition and ordinary tenant feature enforcement.
            v1.0.0-D22B3-TENANT-PRODUCT-ENTITLEMENT-COMPOSER-CERT establishes
            adversarial coverage for all positive, replay and fail-closed paths.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
@@ -319,6 +320,75 @@ def test_exact_founder_subscription_composes_projects_as_internal_use(
     assert [call[0] for call in calls] == ["create", "transition"]
 
 
+def test_exact_perpetual_founder_hr_internal_entitlement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exact Founder R0 may issue HR using existing canonical evidence."""
+    Registry.items = (
+        subscription(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            subscription_id="WILSYSUB-93455E4E",
+            plan_id="WILSYPLAN-37B8164F",
+            features=("tenant.branding",),
+            period_end=NOW - timedelta(days=29),
+            amount=0.0,
+            billing_mode="PLATFORM",
+        ),
+    )
+    kinds: list[str] = []
+    original = composer._evidence
+
+    def capture(*args: Any, **kwargs: Any) -> tuple[str, str, str, str]:
+        kinds.append(str(args[6]))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(composer, "_evidence", capture)
+    calls = install_flow(monkeypatch)
+    result = invoke(
+        tenant_id="WILSYTENANT-4CD2FZ4O",
+        product_id=TenantProductId.HR,
+    )
+    assert result.outcome is composer.TenantProductEntitlementCompositionOutcome.COMPOSED
+    assert result.entitlement.product_id is TenantProductId.HR
+    assert result.entitlement.lifecycle_state is TenantProductEntitlementState.ACTIVE
+    assert kinds == ["PLATFORM_FOUNDER_INTERNAL_USE"]
+    assert [item[0] for item in calls] == ["create", "transition"]
+
+
+def test_ordinary_hr_without_feature_denied_before_entitlement_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A zero-priced non-Founder tenant cannot inherit HR access."""
+    Registry.items = (subscription(features=("tenant.branding",), amount=0.0),)
+    monkeypatch.setattr(
+        composer,
+        "get_current",
+        lambda *_args, **_kwargs: pytest.fail("unexpected entitlement read"),
+    )
+    with pytest.raises(composer.TenantProductEntitlementComposerCommercialError) as err:
+        invoke(product_id=TenantProductId.HR)
+    assert err.value.code == "D22B3_COMMERCIAL_FEATURE_ABSENT"
+
+
+def test_ordinary_hr_with_plan_feature_compose(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Paying HR customers retain the PLAN_FEATURE authority path."""
+    Registry.items = (subscription(features=("hr.core",)),)
+    kinds: list[str] = []
+    original = composer._evidence
+
+    def capture(*args: Any, **kwargs: Any) -> tuple[str, str, str, str]:
+        kinds.append(str(args[6]))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(composer, "_evidence", capture)
+    install_flow(monkeypatch)
+    result = invoke(product_id=TenantProductId.HR)
+    assert result.entitlement.product_id is TenantProductId.HR
+    assert kinds == ["PLAN_FEATURE"]
+
+
 def test_non_founder_projects_requires_projects_plan_feature(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -607,7 +677,7 @@ def test_source_imports_exclude_forbidden_authorities_and_result_is_immutable() 
 
 
 # ARTIFACT: test_tenant_product_entitlement_composer.py
-# VERSION: v1.1.0-PROJECTS-FOUNDER-INTERNAL-ENTITLEMENT-CERT
+# VERSION: v1.2.0-FOUNDER-HR-ENTITLEMENT-CERT
 # AUTHORITY BOUNDARY: direct composer behavior only; no external commercial, IAM, route or financial authority
 # TENANT POSTURE: synthetic exact-tenant dependency calls only
 # FAIL-CLOSED POSTURE: cardinality, proof, evidence divergence, terminal lifecycle and transaction absence reject
