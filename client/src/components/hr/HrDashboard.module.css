@@ -3,12 +3,12 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION
+ * Version:        v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
- * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
+ * Change log: 2026-11-27 v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE restores continuous light work canvas and high-contrast per-source inspection.\n * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
  * VERSION: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
@@ -1565,11 +1565,68 @@
   .peopleSurface .overviewSourceChecks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+
+/* v2.5.8 — Legible source-admission controls and continuous light work canvas.
+   The OS shell keeps navy branding; the People work canvas owns the remaining viewport. */
+.peopleSurface {
+  min-height: max(0px, calc(100dvh - 154px));
+  height: auto;
+  background: #f5f7fb !important;
+}
+.peopleSurface .peopleMain {
+  flex: 1 1 auto;
+  background: #f5f7fb !important;
+  min-height: 0;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck {
+  display: grid;
+  background: #fff !important;
+  border: 1px solid #b9c9de !important;
+  color: #173457 !important;
+  box-shadow: none;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 500;
+  border-radius: 7px;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck strong {
+  color: #102744 !important;
+  font-size: 12px;
+  font-weight: 750;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck span {
+  color: #334e68 !important;
+  font-size: 11px;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck small {
+  color: #526783 !important;
+  font-size: 10px;
+  letter-spacing: 0;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck svg {
+  color: #234a77 !important;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck:hover {
+  background: #eaf2fc !important;
+  border-color: #557eac !important;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck:focus-visible {
+  outline: 2px solid #1c508a !important;
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .peopleSurface { min-height: max(0px, calc(100dvh - 140px)); }
+}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION
- * AUTHORITY BOUNDARY: Presentation only; Python EOS retains all HR authorization and source truth.
- * TENANT POSTURE: No tenant or employee state in CSS.
- * FAIL-CLOSED POSTURE: Denied, unavailable and pending sources remain visually distinct from verified data.
+ * VERSION: v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE
+ * AUTHORITY BOUNDARY: Presentation only; source authorization remains exclusively Python EOS-owned.
+ * TENANT POSTURE: No employee or tenant state in CSS; exact tenant boundary unchanged.
+ * FAIL-CLOSED POSTURE: Source unavailability, denial and verified results remain distinct.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
