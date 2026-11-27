@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS First HR Leadership Headcount Browser Contract
- * VERSION: v1.1.0-FIRST-LEADERSHIP-SUBMIT-CERT
+ * VERSION: v1.2.0-INDEPENDENT-REVIEW-DECISION-CERT
  * AUTHORITY: Synthetic Axios transport; no production EOS or staff records.
  * EPITOME: Verify exact tenant, safe draft creation, readback distinctions,
  *          denied source entry and adverse server provenance.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/FounderHeadcountStart.test.jsx
  * COLLABORATION / OWNERSHIP: FounderHeadcountStart and Python EOS Headcount router.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.2.0-INDEPENDENT-REVIEW-DECISION-CERT verifies authorized and rejected independent-review commands with source-only maker/checker enforcement and exact tenant boundaries.
  * CHANGELOG: v1.1.0-FIRST-LEADERSHIP-SUBMIT-CERT certifies exact-tenant revision-safe draft submission, independent review messaging and denial.
  * CHANGELOG: v1.0.0-FIRST-LEADERSHIP-REPLAY-CERT covers governed draft creation
  *            without any inferred approval, admission or cross-tenant scope.
@@ -19,7 +20,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import FounderHeadcountStart, { HeadcountDraftSubmit } from '../../components/hr/FounderHeadcountStart';
+import FounderHeadcountStart, { HeadcountDraftSubmit, HeadcountIndependentDecision } from '../../components/hr/FounderHeadcountStart';
 import api from '../../services/api';
 
 vi.mock('../../services/api', () => ({
@@ -144,8 +145,50 @@ describe('First HR headcount independent-review submission', () => {
   });
 });
 
+describe('First HR independent headcount decision', () => {
+  const record = { id: SOURCE.requisition_id, status: 'SUBMITTED', revision: 2 };
+
+  it('records a separately authorized decision only after EOS verifies source truth', async () => {
+    api.post.mockResolvedValueOnce({ data: { ...SOURCE, status: 'APPROVED' } });
+    const refreshed = vi.fn().mockResolvedValue();
+    render(<HeadcountIndependentDecision tenantId={TENANT} admitted requisition={record} onDecided={refreshed}/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Independent decision' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Independent decision reason' }), {
+      target: { value: 'Independently verified opening approval' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Record decision through EOS' }));
+    await waitFor(() => expect(refreshed).toHaveBeenCalledOnce());
+    const [path, payload, config] = api.post.mock.calls[0];
+    expect(path).toBe('/hr/headcount-requisitions/' + SOURCE.requisition_id + '/decision');
+    expect(payload).toEqual({
+      expected_revision: 2, decision: 'APPROVE',
+      reason: 'Independently verified opening approval',
+    });
+    expect(config.headers['X-Tenant-ID']).toBe(TENANT);
+    expect(config.headers['Idempotency-Key']).toEqual(expect.any(String));
+  });
+
+  it('reflects maker-checker denial without pretending approval', async () => {
+    api.post.mockRejectedValueOnce({ response: { status: 409, data: { detail: 'HEADCOUNT_SELF_APPROVAL_DENIED' } } });
+    render(<HeadcountIndependentDecision tenantId={TENANT} admitted requisition={record}/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Independent decision' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Independent decision reason' }), {
+      target: { value: 'Founder initial appointment' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Record decision through EOS' }));
+    expect(await screen.findByText(/HEADCOUNT_SELF_APPROVAL_DENIED/)).toBeVisible();
+    expect(screen.queryByText(/recorded the independent decision/)).not.toBeInTheDocument();
+  });
+
+  it('does not expose a submit action for unverified authority', () => {
+    render(<HeadcountIndependentDecision tenantId={TENANT} admitted={false} requisition={record}/>);
+    expect(screen.getByRole('button', { name: 'Independent decision' })).toBeDisabled();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+});
+
 /* ARTIFACT: client/src/__tests__/components/FounderHeadcountStart.test.jsx
- * VERSION: v1.1.0-FIRST-LEADERSHIP-SUBMIT-CERT
+ * VERSION: v1.2.0-INDEPENDENT-REVIEW-DECISION-CERT
  * AUTHORITY BOUNDARY: Synthetic browser UI/transport tests only.
  * TENANT POSTURE: Exact tenant scoped request and response.
  * FAIL-CLOSED POSTURE: Unverified, denied and foreign source results never succeed.
