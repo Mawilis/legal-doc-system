@@ -1,13 +1,14 @@
 """TITLE: WILSY OS authenticated workforce directory and Overview HTTP certificate.
-VERSION: v1.2.0-M03-WORKFORCE-DETAIL-CERT
+VERSION: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT
 AUTHORITY: WILSY OS Core Governance; regression evidence only.
 EPITOME: Certifies exact-tenant, independently IAM-bound workforce directory and
          single-aggregation Overview, denied-before-read, and PII exclusion.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_workforce_directory_router.py
 COLLABORATION / OWNERSHIP: Canonical Python EOS workforce router and its tests.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
-CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
-CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT corrects the single-aggregation test contract and
+CHANGELOG: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
+CHANGELOG: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
+CHANGELOG: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT corrects the single-aggregation test contract and
            supplies institutional header and sovereign end seal.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic employees only; bank and identity
@@ -215,6 +216,19 @@ def test_overview_denied_principal_cannot_read_employee_counts(
     assert response.json() == {"detail": "HR_READ_DENIED"}
 
 
+def test_directory_rejects_whitespace_search_without_a_database_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A whitespace-only query must not silently become a full-directory scan."""
+    collection = _Collection([])
+    response = _client(monkeypatch, _Database(collection)).get(
+        "/api/hr/workforce", params={"q": "   "},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "WORKFORCE_SEARCH_QUERY_INVALID"
+    assert collection.query is None
+
+
 def test_workforce_detail_is_exact_tenant_and_directory_safe(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -277,7 +291,7 @@ def test_workforce_detail_rejects_unsafe_identifier(
 
 
 # ARTIFACT: tests/unit/test_hr_workforce_directory_router.py
-# VERSION: v1.2.0-M03-WORKFORCE-DETAIL-CERT
+# VERSION: v1.2.1-WORKFORCE-SEARCH-AND-DETAIL-CERT
 # AUTHORITY BOUNDARY: Regression tests cannot grant HR or tenant IAM authority.
 # TENANT POSTURE: Synthetic exact-tenant cases and explicit cross-scope denial.
 # FAIL-CLOSED POSTURE: Missing source and denied authorization never return employee counts.
