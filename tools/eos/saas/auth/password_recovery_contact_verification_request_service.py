@@ -1,7 +1,7 @@
 """Authenticated recovery-contact verification request orchestration.
 
 TITLE: WILSY OS Recovery Contact Verification Request Service
-VERSION: v1.0.0-R10E20-RECOVERY-CONTACT-VERIFICATION-REQUEST
+VERSION: v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Uses an authenticated ACCESS identity only to select exact tenant and
          principal, re-reads the current durable user email, and issues one
@@ -13,6 +13,7 @@ COLLABORATION / OWNERSHIP: Authentication proves current ACCESS principal state;
                            existing contact authority; rate and mail adapters are
                            external capabilities only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
+CHANGELOG: v1.1.0 adds independent, SMTP-free readback of exact ACTIVE verified contact evidence.
 CHANGELOG: v1.0.0-R10E20-RECOVERY-CONTACT-VERIFICATION-REQUEST introduces
            durable-email sourcing, exact ACCESS tenant/principal binding,
            separate verification rate gating, already-verified short-circuit,
@@ -67,7 +68,7 @@ from .password_recovery_request_service import (
     recovery_address_digest,
 )
 
-VERSION: Final[str] = "v1.0.0-R10E20-RECOVERY-CONTACT-VERIFICATION-REQUEST"
+VERSION: Final[str] = "v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK"
 DEFAULT_VERIFICATION_TTL: Final[timedelta] = timedelta(minutes=30)
 TOKEN_ENTROPY_BYTES: Final[int] = 48
 VERIFICATION_PATH: Final[str] = "/verify-recovery-contact"
@@ -151,6 +152,66 @@ def _verification_url(origin: str, *, tenant_id: str, raw_token: str) -> str:
 
     fragment = urlencode({"tenant": tenant_id, "verification": raw_token})
     return f"{origin}{VERIFICATION_PATH}#{fragment}"
+
+
+def read_recovery_contact_status(
+    *,
+    identity: SovereignIdentity,
+    auth_registry: AuthRegistry,
+    contact_registry: VerifiedRecoveryContactRegistry,
+) -> str:
+    """Read current durable email-control evidence without SMTP or token issuance.
+
+    The bearer selects only an ACTIVE principal and tenant. Exact credential
+    currentness, durable user identity, tenant and email are re-read from EOS;
+    no client-supplied email or verification state is admitted. Only an ACTIVE
+    contact for the current address digest counts as verified.
+    """
+    if not isinstance(identity, SovereignIdentity):
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_IDENTITY_INVALID"
+        )
+    if identity.status is not PrincipalStatus.ACTIVE:
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_PRINCIPAL_NOT_ACTIVE"
+        )
+    try:
+        auth_registry.get_credential_revision(identity.tenant_id, identity.identity_id)
+        user = auth_registry.get_user_by_id(identity.identity_id)
+    except Exception as error:
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_PRINCIPAL_LOOKUP_FAILED"
+        ) from error
+    if (
+        user is None
+        or user.id != identity.identity_id
+        or user.tenantId != identity.tenant_id
+    ):
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_PRINCIPAL_BINDING_MISMATCH"
+        )
+    try:
+        current_email = normalize_recovery_email(user.email)
+        address_digest = recovery_address_digest(current_email)
+    except Exception as error:
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_EMAIL_INVALID"
+        ) from error
+    try:
+        existing = contact_registry.get_active_by_principal(
+            tenant_id=identity.tenant_id,
+            principal_id=identity.identity_id,
+            channel=VerifiedRecoveryContactChannel.EMAIL,
+        )
+    except VerifiedRecoveryContactRegistryError as error:
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_LOOKUP_FAILED"
+        ) from error
+    return (
+        "VERIFIED"
+        if existing is not None and existing.address_digest == address_digest
+        else "VERIFICATION_REQUIRED"
+    )
 
 
 class RecoveryContactVerificationRequestService:
@@ -351,6 +412,7 @@ __all__ = [
     "RecoveryContactVerificationRequestError",
     "RecoveryContactVerificationRequestResult",
     "RecoveryContactVerificationRequestService",
+    "read_recovery_contact_status",
     "TOKEN_ENTROPY_BYTES",
     "VERIFICATION_PATH",
     "VERSION",
