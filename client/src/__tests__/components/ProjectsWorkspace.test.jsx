@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.82.0-HR-DENIED-OWNER-RECOVERY-CERT
+ * VERSION: v2.83.0-HR-DENIED-NONDESTRUCTIVE-RETURN-CERT
+ * CHANGELOG: v2.83.0-HR-DENIED-NONDESTRUCTIVE-RETURN-CERT proves both HR capacities return to People after denied Projects read without opening a fake Owner-switch action or leaking project records.
  * CHANGELOG: v2.82.0-HR-DENIED-OWNER-RECOVERY-CERT certifies the HR Projects 403 offers an explicit governed Owner switch without rendering projects or granting permissions.
  * CHANGELOG: v2.81.3-VISIBLE-SOURCE-REVISION-EVIDENCE-CERT asserts source revision in the visible event summary rather than colliding with a screen-reader-only revision label.
  * CHANGELOG: v2.81.2-SOURCE-EVENT-REVISION-CASE-CERT preserves exact source revision evidence while matching the new displayed 'Revision' presentation.
@@ -2954,19 +2955,20 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByText(/0 active/)).not.toBeInTheDocument();
   });
 
-  it('offers governed Owner capacity selection for HR-denied Projects without bypassing EOS', async () => {
-    const onRequestOwnerCapacity = vi.fn();
+  it.each(['tenant_hr_director', 'tenant_hr_manager'])('returns denied %s Projects to People without switching capacity or inventing records', async (selectedCapacity) => {
+    const onReturnToPeople = vi.fn();
     api.get.mockRejectedValue(Object.assign(new Error('denied'), {
       response: { status: 403, data: { detail: 'ACCESS_DENIED' } },
     }));
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
-      sessionScope="hr-denied-owner-recovery"
-      selectedCapacity="tenant_hr_director"
-      onRequestOwnerCapacity={onRequestOwnerCapacity}/>);
-    const action = await screen.findByRole('button', { name: 'Switch to Owner capacity' });
-    expect(screen.getByRole('alert')).toHaveTextContent('HR Director capacity');
+      sessionScope={`hr-denied-${selectedCapacity}`}
+      selectedCapacity={selectedCapacity}
+      onReturnToPeople={onReturnToPeople}/>);
+    const action = await screen.findByRole('button', { name: 'Return to People' });
+    expect(screen.getByRole('alert')).toHaveTextContent(selectedCapacity === 'tenant_hr_director' ? 'HR Director session' : 'HR Manager session');
+    expect(screen.queryByRole('button', { name: 'Switch to Owner capacity' })).not.toBeInTheDocument();
     fireEvent.click(action);
-    expect(onRequestOwnerCapacity).toHaveBeenCalledTimes(1);
+    expect(onReturnToPeople).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('No projects in this tenant')).not.toBeInTheDocument();
   });
 
@@ -3028,7 +3030,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.82.0-HR-DENIED-OWNER-RECOVERY-CERT
+ * VERSION: v2.83.0-HR-DENIED-NONDESTRUCTIVE-RETURN-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
