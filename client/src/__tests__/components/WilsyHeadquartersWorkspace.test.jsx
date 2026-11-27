@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT
+ * VERSION: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT certifies the source-owned People application layout, contextual return and bounded shared Headquarters footer at the original operating route.
  * CHANGELOG: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT verifies a Headquarters Projects work row routes directly to its task and never selects the assigned-projects view.
  * CHANGELOG: v1.28.1-IN-CONTEXT-STRATEGY-NAV-CERT requires the M04 breadcrumb and primary action inside canonical Projects navigation, and rejects spurious return nav for ordinary Projects.
  * CHANGELOG: v1.28.0-STRATEGY-RETURN-CERT certifies the exact Strategy-originated Projects return action and its absence for ordinary Projects; only presentation routing changes.
@@ -401,6 +402,30 @@ describe('WILSY Headquarters authenticated shell', () => {
   it('opens the canonical governed HR workflow through attention centre URL', async () => {
     renderHeadquarters(['/headquarters?section=hr-workspace']);
     expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+  });
+
+  it('gives People full application ownership and a way back without duplicating global branding', async () => {
+    renderHeadquarters(['/headquarters?section=hr-workspace']);
+    const layout = document.querySelector('.hq-layout');
+    expect(layout).toHaveClass('hq-layout--people-owned');
+    expect(document.querySelector('.hq-content')).toHaveClass('hq-content--people-owned');
+    expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'People operating application' })).toHaveAttribute('data-workspace-ownership', 'PEOPLE');
+    const footer = screen.getByRole('contentinfo', { name: 'Headquarters operating footer' });
+    expect(footer).toHaveTextContent('People · Hire to Exit');
+    expect(footer).toHaveTextContent('Python Kennel EOS');
+    const styles = document.querySelector('.wilsyHqShell style').textContent;
+    expect(styles).toContain('.wilsyHqShell .hq-layout--people-owned{display:block');
+    expect(styles).toContain('.wilsyHqShell>.hq-global-footer{flex:0 0 auto}');
+    fireEvent.click(screen.getByRole('button', { name: 'Return to Headquarters' }));
+    expect(await screen.findByRole('heading', { name: 'WILSY Headquarters' })).toBeTruthy();
+    expect(layout).not.toHaveClass('hq-layout--people-owned');
+  });
+
+  it('keeps the shared Headquarters footer when the operating view changes', () => {
+    renderHeadquarters(['/headquarters']);
+    expect(screen.getByRole('contentinfo', { name: 'Headquarters operating footer' }))
+      .toHaveTextContent('Headquarters · Enterprise operations');
   });
 
   it('bounds the workspace and sidebar scroll rails and keeps nested groups closed until requested', () => {
@@ -1023,7 +1048,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT
+ * VERSION: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
