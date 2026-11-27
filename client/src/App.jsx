@@ -601,7 +601,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
             </button>
             {userMenuOpen && (
               <div role="menu" aria-label="Account menu" onKeyDown={(event) => {
-                const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitem"]'));
+                const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitem"], [role="menuitemradio"]'));
                 const index = items.indexOf(document.activeElement);
                 if (event.key === 'Escape') {
                   event.preventDefault();
