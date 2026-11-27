@@ -1,7 +1,7 @@
 """
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Workforce-Aware Tenant Authorization HTTP Real-Mongo Certificate
-VERSION: v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE
+VERSION: v1.4.0-PEOPLE-OVERVIEW-REAL-MONGO-AUTH
 AUTHORITY: Integration evidence for the production RequireTenantAuthorization seam.
 EPITOME: Proves explicit workforce-required permissions consume current TENANT
          workforce truth in one Mongo transaction with current IAM while
@@ -12,7 +12,9 @@ COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
 CHANGELOG:
-    v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE aligns the test module version, changelog, canonical path and sovereign seal; test behavior is unchanged.
+    v1.4.0-PEOPLE-OVERVIEW-REAL-MONGO-AUTH proves authorized workforce counts across real MongoDB,
+    exact tenant isolation and forbidden cross-tenant Overview readback.
+    v1.4.0-PEOPLE-OVERVIEW-REAL-MONGO-AUTH aligns the test module version, changelog, canonical path and sovereign seal; test behavior is unchanged.
     v1.3.0-SEPARATE-HR-ENTITLEMENT-TRANSACTION-CERT adds source-owned D22B2 active customer HR entitlement evidence and verifies its separate read-only snapshot after current IAM/workforce authorization.
     v1.1.0-HR-ENTITLEMENT-WORKFORCE-HTTP-CERT seeds active customer HR product truth through D22B2 and certifies the separate entitlement transaction after current IAM/workforce admission.
     v1.0.0-W3D-R8C-R4-REAL-MONGO-WORKFORCE-HTTP establishes the dedicated
@@ -127,7 +129,7 @@ from tools.eos.workforce.registry.workforce_relationship_registry import (
 )
 
 
-VERSION = "v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE"
+VERSION = "v1.4.0-PEOPLE-OVERVIEW-REAL-MONGO-AUTH"
 
 URI = os.getenv(
     "TEST_VENDOR_MONGO_URI",
@@ -737,6 +739,21 @@ def test_authenticated_hr_director_reads_only_own_tenant_directory_from_real_mon
     assert "financial" not in body["items"][0]
     assert "identification" not in body["items"][0]
 
+    # People Overview must remain the same independently authorized exact
+    # tenant workforce source, never a second unguarded aggregate.
+    overview = _client().get(
+        "/api/hr/workforce/overview",
+        headers=_headers(WORKFORCE_PRINCIPAL, TENANT),
+    )
+    assert overview.status_code == 200
+    assert overview.json()["tenant_id"] == TENANT
+    assert overview.json()["metrics"] == {
+        "active_employees": 1, "departments": 1,
+    }
+    assert "EMP-DIR-OWN" not in overview.text
+    assert "EMP-DIR-OTHER" not in overview.text
+    assert "never-return" not in overview.text
+
     # The access token itself is tenant-bound; selecting another tenant
     # fails authentication before any workforce record can be disclosed.
     denied = _client().get(
@@ -744,6 +761,11 @@ def test_authenticated_hr_director_reads_only_own_tenant_directory_from_real_mon
         headers=_headers(WORKFORCE_PRINCIPAL, OTHER_TENANT),
     )
     assert denied.status_code == 401
+    denied_overview = _client().get(
+        "/api/hr/workforce/overview",
+        headers=_headers(WORKFORCE_PRINCIPAL, OTHER_TENANT),
+    )
+    assert denied_overview.status_code == 401
 
 
 def test_absent_workforce_history_is_403_not_outage(
@@ -1098,7 +1120,7 @@ def test_certificate_contains_no_authentication_bypass_or_financial_authority() 
 
 
 # ARTIFACT: tests/integration/test_tenant_authorization_http_workforce_real_mongo.py
-# VERSION: v1.3.1-SEPARATE-HR-ENTITLEMENT-TRANSACTION-GOVERNANCE
+# VERSION: v1.4.0-PEOPLE-OVERVIEW-REAL-MONGO-AUTH
 # AUTHORITY BOUNDARY: certification evidence only; creates no runtime authority.
 # TENANT POSTURE: exact tenant/principal workforce currentness and IAM isolation.
 # FAIL-CLOSED POSTURE: missing, stale, cross-tenant or unavailable workforce denies.
