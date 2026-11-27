@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Workspace Sign-In
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.10.0-EXPLICIT-FOUNDER-HR-CAPACITY-CHOICE
+ * VERSION: v3.10.1-CLOSED-HR-CAPACITY-SELECTOR-JSX
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
@@ -14,6 +14,7 @@
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v3.10.1-CLOSED-HR-CAPACITY-SELECTOR-JSX repairs the parenthesized EOS capacity-choice/legacy sign-in JSX boundary caught by exact-head production build.
  * CHANGELOG: v3.10.0-EXPLICIT-FOUNDER-HR-CAPACITY-CHOICE adds a governed, opt-in HR login journey that offers only the canonical employer capacities returned by EOS, before MFA; legacy tenant sign-in stays intact.
  * CHANGELOG: v3.9.1-OFFICIAL-SQUARE-BRAND uses the same official
  * square platform mark. Credential, discovery, MFA and customer identity
@@ -183,7 +184,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
                 <button type="submit" disabled={loading || !selectedHrRole} style={buttonStyle}>
                   Continue to MFA
                 </button>
-              </form>}
+              </form>
             ) : <form onSubmit={handleSubmit} style={formStyle}>
               <label htmlFor="work-email" style={labelStyle}>Work email</label>
               <input id="work-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} style={inputStyle} required />
@@ -229,7 +230,7 @@ export default function SovereignLogin({ onLoginSuccess }) {
               <button type="submit" disabled={loading || !email.trim() || !password} style={buttonStyle}>
                 {loading ? <Loader2 size={18} className="animate-spin" /> : null}<span>Continue securely</span>
               </button>
-            </form>
+            </form>}
             <button type="button" onClick={() => navigate('/discovery', { replace: true })} style={backButtonStyle}><ArrowLeft size={16} /> Back to workspace discovery</button>
           </div>
         </div>
@@ -266,7 +267,7 @@ const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.10.0-EXPLICIT-FOUNDER-HR-CAPACITY-CHOICE
+ * VERSION: v3.10.1-CLOSED-HR-CAPACITY-SELECTOR-JSX
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated
