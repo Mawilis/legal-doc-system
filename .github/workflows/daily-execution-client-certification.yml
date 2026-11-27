@@ -1,5 +1,5 @@
 # TITLE: WILSY OS Daily Execution Client GitHub Certification Workflow
-# VERSION: v1.2.0-PEOPLE-OWNED-APPLICATION-CI
+# VERSION: v1.3.0-PEOPLE-OVERVIEW-RUNTIME-CERT
 # AUTHORITY: WILSY OS Core Governance, test and build evidence only.
 # EPITOME: Certify authenticated My Work, Daily Attention and Headquarters
 #          client behavior on exact reviewed GitHub source and locked packages.
@@ -7,6 +7,7 @@
 # COLLABORATION / OWNERSHIP: Vitest client suite, My Work source integration,
 #                           GitHub Actions and Vite frontend production build.
 # CERTIFICATION / UPDATE DATE: 2026-11-17
+# CHANGELOG: v1.3.0-PEOPLE-OVERVIEW-RUNTIME-CERT adds mounted People Overview runtime tests, contextual search and exact-tenant Python EOS summary into the protected client build gate.
 # CHANGELOG: v1.2.0-PEOPLE-OWNED-APPLICATION-CI includes the active People component, styles, work-status tokens and fail-closed authority/prototype UI tests in exact-head interactive client certification.
 # CHANGELOG: v1.1.1-503-COORDINATOR-REGRESSION-CERT adds the bounded
 #            503 recovery and exact-session deduplication unit certificate to
@@ -37,6 +38,7 @@ on:
       - "client/src/components/hr/HrDashboard.module.css"
       - "client/src/theme/workStatus.js"
       - "client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js"
+      - "client/src/__tests__/components/PeopleOverviewRuntime.test.jsx"
       - "client/src/services/unifiedMyWorkProjection.js"
       - "client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx"
       - "client/src/__tests__/components/WilsyWorkDeadlineCalendar.test.jsx"
@@ -89,11 +91,12 @@ jobs:
           src/__tests__/components/WilsyHeadquartersDailyBrief.test.jsx
           src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
           src/__tests__/components/hrDashboardAuthorityBoundary.test.js
+          src/__tests__/components/PeopleOverviewRuntime.test.jsx
       - name: Build production client bundle
         run: npm run build
 
 # ARTIFACT: .github/workflows/daily-execution-client-certification.yml
-# VERSION: v1.2.0-PEOPLE-OWNED-APPLICATION-CI
+# VERSION: v1.3.0-PEOPLE-OVERVIEW-RUNTIME-CERT
 # AUTHORITY BOUNDARY: Client-only certificate; Python EOS owns business truth.
 # TENANT POSTURE: No tenant admission or grants.
 # FAIL-CLOSED POSTURE: All tests and build must complete successfully.
