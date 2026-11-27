@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY OS Shared Source-Owned Work Status Semantics
- * VERSION: v1.0.1-M03-HUMAN-STATUS-LABEL-COMPATIBILITY
+ * VERSION: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX
  * AUTHORITY: WILSY OS client presentation only; EOS retains lifecycle truth.
  * EPITOME: One colour and accessible class vocabulary for Projects, People and
  *          subsequently My Work, Strategy, Calendar and Daily Attention.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/theme/workStatus.js
  * COLLABORATION / OWNERSHIP: ProjectWorkRow, ProjectTasksPanel and HrDashboard.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX corrects human label whitespace normalization for task headers.
  * CHANGELOG: v1.0.1-M03-HUMAN-STATUS-LABEL-COMPATIBILITY resolves human-readable task status labels (e.g. In progress) to the same verified EOS semantic tone without changing lifecycle truth.
  * CHANGELOG: v1.0.0-M03-ENTERPRISE-WORK-COLOUR-SEMANTICS maps only verified
  *          statuses; unknown states remain neutral, never imply completion.
@@ -73,7 +74,7 @@ const tones = Object.freeze({
 
 export function workStatusTone(status) {
   return typeof status === 'string'
-    ? (tones[status.trim().toUpperCase().replace(/[\\s-]+/g, '_')] || 'neutral')
+    ? (tones[status.trim().toUpperCase().replace(/[\s-]+/g, '_')] || 'neutral')
     : 'neutral';
 }
 
@@ -87,7 +88,7 @@ export function workStatusClasses(status) {
 }
 
 // ARTIFACT: client/src/theme/workStatus.js
-// VERSION: v1.0.1-M03-HUMAN-STATUS-LABEL-COMPATIBILITY
+// VERSION: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX
 // AUTHORITY BOUNDARY: No status writes or authorization inferred from colour.
 // TENANT POSTURE: Presentation token contract only.
 // FAIL-CLOSED POSTURE: Unknown statuses remain neutral.
