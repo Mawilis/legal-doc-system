@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.12.2-DENSE-PEOPLE-APPLICATION-CHROME
+ * VERSION: v2.12.3-COMPACT-OVERVIEW-WORKSPACE-LEAD
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -4192,10 +4192,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 )}
               <section className={styles.overviewIntro} aria-labelledby="people-lifecycle-heading">
                 <div className={styles.overviewLead}>
-                  <p className={styles.eyebrow}>PEOPLE · EMPLOYER OPERATIONS</p>
                   <h2 id="people-lifecycle-heading">People <em>at work.</em></h2>
-                  <p>Hire to Exit · One governed employee chain, from approved headcount to access revocation.</p>
-                  <p className={styles.tenantContext}>Current employer · {tenantId}</p>
+                  <p className={styles.tenantContext}>Employer · {tenantId}</p>
                 </div>
                 <div className={styles.overviewActions} aria-label="People work navigation">
                   <button type="button" onClick={() => changeTab('employees')}>Workforce directory <ArrowUpRight size={15} aria-hidden /></button>
