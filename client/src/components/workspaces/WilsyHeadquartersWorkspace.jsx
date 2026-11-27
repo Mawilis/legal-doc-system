@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.20.3-FOOTER-SEMANTIC-LANDMARK
+ * VERSION: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER
+ * CHANGELOG: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER binds dynamic People header and persistent Headquarters footer to the exact authenticated tenant legal identity and reference, never a static Founder name or client-selected tenant.
  * CHANGELOG: v4.20.3-FOOTER-SEMANTIC-LANDMARK declares the persistent Headquarters footer as a named contentinfo landmark so it remains discoverable inside the app's main scroll shell.
  * CHANGELOG: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL reserves a visible shared footer within Headquarters' fixed-height EOS chrome and gives the owned People canvas the bounded scroll rail.
  * CHANGELOG: v4.20.1-PEOPLE-VIEWPORT-CSS-PRECEDENCE moves People-owned layout rules after the base and responsive Headquarters CSS so desktop/mobile shells cannot reinstate the old two-column frame.
@@ -182,6 +183,7 @@
 import React, { lazy, Suspense, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
+import { useTenants } from '../../contexts/tenantContext.jsx';
 import api from '../../services/api.js';
 import {
   currentUnifiedMyWorkScope,
@@ -422,6 +424,14 @@ body:has(.wilsyHqShell)::after{display:none}
 .hq-people-navigation button:hover{background:#1d365a}
 .hq-people-navigation button:focus-visible{outline:3px solid #f0ce7b;outline-offset:3px}
 .hq-people-navigation span{font-weight:650;letter-spacing:.03em}
+.hq-people-employer{margin-left:auto;display:flex;align-items:baseline;gap:8px;max-width:min(48%,480px);min-width:0}
+.hq-people-employer strong{color:#fff;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hq-people-employer small{color:#e4c580;white-space:nowrap;font-size:10px}
+.hq-footer-tenant{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.hq-footer-tenant strong{color:#f1f5f9!important;font-weight:750;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+.hq-footer-tenant small{color:#e4c580;font-size:11px}
+@media(max-width:767px){.hq-people-employer{margin-left:0;max-width:100%;flex-wrap:wrap}}
+
 .hq-people-loading{padding:28px;color:#f4f0e6;background:#0e2444}
 .hq-global-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;align-items:center;padding:17px clamp(16px,2vw,32px);background:#0e2444;color:#c4d4e8;border-top:1px solid #334e78;font-size:11px;line-height:1.5}
 .hq-global-footer strong{font-weight:800;color:#f0ce7b;letter-spacing:.05em}
@@ -466,6 +476,8 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   const navigate = useNavigate();
   const auth = useContext(AuthContext) || {};
   const authUser = auth.user || {};
+  const { activeTenant } = useTenants();
+
   const operatingCapacity = authUser.businessRole || (authUser.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION' ? authUser.role : null);
   const initialNavigation = new URLSearchParams(location.search);
   const initialDocument = ['STRATEGY', 'MISSION'].includes(initialNavigation.get('document'))
@@ -496,6 +508,16 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   }, []);
 
   const workTenantId = tenantId || authUser.tenantId;
+  // Show only tenant identity from the current, authenticated selection.
+  // Tenant metadata is presentation data, never an IAM or source admission.
+  const verifiedEmployer = activeTenant
+    && [activeTenant.tenantId, activeTenant.tenant_id, activeTenant.id]
+      .some((candidate) => typeof candidate === 'string' && candidate === workTenantId)
+    ? activeTenant : null;
+  const employerName = [verifiedEmployer?.legalName, verifiedEmployer?.name]
+    .find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() || null;
+  const employerReference = verifiedEmployer ? workTenantId : null;
+
   const workScope = currentUnifiedMyWorkScope(auth, workTenantId);
   const platformOwnerWorkspace = Boolean(workScope && isWilsyPlatformTenant(workTenantId));
   // A deep-link selects a pre-existing workspace view, not IAM or module
@@ -1255,6 +1277,9 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   <ChevronLeft size={16}/> Headquarters
                 </button>
                 <span aria-current="page">People · Hire to Exit</span>
+                {employerName && employerReference && <span className="hq-people-employer" aria-label="Selected authenticated employer">
+                  <strong>{employerName}</strong><small>{employerReference}</small>
+                </span>}
               </div>
               <Suspense fallback={<section role="status" className="hq-people-loading">Verifying the People operating workspace…</section>}>
                 <HRDashboard user={authUser}/>
@@ -1332,7 +1357,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
       <footer role="contentinfo" className="hq-global-footer" aria-label="Headquarters operating footer">
         <span><strong>WILSY OS</strong> · Build. Operate. Grow.</span>
         <span>{peopleOwnsCanvas ? 'People · Hire to Exit' : 'Headquarters · Enterprise operations'}</span>
-        <span>Python Kennel EOS · Source-owned business records · Authorized tenant context</span>
+        <span className="hq-footer-tenant" aria-label="Current employer tenant">
+          {employerName && employerReference
+            ? <><strong>{employerName}</strong><small>{employerReference}</small></>
+            : 'Tenant verification pending'}
+        </span>
+        <span>Python Kennel EOS · Source-owned records</span>
       </footer>
       {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={closeOperatingDocument} onOpenWork={() => { closeOperatingDocument(); openMyWork(); }}
         onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects', { fromStrategy: operatingDocumentClass === 'STRATEGY' }); }}
@@ -1814,7 +1844,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.20.3-FOOTER-SEMANTIC-LANDMARK
+ * VERSION: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
