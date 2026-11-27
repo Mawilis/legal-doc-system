@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.8.5-GLOBAL-PEOPLE-SEARCH-CONTEXT-CERT
+ * VERSION: v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION certifies the existing safe employee-admission-denial command instead of incorrectly treating its protective text as a legacy UI regression.
  *   v1.8.5-GLOBAL-PEOPLE-SEARCH-CONTEXT-CERT verifies the global header and command overlay switch to functional People navigation rather than retaining generic work search.
  *   v1.8.4-READ-SCOPE-NOT-DECISION-AUTHORITY prevents treating readable submitted requisitions as the current operator's approval grant; command authority remains EOS-owned.
  *   v1.8.3-TRANSACTIONAL-HEADCOUNT-PAGINATION-CERT guards exact-tenant headcount page provenance, true total and server-owned hasMore rather than client truncation.
@@ -161,7 +162,8 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(dashboard).toContain('shownState?.status === HR_READ_STATE.VERIFIED_EMPTY');
     expect(dashboard).toContain('EOS verified no records for this view.');
     expect(dashboard).toContain('isVerifiedReadState(shownState)');
-    expect(dashboard).not.toContain('Employee admission unavailable');
+    expect(dashboard).toContain('Employee admission unavailable');
+    expect(dashboard).toContain('A directory read cannot create employment, principal, membership, capacity or IAM state.');
     expect(dashboard).not.toContain('DEFAULT_TENANT_ID');
     expect(dashboard).not.toContain("'MASTER'");
   });
@@ -309,7 +311,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.8.5-GLOBAL-PEOPLE-SEARCH-CONTEXT-CERT
+ * VERSION: v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
