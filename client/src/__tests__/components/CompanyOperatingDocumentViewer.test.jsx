@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT
+ * VERSION: v1.34.4-CURRENT-LINK-SESSION-TRANSPORT-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,8 +12,9 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.34.4-CURRENT-LINK-SESSION-TRANSPORT-CERT certifies Strategy link reads omit a mounted stale Authorization override while retaining exact tenant scope and independent EOS source readback.
  * CHANGELOG: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT isolates a verified Strategy read admission from a later 403 without misreporting document publication, assignments or optional roles.
- * CHANGELOG: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT distinguishes an EOS 15-second read timeout from an unpublished document and forbids fabricated content.
+ * CHANGELOG: v1.34.4-CURRENT-LINK-SESSION-TRANSPORT-CERT distinguishes an EOS 15-second read timeout from an unpublished document and forbids fabricated content.
  * CHANGELOG: v1.34.1-LIVE-DOM-SOURCE-REVOCATION-CERT
  *            asserts the current mounted Strategy DOM after source link
  *            revocation, never an intentionally detached React reference.
@@ -1295,6 +1296,11 @@ describe('Strategy source-owned project execution readback', () => {
     fireEvent.click(linkButton);
     expect(await screen.findByText(/Linked in EOS · current Strategy and project snapshots verified/)).toBeVisible();
     expect(api.post).toHaveBeenCalledTimes(19);
+    const projectLinkReads = api.get.mock.calls.filter(([url]) => url === linkUrl);
+    expect(projectLinkReads.length).toBeGreaterThan(0);
+    expect(projectLinkReads.every(([, config]) =>
+      config.headers['X-Tenant-ID'] === scope.tenantId
+      && !Object.hasOwn(config.headers, 'Authorization'))).toBe(true);
     expect(linked).toBe(true);
     expect(screen.getByText(/No outcome score certified/)).toBeVisible();
   });
@@ -1373,7 +1379,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT
+// VERSION: v1.34.4-CURRENT-LINK-SESSION-TRANSPORT-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
