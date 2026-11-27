@@ -1,3 +1,20 @@
+"""TITLE: WILSY OS Global Principal Membership Selection Projection.
+VERSION: v1.1.0-EXACT-TENANT-WORKSPACE-SELECTION
+AUTHORITY: Python EOS authenticated membership-capacity directory.
+EPITOME: Resolve the selected operating workspace from each source-verified
+    principal membership's exact tenant and current business role.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/membership_selection_projection.py
+COLLABORATION / OWNERSHIP: Global Principal login, workspace bootstrap projection and tenant IAM.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.1.0-EXACT-TENANT-WORKSPACE-SELECTION supplies exact membership tenant
+    to the existing workspace resolver so the canonical Founder Owner receives
+    WILSY_HEADQUARTERS while other tenant owners retain EXECUTIVE_COMMAND_CENTRE.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials, MFA values or principal identifiers logged.
+TENANT BOUNDARY: Canonical tenant input comes only from verified membership.
+AUTHORITY BOUNDARY: Read-only selection projection; no IAM role or session mutation.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains authoritative.
+"""
 """Read-only, principal-scoped projection of eligible tenant memberships.
 
 This projection is intended for the post-credential, pre-session membership
@@ -146,7 +163,7 @@ def build_membership_selection_page(
                 raise MembershipSelectionProjectionError("MEMBERSHIP_SELECTION_CAPACITY_AMBIGUOUS")
             seen_roles.add(role.business_role)
             try:
-                workspace_id = resolve_workspace_id(role.business_role)
+                workspace_id = resolve_workspace_id(role.business_role, tenant_id=membership.tenant_id)
             except Exception as error:
                 raise MembershipSelectionProjectionError("MEMBERSHIP_SELECTION_WORKSPACE_UNMAPPED") from error
             capacities.append(
@@ -181,3 +198,11 @@ __all__ = [
     "MembershipSelectionPage",
     "build_membership_selection_page",
 ]
+
+# ARTIFACT: tools/eos/auth/membership_selection_projection.py
+# VERSION: v1.1.0-EXACT-TENANT-WORKSPACE-SELECTION
+# AUTHORITY BOUNDARY: Read-only principal-membership and business-role selection.
+# TENANT POSTURE: Exact source-verified tenant scopes only; no role union.
+# FAIL-CLOSED POSTURE: Invalid or unmapped capacity remains denied.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively owns financial execution.
+# END OF WILSY OS SOVEREIGN ARTIFACT
