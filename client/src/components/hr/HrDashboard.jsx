@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS
+ * VERSION: v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY displays one actionable access recovery when all current People sources are denied; authorized users see only source-backed work and indicators, never duplicate error cards.
  *   v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS includes independently source-authorized submitted headcount requisitions in the actionable People queue and exposes their read-only governed source view, not a self-approval shortcut.
  *   v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE wires Overview and Headcount read pagination to the existing exact-tenant EOS headcount requisition endpoint, with bounded browser projection and no legacy BFF headcount route.
  *   v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH accepts global People query intents and runs text search only through the existing independent, tenant-authorized employee directory source.
@@ -4098,6 +4099,9 @@ const HrDashboard = () => {
   };
   const shownDataset = isSourceConnected ? activeDataset : EMPTY_DATASET;
   const shownState = isSourceConnected ? activeReadState : null;
+  const overviewHasAuthorizedSource = isVerifiedReadState(snapshotReadState)
+    || ['candidates', 'offers', 'jobOpenings']
+      .some(key => isVerifiedReadState(datasetReadStates[key]));
   const peopleModules = [
     { id: 'overview', title: 'Overview' },
     { id: 'employees', title: 'Workforce' },
@@ -4149,7 +4153,7 @@ const HrDashboard = () => {
         <div className={styles.peopleMain + " min-w-0 flex-1"} role="region" aria-label="People application content">
           {activeTab === 'overview' && (
             <div className={styles.overview} data-testid="people-lifecycle-overview">
-              {(datasetReadStates.employees?.status === HR_READ_STATE.ACCESS_DENIED
+              {overviewHasAuthorizedSource && (datasetReadStates.employees?.status === HR_READ_STATE.ACCESS_DENIED
                 || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED) && (
                   <div className={styles.overviewAuthority} role="alert">
                     <strong>People source access denied for the current operating capacity</strong>
@@ -4170,6 +4174,14 @@ const HrDashboard = () => {
                   <button type="button" onClick={() => changeTab('offers')}>Employment offers <ArrowUpRight size={15} aria-hidden /></button>
                 </div>
               </section>
+              {!overviewHasAuthorizedSource ? (
+                <section className={styles.overviewRecovery} role="status" aria-label="People source admission">
+                  <h3>People access requires an authorized operating capacity</h3>
+                  <p>The current session cannot verify workforce, hiring or headcount sources. No employee counts or approval decisions are presented as zero. Founder designation alone does not grant HR authority.</p>
+                  <button type="button" onClick={() => changeTab('employees')}>Inspect workforce authorization <ArrowUpRight size={14} aria-hidden /></button>
+                </section>
+              ) : <React.Fragment>}
+              {overviewHasAuthorizedSource && <React.Fragment>
               <section className={styles.overviewSection} aria-labelledby="people-queue-heading">
                 <div className={styles.overviewSectionHead}>
                   <div><p className={styles.eyebrow}>YOUR AUTHORIZED PEOPLE WORK · MAKER ≠ CHECKER</p><h3 id="people-queue-heading">Decisions & next actions</h3></div>
@@ -4218,7 +4230,7 @@ const HrDashboard = () => {
                   <div><p className={styles.eyebrow}>CURRENT SOURCES · VERIFIABLE INDICATORS</p><h3 id="people-brief-heading">Verified workforce & hiring</h3></div>
                   <span>Verified counts only · no sample staff</span>
                 </div>
-                {isVerifiedReadState(snapshotReadState) || ['candidates', 'offers', 'jobOpenings'].some(key => isVerifiedReadState(datasetReadStates[key]))
+                {overviewHasAuthorizedSource
                   ? <div className={styles.peopleKpiGrid}>
                   {[
                     { title: 'Workforce', state: snapshotReadState, dataset: { total: snapshot.summary?.employee?.total }, action: 'employees', note: 'Current active employees · EOS' },
@@ -4236,6 +4248,7 @@ const HrDashboard = () => {
                     No current People indicators are authorized for this capacity. Select an eligible operating capacity to verify source-owned headcount, hiring and workforce information.
                   </div>}
               </section>
+              </React.Fragment>}
 
             </div>
           )}
@@ -4832,7 +4845,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS
+ * VERSION: v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
