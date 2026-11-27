@@ -3,7 +3,10 @@ VERSION: v1.0.0-FOUNDER-HR-READ-ONLY-PREFLIGHT
 AUTHORITY: Read-only inspection of current durable tenant IAM evidence.
 EPITOME: Compare Founder, Owner, membership and employer HR prerequisites
          without issuing business capacities, role assignments or permissions.
-ABSOLUTE CANONICAL PATH: tools/eos/ops/founder_hr_iam_preflight.py
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/founder_hr_iam_preflight.py
+COLLABORATION / OWNERSHIP: WILSY EOS IAM operator preflight; canonical authority repositories remain source owners.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.0.0-FOUNDER-HR-READ-ONLY-PREFLIGHT adds safe, exact-tenant, source-only HR readiness classification.
 COMPLIANCE: POPIA section 19; GDPR Article 32.
 SECURITY POSTURE: Never render principal IDs, credentials or personnel records.
 TENANT BOUNDARY: Canonical WILSY employer only; no fallback tenant aliases.
