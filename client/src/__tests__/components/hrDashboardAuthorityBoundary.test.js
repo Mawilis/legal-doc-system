@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.5.2-HR01-LEGACY-PROFILE-RETIREMENT
+ * VERSION: v1.6.0-PROTOTYPE-OWNED-PEOPLE-APPLICATION-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.6.0-PROTOTYPE-OWNED-PEOPLE-APPLICATION-CERT certifies prototype-grounded full People application composition, truthful EOS-only overview, single global logo and Headquarters-owned footer.
  *   v1.5.2-HR01-LEGACY-PROFILE-RETIREMENT — Asserts the unconditional black/gold HR profile card is unmounted in favour of the global authenticated WILSY identity.
  *   v1.5.1-HR01-SOURCE-PROVENANCE-PRIVACY-CERT — Guards canonical EOS workforce provenance and denies passthrough of employee PII into browser state.
  *   v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST — Guards rendered People headings/error/search contrast and saturated source-owned badges/Project row accents.
@@ -232,11 +233,36 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(mapping).not.toContain('identityNumber');
   });
 
+  it('implements the supplied Hire-to-Exit prototype hierarchy without fictitious HR data', () => {
+    expect(dashboard).toContain("useState('overview')");
+    expect(dashboard).toContain("id: 'overview', title: 'Overview'");
+    expect(dashboard).toContain('data-testid="people-lifecycle-overview"');
+    expect(dashboard).toContain('Hire to Exit. ');
+    expect(dashboard).toContain('Every decision Maker ≠ Checker.');
+    expect(dashboard).toContain('Source-owned · Not a task simulation');
+    expect(dashboard).toContain("isVerifiedReadState(datasetReadStates.offers)");
+    expect(dashboard).toContain("isVerifiedReadState(datasetReadStates.candidates)");
+    expect(dashboard).toContain("isVerifiedReadState(metric.state) ? metric.dataset.total : 'Unavailable'");
+    expect(dashboard).not.toContain('24 / 28 Planned');
+    expect(dashboard).not.toContain('Onboard Naledi');
+    expect(dashboard).toContain('const sourceTab = activeTab === \'overview\' ? \'employees\' : activeTab');
+  });
+
+  it('keeps the global logo and delegates owned People footer to Headquarters', () => {
+    const hq = fs.readFileSync(path.join(ROOT, 'src/components/workspaces/WilsyHeadquartersWorkspace.jsx'), 'utf8');
+    expect(hq).toContain("peopleOwnsCanvas = section === 'hr-workspace'");
+    expect(hq).toContain('hq-layout--people-owned');
+    expect(hq).toContain('data-workspace-ownership="PEOPLE"');
+    expect(hq).toContain('aria-label="Return to Headquarters"');
+    expect(hq).toContain('className="hq-global-footer"');
+    expect(dashboard).not.toContain('wilsy-logo.svg');
+  });
+
 });
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.5.2-HR01-LEGACY-PROFILE-RETIREMENT
+ * VERSION: v1.6.0-PROTOTYPE-OWNED-PEOPLE-APPLICATION-CERT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
