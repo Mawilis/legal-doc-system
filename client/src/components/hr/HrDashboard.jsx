@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION
+ * VERSION: v2.11.11-READ-SCOPE-NOT-CHECKER-ENTITLEMENT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.11-READ-SCOPE-NOT-CHECKER-ENTITLEMENT labels tenant-visible submitted requisitions as source-owned requests, not personal approval assignments, because decision authority is rechecked only by the owning EOS command.
  *   v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION maps global contextual People search shortcuts to the real authorized hiring, offers, workforce and paginated headcount lanes without cross-source record indexing.
  *   v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE consumes true paginated transactional headcount Overview pages and independently validates exact-tenant provenance and total, preventing the old 200-record cap from appearing complete.
  *   v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET clears tenant-authorized workforce-only search terms on switching to independently authorized hiring/offer/headcount modules.
@@ -4197,8 +4198,8 @@ const HrDashboard = () => {
               {overviewHasAuthorizedSource && <React.Fragment>
               <section className={styles.overviewSection} aria-labelledby="people-queue-heading">
                 <div className={styles.overviewSectionHead}>
-                  <div><p className={styles.eyebrow}>YOUR AUTHORIZED PEOPLE WORK · MAKER ≠ CHECKER</p><h3 id="people-queue-heading">Decisions & next actions</h3></div>
-                  <span>Source-owned · Not a task simulation</span>
+                  <div><p className={styles.eyebrow}>SOURCE-OWNED PEOPLE REQUESTS · MAKER ≠ CHECKER</p><h3 id="people-queue-heading">Decisions & next actions</h3></div>
+                  <span>EOS reauthorizes every source decision</span>
                 </div>
                 {(() => {
                   const items = [
@@ -4206,7 +4207,7 @@ const HrDashboard = () => {
                       ? datasets.jobOpenings.items.filter(item => item.status === 'SUBMITTED').map(item => ({
                         key: 'requisition:' + item.id,
                         title: 'Review requisition · ' + item.title,
-                        detail: 'Department ' + item.department + ' · Requires independent headcount decision',
+                        detail: 'Department ' + item.department + ' · Pending independent headcount decision',
                         source: 'jobOpenings', status: item.status,
                       })) : []),
                     ...(isVerifiedReadState(datasetReadStates.offers)
@@ -4858,7 +4859,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION
+ * VERSION: v2.11.11-READ-SCOPE-NOT-CHECKER-ENTITLEMENT
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
