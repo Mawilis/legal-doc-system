@@ -5,13 +5,14 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT
+ * VERSION: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT verifies current tenant legal identity in People header/footer and denies presentation of a foreign tenant's legal name under the selected authenticated session.
  * CHANGELOG: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT certifies the source-owned People application layout, contextual return and bounded shared Headquarters footer at the original operating route.
  * CHANGELOG: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT verifies a Headquarters Projects work row routes directly to its task and never selects the assigned-projects view.
  * CHANGELOG: v1.28.1-IN-CONTEXT-STRATEGY-NAV-CERT requires the M04 breadcrumb and primary action inside canonical Projects navigation, and rejects spurious return nav for ordinary Projects.
@@ -420,6 +421,33 @@ describe('WILSY Headquarters authenticated shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Return to Headquarters' }));
     expect(await screen.findByRole('heading', { name: 'WILSY Headquarters' })).toBeTruthy();
     expect(layout).not.toHaveClass('hq-layout--people-owned');
+  });
+
+  it('shows exact authenticated employer identity in People header and shared footer', async () => {
+    const tenantBoundAuth = {
+      ...auth,
+      tenant: { tenantId: exactTenant, legalName: 'Verified Test Employer Ltd' },
+    };
+    renderHeadquarters(['/headquarters?section=hr-workspace'], tenantBoundAuth);
+    expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+    const employer = screen.getByLabelText('Selected authenticated employer');
+    expect(employer).toHaveTextContent('Verified Test Employer Ltd');
+    expect(employer).toHaveTextContent(exactTenant);
+    const footer = screen.getByRole('contentinfo', { name: 'Headquarters operating footer' });
+    expect(footer).toHaveTextContent('Verified Test Employer Ltd');
+    expect(footer).toHaveTextContent(exactTenant);
+  });
+
+  it('does not present a foreign tenant legal name as current employer', async () => {
+    const foreignMetadata = {
+      ...auth,
+      tenant: { tenantId: 'FOREIGN-TENANT', legalName: 'Foreign Employer Ltd' },
+    };
+    renderHeadquarters(['/headquarters?section=hr-workspace'], foreignMetadata);
+    expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+    expect(screen.queryByText('Foreign Employer Ltd')).toBeNull();
+    expect(screen.getByRole('contentinfo', { name: 'Headquarters operating footer' }))
+      .toHaveTextContent('Tenant verification pending');
   });
 
   it('keeps the shared Headquarters footer when the operating view changes', () => {
@@ -1048,7 +1076,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT
+ * VERSION: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
