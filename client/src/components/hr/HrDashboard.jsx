@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE
+ * VERSION: v2.19.0-WORKFORCE-ORGANIZATION-SOURCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,15 +12,16 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.19.0-WORKFORCE-ORGANIZATION-SOURCE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -2384,6 +2385,11 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [peopleQueueFilter, setPeopleQueueFilter] = useState('all');
   const [peopleVerificationHelpOpen, setPeopleVerificationHelpOpen] = useState(false);
+  const [workforceView, setWorkforceView] = useState('directory');
+  const [workforceOrganization, setWorkforceOrganization] = useState(null);
+  const [workforceOrganizationState, setWorkforceOrganizationState] = useState('IDLE');
+  const [workforceOrganizationRefresh, setWorkforceOrganizationRefresh] = useState(0);
+  const workforceOrganizationSequenceRef = useRef(0);
   const [selectedWorkforceEmployeeId, setSelectedWorkforceEmployeeId] = useState(null);
   const [workforceDetail, setWorkforceDetail] = useState(null);
   const [workforceDetailStatus, setWorkforceDetailStatus] = useState('IDLE');
@@ -2464,6 +2470,10 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       datasetRequestSequencesRef.current[datasetName] = (datasetRequestSequencesRef.current[datasetName] || 0) + 1;
     }
     workforceDetailSequenceRef.current += 1;
+    workforceOrganizationSequenceRef.current += 1;
+    setWorkforceOrganization(null);
+    setWorkforceOrganizationState('IDLE');
+    setWorkforceView('directory');
     setSelectedWorkforceEmployeeId(null);
     setWorkforceDetail(null);
     setWorkforceDetailStatus('IDLE');
@@ -2490,6 +2500,10 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     if (previousTenantScopeKeyRef.current === tenantScopeKey) return;
     previousTenantScopeKeyRef.current = tenantScopeKey;
     setDataScopeKey(null);
+    workforceOrganizationSequenceRef.current += 1;
+    setWorkforceOrganization(null);
+    setWorkforceOrganizationState('IDLE');
+    setWorkforceView('directory');
     setSearchTerm('');
     setWorkforceSearchDraft('');
     setSelectedWorkforceEmployeeId(null);
@@ -2967,6 +2981,50 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Organization read is a bounded observational projection, not an approved
+  // department registry. Fresh EOS authorization is required every time the
+  // view is entered or refreshed; superseded tenant results are discarded.
+  useEffect(() => {
+    if (activeTab !== 'employees' || workforceView !== 'organization' || !tenantScopeKey) return undefined;
+    const scope = tenantScopeKey;
+    const sequence = ++workforceOrganizationSequenceRef.current;
+    setWorkforceOrganization(null);
+    setWorkforceOrganizationState('PENDING');
+    void api.get('/hr/workforce/organization', {headers: {'X-Tenant-ID': tenantId}})
+      .then(response => {
+        if (sequence !== workforceOrganizationSequenceRef.current
+          || tenantScopeKeyRef.current !== scope
+          || invalidatedSessionScopeKeyRef.current === scope) return;
+        const data = response?.data;
+        const rows = data?.departments;
+        const valid = data?.schema === 'WILSY-HR-WORKFORCE-ORGANIZATION/V1'
+          && data?.source === 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+          && data?.status === 'OBSERVED_EMPLOYEE_DISTRIBUTION'
+          && data?.tenant_id === tenantId
+          && Number.isSafeInteger(data?.active_employees) && data.active_employees >= 0
+          && Number.isSafeInteger(data?.unassigned_employees) && data.unassigned_employees >= 0
+          && Number.isSafeInteger(data?.department_count)
+          && Array.isArray(rows) && rows.length === data.department_count && rows.length <= 200
+          && rows.every(row => typeof row?.name === 'string' && row.name.length > 0
+            && Number.isSafeInteger(row?.active_employees) && row.active_employees >= 1)
+          && rows.reduce((count, row) => count + row.active_employees, data.unassigned_employees)
+             === data.active_employees;
+        if (!valid) {setWorkforceOrganizationState('UNAVAILABLE'); return;}
+        setWorkforceOrganization(data);
+        setWorkforceOrganizationState('VERIFIED');
+      })
+      .catch(error => {
+        if (sequence !== workforceOrganizationSequenceRef.current
+          || tenantScopeKeyRef.current !== scope) return;
+        if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+          invalidateHrSessionScope(scope, hrReadErrorCode(error));
+          return;
+        }
+        setWorkforceOrganizationState(error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+      });
+    return () => {workforceOrganizationSequenceRef.current += 1;};
+  }, [activeTab, workforceView, workforceOrganizationRefresh, tenantScopeKey, tenantId]);
 
   // The text box remains responsive while EOS only receives a settled query.
   // Search is always executed server-side against the current authorized tenant.
@@ -4591,6 +4649,21 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   : 'Python EOS has not returned a current verified People result. Existing records are not represented as empty or zero.'}</p>
             </div>}
           {activeTab === 'employees' && <section className={styles.workforceSurface} aria-labelledby="workforce-directory-heading" data-testid="eos-workforce-directory">
+            <div style={{display:'flex',gap:6,padding:'12px 20px 0',background:'#fff'}} role="group" aria-label="Workforce views">
+              {[
+                {id:'directory',label:'Directory'},
+                {id:'organization',label:'Organization'},
+              ].map(view => <button type="button" key={view.id}
+                onClick={() => {setWorkforceView(view.id); setSelectedWorkforceEmployeeId(null);}}
+                aria-pressed={workforceView === view.id}
+                style={{padding:'8px 15px',fontSize:13,fontWeight:700,borderRadius:7,
+                  border:'1px solid #b8c9dd',
+                  background:workforceView === view.id ? '#173c70' : '#fff',
+                  color:workforceView === view.id ? '#fff' : '#173c70'}}>
+                {view.label}
+              </button>)}
+            </div>
+            {workforceView === 'directory' && <React.Fragment>
             <div className={styles.workforceHeader}>
               <div className={styles.workforceHeading}>
                 <h2 id="workforce-directory-heading">Workforce directory</h2>
@@ -4696,6 +4769,57 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   </React.Fragment>;
                 })()}
               </div>}
+            </React.Fragment>}
+            {workforceView === 'organization' && <section aria-labelledby="workforce-organization-heading"
+              style={{padding:'20px 22px',borderTop:'1px solid #dbe5f0',background:'#fff'}}>
+              <div style={{display:'flex',gap:14,alignItems:'center',justifyContent:'space-between',flexWrap:'wrap'}}>
+                <div>
+                  <h2 id="workforce-organization-heading" style={{color:'#142b49',fontSize:21,fontWeight:750}}>Organization</h2>
+                  <p style={{color:'#526781',fontSize:13,marginTop:4}}>Observed workforce distribution from authorized EOS employee records</p>
+                </div>
+                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
+                  style={{padding:'9px 12px',border:'1px solid #9eb2ca',borderRadius:8,color:'#173c70',fontWeight:700}}>
+                  Refresh organization
+                </button>
+              </div>
+              {workforceOrganizationState === 'PENDING' && <p role="status" style={{marginTop:18,color:'#526781'}}>Verifying organization source…</p>}
+              {workforceOrganizationState === 'DENIED' && <p role="alert" style={{marginTop:18,color:'#526781'}}>This capacity is not authorized to view the organization source.</p>}
+              {workforceOrganizationState === 'UNAVAILABLE' && <p role="status" style={{marginTop:18,color:'#526781'}}>EOS could not verify the organization distribution. No structure is inferred.</p>}
+              {workforceOrganizationState === 'VERIFIED' && workforceOrganization && <React.Fragment>
+                <p style={{marginTop:18,fontSize:13,color:'#375371'}} aria-live="polite">
+                  <strong style={{color:'#163959'}}>{workforceOrganization.department_count}</strong> observed departments ·
+                  {' '}<strong style={{color:'#163959'}}>{workforceOrganization.active_employees}</strong> active employees
+                  {workforceOrganization.unassigned_employees > 0 ? ` · ${workforceOrganization.unassigned_employees} without a department` : ''}
+                </p>
+                {workforceOrganization.departments.length === 0
+                  ? <div role="status" style={{borderTop:'1px solid #dae4ee',marginTop:18,padding:'20px 0',color:'#4c627a'}}>
+                      No department distribution exists in the verified active workforce. An approved organization and positions registry must be established separately.
+                    </div>
+                  : <div style={{border:'1px solid #d4e0ed',borderRadius:10,overflow:'hidden',marginTop:16}}>
+                      {workforceOrganization.departments.map((unit,i) => <div key={unit.name}
+                        style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,padding:'14px 16px',
+                          borderBottom:i === workforceOrganization.departments.length-1 ? 'none' : '1px solid #e1e8f1'}}>
+                        <div style={{minWidth:0}}>
+                          <strong style={{color:'#172f4e',fontSize:14}}>{unit.name}</strong>
+                          <p style={{fontSize:12,color:'#536982',marginTop:4}}>Current employee records · not an approved position allocation</p>
+                        </div>
+                        <button type="button" onClick={() => {
+                          setWorkforceView('directory');
+                          setWorkforceSearchDraft(unit.name);
+                          setSearchTerm(unit.name);
+                          setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
+                        }} style={{flexShrink:0,padding:'8px 11px',borderRadius:7,border:'1px solid #b8c9dd',color:'#173c70',background:'#fff',fontSize:12,fontWeight:700}}
+                          aria-label={`Search workforce in ${unit.name}, ${unit.active_employees} active employees`}>
+                          {unit.active_employees} people · View
+                        </button>
+                      </div>)}
+                    </div>}
+                <p style={{fontSize:12,color:'#526781',lineHeight:1.6,marginTop:15}}>
+                  This is an observed directory distribution, not an approved organization chart, position inventory or headcount authority.
+                  Approved positions and reporting relationships require their separately governed EOS lifecycle.
+                </p>
+              </React.Fragment>}
+            </section>}
           </section>}
           {activeTab !== 'employees' && <section className="rounded-xl border border-slate-200 bg-white" aria-labelledby="people-current-heading">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 sm:px-5">
@@ -5290,7 +5414,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.18.3-VERIFIED-WORKFORCE-PAGE-STATE
+ * VERSION: v2.19.0-WORKFORCE-ORGANIZATION-SOURCE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
