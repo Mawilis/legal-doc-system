@@ -1,8 +1,8 @@
 /**
  * WILSY OS — RECOVERY SECURITY PRODUCT WIRING CERTIFICATE
  * TITLE: Account recovery-contact security wiring direct certificate
- * VERSION: v1.0.1-R10F2-ACCOUNT-VERSION-PARITY-CERT
- * CHANGELOG: v1.0.1-R10F2-ACCOUNT-VERSION-PARITY-CERT — checks Account Center header/seal version alignment and retains the historical recovery changelog entry.
+ * VERSION: v1.1.0-RECOVERY-STATUS-READBACK-CERT
+ * CHANGELOG: v1.1.0-RECOVERY-STATUS-READBACK-CERT — checks Account Center header/seal version alignment and retains the historical recovery changelog entry.
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies that authenticated recovery-email verification is reachable
  *          from Account Security while browser presentation cannot nominate
@@ -33,12 +33,14 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requestRecoveryContactVerification } = vi.hoisted(() => ({
+const { requestRecoveryContactVerification, getRecoveryContactStatus } = vi.hoisted(() => ({
   requestRecoveryContactVerification: vi.fn(),
+  getRecoveryContactStatus: vi.fn(),
 }));
 
 vi.mock('../../services/api.js', () => ({
   requestRecoveryContactVerification,
+  getRecoveryContactStatus,
 }));
 
 import RecoveryContactSecurityControl from '../../components/account/RecoveryContactSecurityControl.jsx';
@@ -51,6 +53,8 @@ const ACCOUNT_SOURCE = resolve(
 describe('R10F recovery-contact security product wiring', () => {
   beforeEach(() => {
     requestRecoveryContactVerification.mockReset();
+    getRecoveryContactStatus.mockReset();
+    getRecoveryContactStatus.mockResolvedValue({ status: 200, data: { status: 'VERIFICATION_REQUIRED' } });
   });
 
   it('requests verification without browser-supplied authority and shows bounded sent state', async () => {
@@ -65,7 +69,7 @@ describe('R10F recovery-contact security product wiring', () => {
 
     expect(screen.getByText('operator@example.test')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Verify recovery email' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Verify recovery email' }));
 
     await waitFor(() => {
       expect(requestRecoveryContactVerification).toHaveBeenCalledTimes(1);
@@ -77,10 +81,7 @@ describe('R10F recovery-contact security product wiring', () => {
   });
 
   it('uses server-owned current-email copy when no authenticated display email exists', async () => {
-    requestRecoveryContactVerification.mockResolvedValue({
-      status: 202,
-      data: { status: 'VERIFICATION_NOT_REQUIRED' },
-    });
+    getRecoveryContactStatus.mockResolvedValue({ status: 200, data: { status: 'VERIFIED' } });
 
     render(<RecoveryContactSecurityControl />);
 
@@ -88,14 +89,10 @@ describe('R10F recovery-contact security product wiring', () => {
       screen.getByText('Your current account email will be verified by the server.'),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Verify recovery email' }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Current recovery email is already verified.'),
-      ).toBeInTheDocument();
-    });
-    expect(requestRecoveryContactVerification).toHaveBeenCalledWith();
+    expect(await screen.findByText('Current recovery email is already verified.')).toBeInTheDocument();
+    expect(getRecoveryContactStatus).toHaveBeenCalledWith();
+    expect(requestRecoveryContactVerification).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Verify recovery email' })).not.toBeInTheDocument();
   });
 
   it('renders rate limiting without creating local verified state', async () => {
@@ -105,7 +102,7 @@ describe('R10F recovery-contact security product wiring', () => {
 
     render(<RecoveryContactSecurityControl email="operator@example.test" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Verify recovery email' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Verify recovery email' }));
 
     expect(
       await screen.findByRole('alert'),
@@ -113,6 +110,14 @@ describe('R10F recovery-contact security product wiring', () => {
     expect(
       screen.queryByText('Current recovery email is already verified.'),
     ).not.toBeInTheDocument();
+  });
+
+  it('keeps recovery status unavailable and never issues a mail request on source failure', async () => {
+    getRecoveryContactStatus.mockRejectedValue({ response: { status: 503 } });
+    render(<RecoveryContactSecurityControl email="operator@example.test" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Recovery email status unavailable');
+    expect(requestRecoveryContactVerification).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Verify recovery email' })).not.toBeInTheDocument();
   });
 
   it('mounts recovery verification only in Account Security using explicit user email display', () => {
@@ -163,7 +168,7 @@ describe('R10F recovery-contact security product wiring', () => {
 /**
  * WILSY OS SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: recoveryContactSecurityWiring.test.jsx
- * VERSION: v1.0.1-R10F2-ACCOUNT-VERSION-PARITY-CERT
+ * VERSION: v1.1.0-RECOVERY-STATUS-READBACK-CERT
  * AUTHORITY BOUNDARY: deterministic client presentation/wiring evidence only
  * TENANT POSTURE: no browser tenant/email authority admitted
  * FAIL-CLOSED POSTURE: transport/rate failures never create verified state
