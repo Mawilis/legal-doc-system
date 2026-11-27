@@ -84,6 +84,21 @@ const renderAccount = (auth) => (
 );
 
 describe('Top App Bar account identity scope', () => {
+  it('formats an EOS HR Director capacity and exposes the existing recovery verification action', () => {
+    const hrUser = {
+      ...ownerProjection,
+      workspaceEmail: 'hr.director@example.test',
+      role: 'tenant_hr_director',
+      businessRole: 'tenant_hr_director',
+    };
+    const auth = authProjection(hrUser, { tenantId: hrUser.tenantId, legalName: 'Tenant A Organisation' }, 9);
+    render(renderAccount(auth));
+    expect(screen.getByRole('button', { name: 'Open account menu' })).toHaveTextContent('HR Director capacity');
+    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Security & sessions/ }));
+    expect(screen.getByRole('button', { name: 'Verify recovery email' })).toBeInTheDocument();
+  });
+
   it('keeps profile detail in a focused view and saves only a device-local menu preference', () => {
     const candidate = { ...ownerProjection, workspaceEmail: null };
     const auth = authProjection(candidate, { tenantId: candidate.tenantId, legalName: 'Tenant A Organisation' }, 4);
