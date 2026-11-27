@@ -1,9 +1,10 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.33.4-OWNER-STRATEGY-READ-REASON
+ * VERSION: v2.33.5-CURRENT-STRATEGY-LINK-SESSION
+ * CHANGELOG: v2.33.5-CURRENT-STRATEGY-LINK-SESSION removes a stale mounted-bearer override from Strategy project-link reads, delegating the current verified session token to shared api.js without changing tenant or server permission checks.
  * CHANGELOG: v2.33.4-OWNER-STRATEGY-READ-REASON displays only the bounded server-authoritative Strategy denial reason for eligible Owner check and keeps permission and document states unchanged.
- * CHANGELOG: v2.33.4-OWNER-STRATEGY-READ-REASON uses the current authenticated HTTP authority check after a Strategy 403 to distinguish denied read from a later document-stage denial; source failures remain failures and IAM remains unchanged.
- * CHANGELOG: v2.33.4-OWNER-STRATEGY-READ-REASON identifies the 15-second EOS read timeout distinctly from an absent endpoint, without altering document state or authority.
+ * CHANGELOG: v2.33.5-CURRENT-STRATEGY-LINK-SESSION uses the current authenticated HTTP authority check after a Strategy 403 to distinguish denied read from a later document-stage denial; source failures remain failures and IAM remains unchanged.
+ * CHANGELOG: v2.33.5-CURRENT-STRATEGY-LINK-SESSION identifies the 15-second EOS read timeout distinctly from an absent endpoint, without altering document state or authority.
  * CHANGELOG: v2.33.1-M04-RETURN-PROGRESS retains the M04 document shell on a Strategy-origin return and explains the still-pending EOS publication and task verification, rather than showing an empty full-screen spinner or stale execution counts.
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
@@ -908,7 +909,9 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     }
     try {
       const { data: result } = await api.get('/company-operating-documents/STRATEGY/project-links', {
-        headers: { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token },
+        // Keep the link read on the same current api.js session as Strategy.
+        // A mounted viewer token can outlive a governed capacity transition.
+        headers: { 'X-Tenant-ID': scope.tenantId },
         signal: controller.signal,
       });
       if (!active(key) || request !== strategyLinkReadRef.current.sequence) return;
@@ -2682,7 +2685,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.33.4-OWNER-STRATEGY-READ-REASON
+// VERSION: v2.33.5-CURRENT-STRATEGY-LINK-SESSION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
