@@ -221,5 +221,4 @@ const buttonStyle = {
  * FAIL-CLOSED POSTURE: only bounded server status updates presentation
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
- * ============================================================================
  */
