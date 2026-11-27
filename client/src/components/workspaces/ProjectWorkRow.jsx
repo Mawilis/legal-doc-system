@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME
+ * VERSION: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkRow.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
- * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS renders verified and explicitly pending statuses with the canonical enterprise work colour mapping, while retaining text labels and readback.
  * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.
  * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.
  * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
@@ -81,6 +82,7 @@ import React from 'react';
 import { Waypoints, ClipboardList, UserRound } from 'lucide-react';
 import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
 import { workTaskBlueprint } from './WorkTaskBlueprint.jsx';
+import { workStatusClasses } from '../../theme/workStatus.js';
 
 const NO_ACTION_CAPABILITIES = Object.freeze({
   canStart: false, canComplete: false, canBlock: false, canCancel: false,
@@ -217,11 +219,8 @@ export default function ProjectWorkRow({
                   title={item.description}>{item.description}</p>}
               </td>
               <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-slate-800'}>
-                <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
-                  + ({ TODO: 'bg-slate-100 text-slate-800', IN_PROGRESS: 'bg-blue-50 text-blue-800',
-                    BLOCKED: 'bg-amber-100 text-amber-900', DONE: 'bg-emerald-50 text-emerald-800',
-                    CANCELLED: 'bg-slate-100 text-slate-600' })[pendingStatus !== null
-                    ? pendingStatus : item.status]}>
+                <span className={workStatusClasses(pendingStatus !== null
+                  ? pendingStatus : item.status)}>
                   {statusLabel(pendingStatus !== null ? pendingStatus : item.status)}
                   {pendingStatus !== null ? ' · pending' : ''}
                 </span>
@@ -263,7 +262,7 @@ export default function ProjectWorkRow({
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME
+// VERSION: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit
