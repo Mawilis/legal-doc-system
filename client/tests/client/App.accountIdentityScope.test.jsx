@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY account identity scope transition certificate
- * VERSION: v1.1.0-FOCUSED-ACCOUNT-PROFILE-CERT
+ * VERSION: v1.2.0-DURABLE-ACCOUNT-EMAIL-CERT
  * AUTHORITY: Client projection test only; Python EOS remains the authority.
  * EPITOME: Prove that the Top App Bar account menu follows a same-principal
  *          EOS tenant and selected-capacity transition without retaining the
@@ -9,6 +9,7 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/App.accountIdentityScope.test.jsx
  * COLLABORATION / OWNERSHIP: App authenticated chrome and AuthProvider contract.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v1.2.0-DURABLE-ACCOUNT-EMAIL-CERT distinguishes EOS credential email from a sign-in fallback without assigning email-control verification authority.
  * CHANGELOG: v1.1.0-FOCUSED-ACCOUNT-PROFILE-CERT verifies focused account navigation, explicit sign-in email provenance, and durable device menu density.
  * CHANGELOG: v1.0.1-ACCOUNT-IDENTITY-SCOPE-TRANSITIONS — Certifies the existing account identity scope and authenticated workspace boundaries.
  *            Previous: v1.0.1 adds inert authenticated-client mocks so this focused UI certificate cannot issue unrelated network requests.
@@ -103,13 +104,25 @@ describe('Top App Bar account identity scope', () => {
     expect(await screen.findByRole('button', { name: 'Verify recovery email' })).toBeInTheDocument();
   });
 
+  it('labels source-owned EOS workspace account email without a missing-source warning', () => {
+    const auth = authProjection(ownerProjection, {
+      tenantId: ownerProjection.tenantId, legalName: 'Tenant A Organisation',
+    }, 3);
+    render(renderAccount(auth));
+    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    const menu = screen.getByRole('menu', { name: 'Account menu' });
+    expect(menu).toHaveTextContent('alex.tenant-a@example.test');
+    expect(menu).toHaveTextContent('Account email · EOS credential source');
+    expect(menu).not.toHaveTextContent('workspace email not provided');
+  });
+
   it('keeps profile detail in a focused view and saves only a device-local menu preference', () => {
     const candidate = { ...ownerProjection, workspaceEmail: null };
     const auth = authProjection(candidate, { tenantId: candidate.tenantId, legalName: 'Tenant A Organisation' }, 4);
     render(renderAccount(auth));
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
     const menu = screen.getByRole('menu', { name: 'Account menu' });
-    expect(menu).toHaveTextContent('Sign-in email · workspace source unavailable');
+    expect(menu).toHaveTextContent('Sign-in email · workspace email not provided');
     fireEvent.click(screen.getByRole('menuitem', { name: /My profile/ }));
     expect(menu).toHaveTextContent('Sign-in email, not independently verified by EOS');
     expect(screen.getByRole('menuitem', { name: /Back to account/ })).toBeInTheDocument();
@@ -183,7 +196,7 @@ describe('Top App Bar account identity scope', () => {
 });
 
 // ARTIFACT: client/tests/client/App.accountIdentityScope.test.jsx
-// VERSION: v1.1.0-FOCUSED-ACCOUNT-PROFILE-CERT
+// VERSION: v1.2.0-DURABLE-ACCOUNT-EMAIL-CERT
 // AUTHORITY BOUNDARY: Client projection test only; EOS owns identity and access.
 // TENANT POSTURE: Exact synthetic tenant projections; no persistence.
 // FAIL-CLOSED POSTURE: Mismatched or stale rendered identity fails assertions.
