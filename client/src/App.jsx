@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH
+ * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,10 +24,11 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER sends the global logo to the EOS-selected capacity home (Owner Headquarters, HR Director/Manager People), and uses one canonical footer on other protected routes without duplicating the Headquarters footer.
  * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH removes the implicit HR Projects-denial event that opened a logout-and-Owner-login prompt; account capacity change remains explicit, EOS governed and MFA bound.
  * CHANGELOG: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY opens the existing confirmation when HR-denied Projects explicitly requests Owner capacity; reauthentication and EOS authorisation remain mandatory.
  * CHANGELOG: v20.4.11-PLAIN-LANGUAGE-ACCOUNT-EMAIL uses human-readable Account email/Sign-in email labels; verification remains separately EOS-owned, never inferred from workspace identity.
- * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH labels EOS credential-backed account email separately from sign-in fallback; recovery-contact verification remains an independent source.
+ * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER labels EOS credential-backed account email separately from sign-in fallback; recovery-contact verification remains an independent source.
  * CHANGELOG: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
  * CHANGELOG: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES replaces the scrolling accordion with focused account subviews, distinguishes sign-in email from EOS-verified identity, and provides a durable device-only menu density preference without inventing server writes.
  * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
@@ -159,6 +160,7 @@ import {
 } from './services/unifiedMyWorkSync.js';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 import WilsyDailyAttentionCentre from './components/chrome/WilsyDailyAttentionCentre.jsx';
+import WilsySystemFooter from './components/chrome/WilsySystemFooter.jsx';
 
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
@@ -316,6 +318,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const isHrCapacity = currentCapacity === 'tenant_hr_manager'
     || currentCapacity === 'tenant_hr_director';
   const isOwnerCapacity = currentCapacity === 'tenant_owner';
+  // The brand action returns to the HOME of the server-selected capacity.
+  // No client-side role mutation, logout, or cross-capacity navigation.
+  const currentHomeRoute = isHrCapacity
+    ? '/headquarters?section=hr-workspace'
+    : currentCapacity === 'tenant_owner' ? '/headquarters' : '/';
   const institutionalTitle = sessionUser?.institutionalDesignation === 'Founder'
     && sessionUser?.tenantId === 'WILSYTENANT-4CD2FZ4O'
     && currentCapacity === 'tenant_owner'
@@ -501,7 +508,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     event.preventDefault();
     const query = searchValue.trim().toLowerCase();
     if (query === 'headquarters' || query === 'home') {
-      navigate('/headquarters');
+      navigate(query === 'home' ? currentHomeRoute : '/headquarters');
       setSearchOpen(false);
       setSearchValue('');
       setSearchNotice('');
@@ -535,10 +542,10 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   };
 
   return (
-    <div className="min-h-screen bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
+    <div className="flex min-h-screen flex-col bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
       {isPlatformOwnerWorkspace && <style>{'body:has([data-wilsy-platform-owner="true"])::after{display:none!important}'}</style>}
       <header className="sticky top-0 z-40 flex h-[72px] w-full min-w-0 items-center gap-2 border-b border-white/10 bg-gradient-to-r from-[#0b1830] via-[#112444] to-[#0b1830] px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-4 xl:px-5">
-        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[228px] xl:w-[228px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate(currentHomeRoute)} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[228px] xl:w-[228px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
           <img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo" className="h-14 w-14 shrink-0 object-contain md:h-16 md:w-16" />
           <span className="hidden min-w-0 leading-tight min-[360px]:block">
             <span className="block text-[23px] font-bold tracking-[0.045em] md:text-[30px] text-white">WILSY</span>
@@ -760,7 +767,14 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
         </div>
       </header>
 
-      <div>{children}</div>
+      <div className="min-h-0 flex-1">{children}</div>
+      {location.pathname !== '/headquarters' && (
+        <WilsySystemFooter
+          surface={isHrCapacity ? 'People · Hire to Exit' : isOwnerCapacity ? 'Headquarters · Enterprise operations' : 'WILSY OS · Authorized workspace'}
+          employerName={showTenantContext ? organisationName : ''}
+          employerReference={showTenantContext ? currentTenantReference : ''}
+        />
+      )}
 
       {searchOpen && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
@@ -1341,7 +1355,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH
+ * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
