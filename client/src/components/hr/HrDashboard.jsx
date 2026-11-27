@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.12.1-HQ-RETURN-ICON-IMPORT
+ * VERSION: v2.12.2-DENSE-PEOPLE-APPLICATION-CHROME
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -4143,7 +4143,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     <React.Fragment>
       <div className={styles.peopleSurface} data-testid="people-os-workspace" data-source="PYTHON_EOS">
         <header className={styles.peopleAppHeader}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className={styles.peopleToolbar}>
             <div className={styles.peopleHeaderIdentity}>
               {typeof onReturnToHeadquarters === 'function' && (
                 <button type="button" className={styles.peopleReturnButton}
@@ -4152,16 +4152,16 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   <ChevronLeft size={18} aria-hidden="true" />
                 </button>
               )}
-              <div className="min-w-0">
-                <p className={styles.eyebrow}>WILSY OS · PEOPLE OPERATING SYSTEM</p>
-                <h1 className={styles.peopleHeading + " mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl"}>People · Hire to Exit</h1>
-                <p className="mt-1 text-sm text-slate-600">Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit</p>
+              <div className={styles.peopleTitleGroup}>
+                <h1 className={styles.peopleHeading}>People</h1>
+                <span className={styles.peopleLifecycleLabel}>Hire to Exit</span>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+            <div className={styles.peopleToolbarActions}>
+              <button type="button" className={styles.peopleRefreshButton}
+                aria-label={isRefreshing ? 'Verifying People data' : 'Refresh People data'} title={isRefreshing ? 'Verifying People data' : 'Refresh People data'}
                 onClick={() => loadDashboard()} disabled={isRefreshing}>
-                <RefreshCw size={15} className="mr-2 inline-block" aria-hidden />{isRefreshing ? 'Verifying…' : 'Refresh People'}
+                <RefreshCw size={17} className={isRefreshing ? 'animate-spin' : undefined} aria-hidden="true" />
               </button>
               {actionLabel && <button type="button" disabled={isRefreshing || !tenantScopeKey || !isVerifiedReadState(activeReadState)}
                 className="rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
