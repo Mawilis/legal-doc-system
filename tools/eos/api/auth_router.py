@@ -1163,7 +1163,7 @@ def _recovery_contact_verification_request_service(
         auth_registry=get_auth_registry(None),
         rate_limit_gate=rate_limit,
         delivery_adapter=RecoveryContactVerificationEmailDelivery.from_environment(),
-        public_origin=os.environ.get("WILSY_PUBLIC_APP_ORIGIN", ""),
+        public_origin=_configured_password_recovery_origin(),
     )
 
 
@@ -1210,6 +1210,19 @@ async def request_recovery_contact_verification(
         _log_error(
             RuntimeError(error.code),
             "RECOVERY_CONTACT_VERIFICATION_REQUEST_FAILED",
+            tenant_id=identity.tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery email verification is temporarily unavailable.",
+        ) from None
+    except Exception as error:
+        # Dependency construction can fail before request_verification runs:
+        # missing SMTP credentials, invalid trusted HTTPS origin, or index
+        # initialization. Never expose configuration values or mail secrets.
+        _log_error(
+            RuntimeError(type(error).__name__),
+            "RECOVERY_CONTACT_VERIFICATION_DEPENDENCY_UNAVAILABLE",
             tenant_id=identity.tenant_id,
         )
         raise HTTPException(
