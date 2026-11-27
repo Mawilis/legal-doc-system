@@ -444,7 +444,7 @@ def inspect_strategy_read_authority(
     )
     if (
         selected == "tenant_owner"
-        and identity.tenant_id == WILSY_COMPANY_TENANT_ID
+        and getattr(identity, "tenant_id", None) == WILSY_COMPANY_TENANT_ID
         and project_list is not None
         and document_read is None
     ):
