@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.21.3-RECOVERY-CONTACT-READBACK
+VERSION: v1.21.4-RECOVERY-STATUS-FAILURE-STAGES
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -15,7 +15,8 @@ COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume thi
 credential and identity authorities remain in tools.eos.auth.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
 CHANGELOG:
-  v1.21.3-RECOVERY-CONTACT-READBACK: Adds independently authenticated SMTP-free recovery-contact evidence read, with bounded source-unavailable responses and no client-supplied email.
+  v1.21.4-RECOVERY-STATUS-FAILURE-STAGES: Classifies authenticated recovery status 503 failures into bounded source-stage headers and code-only server logging without identity or email exposure.
+  v1.21.4-RECOVERY-STATUS-FAILURE-STAGES: Adds independently authenticated SMTP-free recovery-contact evidence read, with bounded source-unavailable responses and no client-supplied email.
   v1.21.2-PRIVACY-SAFE-LOGIN-STAGES: Adds opt-in WILSY_AUTH_TIMING=1 phase timings for admission throttling, credential verification, throttle reset and tenant/MFA evidence. No passwords, emails, user IDs, tokens or tenant identifiers are logged; HTTP responses and enforcement unchanged.
   v1.21.1-LOGIN-WORKER-ISOLATION: Isolates the synchronous tenant-bound login rate-limit, MongoDB identity checks and bcrypt work from the FastAPI event loop through its own worker thread; preserves existing admission, 429/503 semantics and MFA challenge issuance. No credentials are logged, no timeout increased, no identity or IAM mutations added.
   v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION: Delegates synchronous
@@ -1209,14 +1210,34 @@ async def recovery_contact_status(
     try:
         result = await run_in_threadpool(_recovery_contact_status_read, identity)
     except Exception as error:
+        # Authenticated caller only: bounded failure stage, never email,
+        # digest, contact identifier, raw error or credential material.
+        code = (
+            error.code if isinstance(error, RecoveryContactVerificationRequestError)
+            else "RECOVERY_CONTACT_STATUS_UNEXPECTED_FAILURE"
+        )
+        if code in {
+            "RECOVERY_CONTACT_PRINCIPAL_LOOKUP_FAILED",
+            "RECOVERY_CONTACT_GLOBAL_PRINCIPAL_LOOKUP_FAILED",
+            "RECOVERY_CONTACT_PRINCIPAL_BINDING_MISMATCH",
+            "RECOVERY_CONTACT_PRINCIPAL_NOT_ACTIVE",
+        }:
+            stage = "PRINCIPAL_SOURCE"
+        elif code == "RECOVERY_CONTACT_LOOKUP_FAILED":
+            stage = "CONTACT_SOURCE"
+        elif code == "RECOVERY_CONTACT_EMAIL_INVALID":
+            stage = "DURABLE_EMAIL"
+        else:
+            stage = "SOURCE_UNAVAILABLE"
         _log_error(
-            RuntimeError(type(error).__name__),
+            RuntimeError(code),
             "RECOVERY_CONTACT_STATUS_SOURCE_UNAVAILABLE",
-            tenant_id=identity.tenant_id,
+            tenant_id="redacted",
         )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Recovery email status is temporarily unavailable.",
+            headers={"X-Wilsy-Recovery-Status-Stage": stage},
         ) from None
     return {"status": result}
 
@@ -2038,7 +2059,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.21.3-RECOVERY-CONTACT-READBACK
+# VERSION: v1.21.4-RECOVERY-STATUS-FAILURE-STAGES
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.
