@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.4-PROFILE-WORKSPACE-SWITCHER
+ * VERSION: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,6 +24,7 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE keeps source-admitted My Work navigation in the account menu when the duplicate Founder floating shortcut is retired; it does not extend access or expose inaccessible work.
  * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER moves canonical Founder workspace navigation into the existing account dropdown, with same-capacity navigation and explicit confirmation plus reauthentication for cross-capacity transitions; no role union or IAM escalation.
  * CHANGELOG: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
  * CHANGELOG: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS exposes actionable People-only workforce/hiring/offer/headcount module shortcuts in global search overlay without implying cross-domain search authority.
@@ -606,6 +607,15 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                 {canSwitchFounderWorkspaces && (
                   <div className="mt-2 border-b border-white/10 px-1 pb-3" aria-label="Founder workspace switcher">
                     <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Workspaces</p>
+                    {currentWorkScope && (
+                      <button type="button" role="menuitem"
+                        onClick={() => { setUserMenuOpen(false); navigate('/my-work'); }}
+                        disabled={workspaceSwitchBusy}
+                        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                        <span>My Work <span className="block text-xs text-slate-300">Current authorized tasks</span></span>
+                        <span className="text-xs text-slate-300">Open</span>
+                      </button>
+                    )}
                     <button type="button" role="menuitem"
                       onClick={() => requestFounderWorkspaceSwitch('headquarters')} disabled={workspaceSwitchBusy}
                       className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
@@ -1229,7 +1239,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.4-PROFILE-WORKSPACE-SWITCHER
+ * VERSION: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
