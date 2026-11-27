@@ -1,6 +1,7 @@
 """Caller-transaction durable registry for WILSY headcount requisitions.
 
-The registry persists HR planning evidence only. Callers own the Mongo session
+The registry persists HR planning evidence only. Its bounded exact-tenant
+Overview page reuses the caller-owned snapshot transaction. Callers own the Mongo session
 and transaction; this module grants no hiring, employee, identity, membership,
 capacity, IAM, payroll, or financial authority.
 """
@@ -178,6 +179,32 @@ class HeadcountRequisitionRegistry:
                 [("revision", -1), ("requisition_id", ASCENDING)]
             ).limit(limit)
             return tuple(_hydrate(row) for row in cursor)
+        except PyMongoError as error:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_PERSISTENCE_UNAVAILABLE") from error
+
+    def list_overview_page(
+        self, *, tenant_id: str, session: Any,
+        limit: int = 25, offset: int = 0,
+    ) -> tuple[tuple[HeadcountRequisition, ...], int]:
+        """Bounded exact-tenant source read with transactional total.
+
+        The existing historical list_for_tenant contract remains unchanged.
+        Pages sort by stable tenant-scoped requisition identity, preventing
+        broad scans from becoming a false complete Overview.
+        """
+        tenant = _exact(tenant_id, "HEADCOUNT_TENANT_INVALID")
+        tx = _session(session)
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_LIMIT_INVALID")
+        if type(offset) is not int or not 0 <= offset <= 100000:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_OFFSET_INVALID")
+        coordinate = {"tenant_id": tenant}
+        try:
+            total = self._collection.count_documents(coordinate, session=tx)
+            rows = list(self._collection.find(coordinate, session=tx).sort(
+                [("requisition_id", ASCENDING)]
+            ).skip(offset).limit(limit))
+            return tuple(_hydrate(row) for row in rows), total
         except PyMongoError as error:
             raise HeadcountRequisitionRegistryError("HEADCOUNT_PERSISTENCE_UNAVAILABLE") from error
 
