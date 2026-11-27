@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.8.8-ACCEPTED-PEOPLE-AUTHORITY-UX-CERT
+ * VERSION: v1.8.9-UNIFIED-PEOPLE-FOOTER-SOURCE-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.8.9-UNIFIED-PEOPLE-FOOTER-SOURCE-CERT inspects the real shared footer component and its verified employer props instead of hardcoding old inline JSX in Headquarters.
  *   v1.8.8-ACCEPTED-PEOPLE-AUTHORITY-UX-CERT reconciles accepted compact People chrome, per-source access diagnostics, accessible back ownership and high-contrast status palette.
  *   v1.8.7-BOUNDED-INDEPENDENT-PEOPLE-READS asserts the Overview's independent source reads and strictly selected-source navigation without redundant HR fanout per search keystroke.
  *   v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION certifies the existing safe employee-admission-denial command instead of incorrectly treating its protective text as a legacy UI regression.
@@ -305,9 +306,13 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(hq).toContain('hq-layout--people-owned');
     expect(hq).toContain('data-workspace-ownership="PEOPLE"');
     expect(dashboard).toContain('aria-label="Return to Headquarters"');
-    expect(hq).toContain('className="hq-global-footer"');
-    expect(hq).toContain('className="hq-footer-tenant"');
-    expect(hq).toContain('employerName && employerReference');
+    const footer = fs.readFileSync(path.join(ROOT, 'src/components/chrome/WilsySystemFooter.jsx'), 'utf8');
+    expect(hq).toContain('<WilsySystemFooter');
+    expect(hq).toContain('employerName={employerName}');
+    expect(hq).toContain('employerReference={employerReference}');
+    expect(footer).toContain('className={`hq-global-footer');
+    expect(footer).toContain('hq-footer-tenant');
+    expect(footer).toContain('exactEmployer && exactReference');
     expect(dashboard).not.toContain('wilsy-logo.svg');
   });
 
@@ -315,7 +320,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.8.8-ACCEPTED-PEOPLE-AUTHORITY-UX-CERT
+ * VERSION: v1.8.9-UNIFIED-PEOPLE-FOOTER-SOURCE-CERT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
