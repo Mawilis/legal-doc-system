@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.3.1-HR-STRICT-PAGE-CONTRACT
+ * VERSION: v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
- * CERTIFICATION / UPDATE DATE: 2026-11-12
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT — Certifies unified People surface, no wrong logo or black/gold chrome, read-only future modules and shared status semantics.
  *   v1.3.1-HR-STRICT-PAGE-CONTRACT — Aligns the regression assertion with the normalizer that requires source pagination metadata before verification.
  *   v1.3.0-HR-STRICT-PAGE-CONTRACT — Requires source pagination metadata before a workforce response can become verified data or verified empty.
  *   v1.2.0-HR-NO-MISSING-METRIC-ZERO — Guards snapshot count and currency formatters against turning missing or invalid values into zero.
@@ -26,6 +27,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { workStatusTone, workStatusColor, workStatusClasses } from '../../theme/workStatus.js';
 
 const ROOT = process.cwd();
 const dashboardPath = path.join(ROOT, 'src/components/hr/HrDashboard.jsx');
@@ -137,8 +139,10 @@ describe('HR dashboard authority and read-state boundary', () => {
 
   it('shows no employees only after a valid authoritative empty workforce response', () => {
     expect(dashboard).toContain("api.get('/hr/workforce'");
-    expect(dashboard).toContain('activeReadState.status === HR_READ_STATE.VERIFIED_EMPTY && activeDataset.total === 0');
-    expect(dashboard).toContain('No employees recorded.');
+    expect(dashboard).toContain('shownState?.status === HR_READ_STATE.VERIFIED_EMPTY');
+    expect(dashboard).toContain('EOS verified no records for this view.');
+    expect(dashboard).toContain('isVerifiedReadState(shownState)');
+    expect(dashboard).not.toContain('Employee admission unavailable');
     expect(dashboard).not.toContain('DEFAULT_TENANT_ID');
     expect(dashboard).not.toContain("'MASTER'");
   });
@@ -170,11 +174,32 @@ describe('HR dashboard authority and read-state boundary', () => {
   it('does not advertise executable payslip generation without backend authority', () => {
     expect(dashboard).not.toContain('hrService.generatePayslip');
   });
+  it('replaces the legacy HR chrome and wrong logo without fabricating commands', () => {
+    expect(dashboard).toContain('data-testid="people-os-workspace"');
+    expect(dashboard).toContain('Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit');
+    expect(dashboard).not.toContain('<WilsyOSDashboardChrome');
+    expect(dashboard).not.toContain('wilsy-logo.svg');
+    expect(dashboard).toContain("const isSourceConnected = ['employees', 'candidates', 'offers'].includes(activeTab)");
+    expect(dashboard).toContain('No simulated records or actions are shown.');
+  });
+
+  it('shares verified status colours with project tasks and retains text labels', () => {
+    expect(workStatusTone('IN_PROGRESS')).toBe('active');
+    expect(workStatusTone('DONE')).toBe('success');
+    expect(workStatusTone('BLOCKED')).toBe('blocked');
+    expect(workStatusTone('PENDING')).toBe('caution');
+    expect(workStatusTone('unrecognized_eos_status')).toBe('neutral');
+    expect(workStatusColor('DONE')).toBe('#15803d');
+    expect(workStatusColor('BLOCKED')).toBe('#b91c1c');
+    expect(workStatusClasses('APPROVED')).toContain('text-green-900');
+    expect(dashboard).toContain('workStatusClasses(value)');
+  });
+
 });
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.3.1-HR-STRICT-PAGE-CONTRACT
+ * VERSION: v1.4.0-M03-PEOPLE-SURFACE-AND-STATUS-CERT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
