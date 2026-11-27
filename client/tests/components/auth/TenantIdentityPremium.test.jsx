@@ -6,14 +6,15 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Tenant Identity Brand Fidelity Certificate
  * WILSY OS — PREMIUM TENANT IDENTITY CERTIFICATE
- * VERSION: v1.8.1-OFFICIAL-SQUARE-BRAND-PARITY-CERT
+ * VERSION: v1.9.0-EXPLICIT-HR-CAPACITY-LOGIN-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies the bounded discovery/login identity projection, permanent
  *          platform trust mark, and neutral tenant-logo fallback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/components/auth/TenantIdentityPremium.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises TenantDiscovery, SovereignLogin, and
  *                            TenantIdentityCard without network or auth writes.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.9.0-EXPLICIT-HR-CAPACITY-LOGIN-CERT certifies opt-in verified HR capacity selection on the existing login with no legacy login fallback and MFA-only session issuance.
  * CHANGELOG: v1.8.1-OFFICIAL-SQUARE-BRAND-PARITY-CERT binds the platform mark to the
  * latest approved vivid presentation derivative. All tenant-logo, authority,
  * identity, navigation and geometry assertions are retained.
@@ -65,7 +66,9 @@ import TenantDiscovery from '../../../src/components/sovereign/TenantDiscovery.j
 const navigate = vi.fn();
 const discoverTenant = vi.fn();
 const login = vi.fn();
-const locationState = { pathname: '/discovery', state: null };
+const beginGlobalCapacityLogin = vi.fn();
+const selectGlobalCapacity = vi.fn();
+const locationState = { pathname: '/discovery', search: '', state: null };
 
 vi.mock('../../../src/contexts/authContext.jsx', () => ({
   AUTH_STATES: {
@@ -76,6 +79,8 @@ vi.mock('../../../src/contexts/authContext.jsx', () => ({
   useAuth: () => ({
     discoverTenant,
     login,
+    beginGlobalCapacityLogin,
+    selectGlobalCapacity,
     loading: false,
     error: null,
     tenant: null,
@@ -107,6 +112,9 @@ describe('premium tenant identity projection', () => {
     navigate.mockReset();
     discoverTenant.mockReset();
     login.mockReset();
+    beginGlobalCapacityLogin.mockReset();
+    selectGlobalCapacity.mockReset();
+    locationState.search = '';
     locationState.pathname = '/discovery';
     locationState.state = null;
   });
@@ -177,6 +185,38 @@ describe('premium tenant identity projection', () => {
     })));
   });
 
+  it('uses only EOS-listed HR capacity choices when explicitly entering the Founder People session', async () => {
+    locationState.pathname = '/login';
+    locationState.search = '?capacity=hr';
+    beginGlobalCapacityLogin.mockResolvedValueOnce({
+      status: 'CAPACITY_SELECTION_REQUIRED',
+      options: [
+        { tenantId: 'WILSYTENANT-4CD2FZ4O', role: 'tenant_hr_manager' },
+        { tenantId: 'WILSYTENANT-4CD2FZ4O', role: 'tenant_hr_director' },
+      ],
+    });
+    selectGlobalCapacity.mockResolvedValueOnce({ status: 'MFA_REQUIRED' });
+    render(<MemoryRouter><SovereignLogin /></MemoryRouter>);
+    fireEvent.change(screen.getByLabelText('Work email'), { target: { value: 'founder@example.com' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'synthetic-test-secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue securely' }));
+    await waitFor(() => expect(beginGlobalCapacityLogin).toHaveBeenCalledWith(
+      'founder@example.com', 'synthetic-test-secret', 'WILSYTENANT-4CD2FZ4O',
+    ));
+    expect(login).not.toHaveBeenCalled();
+    expect(await screen.findByRole('form', { name: 'Select verified HR capacity' })).toBeInTheDocument();
+    const options = screen.getByLabelText('Operating capacity');
+    expect(options).toHaveTextContent('HR Director');
+    expect(options).toHaveTextContent('HR Manager');
+    expect(options).not.toHaveTextContent('Tenant Owner');
+    fireEvent.change(options, { target: { value: 'tenant_hr_director' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to MFA' }));
+    await waitFor(() => expect(selectGlobalCapacity).toHaveBeenCalledWith('tenant_hr_director'));
+    expect(navigate).toHaveBeenCalledWith('/mfa', expect.objectContaining({
+      replace: true, state: expect.objectContaining({ capacity: 'tenant_hr_director' }),
+    }));
+  });
+
   it('renders the platform mark and premium identity on login without alias-based branding', () => {
     locationState.pathname = '/login';
     locationState.state = { tenant: verifiedTenant };
@@ -227,7 +267,7 @@ describe('premium tenant identity projection', () => {
 
 /**
  * ARTIFACT: TenantIdentityPremium.test.jsx
- * VERSION: v1.8.1-OFFICIAL-SQUARE-BRAND-PARITY-CERT
+ * VERSION: v1.9.0-EXPLICIT-HR-CAPACITY-LOGIN-CERT
  * AUTHORITY BOUNDARY: deterministic client projection certificate only
  * TENANT POSTURE: no alias-specific logo or inferred legal identity
  * FAIL-CLOSED POSTURE: absent tenant identity is never fabricated
