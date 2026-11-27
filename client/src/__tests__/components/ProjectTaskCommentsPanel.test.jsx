@@ -187,6 +187,11 @@ it('filters only the verified activity page without refetching or changing immut
   expect(screen.getByText(/No matching verified records on the currently loaded pages/)).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Updates' }));
   expect(screen.getByText('Please verify this dependency.')).toBeVisible();
+  const search = screen.getByRole('searchbox', { name: 'Search verified activity on loaded pages' });
+  fireEvent.change(search, { target: { value: 'not present in source' } });
+  expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
+  fireEvent.change(search, { target: { value: 'verify this dependency' } });
+  expect(screen.getByText('Please verify this dependency.')).toBeVisible();
   expect(api.get).toHaveBeenCalledTimes(reads);
   expect(api.post).not.toHaveBeenCalled();
 });
