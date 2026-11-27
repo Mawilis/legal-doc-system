@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.34.1-LIVE-DOM-SOURCE-REVOCATION-CERT
+ * VERSION: v1.34.2-DOCUMENT-SOURCE-TIMEOUT-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,6 +12,7 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.34.2-DOCUMENT-SOURCE-TIMEOUT-CERT distinguishes an EOS 15-second read timeout from an unpublished document and forbids fabricated content.
  * CHANGELOG: v1.34.1-LIVE-DOM-SOURCE-REVOCATION-CERT
  *            asserts the current mounted Strategy DOM after source link
  *            revocation, never an intentionally detached React reference.
@@ -365,6 +366,15 @@ describe('governed company document experience', () => {
     api.get.mockResolvedValue({ data: view() }); fireEvent.click(screen.getByRole('button', { name: 'Retry source read' }));
     expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
   });
+  it('identifies a document read timeout without pretending Strategy is unpublished', async () => {
+    api.get.mockRejectedValue({ code: 'ECONNABORTED', message: 'timeout of 15000ms exceeded' });
+    render(wrap({ classification: 'STRATEGY' }));
+    expect(await screen.findByRole('heading', { name: 'Document source timed out' })).toBeVisible();
+    expect(screen.getByText(/15-second request limit/)).toBeVisible();
+    expect(screen.queryByText('NOT YET PUBLISHED', { exact: true })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it.each([
     [401, { detail: { error: 'COMPANY_DOCUMENT_AUTHENTICATED_SCOPE_REQUIRED' } }, 'Sign-in verification required', 'AUTHENTICATION_REQUIRED'],
     [403, { error: { code: 'FORBIDDEN_OPERATION' } }, 'Access denied', 'ACCESS_DENIED'],
@@ -1342,7 +1352,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.34.1-LIVE-DOM-SOURCE-REVOCATION-CERT
+// VERSION: v1.34.2-DOCUMENT-SOURCE-TIMEOUT-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
