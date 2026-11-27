@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Company Document Viewer Contract Certificate
- * VERSION: v1.34.2-DOCUMENT-SOURCE-TIMEOUT-CERT
+ * VERSION: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT
  * AUTHORITY: Isolated client contract evidence; Python EOS owns publication.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic authority and no real credentials.
@@ -12,7 +12,8 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/CompanyOperatingDocumentViewer.test.jsx
  * COLLABORATION / OWNERSHIP: Viewer, current auth scope and source client adapter.
  * CERTIFICATION / UPDATE DATE: 2026-11-23
- * CHANGELOG: v1.34.2-DOCUMENT-SOURCE-TIMEOUT-CERT distinguishes an EOS 15-second read timeout from an unpublished document and forbids fabricated content.
+ * CHANGELOG: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT isolates a verified Strategy read admission from a later 403 without misreporting document publication, assignments or optional roles.
+ * CHANGELOG: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT distinguishes an EOS 15-second read timeout from an unpublished document and forbids fabricated content.
  * CHANGELOG: v1.34.1-LIVE-DOM-SOURCE-REVOCATION-CERT
  *            asserts the current mounted Strategy DOM after source link
  *            revocation, never an intentionally detached React reference.
@@ -366,6 +367,26 @@ describe('governed company document experience', () => {
     api.get.mockResolvedValue({ data: view() }); fireEvent.click(screen.getByRole('button', { name: 'Retry source read' }));
     expect(await screen.findByText('NOT YET PUBLISHED', { exact: true })).toBeVisible();
   });
+  it.each([
+    ['AUTHORIZED', 'Strategy read is authorised in the current HTTP session; its document operation returned 403.'],
+    ['DENIED', 'Strategy read was denied in the current HTTP session.'],
+  ])('distinguishes current Strategy HTTP authority %s from document 403 without granting access', async (read, expected) => {
+    api.get.mockImplementation((url) => url === '/company-operating-documents/STRATEGY/authority-check'
+      ? Promise.resolve({ data: {
+        schema: 'WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1',
+        selected_capacity: 'tenant_owner', session_scope: 'GLOBAL',
+        document_read: read, project_detail: 'AUTHORIZED', project_list: 'AUTHORIZED',
+        document_author: 'DENIED', document_publish: 'DENIED',
+        grant_issued: false, document_read_performed: false,
+      } })
+      : Promise.reject({ response: { status: 403 } }));
+    render(wrap({ classification: 'STRATEGY' }));
+    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeVisible();
+    expect(await screen.findByText((text) => text.includes(expected))).toBeVisible();
+    expect(screen.queryByText('NOT YET PUBLISHED', { exact: true })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('identifies a document read timeout without pretending Strategy is unpublished', async () => {
     api.get.mockRejectedValue({ code: 'ECONNABORTED', message: 'timeout of 15000ms exceeded' });
     render(wrap({ classification: 'STRATEGY' }));
@@ -1352,7 +1373,7 @@ describe('source contract rejection', () => {
 });
 
 // ARTIFACT: CompanyOperatingDocumentViewer.test.jsx
-// VERSION: v1.34.2-DOCUMENT-SOURCE-TIMEOUT-CERT
+// VERSION: v1.34.3-STRATEGY-HTTP-DENIAL-SPLIT-CERT
 // AUTHORITY BOUNDARY: Client regression only; source IAM and publication stay EOS-owned.
 // TENANT POSTURE: Exact scope and late-session negative gates.
 // FAIL-CLOSED POSTURE: Unverified commands never receive a success assertion.
