@@ -14,9 +14,6 @@ SECURITY / PRIVACY POSTURE: No credentials, MFA values or principal identifiers 
 TENANT BOUNDARY: Canonical tenant input comes only from verified membership.
 AUTHORITY BOUNDARY: Read-only selection projection; no IAM role or session mutation.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains authoritative.
-"""
-"""Read-only, principal-scoped projection of eligible tenant memberships.
-
 This projection is intended for the post-credential, pre-session membership
 selection stage. It does not authenticate a principal, create membership,
 assign a business capacity, issue a token, or authorize tenant operations.
