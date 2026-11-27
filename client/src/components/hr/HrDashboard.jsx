@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE
+ * VERSION: v2.8.1-M03-SHARED-STATUS-SEMANTICS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.1-M03-SHARED-STATUS-SEMANTICS — Uses the same EOS-derived lifecycle badges as Projects for employee, candidate and offer rows; text remains explicit and unknown states neutral.
  *   v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE — Retires the nested legacy black/gold HR chrome and wrong logo, uses existing OS shell and source-backed People rows, preserves Python EOS hiring commands, and blocks unconnected modules from simulated mutations.
  *   v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE — States that institutional offer signing does not prove candidate identity, removes the misleading candidate-signature claim, and explains why source ACCEPTED status is not verified candidate consent or employment.
  *   v2.6.0-EOS-CANDIDATE-EVIDENCE-LOOP — Streams candidate evidence through existing EOS custody, verifies exact-version binary readback and SHA3-512 before enabling a stage transition, and clears candidate bytes on scope invalidation.
@@ -78,6 +79,7 @@ import { exportCSV } from '../../utils/exportHelpers';
 import WilsyProfilePanel, { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import styles from './HrDashboard.module.css';
+import { workStatusClasses } from '../../theme/workStatus.js';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
 
@@ -3663,7 +3665,13 @@ const HrDashboard = () => {
       artifacts: [item.artifactTitle || item.name, item.artifactType || 'HR Artifact', item.artifactFormat || 'HTML', item.proofHash ? item.proofHash.slice(0, 14) : 'Proof pending', item.status || 'GENERATED']
     };
     const sourceIdentity = item.id || item.employeeId || item.candidate_id || item.offer_id || item.requisition_id || 'record';
-    return (rows[activeTab] || rows.employees).map((value, index) => <td key={`${sourceIdentity}-${index}`}>{value ?? 'Unavailable'}</td>);
+    const statusIndex = { employees: 4, candidates: 2, offers: 3 }[activeTab];
+    return (rows[activeTab] || rows.employees).map((value, index) => <td
+      key={`${sourceIdentity}-${index}`} className="px-4 py-3 text-sm text-slate-800">
+      {index === statusIndex && typeof value === 'string'
+        ? <span className={workStatusClasses(value)}>{value.replaceAll('_', ' ')}</span>
+        : value ?? 'Unavailable'}
+    </td>);
   };
 
   /**
@@ -4627,7 +4635,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE
+ * VERSION: v2.8.1-M03-SHARED-STATUS-SEMANTICS
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
