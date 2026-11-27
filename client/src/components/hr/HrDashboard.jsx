@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.9.1-PEOPLE-LIFECYCLE-ICON-AND-NAV-FIX
+ * VERSION: v2.9.2-OVERVIEW-AUTHORITY-AND-TENANT-CONTEXT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.9.2-OVERVIEW-AUTHORITY-AND-TENANT-CONTEXT surfaces an explicit current HR-authority denial and exact selected employer context on the prototype-grounded Overview without bypassing authorization.
  *   v2.9.1-PEOPLE-LIFECYCLE-ICON-AND-NAV-FIX restores the required actual source-navigation icon import and correct Overview transition title.
  *   v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION implements the uploaded Hire-to-Exit prototype's autonomous navigation, compact lifecycle briefing and real source-backed approval work rows without importing sample staff or changing the WILSY logo.
  *   v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE — Unmounts the unconditional black/gold legacy HR profile card, which ignores the supplied isOpen prop; canonical OS account chrome remains authoritative.
@@ -4061,12 +4062,21 @@ const HrDashboard = () => {
         <main className={styles.peopleMain + " min-w-0 flex-1"}>
           {activeTab === 'overview' && (
             <div className={styles.overview} data-testid="people-lifecycle-overview">
+              {(datasetReadStates.employees?.status === HR_READ_STATE.ACCESS_DENIED
+                || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED) && (
+                  <div className={styles.overviewAuthority} role="alert">
+                    <strong>People source access denied for the current operating capacity</strong>
+                    <p>Current HR records are withheld by Python EOS. The existing Founder designation does not create workforce-directory or employee-file permissions. Select an authorized HR capacity through the global session before retrying.</p>
+                    <button type="button" onClick={() => changeTab('employees')}>Inspect workforce source</button>
+                  </div>
+                )}
               <section className={styles.overviewIntro} aria-labelledby="people-lifecycle-heading">
                 <div>
                   <p className={styles.eyebrow}>PEOPLE LIFECYCLE · GOVERNED WORK</p>
                   <h2 id="people-lifecycle-heading">Hire to Exit. <em>One Chain.</em></h2>
                   <p>One person. One authoritative file. Plan → Hire → Onboard → Manage → Pay → Grow → Correct → Exit.</p>
                   <p>Every decision Maker ≠ Checker. Every record tenant-scoped. Every action audited by its owning EOS service.</p>
+                  <p className={styles.tenantContext}>Selected employer tenant · {tenantId}</p>
                 </div>
                 <aside className={styles.chainIntegrity} aria-label="Employment chain integrity">
                   <strong>Chain integrity · Source verification required</strong>
@@ -4723,7 +4733,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.9.1-PEOPLE-LIFECYCLE-ICON-AND-NAV-FIX
+ * VERSION: v2.9.2-OVERVIEW-AUTHORITY-AND-TENANT-CONTEXT
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
