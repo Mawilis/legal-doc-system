@@ -1,13 +1,14 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT
+VERSION: v1.5.4-OWNER-READ-REASON-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
 CERTIFICATION / UPDATE DATE: 2026-11-15
-CHANGELOG: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT independently verifies the read/Projects and optional author/publisher HTTP results for one authenticated selected Owner session with no grants or source reads.
-CHANGELOG: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT
+CHANGELOG: v1.5.4-OWNER-READ-REASON-CERT maintains non-disclosing bounded reason for non-owner or synthetic capacity while the existing read-admission contracts stay unchanged.
+CHANGELOG: v1.5.4-OWNER-READ-REASON-CERT independently verifies the read/Projects and optional author/publisher HTTP results for one authenticated selected Owner session with no grants or source reads.
+CHANGELOG: v1.5.4-OWNER-READ-REASON-CERT
 tests source-bound Founder Pillar 1 link replay and revoked-proof denial.
 CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
 tests current Founder HTTP lifecycle across draft, submission, immutable
@@ -586,6 +587,7 @@ def test_strategy_live_http_authority_check_separates_required_and_optional(
     assert response.headers["cache-control"] == "no-store"
     assert response.json() == {
         "schema": "WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1",
+        "document_read_reason": "NOT_DISCLOSED",
         "selected_capacity": "tenant_owner",
         "session_scope": "GLOBAL",
         "document_read": "AUTHORIZED" if document_allowed else "DENIED",
@@ -653,7 +655,7 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.5.3-LIVE-HTTP-STRATEGY-READ-CHECK-CERT
+# VERSION: v1.5.4-OWNER-READ-REASON-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.
