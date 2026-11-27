@@ -1,14 +1,15 @@
 /**
  * TITLE: WILSY OS MFA Challenge
  * WILSY OS — MFA CHALLENGE AND FIRST-TIME ENROLLMENT
- * VERSION: v30.1.1-OFFICIAL-SQUARE-BRAND
+ * VERSION: v30.2.0-HR-CAPACITY-POST-MFA-ROUTING
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the server-issued MFA state and submits one six-digit OTP
  *          without exposing existing secrets or using page reload navigation.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/SovereignMfaPortal.jsx
  * COLLABORATION / OWNERSHIP: authContext owns challenge/session state; Python
  *                            EOS auth_router validates and durably enrolls MFA.
- * CERTIFICATION / UPDATE DATE: 2026-09-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v30.2.0-HR-CAPACITY-POST-MFA-ROUTING returns a verified Global Principal HR capacity session directly to its EOS-owned workspace rather than a legacy covenant redirect; no session or IAM authority is minted in the UI.
  * CHANGELOG: v30.1.1-OFFICIAL-SQUARE-BRAND uses the same official
  * square platform mark. Credential, discovery, MFA and customer identity
  * contracts are preserved; no client-owned authentication authority is added.
@@ -80,7 +81,10 @@ export default function SovereignMfaPortal({ onVerificationSuccess }) {
     try {
       const result = await verifyOTP(pendingEmail, otp, null, null, setup, tenant?.tenantId);
       onVerificationSuccess?.(result.user);
-      navigate(result.user?.systemServicesWorkspace || result.user?.hasSignedCovenant ? '/' : '/covenant', { replace: true });
+      const verifiedHrCapacity = result.user?.tenantId === 'WILSYTENANT-4CD2FZ4O'
+        && ['tenant_hr_manager', 'tenant_hr_director'].includes(result.user?.role);
+      navigate(verifiedHrCapacity || result.user?.systemServicesWorkspace || result.user?.hasSignedCovenant
+        ? '/' : '/covenant', { replace: true });
     } catch (verificationError) {
       setError(verificationError?.response?.data?.detail || verificationError?.response?.data?.message || verificationError.message || 'Identity verification failed.');
     }
@@ -278,7 +282,7 @@ const errorStyle = {
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignMfaPortal.jsx
- * VERSION: v30.1.1-OFFICIAL-SQUARE-BRAND
+ * VERSION: v30.2.0-HR-CAPACITY-POST-MFA-ROUTING
  * AUTHORITY BOUNDARY: MFA presentation and transport only
  * TENANT POSTURE: no tenant or enrollment state is inferred locally
  * FAIL-CLOSED POSTURE: invalid challenge state redirects to sign-in
