@@ -3,17 +3,18 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.5.10-OPERATING-SOURCE-INDEX
+ * Version:        v2.5.11-LIFECYCLE-SOURCE-HIGH-CONTRAST
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
+ * Change log: 2026-11-27 v2.5.11-LIFECYCLE-SOURCE-HIGH-CONTRAST restores high-contrast navy/slate lifecycle source labels and status on light buttons, with scoped focus/hover styling, without changing approved navigation gold or OS tenant semantics.
  * Change log: 2026-11-27 v2.5.10-OPERATING-SOURCE-INDEX presents the four live EOS sources as a low-height two-column operating index rather than a decorative KPI card grid. Each verified row remains keyboard-operable, with a right-aligned count, readable source description and clear navigation affordance.
  * Change log: 2026-11-27 v2.5.9-HIGH-CONTRAST-COMPACT-PEOPLE-OVERVIEW makes verified source counts readable and actionable on the light canvas: no faded-gold data labels, compact row-like source controls, neutral empty-state review, and responsive keyboard-visible focus. Keeps existing EOS source binding and approved navy/gold navigation.
  * Change log: 2026-11-27 v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE restores continuous light work canvas and high-contrast per-source inspection.\n * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
+ * VERSION: v2.5.11-LIFECYCLE-SOURCE-HIGH-CONTRAST
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
@@ -1765,8 +1766,39 @@
   }
 }
 
+/* v2.5.11 — Source-readiness labels must not inherit legacy HR gold.
+   Only the four lifecycle source navigation buttons use this treatment.
+   The selected People tab retains its independently governed brand accent. */
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] {
+  color: #173457 !important;
+  background-color: #fff !important;
+  border-color: #bfcee0 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] strong,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] > span,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] > span > strong {
+  color: #142b49 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #142b49 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] small,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] > span:last-child,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] svg {
+  color: #395470 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #395470 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"]:hover {
+  background-color: #eaf2fb !important;
+  border-color: #4d78a8 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"]:focus-visible {
+  outline: 3px solid #24558c !important;
+  outline-offset: 2px;
+}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.5.10-OPERATING-SOURCE-INDEX
+ * VERSION: v2.5.11-LIFECYCLE-SOURCE-HIGH-CONTRAST
  * AUTHORITY BOUNDARY: Presentation only; source authorization remains exclusively Python EOS-owned.
  * TENANT POSTURE: No employee or tenant state in CSS; exact tenant boundary unchanged.
  * FAIL-CLOSED POSTURE: Source unavailability, denial and verified results remain distinct.
