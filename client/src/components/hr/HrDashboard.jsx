@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.8.2-M03-LIGHT-SESSION-GATES
+ * VERSION: v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY — Disables candidate/offer create actions until the selected EOS source has a current verified read, preventing misleading commands on denied or unavailable HR views.
  *   v2.8.2-M03-LIGHT-SESSION-GATES — Removes remaining black legacy unauthenticated/tenant-reverification panels, preserving fail-closed EOS scope semantics.
  *   v2.8.1-M03-SHARED-STATUS-SEMANTICS — Uses the same EOS-derived lifecycle badges as Projects for employee, candidate and offer rows; text remains explicit and unknown states neutral.
  *   v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE — Retires the nested legacy black/gold HR chrome and wrong logo, uses existing OS shell and source-backed People rows, preserves Python EOS hiring commands, and blocks unconnected modules from simulated mutations.
@@ -4017,7 +4018,7 @@ const HrDashboard = () => {
                 onClick={() => loadDashboard()} disabled={isRefreshing}>
                 <RefreshCw size={15} className="mr-2 inline-block" aria-hidden />{isRefreshing ? 'Verifying…' : 'Refresh People'}
               </button>
-              {actionLabel && <button type="button" disabled={isRefreshing || !tenantScopeKey}
+              {actionLabel && <button type="button" disabled={isRefreshing || !tenantScopeKey || !isVerifiedReadState(activeReadState)}
                 className="rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={startSourceCommand}><Plus size={15} className="mr-1 inline-block" aria-hidden />{actionLabel}</button>}
             </div>
@@ -4636,7 +4637,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.8.2-M03-LIGHT-SESSION-GATES
+ * VERSION: v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
