@@ -3,20 +3,21 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION
+ * Version:        v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
- * Change log: 2026-11-27 v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION aligns
+ * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION
+ * VERSION: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
  * COLLABORATION / OWNERSHIP: HR People workspace and shared WILSY OS design system.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER styles a small accessible back control in the existing People application heading, avoiding an extra navigation strip at all viewports.
  * CHANGELOG: v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION replaces repeated denied/empty Overview placeholder cards with one accessible source-admission recovery and exact current-capacity explanation.
  * CHANGELOG: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS retains navy OS context header and gold navigation while matching Headquarters light operational canvas, compact hierarchy and accessible source-owned work rows.
  * CHANGELOG: v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT renders one legible source-unverified status instead of decorative empty executive metric cards when EOS has admitted none.
@@ -1347,8 +1348,15 @@
 .overviewRecovery button:hover{background:#123969}
 .overviewRecovery button:focus-visible{outline:3px solid #c79b3c;outline-offset:3px}
 
+/* Contextual navigation belongs in the People title row, not in another shell strip. */
+.peopleHeaderIdentity{display:flex;align-items:center;gap:12px;min-width:0}
+.peopleReturnButton{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 34px;width:34px;height:34px;border-radius:9px!important;background:#193759!important;color:#f5d18b!important;border:1px solid #526787!important;padding:0!important}
+.peopleReturnButton:hover{background:#294e76!important;border-color:#e2bf77!important}
+.peopleReturnButton:focus-visible{outline:3px solid #e7c576;outline-offset:3px}
+@media(max-width:640px){.peopleHeaderIdentity{gap:9px}.peopleReturnButton{flex-basis:32px;width:32px;height:32px}}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION
+ * VERSION: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER
  * AUTHORITY BOUNDARY: Presentation only; all commands remain Python EOS-owned.
  * TENANT POSTURE: No tenant or employee state in CSS.
  * FAIL-CLOSED POSTURE: No disabled control or access denial is visually overridden.
