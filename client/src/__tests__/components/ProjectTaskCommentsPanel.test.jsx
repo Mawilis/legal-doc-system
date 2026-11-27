@@ -253,7 +253,7 @@ it('presents long persisted engineering updates as expandable safe activity evid
   expect(await screen.findByText('MW-T12 — Nonproduction Python EOS recovery')).toBeVisible();
   expect(screen.getByText('You posted a progress update')).toBeVisible();
   expect(screen.queryByText(principalId)).not.toBeInTheDocument();
-  expect(screen.getByRole('list', { name: 'Source-verified task activity newest first' })).toBeVisible();
+  expect(screen.getByRole('list', { name: 'Source-verified task activity' })).toBeVisible();
   const expand = screen.getByRole('button', { name: 'Read full update' });
   expect(expand).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByText(/Verified source gate 9/)).not.toBeInTheDocument();
