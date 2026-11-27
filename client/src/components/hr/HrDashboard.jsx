@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH
+ * VERSION: v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE wires Overview and Headcount read pagination to the existing exact-tenant EOS headcount requisition endpoint, with bounded browser projection and no legacy BFF headcount route.
  *   v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH accepts global People query intents and runs text search only through the existing independent, tenant-authorized employee directory source.
  *   v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE reads the new Python EOS workforce Overview with strict tenant/source provenance, renders admitted active headcount and departments and never calls deprecated /hr/snapshot.
  *   v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW places verified actionable People decisions first; replaces oversized lifecycle hero/chain card with a compact employer-aware working header and source-navigation actions. Keeps all source authorization and fail-closed behavior.
@@ -2757,7 +2758,38 @@ const HrDashboard = () => {
       },
       candidates: () => hrService.getHiringCandidates(tenantId, params),
       offers: () => hrService.getHiringOffers(tenantId, params),
-      jobOpenings: () => hrService.getJobOpenings(tenantId, params),
+      jobOpenings: async () => {
+        // Existing canonical governed requisition source; do not call the
+        // retired BFF /hr/recruitment/openings prototype route.
+        const response = await api.get('/hr/headcount-requisitions', {
+          headers: { 'X-Tenant-ID': tenantId },
+        });
+        const source = response?.data;
+        if (source?.schema !== 'WILSY-HEADCOUNT-REQUISITIONS/V1'
+          || source?.tenant_id !== tenantId || !Array.isArray(source.items)
+          || source.items.some(item => item?.tenant_id !== tenantId
+            || typeof item?.requisition_id !== 'string'
+            || typeof item?.position_title !== 'string'
+            || !['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'].includes(item?.status))) {
+          throw Object.assign(new Error('HR_HEADCOUNT_PROVENANCE_INVALID'),
+            { code: 'HR_HEADCOUNT_PROVENANCE_INVALID' });
+        }
+        const page = source.items.slice(params.offset, params.offset + params.limit);
+        return {
+          items: page.map(item => ({
+            id: item.requisition_id,
+            title: item.position_title,
+            department: item.department_id,
+            status: item.status,
+            headcount: item.headcount,
+            revision: item.revision,
+          })),
+          total: source.items.length,
+          offset: params.offset,
+          limit: params.limit,
+          hasMore: params.offset + page.length < source.items.length,
+        };
+      },
       payroll: () => hrService.getPayrollSummary(tenantId, params),
       benefits: () => hrService.getBenefits(tenantId, params),
       performance: () => hrService.getPerformanceReviews(tenantId, params),
@@ -4792,7 +4824,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH
+ * VERSION: v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
