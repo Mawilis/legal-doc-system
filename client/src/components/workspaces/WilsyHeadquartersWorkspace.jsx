@@ -5,7 +5,8 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.20.1-PEOPLE-VIEWPORT-CSS-PRECEDENCE
+ * VERSION: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL
+ * CHANGELOG: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL reserves a visible shared footer within Headquarters' fixed-height EOS chrome and gives the owned People canvas the bounded scroll rail.
  * CHANGELOG: v4.20.1-PEOPLE-VIEWPORT-CSS-PRECEDENCE moves People-owned layout rules after the base and responsive Headquarters CSS so desktop/mobile shells cannot reinstate the old two-column frame.
  * CHANGELOG: v4.20.0-PEOPLE-OWNED-APPLICATION-CANVAS gives People exclusive application canvas below the canonical global logo and tenant header, adds scoped return navigation and a true Headquarters-wide footer without altering IAM.
  * CHANGELOG: v4.19.2-HQ-HOME-ROUTE-RESET restores Headquarters Home and releases stale Projects/task focus when the canonical logo navigates to /headquarters. No EOS/IAM change.
@@ -423,6 +424,14 @@ body:has(.wilsyHqShell)::after{display:none}
 .hq-people-loading{padding:28px;color:#f4f0e6;background:#0e2444}
 .hq-global-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;align-items:center;padding:17px clamp(16px,2vw,32px);background:#0e2444;color:#c4d4e8;border-top:1px solid #334e78;font-size:11px;line-height:1.5}
 .hq-global-footer strong{font-weight:800;color:#f0ce7b;letter-spacing:.05em}
+/* Headquarters chrome has an intentional fixed app height. Reserve real footer
+   space inside that layout; never clip the footer below the scroll boundary. */
+.wilsyHqShell{display:flex;flex-direction:column}
+.wilsyHqShell>.hq-layout{flex:1 1 0;height:auto!important;min-height:0}
+.wilsyHqShell>.hq-global-footer{flex:0 0 auto}
+.wilsyHqShell .hq-layout--people-owned{min-height:0!important;overflow:hidden!important}
+.wilsyHqShell .hq-content--people-owned{height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
+
 @media(max-width:767px){.hq-people-navigation{padding:10px 14px;flex-wrap:wrap}.hq-global-footer{padding:14px}.wilsyHqShell .hq-people-owned{min-height:calc(100dvh - 180px)}}
 
 
@@ -1804,7 +1813,7 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.20.1-PEOPLE-VIEWPORT-CSS-PRECEDENCE
+ * VERSION: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
