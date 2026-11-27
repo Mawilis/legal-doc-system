@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.12.3-COMPACT-OVERVIEW-WORKSPACE-LEAD
+ * VERSION: v2.12.4-SOURCE-AUTHORITY-TRANSPARENCY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.12.4-SOURCE-AUTHORITY-TRANSPARENCY retains independent workforce/hiring/offer/headcount admission states, distinguishes denied from unavailable, and displays bounded source details without IAM elevation.
  *   v2.12.1-HQ-RETURN-ICON-IMPORT includes the actual icon dependency required by the new contextual People header return control.
  *   v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN mounts a single accessible compact Headquarters return inside the contextual People application header; removes the need for a duplicate external navigation rail.
  *   v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES bounds Overview to concurrent independently governed sources and every other HR lane to its selected source; search no longer refetches unrelated workforce aggregates.
@@ -4122,6 +4123,18 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const overviewHasAuthorizedSource = isVerifiedReadState(snapshotReadState)
     || ['candidates', 'offers', 'jobOpenings']
       .some(key => isVerifiedReadState(datasetReadStates[key]));
+  // Source admission is per operation: a denied directory does not prove that
+  // hiring or headcount was denied, and an outage must not be called a 403.
+  const overviewSources = [
+    { id: 'employees', label: 'Workforce', state: snapshotReadState },
+    { id: 'candidates', label: 'Hiring', state: datasetReadStates.candidates },
+    { id: 'offers', label: 'Offers', state: datasetReadStates.offers },
+    { id: 'jobOpenings', label: 'Headcount', state: datasetReadStates.jobOpenings },
+  ];
+  const overviewAccessDenied = overviewSources.some(source => source.state?.status === HR_READ_STATE.ACCESS_DENIED);
+  const overviewSourcePending = overviewSources.some(source => source.state?.status === HR_READ_STATE.PENDING || source.state?.revalidating);
+  const overviewSourceUnavailable = overviewSources.some(source => source.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE);
+  const overviewAuthRequired = overviewSources.some(source => source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED);
   const peopleModules = [
     { id: 'overview', title: 'Overview' },
     { id: 'employees', title: 'Workforce' },
@@ -4192,9 +4205,11 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 )}
               <section className={styles.overviewIntro} aria-labelledby="people-lifecycle-heading">
                 <div className={styles.overviewLead}>
-                  <h2 id="people-lifecycle-heading">People <em>at work.</em></h2>
+                  <div className={styles.overviewLeadLine}>
+                    <h2 id="people-lifecycle-heading">People <em>at work.</em></h2>
+                    <p className={styles.tenantContext}>Employer · {tenantId}</p>
+                  </div>
                   <p className={styles.overviewTagline}>Hire to Exit · One governed employee chain, from approved headcount to access revocation.</p>
-                  <p className={styles.tenantContext}>Employer · {tenantId}</p>
                 </div>
                 <div className={styles.overviewActions} aria-label="People work navigation">
                   <button type="button" onClick={() => changeTab('employees')}>Workforce directory <ArrowUpRight size={15} aria-hidden /></button>
@@ -4204,9 +4219,33 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               </section>
               {!overviewHasAuthorizedSource && (
                 <section className={styles.overviewRecovery} role="status" aria-label="People source admission">
-                  <h3>People access requires an authorized operating capacity</h3>
-                  <p>The current session cannot verify workforce, hiring or headcount sources. No employee counts or approval decisions are presented as zero. Founder designation alone does not grant HR authority.</p>
-                  <button type="button" onClick={() => changeTab('employees')}>Inspect workforce authorization <ArrowUpRight size={14} aria-hidden /></button>
+                  <div className={styles.overviewRecoverySummary}>
+                    <h3>{overviewSourcePending ? 'Verifying People sources…'
+                      : overviewAuthRequired ? 'People authentication required'
+                      : overviewAccessDenied ? 'People source access needs an authorized capacity'
+                      : overviewSourceUnavailable ? 'People source verification unavailable'
+                      : 'People sources are not yet verified'}</h3>
+                    <p>{overviewSourcePending ? 'Checking the current session and independently governed People sources.'
+                      : overviewAuthRequired ? 'Sign in with a current Global Principal session to verify employer data.'
+                      : overviewAccessDenied ? 'One or more People reads were denied by EOS. Select a separately authorized People capacity; Founder designation alone does not grant HR permission.'
+                      : 'EOS could not verify the current source reads. Refresh to retry; unavailable is not an empty workforce.'}</p>
+                  </div>
+                  <div className={styles.overviewSourceChecks} aria-label="People source verification results">
+                    {overviewSources.map(source => (
+                      <button type="button" key={source.id} onClick={() => changeTab(source.id)}
+                        className={styles.overviewSourceCheck}
+                        aria-label={`Inspect ${source.label}: ${source.state?.status || 'not verified'}`}>
+                        <strong>{source.label}</strong>
+                        <span>{isVerifiedReadState(source.state) ? 'Verified'
+                          : source.state?.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied'
+                          : source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED ? 'Sign in'
+                          : source.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Unavailable'
+                          : 'Verifying'}</span>
+                        {source.state?.errorCode && <small>{source.state.errorCode}</small>}
+                        <ArrowUpRight size={13} aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
                 </section>
               )}
               {overviewHasAuthorizedSource && <React.Fragment>
@@ -4873,7 +4912,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.12.1-HQ-RETURN-ICON-IMPORT
+ * VERSION: v2.12.4-SOURCE-AUTHORITY-TRANSPARENCY
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
