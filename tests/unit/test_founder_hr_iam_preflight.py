@@ -1,9 +1,17 @@
 """TITLE: WILSY OS Founder HR IAM Read-Only Preflight Certificate
 VERSION: v1.0.0-FOUNDER-HR-PREFLIGHT-UNIT-CERT
-AUTHORITY: Synthetic unit only; never mutates IAM or employee records.
-TENANT BOUNDARY: Exact canonical company employer.
-FAIL-CLOSED: A capacity alone, grant alone or Founder label alone is insufficient.
-FINANCIAL EXECUTION: Kennel EOS exclusively.
+AUTHORITY: Synthetic unit verification of the current, non-mutating EOS IAM preflight.
+EPITOME: Missing or partial HR facts are never converted to live authority.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_founder_hr_iam_preflight.py
+COLLABORATION / OWNERSHIP: Founder HR IAM preflight; synthetic test sources only.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.0.0-FOUNDER-HR-PREFLIGHT-UNIT-CERT covers canonical scope, missing and matched HR role/capacity evidence without authority issuance.
+COMPLIANCE: POPIA section 19; GDPR Article 32; WCAG 2.2.
+SECURITY / PRIVACY POSTURE: Synthetic principal and tenant facts only; no credentials.
+TENANT BOUNDARY: Exact canonical company employer; foreign and stale scope denied.
+AUTHORITY BOUNDARY: No grants, membership mutation, session or authorization decision.
+FAIL-CLOSED POSTURE: A capacity alone, grant alone or Founder label alone is insufficient.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
 """
 from __future__ import annotations
 
