@@ -5,14 +5,15 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.32.0-CURRENT-DOCUMENT-TRANSPORT-CERT
+ * VERSION: v1.35.0-PEOPLE-FOOTER-GRID-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v1.32.0-CURRENT-DOCUMENT-TRANSPORT-CERT verifies document callers supply exact tenant scope while shared API owns the current session bearer, preventing stale Owner/HR bearer overrides.
+ * CHANGELOG: v1.35.0-PEOPLE-FOOTER-GRID-CERT requires an actual bounded viewport grid with a dedicated footer row in People rather than relying on footer DOM existence or flex layout that can overflow.
+ * CHANGELOG: v1.35.0-PEOPLE-FOOTER-GRID-CERT verifies document callers supply exact tenant scope while shared API owns the current session bearer, preventing stale Owner/HR bearer overrides.
  * CHANGELOG: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT proves the redundant breadcrumb strip is absent, the People application owns exactly one working back control and authenticated employer identity remains in the shared footer.
  * CHANGELOG: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR locates the visible contextual employer container directly in the authenticated Headquarters DOM while retaining positive and foreign-tenant denial tests.
  * CHANGELOG: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT verifies current tenant legal identity in People header/footer and denies presentation of a foreign tenant's legal name under the selected authenticated session.
@@ -426,7 +427,9 @@ describe('WILSY Headquarters authenticated shell', () => {
     expect(footer).toHaveTextContent('Python Kennel EOS');
     const styles = document.querySelector('.wilsyHqShell style').textContent;
     expect(styles).toContain('.wilsyHqShell .hq-layout--people-owned{display:block');
-    expect(styles).toContain('.wilsyHqShell>.hq-global-footer{flex:0 0 auto;position:relative;z-index:2;min-height:45px;visibility:visible}');
+    expect(styles).toContain('.wilsyHqShell{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;overflow:hidden}');
+    expect(styles).toContain('.wilsyHqShell>.hq-layout{height:100%!important;min-height:0;max-height:none!important;overflow:hidden}');
+    expect(styles).toContain('.wilsyHqShell>.hq-global-footer{position:relative;z-index:2;min-height:45px;max-height:none;visibility:visible;align-self:stretch;flex-shrink:0}');
     expect(document.querySelector('.hq-people-navigation')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Return to Headquarters' })).toHaveLength(1);
 
@@ -1088,7 +1091,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.32.0-CURRENT-DOCUMENT-TRANSPORT-CERT
+ * VERSION: v1.35.0-PEOPLE-FOOTER-GRID-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.
