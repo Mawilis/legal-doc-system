@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE
+ * VERSION: v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION maps global contextual People search shortcuts to the real authorized hiring, offers, workforce and paginated headcount lanes without cross-source record indexing.
  *   v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE consumes true paginated transactional headcount Overview pages and independently validates exact-tenant provenance and total, preventing the old 200-record cap from appearing complete.
  *   v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET clears tenant-authorized workforce-only search terms on switching to independently authorized hiring/offer/headcount modules.
  *   v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS renders canonical headcount requisition position, department, location, requested seats and status without generic invented 'Remote' or 'Normal' values.
@@ -2923,6 +2924,8 @@ const HrDashboard = () => {
       const sourceShortcuts = {
         hiring: 'candidates', recruitment: 'candidates',
         offers: 'offers', workforce: 'employees', employees: 'employees',
+        headcount: 'jobOpenings', requisitions: 'jobOpenings',
+        roles: 'jobOpenings', overview: 'overview',
       };
       const tab = sourceShortcuts[query.toLowerCase()];
       if (tab) {
@@ -4855,7 +4858,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE
+ * VERSION: v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
