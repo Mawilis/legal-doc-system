@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY account identity scope transition certificate
- * VERSION: v1.0.1-ACCOUNT-IDENTITY-SCOPE-TRANSITIONS
+ * VERSION: v1.1.0-FOCUSED-ACCOUNT-PROFILE-CERT
  * AUTHORITY: Client projection test only; Python EOS remains the authority.
  * EPITOME: Prove that the Top App Bar account menu follows a same-principal
  *          EOS tenant and selected-capacity transition without retaining the
@@ -9,6 +9,7 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/App.accountIdentityScope.test.jsx
  * COLLABORATION / OWNERSHIP: App authenticated chrome and AuthProvider contract.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CHANGELOG: v1.1.0-FOCUSED-ACCOUNT-PROFILE-CERT verifies focused account navigation, explicit sign-in email provenance, and durable device menu density.
  * CHANGELOG: v1.0.1-ACCOUNT-IDENTITY-SCOPE-TRANSITIONS — Certifies the existing account identity scope and authenticated workspace boundaries.
  *            Previous: v1.0.1 adds inert authenticated-client mocks so this focused UI certificate cannot issue unrelated network requests.
  * CHANGELOG: v1.0.0 adds a focused same-principal tenant and capacity transition regression.
@@ -83,6 +84,24 @@ const renderAccount = (auth) => (
 );
 
 describe('Top App Bar account identity scope', () => {
+  it('keeps profile detail in a focused view and saves only a device-local menu preference', () => {
+    const candidate = { ...ownerProjection, workspaceEmail: null };
+    const auth = authProjection(candidate, { tenantId: candidate.tenantId, legalName: 'Tenant A Organisation' }, 4);
+    render(renderAccount(auth));
+    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    const menu = screen.getByRole('menu', { name: 'Account menu' });
+    expect(menu).toHaveTextContent('Sign-in email · verification pending');
+    fireEvent.click(screen.getByRole('menuitem', { name: /My profile/ }));
+    expect(menu).toHaveTextContent('Sign-in email, not independently verified by EOS');
+    expect(screen.getByRole('menuitem', { name: /Back to account/ })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /Personal settings/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Back to account/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Personal settings/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Compact' }));
+    expect(window.localStorage.getItem('wilsy:chrome:profile-density')).toBe('compact');
+    expect(screen.getByRole('menuitemradio', { name: 'Compact' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('replaces tenant and capacity identity for the same principal without leaking the prior scope', () => {
     const first = authProjection(
       ownerProjection,
@@ -96,7 +115,7 @@ describe('Top App Bar account identity scope', () => {
     expect(menu).toHaveTextContent('Alex Example');
     expect(menu).toHaveTextContent('alex.tenant-a@example.test');
     expect(menu).toHaveTextContent('Tenant A Organisation');
-    expect(menu).toHaveTextContent('Selected capacity: Owner');
+    expect(menu).toHaveTextContent('Operating as: Owner');
     expect(menu).not.toHaveTextContent('login-candidate@example.test');
 
     const samePrincipalInTenantB = {
@@ -118,10 +137,10 @@ describe('Top App Bar account identity scope', () => {
     expect(menu).toHaveTextContent('Alex Example');
     expect(menu).toHaveTextContent('alex.tenant-b@example.test');
     expect(menu).toHaveTextContent('Tenant B Organisation');
-    expect(menu).toHaveTextContent('Selected capacity: Auditor');
+    expect(menu).toHaveTextContent('Operating as: Auditor');
     expect(menu).not.toHaveTextContent('alex.tenant-a@example.test');
     expect(menu).not.toHaveTextContent('Tenant A Organisation');
-    expect(menu).not.toHaveTextContent('Selected capacity: Owner');
+    expect(menu).not.toHaveTextContent('Operating as: Owner');
 
     const samePrincipalNewCapacity = {
       ...samePrincipalInTenantB,
@@ -138,14 +157,14 @@ describe('Top App Bar account identity scope', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
     menu = screen.getByRole('menu', { name: 'Account menu' });
     expect(menu).toHaveTextContent('Tenant B Organisation');
-    expect(menu).toHaveTextContent('Selected capacity: Legal partner');
-    expect(menu).not.toHaveTextContent('Selected capacity: Auditor');
+    expect(menu).toHaveTextContent('Operating as: Legal partner');
+    expect(menu).not.toHaveTextContent('Operating as: Auditor');
     expect(menu).not.toHaveTextContent('Tenant A Organisation');
   });
 });
 
 // ARTIFACT: client/tests/client/App.accountIdentityScope.test.jsx
-// VERSION: v1.0.1-ACCOUNT-IDENTITY-SCOPE-TRANSITIONS
+// VERSION: v1.1.0-FOCUSED-ACCOUNT-PROFILE-CERT
 // AUTHORITY BOUNDARY: Client projection test only; EOS owns identity and access.
 // TENANT POSTURE: Exact synthetic tenant projections; no persistence.
 // FAIL-CLOSED POSTURE: Mismatched or stale rendered identity fails assertions.
