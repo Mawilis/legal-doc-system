@@ -1,5 +1,10 @@
 """HTTP transport for the tenant-neutral global-principal login journey.
 
+VERSION: v1.1.0-BLOCKING-GLOBAL-LOGIN-WORKER-ISOLATION
+CHANGELOG: 2026-11-27 v1.1.0 isolates synchronous global-principal rate-limit,
+credential verification and MongoDB membership selector transaction in a
+bounded Starlette worker thread without changing identity, session, MFA or
+failure authority. No client timeout extension or automatic credential retry.
 Global routes are additive. Legacy tenant-bound endpoints remain mounted and
 unchanged while global session currentness is migrated and certified.
 """
@@ -191,6 +196,16 @@ def _membership_payload(page: Any) -> list[dict[str, Any]]:
 
 @router.post("/login")
 async def global_login(payload: GlobalCredentialRequest, request: Request) -> dict[str, Any]:
+    """Offload blocking global credential and membership admission from ASGI.
+
+    This does not parallelize, retry, bypass rate limits, reuse challenges or
+    issue a session without the existing independently verified MFA flow.
+    """
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(_global_login_sync, payload, request)
+
+
+def _global_login_sync(payload: GlobalCredentialRequest, request: Request) -> dict[str, Any]:
     """Verify tenant-neutral credentials and issue a one-time membership selector."""
     _require_ready(request, "global_principal_auth_indexes_ready")
     _require_ready(request, "global_principal_mfa_factor_indexes_ready")
