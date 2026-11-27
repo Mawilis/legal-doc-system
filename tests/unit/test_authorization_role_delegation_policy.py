@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Authorization-Role Delegation Certificate.
-VERSION: v1.5.0-WILSY-PROJECT-CONTRIBUTOR-DELEGATION-CERT
+VERSION: v1.6.0-CANONICAL-FOUNDER-HR-MANAGER-GRANT-CERT
 AUTHORITY: Direct certificate of explicit GD1 grant law.
 EPITOME: Certifies the explicit authorization-role delegation graph, exact WILSY-only admission-officer issuance, and fail-closed boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_authorization_role_delegation_policy.py
@@ -9,8 +9,9 @@ TENANT BOUNDARY: Every positive case is exact same-tenant; admission-officer iss
 AUTHORITY BOUNDARY: Tests policy evaluation only.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS remains exclusive.
 TRANSACTION BOUNDARY: No transaction ownership.
-CERTIFICATION / UPDATE DATE: 2026-11-15
+CERTIFICATION / UPDATE DATE: 2026-11-27
 CHANGELOG:
+    2026-11-27 v1.6.0-CANONICAL-FOUNDER-HR-MANAGER-GRANT-CERT proves exact canonical Enterprise Admin -> HR Manager invitation eligibility and cross-tenant, inactive, and HR Director denial.
     2026-11-22 v1.5.0-WILSY-PROJECT-CONTRIBUTOR-DELEGATION-CERT certifies exact WILSY-only Enterprise Admin invite of a narrow PROJECTS_PARTICIPANT_CONTRIBUTOR role and denies cross-tenant, revoked, other inviter or grant-free paths.
     2026-11-16 v1.4.0-PROJECTS-PLATFORM-OWNER-DELEGATION-CERT verifies the dedicated Projects role invitation edge is Enterprise-Admin-only and WILSY-tenant-only, with acceptance required before assignment.
     2026-11-15 v1.3.0-COMPANY-READER-DELEGATION-AND-ADMIN-READ-CERT confirms
@@ -46,6 +47,7 @@ EXPECTED = {
     ("ENTERPRISE_ADMIN", "COMPANY_DOCUMENT_READER"),
     ("ENTERPRISE_ADMIN", "PROJECTS_PLATFORM_OWNER"),
     ("ENTERPRISE_ADMIN", "PROJECTS_PARTICIPANT_CONTRIBUTOR"),
+    ("ENTERPRISE_ADMIN", "HR_MANAGER"),
 }
 
 def assignment(role="ENTERPRISE_ADMIN", tenant="t1", status=RoleAssignmentStatus.ACTIVE):
@@ -66,6 +68,32 @@ def test_allowed_edges_require_canonical_permission():
 def test_tenant_and_lifecycle_boundaries():
     assert not evaluate_authorization_role_grant(assignment(), "other", "AUDITOR").allowed
     assert not evaluate_authorization_role_grant(assignment(status=RoleAssignmentStatus.REVOKED), "t1", "AUDITOR").allowed
+
+
+def test_hr_manager_invitation_only_for_canonical_employer() -> None:
+    """Permission eligibility is not an assignment or an accepted invitation."""
+    authorized = evaluate_authorization_role_grant(
+        assignment(tenant=WILSY_COMPANY_TENANT_ID),
+        WILSY_COMPANY_TENANT_ID,
+        "HR_MANAGER",
+    )
+    assert authorized.allowed is True
+    for tenant in ("t1", "customer-tenant"):
+        assert evaluate_authorization_role_grant(
+            assignment(tenant=tenant), tenant, "HR_MANAGER",
+        ).denial_code is AuthorizationRoleGrantDenialCode.GRANT_NOT_PERMITTED
+    assert not evaluate_authorization_role_grant(
+        assignment("AUDITOR", WILSY_COMPANY_TENANT_ID),
+        WILSY_COMPANY_TENANT_ID, "HR_MANAGER",
+    ).allowed
+    assert not evaluate_authorization_role_grant(
+        assignment(tenant=WILSY_COMPANY_TENANT_ID, status=RoleAssignmentStatus.REVOKED),
+        WILSY_COMPANY_TENANT_ID, "HR_MANAGER",
+    ).allowed
+    assert not evaluate_authorization_role_grant(
+        assignment(tenant=WILSY_COMPANY_TENANT_ID),
+        WILSY_COMPANY_TENANT_ID, "HR_DIRECTOR",
+    ).allowed
 
 
 def test_admission_officer_delegation_is_wilsy_tenant_only():
@@ -164,7 +192,7 @@ def test_company_reader_edge_is_explicit_tenant_local_and_non_possessory():
     assert "company_operating_document:publish" not in ROLE_PERMISSIONS_MAP["ENTERPRISE_ADMIN"]
 
 # ARTIFACT: test_authorization_role_delegation_policy.py
-# VERSION: v1.5.0-WILSY-PROJECT-CONTRIBUTOR-DELEGATION-CERT
+# VERSION: v1.6.0-CANONICAL-FOUNDER-HR-MANAGER-GRANT-CERT
 # AUTHORITY BOUNDARY: certificate only; no authority grant or assignment is created
 # TENANT POSTURE: platform-only Projects delegation is confined to the canonical WILSY company tenant
 # FAIL-CLOSED POSTURE: non-WILSY and unlisted delegation edges deny
