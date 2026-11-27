@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.6.1-LIFECYCLE-NAV-FAIL-CLOSED-CERT
+ * VERSION: v1.6.2-NO-DECORATIVE-UNVERIFIED-METRICS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.6.2-NO-DECORATIVE-UNVERIFIED-METRICS certifies zero-admitted source views show a single honest authority state rather than four decorative unavailable KPI tiles.
  *   v1.6.1-LIFECYCLE-NAV-FAIL-CLOSED-CERT certifies source-unconnected onboarding/exit navigation is available without invalid API requests or simulated employee mutations.
  *   v1.6.0-PROTOTYPE-OWNED-PEOPLE-APPLICATION-CERT certifies prototype-grounded full People application composition, truthful EOS-only overview, single global logo and Headquarters-owned footer.
  *   v1.5.2-HR01-LEGACY-PROFILE-RETIREMENT — Asserts the unconditional black/gold HR profile card is unmounted in favour of the global authenticated WILSY identity.
@@ -244,6 +245,9 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(dashboard).toContain("isVerifiedReadState(datasetReadStates.offers)");
     expect(dashboard).toContain("isVerifiedReadState(datasetReadStates.candidates)");
     expect(dashboard).toContain("isVerifiedReadState(metric.state) ? metric.dataset.total : 'Unavailable'");
+    expect(dashboard).toContain('styles.sourceUnverified');
+    expect(dashboard).toContain("['employees', 'candidates', 'offers', 'jobOpenings'].some(key => isVerifiedReadState(datasetReadStates[key]))");
+    expect(dashboard).toContain('No current People indicators are authorized for this capacity.');
     expect(dashboard).not.toContain('24 / 28 Planned');
     expect(dashboard).not.toContain('Onboard Naledi');
     expect(dashboard).toContain("const sourceTab = activeTab === 'overview' || !Object.prototype.hasOwnProperty.call(pageStates, activeTab)");
@@ -265,7 +269,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.6.1-LIFECYCLE-NAV-FAIL-CLOSED-CERT
+ * VERSION: v1.6.2-NO-DECORATIVE-UNVERIFIED-METRICS
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
