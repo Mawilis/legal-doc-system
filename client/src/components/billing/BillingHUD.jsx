@@ -10,7 +10,7 @@
  * ║   ╚═════╝ ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       ║
  * ║                                                                                                                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
- * 🏛️ WILSY OS - BILLING NUCLEUS HUD [V68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP]
+ * 🏛️ WILSY OS - BILLING NUCLEUS HUD [V68.4.3-M03-HR01-CANONICAL-WORKFORCE-SOURCE]
  * ║ TITLE: WILSY OS Billing HUD                                                                                                            ║
  * ║ AUTHORITY: Wilsy OS Core Governance                                                                                                    ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -18,7 +18,7 @@
  * ║           This version introduces foundational UI elements for multi‑payment method support, dunning visibility, and batch operations. ║
  * ║ COMPLIANCE: POPIA §19 · GDPR §32 · SOC2 §CC7.2 · ISO 27001 · ECT Act §15                                                             ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: v68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP                                                                                           ║
+ * ║ VERSION: v68.4.3-M03-HR01-CANONICAL-WORKFORCE-SOURCE                                                                                           ║
  * ║ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/billing/BillingHUD.jsx                            ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN‑OFF:                                                                                                 ║
@@ -28,6 +28,7 @@
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ CERTIFICATION / UPDATE DATE: 2026-11-27                                                                                                 ║
  * ║ COLLABORATION / OWNERSHIP: BillingHUD, invoice-proof client, and authenticated EOS transport owners.                                     ║
+ * ║ CHANGELOG: v68.4.3-M03-HR01-CANONICAL-WORKFORCE-SOURCE consumes the existing independently authorized /hr/workforce source with exact envelope provenance, not a duplicate employee API.
  * ║ CHANGELOG: v68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP requires current HR directory authorization, removes legacy multi-route lookups and fabricated salesperson records.\n * ║ CHANGELOG: v68.4.1-GOVERNED-C2-TENANT-BOUNDARY completes sovereign header and seal version agreement without behavior change.            ║
  * ║ SECURITY / PRIVACY POSTURE: Authenticated Python EOS projections; no caller tenant label grants authority.                            ║
  * ║ TENANT BOUNDARY: Current workspace client billing only; global recipient lookup stays unavailable pending governed C2.                 ║
@@ -1241,18 +1242,19 @@ const BillingHUD = ({ user: routeUser = null }) => {
       try {
         // Directory access is a separate, current HR permission; billing grants
         // no implicit access to employee files or another tenant's workforce.
-        const response = await sovereignClient.get('/employees/search', {
+        const response = await sovereignClient.get('/hr/workforce', {
           params: { q, limit: 12 },
           headers: { 'X-Tenant-ID': tenantId },
           signal: controller.signal,
         });
         const data = extractData(response);
-        if (!Array.isArray(data)) {
+        if (data?.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+          || !Array.isArray(data.items)) {
           setSalespersonOptions([]);
           return;
         }
         const needle = q.toLocaleLowerCase();
-        setSalespersonOptions(data
+        setSalespersonOptions(data.items
           .filter(item => item && typeof item.employeeId === 'string'
             && typeof item.displayName === 'string')
           .map(item => ({
@@ -6352,7 +6354,7 @@ export default BillingHUD;
 
 /**
  * ARTIFACT: client/src/components/billing/BillingHUD.jsx
- * VERSION: v68.4.2-M03-HR01-VERIFIED-EMPLOYEE-LOOKUP
+ * VERSION: v68.4.3-M03-HR01-CANONICAL-WORKFORCE-SOURCE
  * AUTHORITY BOUNDARY: Tenant-scoped client billing uses EOS authorization; global recipient selection remains unavailable pending governed C2.
  * TENANT POSTURE: Subscription requests use the exact authenticated workspace tenant; client invoice search carries that same scope.
  * FAIL-CLOSED POSTURE: Platform invoice issue and quick issue cannot proceed without governed cross-tenant directory authority.
