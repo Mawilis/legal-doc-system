@@ -43,7 +43,7 @@ from tools.eos.auth.tenant_business_role_repository import (
 from tools.eos.auth.workspace_bootstrap_projection import resolve_workspace_id
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 
-VERSION = "v1.0.0-PRINCIPAL-MEMBERSHIP-SELECTION-PROJECTION"
+VERSION = "v1.1.0-EXACT-TENANT-WORKSPACE-SELECTION"
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 100
 
