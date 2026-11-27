@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v2.33.1-M04-RETURN-PROGRESS
+ * VERSION: v2.34.0-SCOPED-M04-CONTINUATION
+ * CHANGELOG: v2.34.0-SCOPED-M04-CONTINUATION preserves bounded navigation-only context from the previously verified M04 task graph while the current Strategy publication, project and relationship are revalidated. No stale command, authority, or outcome truth.
  * CHANGELOG: v2.33.1-M04-RETURN-PROGRESS retains the M04 document shell on a Strategy-origin return and explains the still-pending EOS publication and task verification, rather than showing an empty full-screen spinner or stale execution counts.
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
@@ -8,7 +9,7 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.jsx
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
- * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
  * CHANGELOG: v2.33.0-RETURN-TO-GOVERNED-M04 resumes the existing M04 workspace after Strategy-originated Projects navigation once its authenticated task graph verifies; no source write.
  * CHANGELOG: v2.32.9-SINGLE-OVERVIEW-RETURN reuses the M04 task navigation control
  *            as the sole return from execution overview. Removes the
@@ -641,6 +642,19 @@ const commandFailure = (failure, action, acknowledged) => {
  * @param {{classification:'MISSION'|'STRATEGY',onClose:Function,onOpenWork:Function,onOpenProject?:Function}} props
  * @returns {JSX.Element} Accessible responsive source-backed document drawer.
  */
+// Ephemeral navigation-only context. Never consulted by source/IAM/command gates.
+let strategyContinuation = null;
+
+/**
+ * @description Read visual-only continuation for the exact authenticated
+ * credential and tenant/principal scope. Never confers current EOS authority.
+ * @returns {object|null} Prior task navigation context or null.
+ */
+function priorStrategyContinuation(token, scope) {
+  return token && scope && strategyContinuation?.token === token
+    && strategyContinuation?.scope === scope ? strategyContinuation : null;
+}
+
 export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject, onOpenProjects }) {
   const location = useLocation();
   const selectedWorkView = classification === 'STRATEGY'
@@ -660,6 +674,10 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const credential = useRef({ token: auth.token, revision: 0 });
   if (credential.current.token !== auth.token) credential.current = { token: auth.token, revision: credential.current.revision + 1 };
   const sessionKey = baseScope ? baseScope + ':' + credential.current.revision : null;
+  const returningToM04 = classification === 'STRATEGY'
+    && new URLSearchParams(location.search).get('resumeM04') === '1';
+  const previousM04 = returningToM04
+    ? priorStrategyContinuation(auth.token, baseScope) : null;
   const epoch = useRef(sessionKey);
   epoch.current = sessionKey;
   const scope = { tenantId: auth.user?.tenantId, principalId: auth.user?.id };
@@ -1108,6 +1126,21 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       pastDueCalendar: unfinishedWithDue, observedAt: delivery.verifiedAt,
       certifiedOutcome: null };
   })();
+
+  // Only the current EOS-admitted M04 graph may refresh the navigation preview.
+  // Never persist it to browser storage or use it in authorization or actions.
+  useEffect(() => {
+    if (!m04Execution || !sessionKey || classification !== 'STRATEGY'
+      || loading || error) return;
+    strategyContinuation = {
+      token: auth.token,
+      scope: baseScope,
+      projectName: m04Execution.project.name,
+      tasks: m04Execution.rows.slice(0, 6).map(({ task }) => ({
+        title: task.title, status: task.status,
+      })),
+    };
+  }, [m04Execution, sessionKey, classification, loading, error, auth.token, baseScope]);
 
   // This view is a bounded client presentation of an already-complete verified
   // task snapshot; filters do not affect the underlying M04 verification gate.
@@ -1786,12 +1819,31 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     <span>Rechecking the authorized Strategy publication and Foundation work source…</span>
                   </div>
                   <p className="mt-3 max-w-2xl text-sm text-slate-400">
-                    Your previously selected task is unchanged. Current project, task and Strategy facts will appear only after EOS verifies them.
+                    Your previous navigation context is retained for this session. Current tasks and permissions appear only after EOS verifies them.
                   </p>
+                  {previousM04 && <section aria-label="Previous M04 task context" className="mt-6 max-w-3xl border-t border-white/15 pt-4">
+                    <p className="text-xs font-semibold text-slate-200">Previous verified view · {previousM04.projectName}</p>
+                    <p className="mt-1 text-xs text-slate-400">Earlier navigation only, not current EOS data. Actions remain unavailable while verifying.</p>
+                    <ul className="mt-3 divide-y divide-white/10">
+                      {previousM04.tasks.map((task, index) => <li key={index} className="flex items-start justify-between gap-4 py-2 text-sm">
+                        <span>{task.title}</span><span className="shrink-0 text-xs text-slate-400">Previously {task.status.replaceAll('_', ' ').toLowerCase()}</span>
+                      </li>)}
+                    </ul>
+                  </section>}
                 </section>
               : <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>)
             : error ? null : tab === 'history' ? <section className={styles.paper}><h2>Revision history</h2><p>Only revisions permitted for your current company capacity appear here.</p>{currentHistory?.items.length ? currentHistory.items.map(item => <button className={styles.revisionRow} key={item.revision} type="button" onClick={() => changeQuery({ review: query.review, revision: item.revision })}><FileText size={18}/><span><strong>Version {item.document_version} · revision {item.revision}</strong><small>{item.state} · {displayDate(item.recorded_at)}</small></span><ArrowUpRight size={15}/></button>) : !error && <p>No permitted revisions are available.</p>}</section>
               : data && <>
+                {returningToM04 && previousM04 && !m04Execution && !error && <section
+                  aria-label="Previous M04 task context" role="status" className="mx-auto w-full max-w-5xl px-5 py-4 text-slate-200">
+                  <p className="text-sm font-semibold">Restoring M04 · {previousM04.projectName}</p>
+                  <p className="mt-1 text-xs text-slate-400">Earlier verified navigation only. Foundation tasks and the Strategy relationship are being checked again; task actions are unavailable.</p>
+                  <ul className="mt-3 divide-y divide-white/10">
+                    {previousM04.tasks.map((task, index) => <li key={index} className="flex justify-between gap-4 py-2 text-sm">
+                      <span>{task.title}</span><span className="shrink-0 text-xs text-slate-400">Previously {task.status.replaceAll('_', ' ').toLowerCase()}</span>
+                    </li>)}
+                  </ul>
+                </section>}
                 {!executionFirst && <nav className={styles.commandDeck} aria-label="Company document actions">
                   <div className={styles.commandStatus}>
                     <strong>{ratificationOpen ? 'Founder ratification · private decision'
@@ -2638,7 +2690,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v2.33.1-M04-RETURN-PROGRESS
+// VERSION: v2.34.0-SCOPED-M04-CONTINUATION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.
