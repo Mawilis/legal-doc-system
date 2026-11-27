@@ -10,6 +10,19 @@
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
  * Change log: 2026-11-27 v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY aligns
  *             retained governed HR command dialogs to light OS surfaces.
+ * TITLE: WILSY OS People Operating Workspace Dialog Styles
+ * VERSION: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY
+ * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
+ * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
+ * COLLABORATION / OWNERSHIP: HR People workspace and shared WILSY OS design system.
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY removes the legacy black/gold HR modal surface while retaining source-controlled input and button semantics.
+ * COMPLIANCE: AGENTS.md; WCAG 2.2 AA; POPIA section 19.
+ * SECURITY / PRIVACY POSTURE: Styles contain no secrets, employee data or persisted business state.
+ * TENANT BOUNDARY: No tenant scope or permissions are handled by CSS.
+ * AUTHORITY BOUNDARY: No mutation, billing or grant authority conveyed by styling.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  * Classification: Production Artifact
  * =============================================================================
  */
