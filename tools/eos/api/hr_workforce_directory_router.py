@@ -1,5 +1,5 @@
 """TITLE: WILSY authenticated workforce directory projection.
-VERSION: v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW
+VERSION: v1.1.1-M03-SINGLE-SOURCE-AGGREGATE
 AUTHORITY: Existing Python EOS tenant authorization and canonical employee directory read.
 EPITOME: Projects a bounded set of directory-safe employee fields from the
          existing employees source for authenticated HR or platform-employer
@@ -8,10 +8,12 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr
 COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py at /api/hr/workforce; consumed by Headquarters and HR directory views.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
 CHANGELOG:
-  v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW — Adds exact-tenant, current-IAM-authorized workforce Overview
+  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Reads employee and department measures in one exact-tenant
+  Mongo aggregation instead of two unsynchronized count/distinct calls.
+  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Adds exact-tenant, current-IAM-authorized workforce Overview
   metrics from the canonical employee source. No HR access, departments,
   payroll, employee PII, or separate-source privileges are inferred.
-  v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
+  v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Corrects the release marker so the header, current changelog and end seal agree exactly; directory behavior is unchanged.
   v1.0.0-PLATFORM-EMPLOYER-DIRECTORY-SCOPE — Adds canonical WILSY platform-employer read authorization while preserving customer HR entitlement, exact tenant query, bounded projection and read-only behavior.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Tenant scope comes only from EOS authorization; directory fields are projected explicitly and sensitive identity, health and financial attributes are excluded.
@@ -148,8 +150,21 @@ async def read_workforce_overview(
     }
     try:
         collection = database["employees"]
-        active_count = collection.count_documents(criteria)
-        departments = collection.distinct("employment.department", criteria)
+        aggregation = list(collection.aggregate([
+            {"$match": criteria},
+            {"$group": {
+                "_id": None,
+                "active_employees": {"$sum": 1},
+                "departments": {"$addToSet": "$employment.department"},
+            }},
+        ]))
+        if len(aggregation) > 1:
+            raise ValueError("HR_OVERVIEW_MULTIPLE_AGGREGATES")
+        metrics = aggregation[0] if aggregation else {
+            "active_employees": 0, "departments": [],
+        }
+        active_count = metrics["active_employees"]
+        departments = metrics["departments"]
     except Exception as error:
         raise HTTPException(
             status_code=503, detail="Workforce overview source is unavailable."
@@ -172,7 +187,7 @@ async def read_workforce_overview(
 
 
 # ARTIFACT: hr_workforce_directory_router.py
-# VERSION: v1.1.0-M03-PEOPLE-VERIFIED-OVERVIEW
+# VERSION: v1.1.1-M03-SINGLE-SOURCE-AGGREGATE
 # AUTHORITY BOUNDARY: Existing EOS tenant authorization gates read-only directory projection; the route grants no employee, principal, membership, IAM, or entitlement authority.
 # TENANT POSTURE: Exact authorized tenant is applied to every employee query; employer alternate pair is canonical-WILSY-only.
 # FAIL-CLOSED POSTURE: Missing database, malformed authorization, or source read failure returns unavailable and never an empty-success projection.
