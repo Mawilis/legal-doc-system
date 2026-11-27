@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.16.0-ACTIONABLE-ZERO-DATA-LIFECYCLE
+ * VERSION: v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,9 +12,10 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v2.16.0-ACTIONABLE-ZERO-DATA-LIFECYCLE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.16.0-ACTIONABLE-ZERO-DATA-LIFECYCLE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.16.0-ACTIONABLE-ZERO-DATA-LIFECYCLE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -2919,6 +2920,15 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
           fetchTabData('jobOpenings', pageStates.jobOpenings, ''),
         ]
       : sourceTab ? [fetchTabData(sourceTab, pageStates[sourceTab], searchTerm)] : [];
+    // An authenticated exact-scope shell is not an authorized source result.
+    // Render immediately with PENDING per-source states while independent EOS
+    // reads continue. One slow source must not lock the entire People surface.
+    // No record or count is admitted until its own provenance validation passes.
+    if (tenantScopeKeyRef.current === requestedScopeKey
+      && invalidatedSessionScopeKeyRef.current !== requestedScopeKey) {
+      setDataScopeKey(requestedScopeKey);
+      setLoading(false);
+    }
     // Each non-Overview lane reads only its own independently authorized
     // source; workforce typing must not refetch unrelated HR summaries.
     const outcomes = await Promise.all(reads);
@@ -5069,7 +5079,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.16.0-ACTIONABLE-ZERO-DATA-LIFECYCLE
+ * VERSION: v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
