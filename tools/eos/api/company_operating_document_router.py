@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Mission and Strategy HTTP Authority.
-VERSION: v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION
+VERSION: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK
 AUTHORITY: Existing canonical tenant IAM; source lifecycle/registry own evidence.
 EPITOME: Expose approved company documents and separately authorized author/
 publication commands without reusing Legal agreements, HR files or Founder labels.
@@ -7,7 +7,8 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/co
 COLLABORATION / OWNERSHIP: Headquarters shared viewer, RequireTenantAuthorization,
 company document lifecycle/registry; explicit operators own index provisioning.
 CERTIFICATION / UPDATE DATE: 2026-11-22
-CHANGELOG: v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION
+CHANGELOG: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK adds a read-only, authenticated check of exact current Strategy read and Projects list/detail admission separately from optional author/publish, without document read, IAM mutation or source fallback.
+CHANGELOG: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK
 reuses the canonical audited project-link command for the exact durable
 Founder, requiring current project-read authority and Founder source in the
 same Mongo transaction as link creation; no author IAM grant is issued.
@@ -78,7 +79,7 @@ from tools.eos.saas.domain.company_operating_document import (
     CompanyOperatingDocumentRevision, instant,
 )
 
-VERSION: Final = "v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION"
+VERSION: Final = "v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK"
 def _require_current_company_session(identity: SovereignIdentity = Depends(get_current_identity)) -> None:
     """Reuse canonical authentication and session authority; never mint a session.
 
@@ -110,6 +111,9 @@ _AUTHOR = RequireTenantAuthorization("company_operating_document:author", "compa
 _PUBLISH = RequireTenantAuthorization("company_operating_document:publish", "company_operating_document_publish")
 _MAY_AUTHOR = OptionalTenantAuthorization("company_operating_document:author", "company_operating_document_author")
 _MAY_PUBLISH = OptionalTenantAuthorization("company_operating_document:publish", "company_operating_document_publish")
+_STRATEGY_READ_CHECK = OptionalTenantAuthorization("company_operating_document:read", "company_operating_document_read")
+_PROJECT_DETAIL_CHECK = OptionalTenantAuthorization("project:read", "project_detail")
+_PROJECT_LIST_CHECK = OptionalTenantAuthorization("project:read", "project_list")
 
 
 class ReaderGrantInput(BaseModel):
@@ -405,6 +409,42 @@ def _same_scope(base: TenantAuthorizationContext, candidate: TenantAuthorization
     return _same_actor(candidate, base)
 
 
+@router.get("/STRATEGY/authority-check")
+def inspect_strategy_read_authority(
+    response: Response,
+    identity: SovereignIdentity = Depends(get_current_identity),
+    document_read: TenantAuthorizationContext | None = Depends(_STRATEGY_READ_CHECK),
+    project_detail: TenantAuthorizationContext | None = Depends(_PROJECT_DETAIL_CHECK),
+    project_list: TenantAuthorizationContext | None = Depends(_PROJECT_LIST_CHECK),
+    author: TenantAuthorizationContext | None = Depends(_MAY_AUTHOR),
+    publisher: TenantAuthorizationContext | None = Depends(_MAY_PUBLISH),
+) -> dict[str, Any]:
+    """Observe current authenticated HTTP IAM outcomes without granting access.
+
+    Every check uses the exact central tenant authorization composer with the
+    browser's already validated session, selected capacity and tenant header.
+    Only positive admissions are returned; denials never become publication
+    evidence. Dependency outages continue to fail closed with HTTP 503.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        "schema": "WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1",
+        "selected_capacity": (
+            identity.roles[0]
+            if identity.principal_scope == "GLOBAL" and len(identity.roles) == 1
+            else None
+        ),
+        "session_scope": identity.principal_scope,
+        "document_read": "AUTHORIZED" if document_read is not None else "DENIED",
+        "project_detail": "AUTHORIZED" if project_detail is not None else "DENIED",
+        "project_list": "AUTHORIZED" if project_list is not None else "DENIED",
+        "document_author": "AUTHORIZED" if author is not None else "DENIED",
+        "document_publish": "AUTHORIZED" if publisher is not None else "DENIED",
+        "grant_issued": False,
+        "document_read_performed": False,
+    }
+
+
 @router.get("/STRATEGY/project-links")
 def read_strategy_project_links(
     response: Response,
@@ -674,7 +714,7 @@ def publish_company_document(classification: CompanyDocumentClass, payload: Publ
 
 
 # ARTIFACT: company_operating_document_router.py
-# VERSION: v1.5.0-FOUNDER-STRATEGY-PILLAR-LINK-ADMISSION
+# VERSION: v1.5.1-STRATEGY-HTTP-AUTHORITY-CHECK
 # AUTHORITY BOUNDARY: Current canonical IAM plus source-owned lifecycle commands.
 # TENANT POSTURE: Exact canonical WILSY company tenant; no root fallback.
 # FAIL-CLOSED POSTURE: Draft privacy, independent approval, indexes and readback required.
