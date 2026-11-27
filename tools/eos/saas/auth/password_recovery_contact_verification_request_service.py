@@ -13,7 +13,7 @@ COLLABORATION / OWNERSHIP: Authentication proves current ACCESS principal state;
                            existing contact authority; rate and mail adapters are
                            external capabilities only.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.1.0 adds independent, SMTP-free readback of exact ACTIVE verified contact evidence.
+CHANGELOG: v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK adds independent, SMTP-free readback of exact ACTIVE verified contact evidence.
 CHANGELOG: v1.0.0-R10E20-RECOVERY-CONTACT-VERIFICATION-REQUEST introduces
            durable-email sourcing, exact ACCESS tenant/principal binding,
            separate verification rate gating, already-verified short-circuit,
