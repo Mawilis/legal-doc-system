@@ -3,7 +3,7 @@
  * WILSY OS — RECOVERY CONTACT SECURITY CONTROL
  * ============================================================================
  * TITLE: Authenticated recovery-email verification control
- * VERSION: v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK
+ * VERSION: v1.2.0-RECOVERY-STATUS-FAILURE-DIAGNOSIS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Lets an authenticated user request verification of the current
  *           durable recovery email without letting the browser nominate an
@@ -13,8 +13,9 @@
  *   re-reads durable principal/email and owns verification/contact authority.
  * CERTIFICATION / UPDATE DATE: 2026-09-22
  * CHANGELOG:
+ *   2026-11-27 v1.2.0 distinguishes absent EOS routes, authentication and bounded source stages and permits a read-only retry without sending email.
  *   2026-11-27 v1.1.0 reads authenticated status before enabling email issuance, suppresses redundant verification and preserves source-unavailable as a separate state.
- *   2026-09-22 v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK — Adds
+ *   2026-09-22 v1.2.0-RECOVERY-STATUS-FAILURE-DIAGNOSIS — Adds
  *   pending suppression, verification-sent/already-verified states, bounded
  *   429/503 copy, and display-only current-email context.
  * COMPLIANCE: POPIA §19, GDPR §32, SOC2 §CC7.2.
@@ -40,20 +41,41 @@ export default function RecoveryContactSecurityControl({ email = '', compact = f
   const [pending, setPending] = useState(false);
   const [state, setState] = useState('loading');
   const [error, setError] = useState('');
+  const [readRevision, setReadRevision] = useState(0);
+  const [statusIssue, setStatusIssue] = useState('');
 
-  // The first read is an SMTP-independent current-source projection.
+  // Reading existing verified contact is idempotent: never issues SMTP tokens.
   useEffect(() => {
     let current = true;
+    setState('loading');
+    setStatusIssue('');
     getRecoveryContactStatus().then((response) => {
       if (!current) return;
       const status = response?.data?.status;
       setState(status === 'VERIFIED' ? 'verified'
         : status === 'VERIFICATION_REQUIRED' ? 'required' : 'unavailable');
-    }).catch(() => {
-      if (current) setState('unavailable');
+      if (!['VERIFIED', 'VERIFICATION_REQUIRED'].includes(status)) {
+        setStatusIssue('Unexpected EOS status response.');
+      }
+    }).catch((failure) => {
+      if (!current) return;
+      const status = failure?.response?.status;
+      const stage = failure?.response?.headers?.['x-wilsy-recovery-status-stage'];
+      if (status === 404 || status === 405) {
+        setStatusIssue('The current EOS process does not expose the recovery status route. Restart Python EOS with the updated code.');
+      } else if (status === 401 || status === 403) {
+        setStatusIssue('EOS could not authenticate this request. Reauthenticate through the current Global Principal session.');
+      } else if (status === 503 && ['PRINCIPAL_SOURCE', 'CONTACT_SOURCE', 'DURABLE_EMAIL', 'SOURCE_UNAVAILABLE'].includes(stage)) {
+        setStatusIssue('EOS readback failed at: ' + stage.replaceAll('_', ' ').toLowerCase() + '.');
+      } else if (status === 503) {
+        setStatusIssue('EOS reported a source failure without a diagnostic stage.');
+      } else {
+        setStatusIssue('EOS status read could not be completed.');
+      }
+      setState('unavailable');
     });
     return () => { current = false; };
-  }, []);
+  }, [readRevision]);
 
 
   const requestVerification = async () => {
@@ -106,7 +128,10 @@ export default function RecoveryContactSecurityControl({ email = '', compact = f
       )}
 
       {state === 'loading' && <p role="status" style={copyStyle}>Checking recovery email status with EOS…</p>}
-      {state === 'unavailable' && <p role="alert" style={errorStyle}>Recovery email status unavailable. Verification cannot be started until EOS verifies the current record.</p>}
+      {state === 'unavailable' && <>
+        <p role="alert" style={errorStyle}>Recovery email status unavailable. {statusIssue} Existing verification evidence has not been changed.</p>
+        <button type="button" style={buttonStyle} onClick={() => setReadRevision((value) => value + 1)}>Retry status read</button>
+      </>}
       {state === 'required' && <p role="status" style={copyStyle}>No matching verified recovery contact for the current EOS email.</p>}
       {state === 'verified' && (
         <div role="status" style={statusStyle}>
@@ -188,7 +213,7 @@ const buttonStyle = {
  * SOVEREIGN ARTIFACT SEAL
  * ============================================================================
  * ARTIFACT: RecoveryContactSecurityControl.jsx
- * VERSION: v1.1.0-R10E-RECOVERY-CONTACT-STATUS-READBACK
+ * VERSION: v1.2.0-RECOVERY-STATUS-FAILURE-DIAGNOSIS
  * AUTHORITY BOUNDARY: authenticated client transport/presentation only
  * TENANT POSTURE: no browser tenant/email authority submitted
  * FAIL-CLOSED POSTURE: only bounded server status updates presentation
