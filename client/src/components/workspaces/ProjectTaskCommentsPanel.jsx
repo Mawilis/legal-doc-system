@@ -18,7 +18,10 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  * CHANGELOG: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS introduces page-scoped counts, mine/date filters, order switching, day grouping and natural-language actor events without changing EOS authority.
  * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters and text search over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
- * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.\n * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.\n * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
+ * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.
+ * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.
+ * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.
+ * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
  * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
  *          existing source-owned comment editor directly under the action
@@ -866,7 +869,7 @@ export default function ProjectTaskCommentsPanel({
         </button>}
         <span className="ml-auto text-[11px] text-slate-600">Filters apply only to loaded EOS pages</span>
       </div>
-      <ol className="space-y-2" aria-label="Source-verified task activity newest first">
+      <ol className="space-y-2" aria-label="Source-verified task activity">
         {visibleActivity.map((entry, index) => <React.Fragment key={entry.id}>
           {(index === 0 || dayFor(visibleActivity[index - 1].time) !== dayFor(entry.time)) &&
             <li className="border-b border-slate-200 pb-1 pt-2 text-xs font-semibold text-slate-600"
@@ -931,7 +934,7 @@ export default function ProjectTaskCommentsPanel({
             <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
         </li></React.Fragment>)}
         {visibleActivity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
-          {activityFilter === 'ALL' ? 'No EOS-verified activity is available on these pages.'
+          {activityFilter === 'ALL' && !activeSecondaryFilters ? 'No EOS-verified activity is available on these pages.'
             : 'No matching verified records on the currently loaded pages. Other EOS pages may contain results.'}
         </li>}
       </ol>
@@ -971,7 +974,7 @@ export default function ProjectTaskCommentsPanel({
       {(approvalState === 'LOADING' || attachmentState === 'LOADING') &&
         <p role="status" className="mt-2 text-sm text-slate-600">Verifying decision and attachment evidence…</p>}
       {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
-      <p className="mt-2 text-xs text-slate-600">Newest first across the currently verified source pages; totals are not inferred.
+      <p className="mt-2 text-xs text-slate-600">Sorting and filters apply only to currently verified source pages; totals are not inferred.
         {hasMore || eventHasMore || approvalHasMore || attachmentHasMore
           ? ' Additional source pages exist; this is not the complete history.' : ''}
         {' '}Project Notes remain separate project-wide records.</p>
