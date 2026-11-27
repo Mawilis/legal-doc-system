@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY
+ * VERSION: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
@@ -16,6 +16,7 @@
  * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
  *          approvals; EOS rechecks every mentioned principal on creation.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS introduces page-scoped counts, mine/date filters, order switching, day grouping and natural-language actor events without changing EOS authority.
  * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters and text search over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
  * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.\n * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.\n * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.\n * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
  * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
@@ -265,6 +266,9 @@ export default function ProjectTaskCommentsPanel({
   const [showComposer, setShowComposer] = useState(false);
   const [activityFilter, setActivityFilter] = useState('ALL');
   const [activityQuery, setActivityQuery] = useState('');
+  const [activityMineOnly, setActivityMineOnly] = useState(false);
+  const [activityDateRange, setActivityDateRange] = useState('ALL');
+  const [activitySort, setActivitySort] = useState('NEWEST');
   const [showTaskEvidence, setShowTaskEvidence] = useState(false);
   const [body, setBody] = useState('');
   const [correction, setCorrection] = useState(null);
@@ -536,8 +540,24 @@ export default function ProjectTaskCommentsPanel({
     : entry.type === 'event' ? 'EVENT'
       : entry.type.startsWith('approval') ? 'APPROVAL' : 'ATTACHMENT';
   const activityTerm = activityQuery.trim().toLocaleLowerCase();
+  const categoryCounts = activityCategories.reduce((counts, category) => ({
+    ...counts,
+    [category.key]: category.key === 'ALL' ? activity.length
+      : activity.filter(entry => categoryOf(entry) === category.key).length,
+  }), {});
   const visibleActivity = activity.filter(entry => {
     if (activityFilter !== 'ALL' && categoryOf(entry) !== activityFilter) return false;
+    if (activityMineOnly && entry.actor !== principalId) return false;
+    if (activityDateRange !== 'ALL') {
+      const timestamp = Date.parse(entry.time);
+      if (!Number.isFinite(timestamp)) return false;
+      const now = Date.now();
+      const age = now - timestamp;
+      if (age < 0) return false;
+      if (activityDateRange === 'TODAY' && new Date(timestamp).toDateString() !== new Date(now).toDateString()) return false;
+      if (activityDateRange === '7D' && age > 7 * 86400000) return false;
+      if (activityDateRange === '30D' && age > 30 * 86400000) return false;
+    }
     if (!activityTerm) return true;
     const searchable = entry.type === 'comment' ? entry.item.body
       : entry.type === 'attachment' ? entry.item.filename
@@ -545,7 +565,13 @@ export default function ProjectTaskCommentsPanel({
           : entry.type === 'approval-decision' ? entry.item.decision_rationale
             : [entry.item.event_type, entry.item.status_after].filter(Boolean).join(' ');
     return typeof searchable === 'string' && searchable.toLocaleLowerCase().includes(activityTerm);
-  });
+  }).sort((a, b) => (activitySort === 'NEWEST' ? 1 : -1)
+    * ((Date.parse(b.time) || 0) - (Date.parse(a.time) || 0))
+    || a.id.localeCompare(b.id));
+  const activeSecondaryFilters = activityMineOnly || activityDateRange !== 'ALL' || Boolean(activityTerm);
+  const dayFor = value => Number.isFinite(Date.parse(value))
+    ? new Date(value).toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })
+    : 'Date unverified';
   const displayTime = value => Number.isFinite(Date.parse(value))
     ? new Date(value).toLocaleString() : 'Timestamp not verified';
   const displayActor = id => {
@@ -795,7 +821,8 @@ export default function ProjectTaskCommentsPanel({
               + (activityFilter === category.key
                 ? 'border-slate-900 bg-slate-900 text-white'
                 : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
-            {category.label}
+            {category.label} <span aria-label={categoryCounts[category.key] + ' on loaded pages'}
+              className="ml-1 text-[10px] tabular-nums opacity-75">{categoryCounts[category.key]}</span>
           </button>)}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -805,27 +832,61 @@ export default function ProjectTaskCommentsPanel({
             placeholder="Find on these pages"
             className="min-h-9 w-44 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-900 placeholder:text-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"/>
           <p className="text-xs text-slate-600" role="status">
-            {visibleActivity.length} matching · newest first
+            {visibleActivity.length} matching · {activitySort === 'NEWEST' ? 'newest' : 'oldest'} first
           </p>
         </div>
       </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+        <button type="button" aria-pressed={activityMineOnly} onClick={() => setActivityMineOnly(value => !value)}
+          className={'min-h-9 rounded-md border px-3 text-xs font-semibold ' + (activityMineOnly
+            ? 'border-blue-700 bg-blue-50 text-blue-900' : 'border-slate-300 bg-white text-slate-700')}>
+          Mine only
+        </button>
+        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          Date
+          <select aria-label="Filter activity date" value={activityDateRange} onChange={event => setActivityDateRange(event.target.value)}
+            className="min-h-9 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900">
+            <option value="ALL">All loaded dates</option>
+            <option value="TODAY">Today</option>
+            <option value="7D">Last 7 days</option>
+            <option value="30D">Last 30 days</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          Order
+          <select aria-label="Sort verified activity" value={activitySort} onChange={event => setActivitySort(event.target.value)}
+            className="min-h-9 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900">
+            <option value="NEWEST">Newest first</option>
+            <option value="OLDEST">Oldest first</option>
+          </select>
+        </label>
+        {activeSecondaryFilters && <button type="button" className="min-h-9 px-2 text-xs font-semibold text-blue-800 underline"
+          onClick={() => { setActivityMineOnly(false); setActivityDateRange('ALL'); setActivityQuery(''); }}>
+          Clear filters
+        </button>}
+        <span className="ml-auto text-[11px] text-slate-600">Filters apply only to loaded EOS pages</span>
+      </div>
       <ol className="space-y-2" aria-label="Source-verified task activity newest first">
-        {visibleActivity.map(entry => <li className="relative min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm" key={entry.id}>
+        {visibleActivity.map((entry, index) => <React.Fragment key={entry.id}>
+          {(index === 0 || dayFor(visibleActivity[index - 1].time) !== dayFor(entry.time)) &&
+            <li className="border-b border-slate-200 pb-1 pt-2 text-xs font-semibold text-slate-600"
+              aria-label={'Activity dated ' + dayFor(entry.time)}>{dayFor(entry.time)}</li>}
+          <li className="relative min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm">
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
             <strong className="min-w-0 break-words text-sm font-semibold text-slate-900">
-              {entry.type === 'comment' ? 'Progress update / comment'
-                : entry.type === 'approval-request' ? 'Approval requested'
-                  : entry.type === 'approval-decision' ? 'Decision · ' + entry.item.status.toLowerCase()
-                    : entry.type === 'attachment' ? 'Evidence attached'
-                : entry.item.event_type === 'PROJECT_TASK_CREATED' ? 'Work created'
-                  : entry.item.event_type === 'PROJECT_TASK_REVISED' ? 'Work revised'
-                    : 'Lifecycle transition'}
+              {entry.type === 'comment' ? displayActor(entry.actor) + ' posted a progress update'
+                : entry.type === 'approval-request' ? displayActor(entry.actor) + ' requested approval'
+                  : entry.type === 'approval-decision' ? displayActor(entry.actor) + ' recorded a decision · ' + entry.item.status.toLowerCase()
+                    : entry.type === 'attachment' ? displayActor(entry.actor) + ' attached evidence'
+                : entry.item.event_type === 'PROJECT_TASK_CREATED' ? displayActor(entry.actor) + ' created this work'
+                  : entry.item.event_type === 'PROJECT_TASK_REVISED' ? displayActor(entry.actor) + ' revised this work'
+                    : displayActor(entry.actor) + ' changed this work'}
             </strong>
             <time className="shrink-0 text-xs tabular-nums text-slate-600" dateTime={entry.time}>{displayTime(entry.time)}</time>
           </div>
           <p className="mt-1 text-xs text-slate-600">
-            {displayActor(entry.actor)}
-            {entry.type === 'event' ? ' · revision ' + entry.item.revision + ' · ' + entry.item.status_after.replaceAll('_', ' ').toLowerCase() : ''}
+            {entry.type === 'event' ? 'Revision ' + entry.item.revision + ' · ' + entry.item.status_after.replaceAll('_', ' ').toLowerCase()
+              : entry.type === 'comment' ? 'Recorded EOS update' : 'Source-recorded event'}
           </p>
           {entry.type === 'approval-request' && <p className="mt-2 break-words text-sm text-slate-800">
             {entry.item.rationale}
@@ -868,7 +929,7 @@ export default function ProjectTaskCommentsPanel({
             </p>}
           {entry.type === 'comment' && entry.item.mentions.length > 0 &&
             <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
-        </li>)}
+        </li></React.Fragment>)}
         {visibleActivity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
           {activityFilter === 'ALL' ? 'No EOS-verified activity is available on these pages.'
             : 'No matching verified records on the currently loaded pages. Other EOS pages may contain results.'}
@@ -923,7 +984,7 @@ export default function ProjectTaskCommentsPanel({
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY
+// VERSION: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny
