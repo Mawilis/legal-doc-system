@@ -448,7 +448,7 @@ def _workspace_durable_account_email(
     identity.email is JWT display metadata only and is not an authoritative
     email source. The credential reread never creates a verified-contact claim.
     """
-    if identity.principal_scope != "GLOBAL":
+    if getattr(identity, "principal_scope", None) != "GLOBAL":
         return projection.email
     try:
         from tools.eos.auth.principal_credential_repository import (
