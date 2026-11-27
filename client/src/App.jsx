@@ -624,7 +624,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/40 bg-[#263b5a] text-base font-bold text-amber-100" aria-hidden="true">{initials || <UserRound size={19}/>}</span>
                   <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
-                  {(accountEmail || signInEmail) && <p className="mt-1 break-all text-xs text-slate-200">{accountEmail || signInEmail}{!accountEmail && <span className="block text-[10px] text-amber-200">Sign-in email · verification pending</span>}</p>}
+                  {(accountEmail || signInEmail) && <p className="mt-1 break-all text-xs text-slate-200">{accountEmail || signInEmail}{!accountEmail && <span className="block text-[10px] text-amber-200">Sign-in email · workspace source unavailable</span>}</p>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-200">Operating as: {selectedCapacityLabel}</p>}
