@@ -1,8 +1,8 @@
 /**
  * WILSY OS — RECOVERY SECURITY PRODUCT WIRING CERTIFICATE
  * TITLE: Account recovery-contact security wiring direct certificate
- * VERSION: v1.1.0-RECOVERY-STATUS-READBACK-CERT
- * CHANGELOG: v1.1.0-RECOVERY-STATUS-READBACK-CERT — checks Account Center header/seal version alignment and retains the historical recovery changelog entry.
+ * VERSION: v1.2.0-RECOVERY-STATUS-DIAGNOSIS-CERT
+ * CHANGELOG: v1.2.0-RECOVERY-STATUS-DIAGNOSIS-CERT — checks Account Center header/seal version alignment and retains the historical recovery changelog entry.
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Certifies that authenticated recovery-email verification is reachable
  *          from Account Security while browser presentation cannot nominate
@@ -120,6 +120,17 @@ describe('R10F recovery-contact security product wiring', () => {
     expect(screen.queryByRole('button', { name: 'Verify recovery email' })).not.toBeInTheDocument();
   });
 
+  it('identifies an unmounted EOS route and retries only the status read', async () => {
+    getRecoveryContactStatus.mockRejectedValueOnce({ response: { status: 404 } })
+      .mockResolvedValueOnce({ status: 200, data: { status: 'VERIFIED' } });
+    render(<RecoveryContactSecurityControl email="operator@example.test" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('does not expose the recovery status route');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry status read' }));
+    expect(await screen.findByText('Current recovery email is already verified.')).toBeInTheDocument();
+    expect(getRecoveryContactStatus).toHaveBeenCalledTimes(2);
+    expect(requestRecoveryContactVerification).not.toHaveBeenCalled();
+  });
+
   it('mounts recovery verification only in Account Security using explicit user email display', () => {
     const source = readFileSync(ACCOUNT_SOURCE, 'utf8');
     const mountPattern =
@@ -168,7 +179,7 @@ describe('R10F recovery-contact security product wiring', () => {
 /**
  * WILSY OS SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: recoveryContactSecurityWiring.test.jsx
- * VERSION: v1.1.0-RECOVERY-STATUS-READBACK-CERT
+ * VERSION: v1.2.0-RECOVERY-STATUS-DIAGNOSIS-CERT
  * AUTHORITY BOUNDARY: deterministic client presentation/wiring evidence only
  * TENANT POSTURE: no browser tenant/email authority admitted
  * FAIL-CLOSED POSTURE: transport/rate failures never create verified state
