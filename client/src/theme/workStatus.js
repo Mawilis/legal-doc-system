@@ -1,14 +1,14 @@
 /**
  * TITLE: WILSY OS Shared Source-Owned Work Status Semantics
- * VERSION: v1.1.0-HR01-HIGH-VISIBILITY-STATUS-PALETTE
+ * VERSION: v1.1.1-STATUS-TEXT-CONTRAST-ENFORCEMENT
  * AUTHORITY: WILSY OS client presentation only; EOS retains lifecycle truth.
  * EPITOME: One colour and accessible class vocabulary for Projects, People and
  *          subsequently My Work, Strategy, Calendar and Daily Attention.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/theme/workStatus.js
  * COLLABORATION / OWNERSHIP: ProjectWorkRow, ProjectTasksPanel and HrDashboard.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v1.1.0-HR01-HIGH-VISIBILITY-STATUS-PALETTE introduces visibly saturated, contrast-safe EOS status badges and project row lifecycle accents; no status mutation.
- * CHANGELOG: v1.0.3-M03-SECURITY-HEADER-SEAL includes mandatory sovereign security/privacy header metadata with no status behavior changes.
+ * CHANGELOG: v1.1.1-STATUS-TEXT-CONTRAST-ENFORCEMENT introduces visibly saturated, contrast-safe EOS status badges and project row lifecycle accents; no status mutation.
+ * CHANGELOG: v1.1.1-STATUS-TEXT-CONTRAST-ENFORCEMENT keeps state-derived badge text white and dark backgrounds intact despite inherited workspace typography, while preserving EOS status truth.\n * CHANGELOG: v1.0.3-M03-SECURITY-HEADER-SEAL includes mandatory sovereign security/privacy header metadata with no status behavior changes.
  * CHANGELOG: v1.0.2-M03-WHITESPACE-NORMALIZATION-FIX corrects human label whitespace normalization for task headers.
  * CHANGELOG: v1.0.1-M03-HUMAN-STATUS-LABEL-COMPATIBILITY resolves human-readable task status labels (e.g. In progress) to the same verified EOS semantic tone without changing lifecycle truth.
  * CHANGELOG: v1.0.0-M03-ENTERPRISE-WORK-COLOUR-SEMANTICS maps only verified
@@ -32,19 +32,19 @@ export const WORK_STATUS = Object.freeze({
 // meaning, and provisional transitions must retain their "pending" label.
 const appearance = Object.freeze({
   neutral: Object.freeze({
-    color: '#8792a2', chip: 'border-slate-600 bg-slate-600 text-white',
+    color: '#8792a2', chip: '!border-slate-600 !bg-slate-600 !text-white',
   }),
   active: Object.freeze({
-    color: '#2563eb', chip: 'border-blue-700 bg-blue-700 text-white',
+    color: '#2563eb', chip: '!border-blue-700 !bg-blue-700 !text-white',
   }),
   success: Object.freeze({
-    color: '#15803d', chip: 'border-emerald-700 bg-emerald-700 text-white',
+    color: '#15803d', chip: '!border-emerald-700 !bg-emerald-700 !text-white',
   }),
   caution: Object.freeze({
-    color: '#d49716', chip: 'border-amber-700 bg-amber-700 text-white',
+    color: '#d49716', chip: '!border-amber-700 !bg-amber-700 !text-white',
   }),
   blocked: Object.freeze({
-    color: '#be3640', chip: 'border-red-700 bg-red-700 text-white',
+    color: '#be3640', chip: '!border-red-700 !bg-red-700 !text-white',
   }),
 });
 
@@ -101,7 +101,7 @@ export function workStatusClasses(status) {
 }
 
 // ARTIFACT: client/src/theme/workStatus.js
-// VERSION: v1.1.0-HR01-HIGH-VISIBILITY-STATUS-PALETTE
+// VERSION: v1.1.1-STATUS-TEXT-CONTRAST-ENFORCEMENT
 // AUTHORITY BOUNDARY: No status writes or authorization inferred from colour.
 // TENANT POSTURE: Presentation token contract only.
 // FAIL-CLOSED POSTURE: Unknown statuses remain neutral.
