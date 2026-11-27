@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH
+ * VERSION: v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS renders canonical headcount requisition position, department, location, requested seats and status without generic invented 'Remote' or 'Normal' values.
  *   v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH keeps the nonadmitted Overview recovery branch syntactically closed and exclusive from source-admitted work.
  *   v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY displays one actionable access recovery when all current People sources are denied; authorized users see only source-backed work and indicators, never duplicate error cards.
  *   v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS includes independently source-authorized submitted headcount requisitions in the actionable People queue and exposes their read-only governed source view, not a self-approval shortcut.
@@ -2783,6 +2784,7 @@ const HrDashboard = () => {
             id: item.requisition_id,
             title: item.position_title,
             department: item.department_id,
+            location: item.work_location,
             status: item.status,
             headcount: item.headcount,
             revision: item.revision,
@@ -3768,7 +3770,7 @@ const HrDashboard = () => {
       employees: [item.name, item.email, item.department || 'Unassigned', item.position || 'Staff', item.status || 'ACTIVE'],
       candidates: [item.candidate_id, item.requisition_id, item.stage, item.source, item.revision],
       offers: [item.offer_id, item.candidate_id, item.requisition_id, item.status, item.revision],
-      jobOpenings: [item.title || item.name, item.department || 'Unassigned', item.location || 'Remote', item.priority || 'Normal', item.status || 'OPEN'],
+      jobOpenings: [item.title || 'Position unavailable', item.department || 'Department unavailable', item.location || 'Location unavailable', item.headcount ?? 'Not verified', item.status ?? 'Not verified'],
       payroll: [item.employeeName || item.name, item.period || 'Current', `${formatMoney(item.grossPay)} gross`, `${formatMoney(item.employeeTax || item.statutoryDeductions || 0)} tax`, item.status || item.payrollGateStatus || 'READY'],
       benefits: [item.name, item.coverage || 'Coverage pending', formatMoney(item.cost), item.status || 'ACTIVE', item.type || 'Benefit'],
       performance: [item.employeeName || item.name, item.reviewerName || 'Reviewer pending', `${item.rating || '—'} / ${item.productivityScore || 0}`, item.period || 'Current', item.status || 'PENDING'],
@@ -4069,6 +4071,7 @@ const HrDashboard = () => {
   const activeDataset = datasets[activeTab] || EMPTY_DATASET;
   const hiringSearchDisabled = ['candidates', 'offers'].includes(activeTab);
   const activeTableColumns = {
+    jobOpenings: ['Position', 'Department', 'Work location', 'Requested seats', 'EOS Status'],
     candidates: ['Candidate ID', 'Approved Requisition', 'EOS Stage', 'Source', 'Revision'],
     offers: ['Offer ID', 'Candidate ID', 'Requisition ID', 'Offer Status', 'Revision']
   }[activeTab] || ['Primary', 'Source', 'Domain', 'Metric', 'Status'];
@@ -4846,7 +4849,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH
+ * VERSION: v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
