@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION
+ * VERSION: v2.17.0-COMPACT-PEOPLE-OPERATING-SURFACE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,10 +12,11 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.17.0-COMPACT-PEOPLE-OPERATING-SURFACE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.17.0-COMPACT-PEOPLE-OPERATING-SURFACE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.17.0-COMPACT-PEOPLE-OPERATING-SURFACE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.17.0-COMPACT-PEOPLE-OPERATING-SURFACE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.17.0-COMPACT-PEOPLE-OPERATING-SURFACE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -4302,25 +4303,25 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               {overviewHasAuthorizedSource && <React.Fragment>
               <section className={styles.overviewSection} aria-labelledby="people-brief-heading">
                 <div className={styles.overviewSectionHead}>
-                  <div><p className={styles.eyebrow}>LIVE EMPLOYER SNAPSHOT · SOURCE VERIFIED</p><h3 id="people-brief-heading">People lifecycle at a glance</h3></div>
-                  <span>Exact employer · each indicator opens its governed source</span>
+                  <div><p className={styles.eyebrow} style={{textTransform:'none',letterSpacing:0,fontSize:12}}>Workforce snapshot</p><h3 id="people-brief-heading">People lifecycle at a glance</h3></div>
+                  <span>Select a measure to open its source</span>
                 </div>
-                <div className={styles.peopleKpiGrid} style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,210px),1fr))'}}>
+                <div className={styles.peopleKpiGrid} style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,225px),1fr))',gap:0,border:'1px solid #cbd7e6',borderRadius:12,overflow:'hidden',background:'#fff'}}>
                   {[
-                    { title: 'Active workforce', state: snapshotReadState, total: snapshot.summary?.employee?.total, action: 'employees', note: 'Employee authority', empty: 'No active employees in this verified source' },
-                    { title: 'Hiring candidates', state: datasetReadStates.candidates, total: datasets.candidates.total, action: 'candidates', note: 'Candidate pipeline', empty: 'Awaiting first candidate record' },
-                    { title: 'Employment offers', state: datasetReadStates.offers, total: datasets.offers.total, action: 'offers', note: 'Offer governance', empty: 'Awaiting first offer record' },
-                    { title: 'Headcount requests', state: datasetReadStates.jobOpenings, total: datasets.jobOpenings.total, action: 'jobOpenings', note: 'Position request authority', empty: 'Ready for a first headcount request' },
+                    { title: 'Active workforce', state: snapshotReadState, total: snapshot.summary?.employee?.total, action: 'employees', note: 'Employee authority', empty: 'No active employees yet' },
+                    { title: 'Hiring candidates', state: datasetReadStates.candidates, total: datasets.candidates.total, action: 'candidates', note: 'Candidate pipeline', empty: 'No candidates yet' },
+                    { title: 'Employment offers', state: datasetReadStates.offers, total: datasets.offers.total, action: 'offers', note: 'Offer governance', empty: 'No offers yet' },
+                    { title: 'Headcount requests', state: datasetReadStates.jobOpenings, total: datasets.jobOpenings.total, action: 'jobOpenings', note: 'Position request authority', empty: 'Ready to plan a position' },
                   ].map(metric => {
                     const verified = isVerifiedReadState(metric.state);
                     const empty = verified && metric.total === 0;
                     return <button key={metric.title} type="button" className={styles.peopleKpi}
                       onClick={() => changeTab(metric.action)}
                       aria-label={`${metric.title}: ${verified ? metric.total : 'not currently verified'}. Open ${metric.note}`}
-                      style={{minHeight:106,outlineOffset:2,borderStyle:empty ? 'dashed' : 'solid',background:empty ? '#f9fbfe' : '#fff',transition:'border-color 150ms ease,background 150ms ease'}}>
+                      style={{minHeight:96,outlineOffset:-3,border:'none',borderRight:'1px solid #e1e8f1',borderRadius:0,background:'transparent',boxShadow:'none',padding:'16px 18px',transition:'background 150ms ease'}}>
                       <span style={{color:'#243e60'}}>{metric.title}</span>
                       <strong style={{color:'#112f53'}}>{verified ? metric.total : '—'}</strong>
-                      <small style={{color:'#4b607a',fontSize:11,lineHeight:1.35}}>
+                      <small style={{color:'#4b607a',fontSize:12,lineHeight:1.45,textTransform:'none',letterSpacing:0,fontWeight:500}}>
                         {empty ? metric.empty : verified ? metric.note
                           : metric.state?.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied · inspect source'
                           : metric.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Source unavailable · inspect'
@@ -4330,11 +4331,11 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   })}
                 </div>
               </section>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,440px),1fr))',gap:16,alignItems:'start'}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,470px),1fr))',gap:24,alignItems:'start'}}>
                 <section className={styles.overviewSection} aria-labelledby="people-queue-heading" style={{minWidth:0}}>
                   <div className={styles.overviewSectionHead}>
-                    <div><p className={styles.eyebrow}>TODAY'S WORK · MAKER ≠ CHECKER</p><h3 id="people-queue-heading">Decisions & next actions</h3></div>
-                    <span>EOS reauthorizes each command</span>
+                    <div><p className={styles.eyebrow} style={{textTransform:'none',letterSpacing:0,fontSize:12}}>Today's work · independent decisions</p><h3 id="people-queue-heading">Decisions & next actions</h3></div>
+                    <span>Every action is checked by EOS</span>
                   </div>
                   {(() => {
                     const items = [
@@ -4371,16 +4372,16 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                           {filter.label}{filter.id === 'all' ? ` · ${items.length}` : ''}
                         </button>)}
                       </div>
-                      {visible.length === 0 ? <div className={styles.queueEmpty} role="status" style={{padding:'16px 18px',borderStyle:'solid'}}>
+                      {visible.length === 0 ? <div className={styles.queueEmpty} role="status" style={{padding:'20px 22px',borderStyle:'solid',background:'#fff',borderRadius:12}}>
                         <strong style={{display:'block',fontSize:15,color:'#183755',marginBottom:5}}>
                           {filteredEmpty ? 'No decisions match this filter'
-                            : verifiedWorkSources ? 'No verified decisions in these source pages'
-                            : 'People decisions are not fully verified'}
+                            : verifiedWorkSources ? 'Nothing needs review in these pages'
+                            : 'Some sources still need verification'}
                         </strong>
                         <p style={{fontSize:12,color:'#4b607a',lineHeight:1.55}}>
                           {filteredEmpty ? 'The selected queue has no matching work in the loaded source pages. Clear the filter to see other decisions.'
-                            : verifiedWorkSources ? 'There are no eligible headcount, hiring or offer decisions in the currently loaded authorized pages. Start with an existing People source.'
-                            : 'Some People sources are pending, unavailable or denied. An empty visible queue is not proof that all work is complete.'}
+                            : verifiedWorkSources ? 'There are no decisions requiring attention in the verified pages. Start with headcount or open another People source.'
+                            : 'Some sources are not verified. Open a source to inspect its status before acting.'}
                         </p>
                         {filteredEmpty
                           ? <button type="button" onClick={() => setPeopleQueueFilter('all')}
@@ -4406,7 +4407,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                         </article>)}
                       </div>}
                       <p style={{fontSize:11,color:'#536781',marginTop:10}}>
-                        Current authorized pages only · not all historical decisions.
+                        Showing authorized pages, not complete history.
                         {overviewSources.some(source => isVerifiedReadState(source.state) && source.state.verifiedAt)
                           ? ' Last browser verification: ' + new Date(Math.max(...overviewSources.filter(source => isVerifiedReadState(source.state) && source.state.verifiedAt).map(source => Date.parse(source.state.verifiedAt)).filter(Number.isFinite))).toLocaleString()
                           : ' No completed source verification timestamp.'}
@@ -4416,29 +4417,29 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 </section>
                 <aside className={styles.overviewSection} aria-label="Workforce source readiness" style={{minWidth:0}}>
                   <div className={styles.overviewSectionHead}>
-                    <div><p className={styles.eyebrow}>SOURCE READINESS</p><h3>Lifecycle coverage</h3></div>
+                    <div><p className={styles.eyebrow} style={{textTransform:'none',letterSpacing:0,fontSize:12}}>Connected sources</p><h3>Lifecycle coverage</h3></div>
                     <span>{overviewSources.filter(source => isVerifiedReadState(source.state)).length} of {overviewSources.length} reads verified</span>
                   </div>
-                  <div style={{display:'grid',gap:8}}>
-                    {overviewSources.map(source => {
+                  <div style={{display:'grid',gap:0,border:'1px solid #cbd7e6',borderRadius:12,overflow:'hidden',background:'#fff'}}>
+                    {overviewSources.map((source, sourceIndex) => {
                       const verified = isVerifiedReadState(source.state);
-                      const statusLabel = verified ? 'Source verified'
+                      const statusLabel = verified ? 'Ready'
                         : source.state?.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied'
                         : source.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Unavailable'
-                        : source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED ? 'Sign in required'
+                        : source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED ? 'Sign in'
                         : 'Verifying';
                       return <button key={source.id} type="button" onClick={() => changeTab(source.id)}
                         aria-label={`Open ${source.label} source: ${statusLabel}`}
                         style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',alignItems:'center',gap:12,
-                          padding:'11px 14px',background:'#fff',border:'1px solid #cbd7e6',borderRadius:9,color:'#173457',
-                          textAlign:'left',width:'100%',outlineOffset:2}}>
+                          padding:'14px 16px',background:'#fff',border:0,borderBottom:sourceIndex < overviewSources.length - 1 ? '1px solid #e1e8f1' : 'none',borderRadius:0,color:'#173457',
+                          textAlign:'left',width:'100%',outlineOffset:-3}}>
                         <span style={{display:'grid',gap:3,minWidth:0}}>
                           <strong style={{display:'block',fontSize:13,fontWeight:750,color:'#142b49',opacity:1}}>{source.label}</strong>
-                          <small style={{display:'block',fontSize:11,color:'#50657e',opacity:1}}>
-                            {verified ? 'Authorized source read completed'
-                              : source.state?.status === HR_READ_STATE.PENDING ? 'Awaiting source verification'
-                              : 'Inspect the governed source for details'}
-                          </small>
+                          <span style={{display:'block',fontSize:12,lineHeight:1.4,color:'#50657e',opacity:1,textTransform:'none',letterSpacing:0,fontWeight:450}}>
+                            {verified ? 'Current authorized read completed'
+                              : source.state?.status === HR_READ_STATE.PENDING ? 'Checking connection'
+                              : 'Open for details'}
+                          </span>
                         </span>
                         <span style={{display:'flex',alignItems:'center',gap:8,fontSize:11,color:'#234467',whiteSpace:'nowrap'}}>
                           {statusLabel}<ArrowUpRight size={14} aria-hidden />
@@ -4446,7 +4447,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       </button>;
                     })}
                   </div>
-                  <div style={{marginTop:12,borderTop:'1px solid #d7e0ec',paddingTop:10}}>
+                  <div style={{marginTop:12,borderTop:'none',paddingTop:8}}>
                     <button type="button" aria-expanded={peopleVerificationHelpOpen} onClick={() => setPeopleVerificationHelpOpen(value => !value)}
                       style={{display:'inline-flex',gap:6,alignItems:'center',padding:'6px 0',background:'transparent',
                         border:0,color:'#173c70',fontWeight:750,fontSize:12,textDecoration:'underline',textUnderlineOffset:3}}>
@@ -5079,7 +5080,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.16.1-NONBLOCKING-PEOPLE-WORKSPACE-HYDRATION
+ * VERSION: v2.17.0-COMPACT-PEOPLE-OPERATING-SURFACE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
