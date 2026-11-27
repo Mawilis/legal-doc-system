@@ -1,17 +1,18 @@
 """TITLE: WILSY OS Authorization-Role Delegation Policy.
-VERSION: v1.5.0-CANONICAL-FOUNDER-HR-MANAGER-DELEGATION
+VERSION: v1.6.0-CANONICAL-FOUNDER-HR-DIRECTOR-DELEGATION
 AUTHORITY: Explicit GD1 authorization-role grant law.
 PURPOSE: Evaluate whether canonical role evidence may grant a target role.
 EPITOME: Pure, deterministic, fail-closed tenant-local delegation authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/authorization_role_delegation_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 SECURITY / PRIVACY POSTURE: No persistence, secrets, network, or caller permission trust.
-TENANT BOUNDARY: Inviter assignment and target tenant must match exactly; admission-officer, company-document-reader and Projects Platform Owner and HR Manager grants are confined to the canonical WILSY company tenant.
+TENANT BOUNDARY: Inviter assignment and target tenant must match exactly; admission-officer, company-document-reader and Projects Platform Owner and HR Manager/Director invitations are confined to the canonical WILSY company tenant.
 AUTHORITY BOUNDARY: RoleAssignmentAuthority evidence only; no lifecycle mutation.
 FINANCIAL AUTHORITY BOUNDARY: No financial or Kennel execution authority.
 TRANSACTION BOUNDARY: Pure evaluator; caller owns orchestration and sessions.
 CERTIFICATION / UPDATE DATE: 2026-11-27
 CHANGELOG:
+    v1.6.0-CANONICAL-FOUNDER-HR-DIRECTOR-DELEGATION adds a separate HR_DIRECTOR invitation edge restricted to the canonical WILSY employer; invitation creation separately requires an ACTIVE exact Founder designation and self-bound recipient for transitional bootstrap. No approval, employee admission or payroll grant follows from this edge.
     v1.5.0-CANONICAL-FOUNDER-HR-MANAGER-DELEGATION admits a same-tenant ENTERPRISE_ADMIN -> HR_MANAGER invitation edge for the exact canonical WILSY employer only. Existing invitation acceptance, identity and source-role checks still govern issuance; HR_DIRECTOR and payroll/admission roles remain excluded.
     2026-11-22 v1.4.0-WILSY-CONTRIBUTOR-SELF-ADMISSION-EDGE permits an already ACTIVE same-tenant ENTERPRISE_ADMIN inviter to issue a short-lived invitation for PROJECTS_PARTICIPANT_CONTRIBUTOR only in the canonical WILSY company tenant. The caller must separately verify exact-project contributor participation and recipient identity, accept the invitation and read back active role before any attachment use. No role inheritance or silent grants.
     2026-11-16 v1.3.0-PROJECTS-PLATFORM-OWNER-DELEGATION permits the existing same-tenant ENTERPRISE_ADMIN delegation path to issue an invitation for the separately assignable Projects Platform Owner role only inside the canonical WILSY company tenant. Invitation acceptance remains required; no direct or automatic assignment occurs.
@@ -34,7 +35,7 @@ from .role_assignment import RoleAssignmentAuthority, RoleAssignmentStatus
 from .roles import ROLE_PERMISSIONS_MAP
 from .workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
-VERSION = "v1.5.0-CANONICAL-FOUNDER-HR-MANAGER-DELEGATION"
+VERSION = "v1.6.0-CANONICAL-FOUNDER-HR-DIRECTOR-DELEGATION"
 ROLE_GRANT_PERMISSION = "tenant:role_assignment:write"
 CANONICAL_AUTHORIZATION_ROLES: Final = frozenset(ROLE_PERMISSIONS_MAP)
 PLATFORM_EMPLOYEE_ADMISSION_ROLE: Final[str] = (
@@ -51,6 +52,7 @@ _ALLOW_EDGES: Final = frozenset({
     ("ENTERPRISE_ADMIN", PROJECTS_PLATFORM_OWNER_ROLE),
     ("ENTERPRISE_ADMIN", PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE),
     ("ENTERPRISE_ADMIN", "HR_MANAGER"),
+    ("ENTERPRISE_ADMIN", "HR_DIRECTOR"),
 })
 ALLOW_EDGES: Final = frozenset(_ALLOW_EDGES)
 
@@ -105,7 +107,7 @@ def evaluate_authorization_role_grant(
     if (inviter_role, target_role) not in ALLOW_EDGES:
         return _deny(inviter_role, target_role, target_tenant_id, AuthorizationRoleGrantDenialCode.GRANT_NOT_PERMITTED)
     if (
-        target_role in {PLATFORM_EMPLOYEE_ADMISSION_ROLE, COMPANY_DOCUMENT_READER_ROLE, PROJECTS_PLATFORM_OWNER_ROLE, PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE, "HR_MANAGER"}
+        target_role in {PLATFORM_EMPLOYEE_ADMISSION_ROLE, COMPANY_DOCUMENT_READER_ROLE, PROJECTS_PLATFORM_OWNER_ROLE, PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE, "HR_MANAGER", "HR_DIRECTOR"}
         and target_tenant_id != WILSY_COMPANY_TENANT_ID
     ):
         return _deny(
@@ -120,7 +122,7 @@ def evaluate_authorization_role_grant(
 __all__ = ["VERSION", "ROLE_GRANT_PERMISSION", "PLATFORM_EMPLOYEE_ADMISSION_ROLE", "COMPANY_DOCUMENT_READER_ROLE", "PROJECTS_PLATFORM_OWNER_ROLE", "PROJECTS_PARTICIPANT_CONTRIBUTOR_ROLE", "CANONICAL_AUTHORIZATION_ROLES", "ALLOW_EDGES", "AuthorizationRoleGrantDenialCode", "AuthorizationRoleGrantDecision", "evaluate_authorization_role_grant"]
 
 # ARTIFACT: authorization_role_delegation_policy.py
-# VERSION: v1.5.0-CANONICAL-FOUNDER-HR-MANAGER-DELEGATION
+# VERSION: v1.6.0-CANONICAL-FOUNDER-HR-DIRECTOR-DELEGATION
 # AUTHORITY BOUNDARY: explicit authorization-role delegation evaluation only; this policy creates no assignment
 # TENANT POSTURE: exact assignment tenant equality required; platform-only roles are limited to the canonical WILSY company tenant
 # FAIL-CLOSED POSTURE: unknown, inactive, malformed, unauthorized, and out-of-scope inputs deny
