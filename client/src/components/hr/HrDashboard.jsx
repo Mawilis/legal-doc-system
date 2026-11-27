@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE
+ * VERSION: v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -12,6 +12,7 @@
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS includes independently source-authorized submitted headcount requisitions in the actionable People queue and exposes their read-only governed source view, not a self-approval shortcut.
  *   v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE wires Overview and Headcount read pagination to the existing exact-tenant EOS headcount requisition endpoint, with bounded browser projection and no legacy BFF headcount route.
  *   v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH accepts global People query intents and runs text search only through the existing independent, tenant-authorized employee directory source.
  *   v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE reads the new Python EOS workforce Overview with strict tenant/source provenance, renders admitted active headcount and departments and never calls deprecated /hr/snapshot.
@@ -3775,7 +3776,7 @@ const HrDashboard = () => {
       artifacts: [item.artifactTitle || item.name, item.artifactType || 'HR Artifact', item.artifactFormat || 'HTML', item.proofHash ? item.proofHash.slice(0, 14) : 'Proof pending', item.status || 'GENERATED']
     };
     const sourceIdentity = item.id || item.employeeId || item.candidate_id || item.offer_id || item.requisition_id || 'record';
-    const statusIndex = { employees: 4, candidates: 2, offers: 3 }[activeTab];
+    const statusIndex = { employees: 4, candidates: 2, offers: 3, jobOpenings: 4 }[activeTab];
     return (rows[activeTab] || rows.employees).map((value, index) => <td
       key={`${sourceIdentity}-${index}`} className="px-4 py-3 text-sm text-slate-800">
       {index === statusIndex && typeof value === 'string'
@@ -4088,7 +4089,7 @@ const HrDashboard = () => {
     );
   }
 
-  const isSourceConnected = ['employees', 'candidates', 'offers'].includes(activeTab);
+  const isSourceConnected = ['employees', 'candidates', 'offers', 'jobOpenings'].includes(activeTab);
   const actionLabel = activeTab === 'candidates' ? 'Create candidate'
     : activeTab === 'offers' ? 'Prepare offer' : null;
   const startSourceCommand = () => {
@@ -4176,6 +4177,13 @@ const HrDashboard = () => {
                 </div>
                 {(() => {
                   const items = [
+                    ...(isVerifiedReadState(datasetReadStates.jobOpenings)
+                      ? datasets.jobOpenings.items.filter(item => item.status === 'SUBMITTED').map(item => ({
+                        key: 'requisition:' + item.id,
+                        title: 'Review requisition · ' + item.title,
+                        detail: 'Department ' + item.department + ' · Requires independent headcount decision',
+                        source: 'jobOpenings', status: item.status,
+                      })) : []),
                     ...(isVerifiedReadState(datasetReadStates.offers)
                       ? datasets.offers.items.filter(item => ['DRAFT', 'SUBMITTED', 'APPROVED'].includes(item.status)).map(item => ({
                         key: 'offer:' + item.offer_id, title: 'Employment offer · ' + item.offer_id,
@@ -4190,7 +4198,7 @@ const HrDashboard = () => {
                       })) : []),
                   ];
                   if (items.length === 0) return <div className={styles.queueEmpty} role="status">
-                    {['employees', 'candidates', 'offers'].every(key => isVerifiedReadState(datasetReadStates[key]))
+                    {['employees', 'candidates', 'offers', 'jobOpenings'].every(key => isVerifiedReadState(datasetReadStates[key]))
                       ? 'No eligible hiring or offer review items appear in the current authorized source pages.'
                       : 'The current capacity has not verified a complete People work queue. Unavailable sources are not counted as zero.'}
                   </div>;
@@ -4824,7 +4832,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE
+ * VERSION: v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
