@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.5.1-HR01-SOURCE-PROVENANCE-PRIVACY-CERT
+ * VERSION: v1.5.2-HR01-LEGACY-PROFILE-RETIREMENT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,6 +8,7 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
+ *   v1.5.2-HR01-LEGACY-PROFILE-RETIREMENT — Asserts the unconditional black/gold HR profile card is unmounted in favour of the global authenticated WILSY identity.
  *   v1.5.1-HR01-SOURCE-PROVENANCE-PRIVACY-CERT — Guards canonical EOS workforce provenance and denies passthrough of employee PII into browser state.
  *   v1.5.0-HR01-VISIBLE-SOURCE-STATUS-AND-CONTRAST — Guards rendered People headings/error/search contrast and saturated source-owned badges/Project row accents.
  *   v1.4.1-M03-STATUS-PARITY-PROJECTS-AND-PEOPLE — Asserts both canonical Project task row and lifecycle chart use the same semantic source-status contract as People.
@@ -185,6 +186,7 @@ describe('HR dashboard authority and read-state boundary', () => {
     expect(dashboard).toContain('data-testid="people-os-workspace"');
     expect(dashboard).toContain('Plan · Hire · Onboard · Manage · Pay inputs · Grow · Correct · Exit');
     expect(dashboard).not.toContain('<WilsyOSDashboardChrome');
+    expect(dashboard).not.toContain('<WilsyProfilePanel');
     expect(dashboard).not.toContain('wilsy-logo.svg');
     expect(dashboard).toContain("const isSourceConnected = ['employees', 'candidates', 'offers'].includes(activeTab)");
     expect(dashboard).toContain('No simulated records or actions are shown.');
@@ -234,7 +236,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.5.1-HR01-SOURCE-PROVENANCE-PRIVACY-CERT
+ * VERSION: v1.5.2-HR01-LEGACY-PROFILE-RETIREMENT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
