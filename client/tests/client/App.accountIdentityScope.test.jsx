@@ -172,7 +172,7 @@ describe('Top App Bar account identity scope', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
     menu = screen.getByRole('menu', { name: 'Account menu' });
     expect(menu).toHaveTextContent('Tenant B Organisation');
-    expect(menu).toHaveTextContent('Operating as: Legal partner');
+    expect(menu).toHaveTextContent('Operating as: Legal Partner');
     expect(menu).not.toHaveTextContent('Operating as: Auditor');
     expect(menu).not.toHaveTextContent('Tenant A Organisation');
   });
