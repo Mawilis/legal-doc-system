@@ -1,6 +1,7 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT
+ * VERSION: v2.81.2-SOURCE-EVENT-REVISION-CASE-CERT
+ * CHANGELOG: v2.81.2-SOURCE-EVENT-REVISION-CASE-CERT preserves exact source revision evidence while matching the new displayed 'Revision' presentation.
  * CHANGELOG: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT retains approved 44px mobile action targets and validates actor-based activity semantics without weakening source-history assertions.
  * CHANGELOG: v2.81.0-COMPLETED-SERVER-QUERY-CERT verifies completed-only EOS source query and immutable event metadata across source pagination, retaining task detail and selection semantics.
  * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
@@ -1575,7 +1576,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     ]);
     expect(screen.getAllByRole('button', { name: 'Open governed decision' })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Open governed attachment' })).toBeVisible();
-    expect(screen.getByText(/revision 1/)).toBeVisible();
+    expect(screen.getByText(/Revision 1/)).toBeVisible();
     fireEvent.click(within(options).getByRole('button', { name: /Current project delivery/ }));
     expect(await screen.findByRole('list', { name: 'Verified discussion work items' })).toBeVisible();
   });
@@ -3009,7 +3010,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT
+ * VERSION: v2.81.2-SOURCE-EVENT-REVISION-CASE-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.
