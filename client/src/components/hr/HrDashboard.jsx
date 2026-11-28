@@ -3,8 +3,9 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY
- * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY introduces approved tenant-context suggestions, governed change workspace and bounded client-reported form effort without altering EOS business authority.
+ * VERSION: v2.24.0-M03-HR03-GOVERNED-ASSIGNMENT-COMPOSITION
+ * CHANGELOG: v2.24.0-M03-HR03-GOVERNED-ASSIGNMENT-COMPOSITION mounts independent Employee→Position→Department workbench with no new grants or legacy employee writes.
+CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY introduces approved tenant-context suggestions, governed change workspace and bounded client-reported form effort without altering EOS business authority.
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -6044,7 +6045,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY
+ * VERSION: v2.24.0-M03-HR03-GOVERNED-ASSIGNMENT-COMPOSITION
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
