@@ -295,7 +295,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const accountEmail = safeAccountEmail(sessionUser?.workspaceEmail);
   // The authenticated compatibility field may originate from the credential
   // candidate: useful for the operator, but not independently EOS-verified.
-  const signInEmail = safeAccountEmail(sessionUser?.email);
+  const signInEmail = sessionUser?.systemServicesWorkspace ? '' : safeAccountEmail(sessionUser?.email);
   const verifiedTenantId = activeTenant?.tenantId
     || activeTenant?.tenant_id || activeTenant?.id || null;
   const tenantIdentity = sessionUser?.tenantId
