@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.3.2-ORGANIZATION-UNAVAILABLE-CERT
+ * VERSION: v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,21 +9,22 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT asserts the source-denied organization without relying on retired EOS-voice copy; foreign-tenant response remains concealed and authority checks unchanged.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT uses the actual canonical requisition envelope (requisition_id, position_title, department_id) and bounded pagination semantics; rejects invented fixture shapes.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT verifies visible observed zeros, absent duplicate actions, independent headcount totals, page-scoped approved counts, and governed navigation without fabricating a position master.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT closes the candidate-intake dialog before the headcount handoff, preserving authentic modal interaction and proving no candidate write occurs without an explicit source-authorized command.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
- *   v1.3.2-ORGANIZATION-UNAVAILABLE-CERT verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT covers exact-tenant organizational draft POST, independently verified registry readback and denied command without false success.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts the source-denied organization without relying on retired EOS-voice copy; foreign-tenant response remains concealed and authority checks unchanged.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT uses the actual canonical requisition envelope (requisition_id, position_title, department_id) and bounded pagination semantics; rejects invented fixture shapes.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies visible observed zeros, absent duplicate actions, independent headcount totals, page-scoped approved counts, and governed navigation without fabricating a position master.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT closes the candidate-intake dialog before the headcount handoff, preserving authentic modal interaction and proving no candidate write occurs without an explicit source-authorized command.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
+ *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
  *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
@@ -44,13 +45,14 @@
 
 import React from 'react';
 import { sha3_512 } from 'js-sha3';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
   auth: null,
   tenant: null,
   apiGet: vi.fn(),
+  apiPost: vi.fn(),
   candidateRead: vi.fn(),
   offerSend: vi.fn(),
   offerDecision: vi.fn(),
@@ -77,7 +79,7 @@ vi.mock('../../contexts/tenantContext', () => ({
 }));
 
 vi.mock('../../services/api', () => ({
-  default: { get: mockState.apiGet },
+  default: { get: mockState.apiGet, post: mockState.apiPost },
 }));
 
 vi.mock('../../services/hrService', () => {
@@ -251,6 +253,88 @@ beforeEach(() => {
 });
 
 describe('production People Overview source contracts', () => {
+
+  it('creates an organization draft only after an exact-tenant persisted readback', async () => {
+    const scope = 'TENANT-HR-A';
+    let created = false;
+    const registry = () => ({data: {
+      schema:'WILSY-HR-ORGANIZATION-REGISTRY/V1', source:'EOS_HR_ORGANIZATION_REGISTRY',
+      tenant_id:scope, count:created?1:0, items:created?[{
+        kind:'DEPARTMENT', record_id:'DEP-OPS', name:'Operations',
+        effective_from:'2026-12-01', status:'DRAFT', revision:1,
+      }]:[],
+    }});
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/structure') return Promise.resolve(registry());
+      if (path === '/hr/workforce/organization') return Promise.resolve({data: {
+        schema:'WILSY-HR-WORKFORCE-ORGANIZATION/V1',
+        source:'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+        status:'OBSERVED_EMPLOYEE_DISTRIBUTION',
+        tenant_id:scope,active_employees:0,department_count:0,
+        unassigned_employees:0,departments:[],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'),{response:{status:404}}));
+    });
+    mockState.apiPost.mockImplementation(async (path,body,options) => {
+      expect(path).toBe('/hr/workforce/structure/departments');
+      expect(options.headers['X-Tenant-ID']).toBe(scope);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      expect(body).toMatchObject({record_id:'DEP-OPS',name:'Operations',effective_from:'2026-12-01'});
+      created = true;
+      return {data:{
+        schema:'WILSY-HR-ORGANIZATION-COMMAND/V1',tenant_id:scope,
+        record: {kind:'DEPARTMENT',record_id:'DEP-OPS',name:'Operations',
+          effective_from:'2026-12-01',status:'DRAFT',revision:1},
+      }};
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button',{name:'Workforce',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'Organization',exact:true}));
+    fireEvent.click(await screen.findByRole('button',{name:'Create department'}));
+    const form = screen.getByRole('form',{name:'Organization draft form'});
+    fireEvent.change(within(form).getByLabelText('Unique code'),{target:{value:'DEP-OPS'}});
+    fireEvent.change(within(form).getByLabelText('Name'),{target:{value:'Operations'}});
+    fireEvent.change(within(form).getByLabelText('Effective from (YYYY-MM-DD)'),{target:{value:'2026-12-01'}});
+    fireEvent.click(within(form).getByRole('button',{name:'Save draft'}));
+    await waitFor(() => expect(mockState.apiPost).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/DEP-OPS · DRAFT · Revision 1/)).toBeInTheDocument();
+    expect(screen.getByText(/verified after readback/)).toBeInTheDocument();
+  });
+
+  it('does not display a successful organization record when write permission is denied',async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/structure') return Promise.resolve({data:{
+        schema:'WILSY-HR-ORGANIZATION-REGISTRY/V1',
+        source:'EOS_HR_ORGANIZATION_REGISTRY',tenant_id:'TENANT-HR-A',
+        count:0,items:[],
+      }});
+      if (path === '/hr/workforce/organization') return Promise.resolve({data:{
+        schema:'WILSY-HR-WORKFORCE-ORGANIZATION/V1',
+        source:'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+        status:'OBSERVED_EMPLOYEE_DISTRIBUTION',tenant_id:'TENANT-HR-A',
+        active_employees:0,department_count:0,unassigned_employees:0,departments:[],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'),{response:{status:404}}));
+    });
+    mockState.apiPost.mockRejectedValue(Object.assign(new Error('denied'),{response:{status:403}}));
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button',{name:'Workforce',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'Organization',exact:true}));
+    fireEvent.click(await screen.findByRole('button',{name:'Create department'}));
+    const form = screen.getByRole('form',{name:'Organization draft form'});
+    fireEvent.change(within(form).getByLabelText('Unique code'),{target:{value:'DEP-TEST'}});
+    fireEvent.change(within(form).getByLabelText('Name'),{target:{value:'Test department'}});
+    fireEvent.change(within(form).getByLabelText('Effective from (YYYY-MM-DD)'),{target:{value:'2026-12-01'}});
+    fireEvent.click(within(form).getByRole('button',{name:'Save draft'}));
+    expect(await screen.findByText(/does not have the independent organization command permission/)).toBeInTheDocument();
+    expect(screen.queryByText(/verified after readback/)).not.toBeInTheDocument();
+  });
+
+
   it('builds a verified first-use HR Director journey without fabricated people or bypassed admission', async () => {
     setAuthenticatedScope('TENANT-HR-A', 'PRINCIPAL-HR-A');
     mockState.auth.user.role = 'tenant_hr_director';
@@ -516,7 +600,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.3.2-ORGANIZATION-UNAVAILABLE-CERT
+ * VERSION: v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
