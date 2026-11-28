@@ -137,6 +137,7 @@ import styles from './HrDashboard.module.css';
 import { ORGANIZATION_BUSINESS_MODELS, getDepartmentSuggestions } from './organizationDepartmentCatalog.js';
 import OrganizationLifecycleWorkspace from './OrganizationLifecycleWorkspace.jsx';
 import BusinessActivityContextWorkspace from './BusinessActivityContextWorkspace.jsx';
+import OrganizationAssignmentWorkspace from './OrganizationAssignmentWorkspace.jsx';
 import { workStatusClasses } from '../../theme/workStatus.js';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
@@ -5292,6 +5293,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   {workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationLifecycleWorkspace
                     tenantId={tenantId} scopeKey={tenantScopeKey} structure={workforceStructure}
                     onUpdated={() => setWorkforceOrganizationRefresh(value => value + 1)}/>}
+                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationAssignmentWorkspace
+                    tenantId={tenantId} scopeKey={tenantScopeKey} structure={workforceStructure}/>}
                 </section>
 
               <section aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
