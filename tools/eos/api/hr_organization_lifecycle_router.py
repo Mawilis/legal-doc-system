@@ -120,6 +120,8 @@ def _transaction(callback):
 
 def _run_command(callback, *, tenant, actor, key, operation, payload):
     """Transactional replay of an identical actor-scoped command key."""
+    if not isinstance(actor, str) or not actor.strip():
+        raise HTTPException(503, "ORGANIZATION_ACTOR_INVALID")
     fingerprint = org._org_fingerprint(
         tenant=tenant, actor=actor, key=key, command=operation, payload=payload,
     )
