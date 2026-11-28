@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF
+ * VERSION: v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -11,18 +11,19 @@
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG:
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ * CHANGELOG: v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+CHANGELOG:
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -2384,6 +2385,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const previousTenantScopeKeyRef = useRef(tenantScopeKey);
   const user = authUser || {};
   const [activeTab, setActiveTab] = useState('overview');
+  const [morePeopleModulesOpen, setMorePeopleModulesOpen] = useState(false);
   const [peopleQueueFilter, setPeopleQueueFilter] = useState('all');
   const [peopleVerificationHelpOpen, setPeopleVerificationHelpOpen] = useState(false);
   const [workforceView, setWorkforceView] = useState('directory');
@@ -3062,6 +3064,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       setWorkforceSearchDraft('');
     }
     setActiveTab(tabId);
+    setMorePeopleModulesOpen(false);
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
 
@@ -4352,6 +4355,27 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     { id: 'artifacts', title: 'People Files' },
     { id: 'activity', title: 'Activity & audit' },
   ];
+  // Progressive navigation is a presentation choice only. It is never used as
+  // IAM evidence. Hide no module unless all four independent sources verify
+  // the employer's genuine first-use state.
+  const firstUseVerified = isVerifiedReadState(snapshotReadState)
+    && snapshot.summary?.employee?.total === 0
+    && ['candidates', 'offers', 'jobOpenings'].every(key =>
+      isVerifiedReadState(datasetReadStates[key]) && datasets[key].total === 0);
+  const firstUsePrimaryTabs = new Set(['overview','jobOpenings','candidates','employees']);
+  const primaryPeopleModules = firstUseVerified
+    ? peopleModules.filter(module => firstUsePrimaryTabs.has(module.id))
+    : peopleModules;
+  const secondaryPeopleModules = firstUseVerified
+    ? peopleModules.filter(module => !firstUsePrimaryTabs.has(module.id))
+    : [];
+  const hiringCandidatesVerified = isVerifiedReadState(datasetReadStates.candidates);
+  const hiringRequisitionsVerified = isVerifiedReadState(datasetReadStates.jobOpenings);
+  const hiringOffersVerified = isVerifiedReadState(datasetReadStates.offers);
+  const hiringPipelineVerified = hiringCandidatesVerified && hiringRequisitionsVerified && hiringOffersVerified;
+  const hiringLoadedCandidates = hiringCandidatesVerified ? datasets.candidates.items : [];
+  const hiringHasApprovedRequisition = hiringRequisitionsVerified
+    && datasets.jobOpenings.items.some(item => item.status === 'APPROVED');
 
   return (
     <React.Fragment>
@@ -4383,7 +4407,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
             </div>
           </div>
           <nav className={styles.peopleNav} aria-label="People operating functions">
-            {peopleModules.map(module => {
+            {primaryPeopleModules.map(module => {
               const selected = activeTab === module.id;
               return <button type="button" key={module.id} onClick={() => changeTab(module.id)}
                 aria-current={selected ? 'page' : undefined}
@@ -4391,6 +4415,24 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 {module.title}
               </button>;
             })}
+            {secondaryPeopleModules.length > 0 && <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+              <button type="button" aria-expanded={morePeopleModulesOpen}
+                aria-controls="people-additional-functions"
+                className={secondaryPeopleModules.some(module => module.id === activeTab)
+                  ? styles.peopleNavActive : styles.peopleNavButton}
+                onClick={() => setMorePeopleModulesOpen(open => !open)}>
+                More functions {morePeopleModulesOpen ? '−' : '+'}
+              </button>
+              {morePeopleModulesOpen && <div id="people-additional-functions"
+                style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                {secondaryPeopleModules.map(module => <button type="button" key={module.id}
+                  onClick={() => changeTab(module.id)}
+                  aria-current={activeTab === module.id ? 'page' : undefined}
+                  className={activeTab === module.id ? styles.peopleNavActive : styles.peopleNavButton}>
+                  {module.title}
+                </button>)}
+              </div>}
+            </div>}
           </nav>
         </header>
         <div className={styles.peopleMain + " min-w-0 flex-1"} role="region" aria-label="People application content">
@@ -4668,10 +4710,10 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
             <div className={styles.workforceHeader}>
               <div className={styles.workforceHeading}>
                 <h2 id="workforce-directory-heading">Workforce directory</h2>
-                <p>Find people across your current authorized employer. Employee records remain source-owned by Python EOS.</p>
+                <p>Search people on this employer, then open a person to see their work details.</p>
                 <p className={styles.workforceSummary} aria-live="polite">
                   {workforcePageReady
-                    ? <><span className={styles.workforceCount}>{shownDataset.total.toLocaleString()}</span> verified directory {shownDataset.total === 1 ? 'record' : 'records'} · Page {currentPage} of {totalPages}</>
+                    ? <><span className={styles.workforceCount}>{shownDataset.total.toLocaleString()}</span> {shownDataset.total === 1 ? 'person' : 'people'} · Page {currentPage} of {totalPages}</>
                     : shownState?.status === HR_READ_STATE.PENDING ? 'Checking the workforce source…'
                     : shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'Directory access denied'
                     : shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Workforce source unavailable'
@@ -4716,18 +4758,22 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
             </div>}
             {workforcePageReady && shownDataset.items.length === 0 && <div className={styles.workforceEmpty} role="status">
               <div>
-                <strong>{workforceSearchDraft.trim().length >= 2 ? 'No matching employees' : shownDataset.total === 0 ? 'Your workforce directory is ready' : 'No records on this page'}</strong>
+                <strong>{workforceSearchDraft.trim().length >= 2 ? 'No matching employees' : shownDataset.total === 0 ? 'No people yet' : 'No records on this page'}</strong>
                 <p>{workforceSearchDraft.trim().length >= 2
                   ? 'The authorized source returned no records for this search. Clear your query to return to the full directory.'
                   : shownDataset.total === 0
-                  ? 'EOS verified no active employees for this employer. Start with a governed headcount request; employee admission requires separate identity and workforce approval.'
+                  ? 'Build your team by requesting headcount and starting a hiring pipeline. Employee invitations will become available only when admission is approved.'
                   : 'This page is empty although the source reports existing records. Return to the first page or refresh.'}</p>
               </div>
               {workforceSearchDraft.trim().length >= 2
                 ? <button type="button" onClick={() => {setWorkforceSearchDraft('');
                   setSearchTerm('');setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));}}>Clear search</button>
                 : shownDataset.total === 0
-                ? <button type="button" onClick={() => changeTab('jobOpenings')}>Open headcount requests <ArrowUpRight size={15} aria-hidden /></button>
+                ? <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
+                    <button type="button" onClick={() => changeTab('jobOpenings')}>Request headcount <ArrowUpRight size={15} aria-hidden /></button>
+                    <button type="button" onClick={() => changeTab('candidates')}>Hiring pipeline <ArrowUpRight size={15} aria-hidden /></button>
+                    <button type="button" onClick={() => setWorkforceView('organization')}>View organization <ArrowUpRight size={15} aria-hidden /></button>
+                  </div>
                 : <button type="button" onClick={() => setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}))}>First page</button>}
             </div>}
             {workforcePageReady && shownDataset.items.length > 0 && <div className={styles.workforceTableRegion} role="region" aria-label="Verified workforce directory results" tabIndex={0}>
@@ -4829,15 +4875,81 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               </React.Fragment>}
             </section>}
           </section>}
-          {activeTab !== 'employees' && <section className="rounded-xl border border-slate-200 bg-white" aria-labelledby="people-current-heading">
+          {activeTab === 'candidates' && <section aria-labelledby="people-hiring-heading"
+            style={{background:'#fff',border:'1px solid #ccd9e8',borderRadius:12,overflow:'hidden',color:'#183451'}}>
+            <div style={{padding:'21px 24px',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap',borderBottom:'1px solid #e1e9f3'}}>
+              <div>
+                <h2 id="people-hiring-heading" style={{color:'#102744',fontSize:23,lineHeight:1.3,fontWeight:750}}>Hiring pipeline</h2>
+                <p style={{marginTop:6,fontSize:13,color:'#455e79'}}>Move from approved roles to candidates, interviews and offers.</p>
+              </div>
+              <button type="button" onClick={() => changeTab('jobOpenings')}
+                style={{padding:'9px 13px',border:'1px solid #afc2d8',borderRadius:8,color:'#173c70',fontWeight:700,fontSize:13}}>
+                Headcount &amp; roles <ArrowUpRight size={14} aria-hidden />
+              </button>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(175px,1fr))',background:'#f9fbfe',borderBottom:'1px solid #e1e9f3'}}>
+              {[
+                {label:'Approved roles',verified:hiringRequisitionsVerified,value:hiringRequisitionsVerified ? datasets.jobOpenings.items.filter(item => item.status === 'APPROVED').length : null,detail:'On loaded headcount page'},
+                {label:'Candidates',verified:hiringCandidatesVerified,value:hiringCandidatesVerified ? datasets.candidates.total : null,detail:'Current hiring records'},
+                {label:'In interview',verified:hiringCandidatesVerified,value:hiringCandidatesVerified ? hiringLoadedCandidates.filter(item => item.stage === 'INTERVIEW').length : null,detail:'On loaded candidate page'},
+                {label:'Offers',verified:hiringOffersVerified,value:hiringOffersVerified ? datasets.offers.total : null,detail:'Current offer records'},
+              ].map(metric => <div key={metric.label} style={{minWidth:0,padding:'15px 20px',borderRight:'1px solid #e1e9f3'}}>
+                <span style={{display:'block',fontSize:12,fontWeight:650,color:'#3c5673'}}>{metric.label}</span>
+                <strong style={{display:'block',fontSize:24,fontWeight:750,color:'#132f51',marginTop:4,fontVariantNumeric:'tabular-nums'}}>{metric.verified ? metric.value : '—'}</strong>
+                <small style={{fontSize:11,color:'#5c7086'}}>{metric.verified ? metric.detail : 'Awaiting verification'}</small>
+              </div>)}
+            </div>
+            {shownState?.status === HR_READ_STATE.PENDING && <p role="status" style={{padding:22,color:'#455e79'}}>Checking the current hiring pipeline…</p>}
+            {shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE && <p role="status" style={{padding:22,color:'#455e79'}}>The hiring pipeline is temporarily unavailable. Refresh to try again.</p>}
+            {shownState?.status === HR_READ_STATE.ACCESS_DENIED && <p role="alert" style={{padding:22,color:'#455e79'}}>This capacity cannot access the hiring pipeline.</p>}
+            {isVerifiedReadState(shownState) && shownDataset.total === 0 && <div style={{padding:'27px 24px',display:'grid',gap:13}}>
+              <div>
+                <h3 style={{fontSize:17,fontWeight:750,color:'#142d4b'}}>No candidates yet</h3>
+                <p style={{color:'#4b607a',fontSize:13,marginTop:6,lineHeight:1.6}}>Start with approved headcount, then create your first candidate. Each application follows its own review and evidence process.</p>
+              </div>
+              <div style={{display:'flex',gap:9,flexWrap:'wrap'}}>
+                <button type="button" onClick={() => changeTab('jobOpenings')}
+                  style={{background:'#173c70',color:'#fff',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700}}>Request headcount</button>
+                <button type="button" disabled={!hiringHasApprovedRequisition}
+                  onClick={() => beginHiringCommand('candidateCreate')}
+                  title={hiringHasApprovedRequisition ? 'Create a candidate under an approved requisition' : 'An approved requisition must be visible before candidate intake'}
+                  style={{border:'1px solid #afc2d8',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700,color:'#173c70',opacity:hiringHasApprovedRequisition?1:.6}}>
+                  Create candidate
+                </button>
+                <button type="button" onClick={() => changeTab('offers')}
+                  style={{border:'1px solid #afc2d8',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700,color:'#173c70'}}>View offers</button>
+              </div>
+              {!hiringHasApprovedRequisition && <p style={{fontSize:12,color:'#4b607a'}}>Candidate intake requires an approved requisition. Open Headcount &amp; roles to begin; approval is checked again when the command runs.</p>}
+            </div>}
+            {isVerifiedReadState(shownState) && shownDataset.total > 0 && <div style={{padding:'15px 20px',display:'grid',gap:10}}>
+              <p style={{fontSize:12,color:'#526982'}}>Current authorized candidate page · {shownDataset.total} total candidates</p>
+              {shownDataset.items.map(item => <article key={item.candidate_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:14,flexWrap:'wrap',padding:'13px 15px',border:'1px solid #d4dfeb',borderRadius:9}}>
+                <div style={{minWidth:0}}>
+                  <strong style={{fontSize:13,color:'#143351'}}>{item.candidate_id}</strong>
+                  <p style={{fontSize:12,color:'#536982',marginTop:4}}>Requisition {item.requisition_id} · {item.stage?.replaceAll('_',' ') || 'Stage unavailable'}</p>
+                </div>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  {['APPLIED','SCREENING','INTERVIEW','REFERENCE_CHECK'].includes(item.stage) && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('candidateTransition',item)}
+                    style={{border:'1px solid #afc2d8',padding:'8px 12px',borderRadius:7,color:'#173c70',fontSize:12,fontWeight:700}}>Advance with evidence</button>}
+                  {item.stage === 'SELECTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerCreate',item)}
+                    style={{border:'1px solid #afc2d8',padding:'8px 12px',borderRadius:7,color:'#173c70',fontSize:12,fontWeight:700}}>Prepare offer</button>}
+                </div>
+              </article>)}
+              {shownDataset.hasMore && <button type="button" onClick={() => updatePageOffset(true)}
+                style={{padding:'9px 12px',border:'1px solid #afc2d8',color:'#173c70',borderRadius:7,justifySelf:'start',fontWeight:700}}>Next candidates</button>}
+              {shownDataset.offset > 0 && <button type="button" onClick={() => updatePageOffset(false)}
+                style={{padding:'9px 12px',border:'1px solid #afc2d8',color:'#173c70',borderRadius:7,justifySelf:'start',fontWeight:700}}>Previous candidates</button>}
+            </div>}
+          </section>}
+          {activeTab !== 'employees' && activeTab !== 'candidates' && <section className="rounded-xl border border-slate-200 bg-white" aria-labelledby="people-current-heading">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 sm:px-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source-owned operating records</p>
-                <h2 id="people-current-heading" className={styles.peopleHeading + " mt-1 text-lg font-bold text-slate-950"}>
+                <p className="text-xs font-semibold text-slate-600">People operations</p>
+                <h2 id="people-current-heading" className="mt-1 text-lg font-bold !text-[#142b49]">
                   {peopleModules.find(module => module.id === activeTab)?.title || 'People'}
                 </h2>
                 <p className="mt-1 text-xs text-slate-600">
-                  {isSourceConnected ? 'Current authorized Python EOS records; no demonstration data.' : 'No unverified business data is displayed.'}
+                  {isSourceConnected ? 'Current records for this employer' : 'This service is not yet available in People.'}
                 </p>
               </div>
               {isSourceConnected && <div className="flex flex-wrap items-center gap-2">
@@ -4863,7 +4975,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
             {isSourceConnected && shownState?.status === HR_READ_STATE.PENDING
               && <p role="status" className="p-5 text-sm text-slate-600">Verifying authorized People source…</p>}
             {isSourceConnected && shownState?.status === HR_READ_STATE.VERIFIED_EMPTY
-              && <p role="status" className="p-5 text-sm text-slate-600">EOS verified no records for this view.</p>}
+              && <p role="status" className="p-5 text-sm text-slate-600">No records yet. Choose a relevant action to begin.</p>}
             {isSourceConnected && isVerifiedReadState(shownState) && shownDataset.items.length > 0
               && <div className="overflow-x-auto" role="region" aria-label="Verified People records" tabIndex={0}>
                 <table className="w-full min-w-[680px] text-left text-sm">
@@ -5422,7 +5534,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.19.1-ORGANIZATION-HEADCOUNT-HANDOFF
+ * VERSION: v2.20.0-PEOPLE-FIRST-USE-WORKFLOWS
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
