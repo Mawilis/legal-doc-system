@@ -133,6 +133,7 @@ import { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import FounderHeadcountStart, { HeadcountDraftSubmit, HeadcountIndependentDecision } from './FounderHeadcountStart';
 import styles from './HrDashboard.module.css';
+import { ORGANIZATION_BUSINESS_MODELS, getDepartmentSuggestions } from './organizationDepartmentCatalog.js';
 import { workStatusClasses } from '../../theme/workStatus.js';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
@@ -2406,6 +2407,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [organizationReviewId, setOrganizationReviewId] = useState(null);
   const [organizationDecisionReason, setOrganizationDecisionReason] = useState('');
   const [organizationKind, setOrganizationKind] = useState('departments');
+  const [departmentModel, setDepartmentModel] = useState('general');
+  const [departmentTemplate, setDepartmentTemplate] = useState('');
+  const [departmentCatalogSearch, setDepartmentCatalogSearch] = useState('');
   const [organizationForm, setOrganizationForm] = useState({record_id:'',name:'',parent_id:'',department_id:'',effective_from:'',capacity:'1'});
   const [organizationCommandState, setOrganizationCommandState] = useState({status:'IDLE', message:''});
   const workforceStructureSequenceRef = useRef(0);
@@ -5098,6 +5102,55 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       </div>
                       <span>Draft · not approved</span>
                     </div>
+                    {organizationKind === 'departments' && <section className={styles.organizationGuidedPick} aria-label="Choose a department from a business model">
+                      <div className={styles.organizationGuidedTitle}>
+                        <strong>Choose a department</strong>
+                        <p>Select a business activity and a suggested department, or enter a custom department below. Suggestions never create tenant records.</p>
+                      </div>
+                      <div className={styles.organizationDraftGrid}>
+                        <label>
+                          <span>Business activity</span>
+                          <select value={departmentModel} onChange={event => {
+                            setDepartmentModel(event.target.value);
+                            setDepartmentTemplate('');
+                            setDepartmentCatalogSearch('');
+                          }}>
+                            {ORGANIZATION_BUSINESS_MODELS.map(model =>
+                              <option key={model.id} value={model.id}>{model.label}</option>)}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Find a suggested department</span>
+                          <input type="search" value={departmentCatalogSearch}
+                            onChange={event => setDepartmentCatalogSearch(event.target.value)}
+                            placeholder="Filter the suggested department list"/>
+                        </label>
+                        <label>
+                          <span>Suggested department</span>
+                          <select value={departmentTemplate} onChange={event => {
+                            const name = event.target.value;
+                            setDepartmentTemplate(name);
+                            if (!name) return;
+                            const slug = name.normalize('NFKD').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0,105);
+                            setOrganizationForm(previous => ({
+                              ...previous, name, record_id:slug ? 'DEP-' + slug : previous.record_id,
+                              effective_from:previous.effective_from || (() => {
+                                const now = new Date();
+                                return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+                              })(),
+                            }));
+                          }}>
+                            <option value="">Choose a suggestion or enter custom details</option>
+                            {getDepartmentSuggestions(departmentModel, departmentCatalogSearch, workforceStructure.items)
+                              .map(name => <option key={name} value={name}>{name}</option>)}
+                          </select>
+                        </label>
+                      </div>
+                      <p className={styles.organizationCatalogNotice}>
+                        Suggestions are optional reference vocabulary, not approved departments or an inferred tenant industry.
+                        A mixed-activity business can choose a different activity for each draft. Only EOS approval makes a department official.
+                      </p>
+                    </section>}
                     <div className={styles.organizationDraftGrid}>
                       <label>
                         <span>Name</span>
