@@ -1,14 +1,15 @@
 """TITLE: WILSY OS authenticated workforce directory and Overview HTTP certificate.
-VERSION: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT
+VERSION: v1.4.1-CONFIDENTIAL-ORGANIZATION-READ-CERT
 AUTHORITY: WILSY OS Core Governance; regression evidence only.
 EPITOME: Certifies exact-tenant, independently IAM-bound workforce directory and
          single-aggregation Overview, denied-before-read, and PII exclusion.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_workforce_directory_router.py
 COLLABORATION / OWNERSHIP: Canonical Python EOS workforce router and its tests.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
-CHANGELOG: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT certifies no-permission-before-database, exact-tenant draft creation, replay-fingerprint denial, independent checker, unapproved-parent rejection and source-owned position records using deterministic transaction doubles.
-CHANGELOG: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT certifies bounded, PII-free exact-tenant observed department distribution and source-unavailable failure, without asserting approved organization authority.
-CHANGELOG: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
+CHANGELOG: v1.4.1-CONFIDENTIAL-ORGANIZATION-READ-CERT overrides independent proposal-read IAM only in the scoped transaction double; no directory-read shortcut is added to production.
+CHANGELOG: v1.4.1-CONFIDENTIAL-ORGANIZATION-READ-CERT certifies no-permission-before-database, exact-tenant draft creation, replay-fingerprint denial, independent checker, unapproved-parent rejection and source-owned position records using deterministic transaction doubles.
+CHANGELOG: v1.4.1-CONFIDENTIAL-ORGANIZATION-READ-CERT certifies bounded, PII-free exact-tenant observed department distribution and source-unavailable failure, without asserting approved organization authority.
+CHANGELOG: v1.4.1-CONFIDENTIAL-ORGANIZATION-READ-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
 CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
 CHANGELOG: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT corrects the single-aggregation test contract and
            supplies institutional header and sovereign end seal.
@@ -433,7 +434,7 @@ def _org_client(monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, _Organizat
             tenant_id="WILSYTENANT-4CD2FZ4O",
             identity=SimpleNamespace(identity_id=principal["identity_id"]),
         )
-    for dependency in (subject._DIRECTORY_AUTHORITY, subject._ORG_CREATE, subject._ORG_DECIDE):
+    for dependency in (subject._DIRECTORY_AUTHORITY, subject._ORG_READ, subject._ORG_CREATE, subject._ORG_DECIDE):
         app.dependency_overrides[dependency] = authority
     monkeypatch.setattr(subject, "get_database", lambda: store)
     monkeypatch.setattr(subject, "get_client", lambda: _OrganizationClient())
@@ -532,7 +533,7 @@ def test_organization_write_permission_denies_before_database(
 
 
 # ARTIFACT: tests/unit/test_hr_workforce_directory_router.py
-# VERSION: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT
+# VERSION: v1.4.1-CONFIDENTIAL-ORGANIZATION-READ-CERT
 # AUTHORITY BOUNDARY: Regression tests cannot grant HR or tenant IAM authority.
 # TENANT POSTURE: Synthetic exact-tenant cases and explicit cross-scope denial.
 # FAIL-CLOSED POSTURE: Missing source and denied authorization never return employee counts.
