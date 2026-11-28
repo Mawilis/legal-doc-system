@@ -432,7 +432,7 @@ describe('production People Overview source contracts', () => {
     fireEvent.change(within(form).getByLabelText('Name'),{target:{value:'Test department'}});
     fireEvent.change(within(form).getByLabelText('Effective from (YYYY-MM-DD)'),{target:{value:'2026-12-01'}});
     fireEvent.click(within(form).getByRole('button',{name:'Save draft'}));
-    expect(await screen.findByText(/does not have the independent organization command permission/)).toBeInTheDocument();
+    expect(await screen.findByText(/EOS denied this capacity the required organization command permission/)).toBeInTheDocument();
     expect(screen.queryByText(/verified after readback/)).not.toBeInTheDocument();
   });
 
