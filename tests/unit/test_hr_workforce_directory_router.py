@@ -1,13 +1,14 @@
 """TITLE: WILSY OS authenticated workforce directory and Overview HTTP certificate.
-VERSION: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT
+VERSION: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT
 AUTHORITY: WILSY OS Core Governance; regression evidence only.
 EPITOME: Certifies exact-tenant, independently IAM-bound workforce directory and
          single-aggregation Overview, denied-before-read, and PII exclusion.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_workforce_directory_router.py
 COLLABORATION / OWNERSHIP: Canonical Python EOS workforce router and its tests.
 CERTIFICATION / UPDATE DATE: 2026-11-27.
-CHANGELOG: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT certifies bounded, PII-free exact-tenant observed department distribution and source-unavailable failure, without asserting approved organization authority.
-CHANGELOG: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
+CHANGELOG: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT certifies no-permission-before-database, exact-tenant draft creation, replay-fingerprint denial, independent checker, unapproved-parent rejection and source-owned position records using deterministic transaction doubles.
+CHANGELOG: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT certifies bounded, PII-free exact-tenant observed department distribution and source-unavailable failure, without asserting approved organization authority.
+CHANGELOG: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT asserts a whitespace-only search never reaches Mongo; maintains exact-tenant single-detail, projection and absent-record certificates.
 CHANGELOG: v1.2.0-M03-WORKFORCE-DETAIL-CERT verifies the separate authorized single employee directory read, protected-field exclusion, exact-tenant query and indistinguishable absent/foreign status.
 CHANGELOG: v1.1.0-M03-WORKFORCE-OVERVIEW-CERT corrects the single-aggregation test contract and
            supplies institutional header and sovereign end seal.
@@ -360,8 +361,178 @@ def test_observed_workforce_organization_requires_database(
     assert response.json()["detail"] == "WORKFORCE_ORGANIZATION_SOURCE_UNAVAILABLE"
 
 
+
+class _OrganizationDocumentStore:
+    """Deterministic transaction double for proposed organization commands."""
+
+    def __init__(self) -> None:
+        self.rows: list[dict[str, Any]] = []
+        self.indexes: list[tuple[Any, bool]] = []
+
+    def create_index(self, spec: Any, unique: bool = False) -> None:
+        self.indexes.append((spec, unique))
+
+    def find_one(self, query: dict[str, Any], session: Any = None) -> dict[str, Any] | None:
+        return next((dict(row) for row in self.rows
+                     if all(row.get(k) == v for k, v in query.items())), None)
+
+    def insert_one(self, document: dict[str, Any], session: Any = None) -> None:
+        self.rows.append(dict(document))
+
+    def find_one_and_update(
+        self, query: dict[str, Any], mutation: dict[str, Any],
+        return_document: Any = None, session: Any = None,
+    ) -> dict[str, Any] | None:
+        row = next((value for value in self.rows
+                    if all(value.get(k) == v for k, v in query.items())), None)
+        if row is None:
+            return None
+        row.update(mutation.get("$set", {}))
+        for field, count in mutation.get("$inc", {}).items():
+            row[field] += count
+        return dict(row)
+
+    def find(self, query: dict[str, Any], projection: Any = None) -> _Cursor:
+        return _Cursor([dict(row) for row in self.rows
+                        if all(row.get(k) == v for k, v in query.items())])
+
+
+class _OrganizationDatabase:
+    def __init__(self) -> None:
+        self.records = _OrganizationDocumentStore()
+        self.events = _OrganizationDocumentStore()
+
+    def get_collection(self, name: str, **_: Any) -> _OrganizationDocumentStore:
+        return self.records if name == subject._ORG_COLLECTION else self.events
+
+
+class _OrganizationSession:
+    def __enter__(self) -> "_OrganizationSession":
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        return None
+
+    def with_transaction(self, callback: Any, **_: Any) -> Any:
+        return callback(self)
+
+
+class _OrganizationClient:
+    def start_session(self) -> _OrganizationSession:
+        return _OrganizationSession()
+
+
+def _org_client(monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, _OrganizationDatabase, dict[str, str]]:
+    """Override independent read, create and decide IAM only in these isolated tests."""
+    store = _OrganizationDatabase()
+    principal = {"identity_id": "HR-DIRECTOR"}
+    app = FastAPI()
+    app.include_router(subject.router)
+    def authority() -> SimpleNamespace:
+        return SimpleNamespace(
+            tenant_id="WILSYTENANT-4CD2FZ4O",
+            identity=SimpleNamespace(identity_id=principal["identity_id"]),
+        )
+    for dependency in (subject._DIRECTORY_AUTHORITY, subject._ORG_CREATE, subject._ORG_DECIDE):
+        app.dependency_overrides[dependency] = authority
+    monkeypatch.setattr(subject, "get_database", lambda: store)
+    monkeypatch.setattr(subject, "get_client", lambda: _OrganizationClient())
+    return TestClient(app), store, principal
+
+
+def test_organization_department_and_position_require_independent_approval(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Creator cannot approve and positions must reference approved departments."""
+    client, db, actor = _org_client(monkeypatch)
+    root = "/api/hr/workforce/structure"
+    headers = {"Idempotency-Key": "create-dept-command-00001",
+               "X-Tenant-ID": "FOREIGN-TENANT"}
+    department = {
+        "record_id": "DEP-OPERATIONS", "name": "Operations",
+        "effective_from": "2026-12-01",
+    }
+    created = client.post(root + "/departments", json=department, headers=headers)
+    assert created.status_code == 201
+    assert created.json()["record"]["status"] == "DRAFT"
+    assert created.json()["tenant_id"] == "WILSYTENANT-4CD2FZ4O"
+    assert len(db.records.rows) == 1
+    # Exact replay is durable and cannot create duplicate records/events.
+    assert client.post(root + "/departments", json=department, headers=headers).json() == created.json()
+    assert len(db.records.rows) == 1
+    assert len(db.events.rows) == 1
+    changed = client.post(root + "/departments", json={**department, "name": "Changed"},
+                          headers=headers)
+    assert changed.status_code == 409
+    assert changed.json()["detail"] == "ORGANIZATION_IDEMPOTENCY_CONFLICT"
+
+    position = {
+        "record_id": "POS-OPERATIONS", "name": "Operations coordinator",
+        "department_id": "DEP-OPERATIONS", "effective_from": "2026-12-01",
+        "capacity": 3,
+    }
+    waiting = client.post(root + "/positions", json=position,
+                          headers={"Idempotency-Key": "create-pos-command-00001"})
+    assert waiting.status_code == 422
+    assert waiting.json()["detail"] == "ORGANIZATION_PARENT_NOT_APPROVED"
+    submitted = client.post(root + "/departments/DEP-OPERATIONS/submit",
+                            json={"expected_revision": 1},
+                            headers={"Idempotency-Key": "submit-dept-command-0001"})
+    assert submitted.status_code == 200
+    assert submitted.json()["record"]["revision"] == 2
+    self_decision = client.post(
+        root + "/departments/DEP-OPERATIONS/decision",
+        json={"expected_revision": 2, "decision": "APPROVE", "reason": "Approved structure"},
+        headers={"Idempotency-Key": "approve-dept-command-001"},
+    )
+    assert self_decision.status_code == 403
+    assert self_decision.json()["detail"] == "ORGANIZATION_MAKER_CANNOT_APPROVE"
+    actor["identity_id"] = "INDEPENDENT-CHECKER"
+    approved = client.post(
+        root + "/departments/DEP-OPERATIONS/decision",
+        json={"expected_revision": 2, "decision": "APPROVE", "reason": "Approved structure"},
+        headers={"Idempotency-Key": "approve-dept-command-001"},
+    )
+    assert approved.status_code == 200
+    assert approved.json()["record"]["status"] == "APPROVED"
+    actor["identity_id"] = "HR-DIRECTOR"
+    created_position = client.post(root + "/positions", json=position,
+        headers={"Idempotency-Key": "create-pos-command-00002"})
+    assert created_position.status_code == 201
+    assert created_position.json()["record"]["capacity"] == 3
+    assert created_position.json()["record"]["status"] == "DRAFT"
+    snapshot = client.get(root, headers={"X-Tenant-ID": "FOREIGN-TENANT"})
+    assert snapshot.status_code == 200
+    assert snapshot.json()["count"] == 2
+    assert all(r["kind"] in ("DEPARTMENT","POSITION") for r in snapshot.json()["items"])
+    assert all("created_by" not in r for r in snapshot.json()["items"])
+    assert all(r["tenant_id"] == "WILSYTENANT-4CD2FZ4O" for r in db.records.rows)
+    assert all(e["tenant_id"] == "WILSYTENANT-4CD2FZ4O" for e in db.events.rows)
+
+
+def test_organization_write_permission_denies_before_database(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Organization creation is never inherited from directory-read IAM."""
+    from fastapi import HTTPException
+    app = FastAPI()
+    app.include_router(subject.router)
+    app.dependency_overrides[subject._ORG_CREATE] = lambda: (_ for _ in ()).throw(
+        HTTPException(status_code=403, detail="ORGANIZATION_PERMISSION_REQUIRED")
+    )
+    monkeypatch.setattr(subject, "get_database",
+                        lambda: (_ for _ in ()).throw(AssertionError("No DB access allowed")))
+    response = TestClient(app).post(
+        "/api/hr/workforce/structure/departments",
+        json={"record_id": "DEP-ONE", "name": "Example", "effective_from": "2026-12-01"},
+        headers={"Idempotency-Key": "denied-org-command-001"},
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "ORGANIZATION_PERMISSION_REQUIRED"
+
+
 # ARTIFACT: tests/unit/test_hr_workforce_directory_router.py
-# VERSION: v1.3.0-OBSERVED-WORKFORCE-ORGANIZATION-CERT
+# VERSION: v1.4.0-GOVERNED-ORGANIZATION-COMMAND-CERT
 # AUTHORITY BOUNDARY: Regression tests cannot grant HR or tenant IAM authority.
 # TENANT POSTURE: Synthetic exact-tenant cases and explicit cross-scope denial.
 # FAIL-CLOSED POSTURE: Missing source and denied authorization never return employee counts.
