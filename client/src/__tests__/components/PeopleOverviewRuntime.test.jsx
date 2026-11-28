@@ -229,6 +229,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/');
   setAuthenticatedScope('TENANT-HR-A', 'PRINCIPAL-HR-A');
   mockState.apiGet.mockReset();
   mockState.apiPost.mockReset();
