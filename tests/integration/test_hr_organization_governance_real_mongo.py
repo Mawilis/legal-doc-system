@@ -42,10 +42,16 @@ def _auth(tenant: str, actor: str):
 def mongo(monkeypatch):
     """Admit disposable loopback replica-set only; never fall back to Atlas."""
     uri = os.environ.get("WILSY_HR03_TEST_MONGO_URI", "")
-    if not uri or not uri.startswith("mongodb://") or not any(
-        host in uri for host in ("127.0.0.1", "localhost")
-    ) or "mongodb+srv" in uri:
+    if not uri or not uri.startswith("mongodb://") or uri.startswith("mongodb+srv://"):
         pytest.skip("HR03 disposable loopback replica-set URI absent; not certified")
+    from pymongo.uri_parser import parse_uri
+    try:
+        nodes = parse_uri(uri).get("nodelist") or []
+    except Exception:
+        pytest.skip("Invalid HR03 Mongo test URI; not certified")
+    if not nodes or any(host not in ("127.0.0.1", "localhost", "::1")
+                        for host, _port in nodes):
+        pytest.skip("HR03 certification requires exclusively loopback Mongo hosts")
     client = MongoClient(uri, serverSelectionTimeoutMS=2000, retryWrites=True)
     try:
         topology = client.admin.command("hello")
