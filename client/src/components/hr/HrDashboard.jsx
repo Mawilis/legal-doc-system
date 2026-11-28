@@ -3257,12 +3257,23 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       const code = typeof rawDetail === 'string' && /^ORGANIZATION_[A-Z0-9_]{1,100}$/.test(rawDetail)
         ? rawDetail : null;
       const codeHint = code ? ' · ' + code : '';
+      // Only display allowlisted request-field and validation-type diagnostics.
+      // Never render the raw EOS error message, input or PII.
+      const allowedFields = new Set(['record_id','name','effective_from','parent_id','department_id','capacity','kind','idempotency-key','x-tenant-id']);
+      const allowedTypes = new Set(['missing','string_pattern_mismatch','string_too_short','string_too_long','date_from_datetime_parsing','date_from_datetime_inexact','date_type','date_parsing','literal_error','int_type','greater_than_equal','less_than_equal','extra_forbidden']);
+      const validationIssues = Array.isArray(rawDetail) ? rawDetail.flatMap(issue => {
+        const location = Array.isArray(issue?.loc) ? issue.loc.map(String) : [];
+        const field = location.at(-1)?.toLowerCase();
+        const type = typeof issue?.type === 'string' ? issue.type : '';
+        return allowedFields.has(field) && allowedTypes.has(type) ? [field + ' (' + type.replaceAll('_',' ') + ')'] : [];
+      }).slice(0,3) : [];
+      const validationHint = validationIssues.length ? ' · Fields: ' + validationIssues.join(', ') : '';
       const message = status === 403
         ? 'EOS denied this capacity the required organization command permission.'
         : status === 405 || status === 404
           ? 'EOS route unavailable (HTTP ' + status + '). The running Python EOS must load the current Organization routers.'
           : status === 422
-            ? 'EOS rejected the department proposal (HTTP 422' + codeHint + '). Confirm the request contract and response validation errors before retrying.'
+            ? 'EOS rejected the organization proposal (HTTP 422' + codeHint + validationHint + '). Verify the indicated request fields before retrying.'
             : status === 409
               ? 'EOS reported an organization conflict (HTTP 409' + codeHint + '). Refresh the registry before another attempt.'
               : status === 503
