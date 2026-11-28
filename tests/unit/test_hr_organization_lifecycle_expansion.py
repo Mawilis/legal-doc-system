@@ -300,6 +300,40 @@ def test_bounded_as_of_read_cannot_show_a_future_version_or_another_tenant(monke
     assert before.value.status_code == 404
 
 
+
+def test_productivity_aggregates_client_metrics_without_a_200_event_ceiling(monkeypatch):
+    class _Aggregated(_Collection):
+        def aggregate(self, stages):
+            assert stages[0] == {"$match": {"tenant_id": "TENANT-SYNTHETIC-A"}}
+            return [
+                {"_id": "FORM_OPENED", "count": 250, "samples": 250,
+                 "mean_elapsed_ms": None},
+                {"_id": "DRAFT_VERIFIED", "count": 210, "samples": 210,
+                 "mean_elapsed_ms": 12000},
+                {"_id": "MANUAL_FIELD_EDITED", "count": 360, "samples": 180,
+                 "mean_elapsed_ms": None},
+            ]
+    events = _Collection([
+        {"tenant_id": "TENANT-SYNTHETIC-A", "change_id": str(i),
+         "action": "CHANGE_DRAFT", "occurred_at": "2026-11-28T10:00:00+00:00"}
+        for i in range(201)
+    ])
+    db = _Db({
+        lifecycle._CHANGE_EVENTS: events,
+        lifecycle._OBSERVATIONS: _Aggregated([]),
+    })
+    monkeypatch.setattr(lifecycle, "get_database", lambda: db)
+    result = lifecycle.read_organization_productivity(auth=_identity())
+    assert result["source"] == "EOS_ORGANIZATION_CHANGE_EVENTS"
+    assert result["recent_events_truncated"] is True
+    assert result["bounded_events"] == 200
+    assert result["client_report_source"] == "CLIENT_REPORTED"
+    assert result["client_observation_sample"] == 640
+    assert result["client_observed"]["MANUAL_FIELD_EDITED"] == 360
+    assert result["client_mean_form_to_verified_seconds"] == 12.0
+    assert result["accessibility_certified"] is False
+
+
 # ARTIFACT: tests/unit/test_hr_organization_lifecycle_expansion.py
 # VERSION: v1.0.0-M03-HR03-ORGANIZATION-LIFECYCLE-CERT
 # AUTHORITY BOUNDARY: Exact-tenant EOS authority and regression evidence; no grants or financial execution.
