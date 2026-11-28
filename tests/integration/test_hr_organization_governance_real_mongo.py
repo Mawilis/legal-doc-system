@@ -322,6 +322,14 @@ def test_governed_assignment_move_with_approval_and_persistent_versions(mongo):
         {"tenant_id": tenant, "employee_id": "EMP-ONE"})
     assert second["revision"] == 2
     assert second["department_id"] == "DEP-SERVICES"
+    versions = assignment.read_assignment_history(
+        "EMP-ONE", organization=checker, workforce=checker,
+    )
+    assert versions["count"] == 2
+    assert [item["department_id"] for item in versions["items"]] == [
+        "DEP-OPERATIONS", "DEP-SERVICES",
+    ]
+    assert versions["legacy_employee_fields_synchronized"] is False
     assert db[assignment._ASSIGNMENTS].count_documents({"tenant_id": tenant}) == 1
     assert db[assignment._ASSIGNMENTS].count_documents(
         {"tenant_id": foreign.tenant_id}) == 0
