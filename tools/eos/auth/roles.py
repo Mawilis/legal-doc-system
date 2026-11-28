@@ -1,8 +1,9 @@
 """
-CHANGELOG: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES establishes two separately assignable,
+CHANGELOG: v1.60.0-HR-ORGANIZATION-ROLE-ELIGIBILITY adds separately assignable HR Manager organization maker and HR Director organization maker/checker static eligibility, including canonical platform employer equivalents. Active role possession, explicit IAM assignments, independent checker and tenant fences remain mandatory.
+CHANGELOG: v1.60.0-HR-ORGANIZATION-ROLE-ELIGIBILITY establishes two separately assignable,
 non-inherited participant IAM roles; project record participation and live
 member/entitlement/project scope remain independent mandatory conjuncts.
-CHANGELOG: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES defines a separately assignable
+CHANGELOG: v1.60.0-HR-ORGANIZATION-ROLE-ELIGIBILITY defines a separately assignable
 Projects tenant-owner authorization role for paying tenants across business
 models. The existing WILSY-only platform role stays fenced; neither founder,
 admin, employee nor manager inherits the new role or permission.
@@ -12,7 +13,7 @@ AUDITOR remains read-only. Static grants require independent current
 membership, eligible capacity and active role assignment.
 CHANGELOG: v1.56.0-PROJECTS-PLATFORM-OWNER-ROLE — Consolidated sovereign documentation without executable changes.
 TITLE: WILSY OS Role Definition Policy.
-VERSION: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES
+VERSION: v1.60.0-HR-ORGANIZATION-ROLE-ELIGIBILITY
 AUTHORITY: Canonical Python role identifiers and explicit permission grants.
 EPITOME: Defines current tenant-scoped authorization roles, including
 least-privilege subscription/plan-catalogue grants, read-only WILSY AI
@@ -263,7 +264,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
-VERSION = "v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES"
+VERSION = "v1.60.0-HR-ORGANIZATION-ROLE-ELIGIBILITY"
 
 
 ROLE_PERMISSIONS_MAP: dict[str, list[str]] = {
@@ -527,6 +528,15 @@ ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend([
     "hr:headcount_requisition:decide",
 ])
 
+# Organization proposals are distinct from employee admission and headcount.
+# An HR Director may propose but cannot approve their own proposal; independent
+# current principal/role/tenant permissions and CAS state checks remain required.
+ROLE_PERMISSIONS_MAP["HR_MANAGER"].append("hr:organization:create")
+ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend([
+    "hr:organization:create",
+    "hr:organization:decide",
+])
+
 # Candidate evidence bytes are a separate permission boundary from lifecycle
 # commands: HR Manager uploads/reads; HR Director reads only.
 ROLE_PERMISSIONS_MAP["HR_MANAGER"].extend([
@@ -544,6 +554,7 @@ ROLE_PERMISSIONS_MAP["HR_MANAGER"].extend((
     "platform_employer:employee_directory:read",
     "platform_employer:headcount_requisition:read",
     "platform_employer:headcount_requisition:create",
+    "platform_employer:organization:create",
     "platform_employer:hiring_candidate:read",
     "platform_employer:hiring_candidate:create",
     "platform_employer:hiring_candidate:transition",
@@ -558,6 +569,8 @@ ROLE_PERMISSIONS_MAP["HR_DIRECTOR"].extend((
     "platform_employer:employee_directory:read",
     "platform_employer:headcount_requisition:read",
     "platform_employer:headcount_requisition:decide",
+    "platform_employer:organization:create",
+    "platform_employer:organization:decide",
     "platform_employer:hiring_candidate:read",
     "platform_employer:hiring_candidate_evidence:read",
     "platform_employer:hiring_offer:read",
@@ -813,7 +826,7 @@ ROLE_PERMISSIONS_MAP["PROJECTS_PARTICIPANT_CONTRIBUTOR"] = [
 ]
 
 # ARTIFACT: tools/eos/auth/roles.py
-# VERSION: v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES
+# VERSION: v1.60.0-HR-ORGANIZATION-ROLE-ELIGIBILITY
 # AUTHORITY BOUNDARY: static read permission only; current assignment and operation authorization remain separate
 # TENANT POSTURE: company-document reading is hard-fenced to the canonical WILSY company tenant after separately governed active assignments
 # FAIL-CLOSED POSTURE: unknown, inactive, foreign, unpublished-review, author and publisher paths deny; this definition creates no assignment, route, admission, IAM, payroll, or entitlement authority
