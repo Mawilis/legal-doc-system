@@ -3260,7 +3260,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       setWorkforceSearchDraft('');
     }
     setActiveTab(tabId);
-    if (tabId !== 'employees' && window.location.pathname.startsWith('/people/workforce')) window.history.replaceState(window.history.state, '', '/');
+    if (tabId === 'employees') openWorkforceSubview(workforceView);
+    else if (window.location.pathname.startsWith('/people/workforce')) window.history.replaceState(window.history.state, '', '/');
     setMorePeopleModulesOpen(false);
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
