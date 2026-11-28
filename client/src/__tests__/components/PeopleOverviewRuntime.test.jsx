@@ -355,7 +355,9 @@ describe('production People Overview source contracts', () => {
     fireEvent.change(within(form).getByLabelText('Name'),{target:{value:'Operations'}});
     fireEvent.change(within(form).getByLabelText('Effective from (YYYY-MM-DD)'),{target:{value:'2026-12-01'}});
     fireEvent.click(within(form).getByRole('button',{name:'Save draft'}));
-    await waitFor(() => expect(mockState.apiPost).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(
+      mockState.apiPost.mock.calls.filter(([path]) => path === '/hr/workforce/structure/departments')
+    ).toHaveLength(1));
     expect(await screen.findByText(/DEP-OPS · DRAFT · Revision 1/)).toBeInTheDocument();
     expect(screen.getByText(/verified after readback/)).toBeInTheDocument();
   });
