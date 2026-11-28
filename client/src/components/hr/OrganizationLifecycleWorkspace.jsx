@@ -25,7 +25,7 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
   const [queue, setQueue] = useState(emptyState);
   const [metrics, setMetrics] = useState(null);
   const [draft, setDraft] = useState({
-    record_id: '', change_type: 'AMEND', name: '', parent_id: '',
+    record_id: '', change_type: 'AMEND', name: '', parent_id: '', clear_parent: false,
     effective_from: '', reason: '',
   });
   const [selection, setSelection] = useState('');
@@ -73,7 +73,7 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
   useEffect(() => {
     commandKeys.current.clear();
     setOpenEditor(false);
-    setDraft({record_id:'',change_type:'AMEND',name:'',parent_id:'',effective_from:'',reason:''});
+    setDraft({record_id:'',change_type:'AMEND',name:'',parent_id:'',clear_parent:false,effective_from:'',reason:''});
     setSelection('');
     setHistory(null);
     setImpact(null);
@@ -165,7 +165,7 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
     const target = departments.find(item => item.record_id === draft.record_id && item.status === 'APPROVED');
     if (!target || !impact || impact.record_id !== target.record_id || !history ||
         draft.reason.trim().length < 5 ||
-        (draft.change_type === 'AMEND' && !draft.name.trim() && !draft.parent_id)) {
+        (draft.change_type === 'AMEND' && !draft.name.trim() && !draft.parent_id && !draft.clear_parent)) {
       setNotice('Choose an approved department, inspect verified impact, and provide the proposed change and reason.');
       return;
     }
@@ -176,7 +176,8 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
     void send(ROOT + '/departments/' + encodeURIComponent(draft.record_id) + '/changes',
       {change_type:draft.change_type,
        ...(draft.change_type === 'AMEND' && draft.name.trim() ? {name:draft.name.trim()} : {}),
-       ...(draft.change_type === 'AMEND' && draft.parent_id ? {parent_id:draft.parent_id} : {}),
+       ...(draft.change_type === 'AMEND' && draft.parent_id && !draft.clear_parent ? {parent_id:draft.parent_id} : {}),
+       ...(draft.change_type === 'AMEND' && draft.clear_parent ? {clear_parent:true} : {}),
        effective_from:draft.effective_from,reason:draft.reason.trim()});
   };
 
@@ -201,7 +202,7 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
       {openEditor && <form className={styles.form} onSubmit={submitDraft} aria-label="Department lifecycle change form">
         <label>Approved department
           <select required value={draft.record_id} onChange={event => {
-            setDraft(previous => ({...previous,record_id:event.target.value,parent_id:''}));
+            setDraft(previous => ({...previous,record_id:event.target.value,parent_id:'',clear_parent:false}));
             void select(event.target.value);
           }}>
             <option value="">Choose an approved department</option>
@@ -220,11 +221,18 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
             <input maxLength={180} value={draft.name} onChange={event => setDraft(previous => ({...previous,name:event.target.value}))}/>
           </label>
           <label>Move under approved parent (optional)
-            <select value={draft.parent_id} onChange={event => setDraft(previous => ({...previous,parent_id:event.target.value}))}>
+            <select value={draft.parent_id} disabled={draft.clear_parent} onChange={event => setDraft(previous => ({...previous,parent_id:event.target.value}))}>
               <option value="">Keep current hierarchy</option>
               {departments.filter(d => d.status === 'APPROVED' && d.record_id !== draft.record_id).map(d =>
                 <option key={d.record_id} value={d.record_id}>{d.name} · {d.record_id}</option>)}
             </select>
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={draft.clear_parent}
+              onChange={event => setDraft(previous => ({
+                ...previous,clear_parent:event.target.checked,parent_id:'',
+              }))}/>
+            Move department to top level
           </label>
         </>}
         <label>Effective date
