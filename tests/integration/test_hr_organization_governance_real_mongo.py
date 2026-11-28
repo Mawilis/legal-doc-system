@@ -203,6 +203,42 @@ def test_aborted_transaction_preserves_current_department_and_events(mongo):
     assert versions.count_documents({"tenant_id":tenant,"record_id":"DEP-ROLLBACK"}) == 0
 
 
+
+def test_authorized_http_structure_paths_do_not_fall_through_to_employee_detail(mongo):
+    """FastAPI dispatch and exact-tenant readback against disposable real Mongo."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    db, _ = mongo
+    tenant = "TENANT-SYNTHETIC-A"
+    db[org._ORG_COLLECTION].insert_one({
+        "tenant_id": tenant, "kind": "DEPARTMENT", "record_id": "DEP-HTTP",
+        "name": "Governed Operating Department", "status": "APPROVED",
+        "revision": 1, "effective_from": "2026-01-01",
+        "created_by": "HR-MAKER", "submitted_by": "HR-MAKER",
+    })
+    app = FastAPI()
+    app.include_router(business.router)
+    app.include_router(lifecycle.router)
+    app.include_router(org.router)
+    app.dependency_overrides[org._ORG_READ] = lambda: _auth(tenant, "HR-READER")
+    app.dependency_overrides[org._DIRECTORY_AUTHORITY] = (
+        lambda: _auth(tenant, "HR-READER")
+    )
+    client = TestClient(app)
+    context = client.get("/api/hr/workforce/structure/context")
+    assert context.status_code == 200, context.text
+    assert context.json()["tenant_id"] == tenant
+    changes = client.get("/api/hr/workforce/structure/changes")
+    assert changes.status_code == 200, changes.text
+    assert changes.json()["schema"] == "WILSY-HR-ORGANIZATION-CHANGES/V1"
+    staffing = client.get("/api/hr/workforce/structure/staffing-reconciliation")
+    assert staffing.status_code == 200, staffing.text
+    assert staffing.json()["retirement_approval_permitted"] is False
+    source = client.get("/api/hr/workforce/structure")
+    assert source.status_code == 200, source.text
+    assert source.json()["items"][0]["record_id"] == "DEP-HTTP"
+
+
 # ARTIFACT: tests/integration/test_hr_organization_governance_real_mongo.py
 # VERSION: v1.0.0-M03-HR03-REAL-MONGO-TRANSACTION-CERT
 # AUTHORITY BOUNDARY: Disposable real Mongo certificate, never a grant.
