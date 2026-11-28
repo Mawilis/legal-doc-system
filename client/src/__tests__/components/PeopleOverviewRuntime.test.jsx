@@ -397,6 +397,11 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
     expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
+    const governed = screen.getByRole('heading', {name: 'Governed structure'});
+    const secondary = screen.getByText(/Observed workforce and headcount planning/);
+    expect(governed.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(secondary.closest('details')).not.toHaveAttribute('open');
+
     await waitFor(() => expect(mockState.apiGet).toHaveBeenCalledWith(
       '/hr/workforce/organization',
       expect.objectContaining({headers: {'X-Tenant-ID': 'TENANT-HR-A'}}),
