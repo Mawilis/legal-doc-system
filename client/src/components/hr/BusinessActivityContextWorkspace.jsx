@@ -33,6 +33,8 @@ export default function BusinessActivityContextWorkspace({tenantId, scopeKey, on
   const [pending, setPending] = useState(false);
   const token = useRef(0);
   const keys = useRef(new Map());
+  const approvedCallback = useRef(onApproved);
+  approvedCallback.current = onApproved;
   const actualScope = useRef(scopeKey);
   actualScope.current = scopeKey;
   const headers = useCallback(() => ({'X-Tenant-ID':tenantId}), [tenantId]);
@@ -45,15 +47,15 @@ export default function BusinessActivityContextWorkspace({tenantId, scopeKey, on
       if (seq !== token.current || actualScope.current !== scopeKey) return null;
       if (!valid(reply.data, tenantId)) throw Error('BUSINESS_CONTEXT_INVALID_ENVELOPE');
       setState({status:'VERIFIED',data:reply.data});
-      onApproved?.(reply.data.status === 'APPROVED' ? reply.data.activity_ids : []);
+      approvedCallback.current?.(reply.data.status === 'APPROVED' ? reply.data.activity_ids : []);
       return reply.data;
     } catch(error) {
       if (seq !== token.current || actualScope.current !== scopeKey) return null;
       setState({status:error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE',data:null});
-      onApproved?.([]);
+      approvedCallback.current?.([]);
       return null;
     }
-  }, [scopeKey, tenantId, headers, onApproved]);
+  }, [scopeKey, tenantId, headers]);
 
   useEffect(() => {
     keys.current.clear(); setEditing(false); setActivities([]);
@@ -91,7 +93,7 @@ export default function BusinessActivityContextWorkspace({tenantId, scopeKey, on
       }
       keys.current.delete(fingerprint);
       setState({status:'VERIFIED',data:readback.data});
-      onApproved?.(readback.data.status === 'APPROVED' ? readback.data.activity_ids : []);
+      approvedCallback.current?.(readback.data.status === 'APPROVED' ? readback.data.activity_ids : []);
       setEditing(false);
       setNotice('Verified in EOS · ' + response.data.proposal.status.toLowerCase());
     } catch(error) {
