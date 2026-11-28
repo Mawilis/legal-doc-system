@@ -28,6 +28,7 @@ on:
     paths:
       - "tools/eos/api/hr_workforce_directory_router.py"
       - "tools/eos/api/hr_organization_lifecycle_router.py"
+      - "tools/eos/api/hr_organization_assignment_router.py"
       - "tools/eos/api/hr_organization_business_context_router.py"
       - "tests/unit/test_hr_organization_lifecycle_expansion.py"
       - "tests/unit/test_hr03_organization_accessibility_contract.py"
@@ -103,6 +104,7 @@ jobs:
           python -m py_compile \
             tools/eos/api/hr_workforce_directory_router.py \
             tools/eos/api/hr_organization_lifecycle_router.py \
+            tools/eos/api/hr_organization_assignment_router.py \
             tools/eos/api/hr_organization_business_context_router.py \
             tests/unit/test_hr_organization_lifecycle_expansion.py \
             tests/unit/test_hr03_organization_accessibility_contract.py \
