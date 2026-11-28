@@ -35,6 +35,7 @@ function verifyList(data, tenantId) {
 export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, structure, onUpdated}) {
   const [queue, setQueue] = useState(emptyState);
   const [metrics, setMetrics] = useState(null);
+  const [staffingReconciliation, setStaffingReconciliation] = useState({status:'PENDING',data:null});
   const [draft, setDraft] = useState({
     record_id: '', change_type: 'AMEND', name: '', parent_id: '', clear_parent: false,
     effective_from: '', reason: '',
@@ -96,6 +97,41 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
     void load();
     return () => {sequence.current += 1;};
   }, [load]);
+
+  useEffect(() => {
+    if (!tenantId || !scopeKey) return undefined;
+    let cancelled = false;
+    setStaffingReconciliation({status:'PENDING',data:null});
+    void api.get(ROOT + '/staffing-reconciliation', {headers:headers()})
+      .then(reply => {
+        if (cancelled || snapshot.current !== scopeKey) return;
+        const data = reply?.data;
+        const valid = data?.schema === 'WILSY-HR-STAFFING-RECONCILIATION/V1'
+          && data?.tenant_id === tenantId
+          && data?.source === 'EOS_LEGACY_EMPLOYEE_DEPARTMENT_LABELS'
+          && data?.reconciliation_kind === 'READ_ONLY_OBSERVATION'
+          && data?.employee_assignment_linkage_certified === false
+          && data?.retirement_approval_permitted === false
+          && Number.isSafeInteger(data?.unmatched_active_employees)
+          && Number.isSafeInteger(data?.ambiguous_active_employees)
+          && Number.isSafeInteger(data?.source_total_active)
+          && Array.isArray(data?.candidate_matches)
+          && data.candidate_matches.length <= 200
+          && data.candidate_matches.every(item =>
+            typeof item.department_id === 'string'
+            && Number.isSafeInteger(item.employee_count)
+            && item.relationship === 'LABEL_CANDIDATE_NOT_AUTHORIZED_ASSIGNMENT');
+        setStaffingReconciliation(valid ? {status:'VERIFIED',data} :
+          {status:'UNAVAILABLE',data:null});
+      }).catch(error => {
+        if (cancelled || snapshot.current !== scopeKey) return;
+        setStaffingReconciliation({
+          status:error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE',
+          data:null,
+        });
+      });
+    return () => {cancelled = true;};
+  }, [scopeKey,tenantId,headers]);
 
   const select = async id => {
     setSelection(id);
@@ -232,6 +268,22 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
     {queue.status === 'DENIED' && <p role="alert">Department change history is denied to this operating capacity.</p>}
     {queue.status === 'UNAVAILABLE' && <p role="status">Change records could not be verified. No zero result is inferred.</p>}
     {queue.status === 'VERIFIED' && <>
+      <div className={styles.reconciliation} aria-label="Employee department linkage reconciliation">
+        <strong>Workforce linkage</strong>
+        {staffingReconciliation.status === 'PENDING' &&
+          <p role="status">Checking the independently authorized employee source…</p>}
+        {staffingReconciliation.status === 'DENIED' &&
+          <p role="status">Employee source permission denied. No staffing relationship is inferred.</p>}
+        {staffingReconciliation.status === 'UNAVAILABLE' &&
+          <p role="status">Employee department linkage cannot be verified. Retirement remains blocked.</p>}
+        {staffingReconciliation.status === 'VERIFIED' && <>
+          <p>{staffingReconciliation.data.source_total_active} active employee records in the bounded source grouping,
+            {' '}{staffingReconciliation.data.unmatched_active_employees} unmatched and
+            {' '}{staffingReconciliation.data.ambiguous_active_employees} ambiguous by department label.</p>
+          <p>Candidate label matches: {staffingReconciliation.data.candidate_matches.length} groups.
+            These are observations, not canonical employee assignments or permission to retire a department.</p>
+        </>}
+      </div>
       <div className={styles.actions}>
         <button type="button" onClick={() => setOpenEditor(open => !open)} disabled={!departments.some(d => d.status === 'APPROVED')}>
           {openEditor ? 'Close change draft' : 'Propose a department change'}
