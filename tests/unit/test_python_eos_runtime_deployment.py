@@ -104,3 +104,40 @@ def test_node_backend_process_launchers_and_transport_are_absent():
     lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
     assert "pm2" not in lock["packages"][""].get("devDependencies", {})
     assert "pm2" not in lock["packages"][""].get("dependencies", {})
+
+
+def test_mw_t12_disposable_replica_uses_mongo7_compatible_hostname(monkeypatch):
+    """Exercise the exact recovery certificate's positive and denied Mongo initiation."""
+    import pytest
+    from tools.eos.ops import mw_t12_disposable_mongo_recovery as recovery
+
+    monkeypatch.setattr(recovery.time, "sleep", lambda _: None)
+    calls = []
+
+    def success(_container, expression):
+        calls.append(expression)
+        if expression == "db.adminCommand({ping:1}).ok":
+            return "1"
+        if expression.startswith("JSON.stringify(rs.initiate"):
+            assert 'host:"localhost:27017"' in expression
+            assert 'host:"127.0.0.1:27017"' not in expression
+            return '{"ok":1}'
+        if expression == "db.hello().isWritablePrimary":
+            return "true"
+        raise AssertionError("Unexpected Mongo primary shell call")
+
+    monkeypatch.setattr(recovery, "mongo", success)
+    recovery.primary("synthetic-owned-container")
+    assert len(calls) == 3
+
+    def rejected(_container, expression):
+        if expression == "db.adminCommand({ping:1}).ok":
+            return "1"
+        if expression.startswith("JSON.stringify(rs.initiate"):
+            return '{"ok":0,"code":93}'
+        raise AssertionError("Rejected initialization must not be treated as primary")
+
+    monkeypatch.setattr(recovery, "mongo", rejected)
+    with pytest.raises(recovery.RecoveryGateError) as error:
+        recovery.primary("synthetic-owned-container")
+    assert error.value.code == "MONGO_REPLICA_INIT_REJECTED"
