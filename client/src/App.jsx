@@ -543,7 +543,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
+    <div className={`flex flex-col bg-[#080f1d] text-slate-100 ${isHrCapacity ? 'h-dvh min-h-0 overflow-hidden' : 'min-h-screen'}`} data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
       {isPlatformOwnerWorkspace && <style>{'body:has([data-wilsy-platform-owner="true"])::after{display:none!important}'}</style>}
       <header className="sticky top-0 z-40 flex h-[72px] w-full min-w-0 items-center gap-2 border-b border-white/10 bg-gradient-to-r from-[#0b1830] via-[#112444] to-[#0b1830] px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-4 xl:px-5">
         <button type="button" aria-label="WILSY home" onClick={() => navigate(currentHomeRoute)} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[228px] xl:w-[228px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
@@ -768,11 +768,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
         </div>
       </header>
 
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className={isHrCapacity ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : "min-h-0 flex-1"} data-wilsy-workspace-scroll={isHrCapacity ? "true" : undefined}>{children}</div>
       {!(isOwnerCapacity && ['/headquarters', '/', '/dashboard'].includes(location.pathname)) && (
         <WilsySystemFooter
           surface={isHrCapacity ? 'People · Hire to Exit' : isOwnerCapacity ? 'Headquarters · Enterprise operations' : 'WILSY OS · Authorized workspace'}
-          className={isHrCapacity ? 'sticky bottom-0 z-30' : ''}
+          className={isHrCapacity ? 'relative z-30 shrink-0' : ''}
           employerName={showTenantContext ? organisationName : ''}
           employerReference={showTenantContext ? currentTenantReference : ''}
         />
