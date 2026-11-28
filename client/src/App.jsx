@@ -769,7 +769,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       </header>
 
       <div className="min-h-0 flex-1">{children}</div>
-      {location.pathname !== '/headquarters' && !(isOwnerCapacity && ['/', '/dashboard'].includes(location.pathname)) && (
+      {!(isOwnerCapacity && ['/headquarters', '/', '/dashboard'].includes(location.pathname)) && (
         <WilsySystemFooter
           surface={isHrCapacity ? 'People · Hire to Exit' : isOwnerCapacity ? 'Headquarters · Enterprise operations' : 'WILSY OS · Authorized workspace'}
           className={isHrCapacity ? 'sticky bottom-0 z-30' : ''}
