@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING
+ * VERSION: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -11,23 +11,24 @@
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
- * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
- * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
- * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
- * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+ * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE introduces the separate source-verified organization register, an authorized draft/submit/checker UI and independently validated readback, current tenant isolation, retained command idempotency and denied/unknown outcomes. No client-side permission grant or admission is inferred.
+ * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
+ * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
+ * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
+ * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
+ * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
 CHANGELOG:
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -2396,6 +2397,15 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [workforceOrganization, setWorkforceOrganization] = useState(null);
   const [workforceOrganizationState, setWorkforceOrganizationState] = useState('IDLE');
   const [workforceOrganizationRefresh, setWorkforceOrganizationRefresh] = useState(0);
+  const [workforceStructure, setWorkforceStructure] = useState(null);
+  const [workforceStructureStatus, setWorkforceStructureStatus] = useState('IDLE');
+  const [organizationFormOpen, setOrganizationFormOpen] = useState(false);
+  const [organizationKind, setOrganizationKind] = useState('departments');
+  const [organizationForm, setOrganizationForm] = useState({record_id:'',name:'',parent_id:'',department_id:'',effective_from:'',capacity:'1'});
+  const [organizationCommandState, setOrganizationCommandState] = useState({status:'IDLE', message:''});
+  const workforceStructureSequenceRef = useRef(0);
+  const organizationCommandKeysRef = useRef({});
+
   const workforceOrganizationSequenceRef = useRef(0);
   const [selectedWorkforceEmployeeId, setSelectedWorkforceEmployeeId] = useState(null);
   const [workforceDetail, setWorkforceDetail] = useState(null);
@@ -2478,6 +2488,12 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     }
     workforceDetailSequenceRef.current += 1;
     workforceOrganizationSequenceRef.current += 1;
+    workforceStructureSequenceRef.current += 1;
+    organizationCommandKeysRef.current = {};
+    setWorkforceStructure(null);
+    setWorkforceStructureStatus('IDLE');
+    setOrganizationFormOpen(false);
+    setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
     setWorkforceView('directory');
@@ -2508,6 +2524,12 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     previousTenantScopeKeyRef.current = tenantScopeKey;
     setDataScopeKey(null);
     workforceOrganizationSequenceRef.current += 1;
+    workforceStructureSequenceRef.current += 1;
+    organizationCommandKeysRef.current = {};
+    setWorkforceStructure(null);
+    setWorkforceStructureStatus('IDLE');
+    setOrganizationFormOpen(false);
+    setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
     setWorkforceView('directory');
@@ -3032,6 +3054,128 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       });
     return () => {workforceOrganizationSequenceRef.current += 1;};
   }, [activeTab, workforceView, workforceOrganizationRefresh, tenantScopeKey, tenantId]);
+
+  // Independent emerging-canonical organization registry. The verified
+  // employee distribution above never substitutes for approved departments.
+  useEffect(() => {
+    if (activeTab !== 'employees' || workforceView !== 'organization' || !tenantScopeKey) return undefined;
+    const scope = tenantScopeKey;
+    const seq = ++workforceStructureSequenceRef.current;
+    setWorkforceStructure(null);
+    setWorkforceStructureStatus('PENDING');
+    void api.get('/hr/workforce/structure', {headers: {'X-Tenant-ID': tenantId}})
+      .then(response => {
+        if (seq !== workforceStructureSequenceRef.current
+          || tenantScopeKeyRef.current !== scope
+          || invalidatedSessionScopeKeyRef.current === scope) return;
+        const data = response?.data;
+        const items = data?.items;
+        const valid = data?.schema === 'WILSY-HR-ORGANIZATION-REGISTRY/V1'
+          && data?.source === 'EOS_HR_ORGANIZATION_REGISTRY'
+          && data?.tenant_id === tenantId
+          && Number.isSafeInteger(data?.count)
+          && Array.isArray(items) && items.length === data.count && items.length <= 200
+          && items.every(item => ['DEPARTMENT','POSITION'].includes(item?.kind)
+            && ['DRAFT','SUBMITTED','APPROVED','REJECTED'].includes(item?.status)
+            && typeof item?.record_id === 'string' && typeof item?.name === 'string'
+            && Number.isSafeInteger(item?.revision) && item.revision >= 1);
+        if (!valid) { setWorkforceStructureStatus('UNAVAILABLE'); return; }
+        setWorkforceStructure(data);
+        setWorkforceStructureStatus('VERIFIED');
+      })
+      .catch(error => {
+        if (seq !== workforceStructureSequenceRef.current || tenantScopeKeyRef.current !== scope) return;
+        if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+          invalidateHrSessionScope(scope, hrReadErrorCode(error));
+          return;
+        }
+        setWorkforceStructureStatus(error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+      });
+    return () => { workforceStructureSequenceRef.current += 1; };
+  }, [activeTab, workforceView, workforceOrganizationRefresh, tenantId, tenantScopeKey]);
+
+  /**
+   * @function runOrganizationCommand
+   * @description Execute one exact-tenant EOS organization command, then require
+   * an independent matching registry readback before displaying verified change.
+   * Pending-key retention makes safe retries use the same idempotency evidence.
+   * Neither UI state nor this function grants department approval or IAM.
+   */
+  const runOrganizationCommand = async (action, item = null) => {
+    if (organizationCommandState.status === 'PENDING' || !tenantScopeKey
+      || workforceStructureStatus !== 'VERIFIED') return;
+    const scope = tenantScopeKey;
+    const kind = item ? (item.kind === 'POSITION' ? 'positions' : 'departments') : organizationKind;
+    const recordId = item?.record_id || organizationForm.record_id.trim();
+    const payload = action === 'create' ? {
+      record_id: recordId,
+      name: organizationForm.name.trim(),
+      effective_from: organizationForm.effective_from,
+      ...(organizationForm.parent_id.trim() ? {parent_id:organizationForm.parent_id.trim()}:{}),
+      ...(kind === 'positions' ? {
+        department_id:organizationForm.department_id.trim(),
+        capacity:Number(organizationForm.capacity),
+      }:{}),
+    } : action === 'submit' ? {expected_revision:item.revision} : {
+      expected_revision:item.revision,
+      decision:action === 'approve' ? 'APPROVE' : 'REJECT',
+      reason: 'Independently reviewed organizational proposal',
+    };
+    if (action === 'create' && (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$/.test(recordId)
+      || payload.name.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(payload.effective_from)
+      || (kind === 'positions' && (!payload.department_id || !Number.isInteger(payload.capacity)
+        || payload.capacity < 1 || payload.capacity > 500)))) {
+      setOrganizationCommandState({status:'INVALID',message:'Enter a valid identifier, name, effective date and approved department for a position.'});
+      return;
+    }
+    const path = '/hr/workforce/structure/' + kind
+      + (action === 'create' ? '' : '/' + encodeURIComponent(recordId)
+        + (action === 'submit' ? '/submit' : '/decision'));
+    const signature = JSON.stringify({scope,path,payload});
+    let key = organizationCommandKeysRef.current[signature];
+    if (!key) {
+      key = crypto.randomUUID();
+      organizationCommandKeysRef.current[signature] = key;
+    }
+    setOrganizationCommandState({status:'PENDING',message:'Saving and verifying organizational evidence…'});
+    try {
+      const result = await api.post(path,payload,{
+        headers:{'X-Tenant-ID':tenantId,'Idempotency-Key':key},
+      });
+      const saved = result?.data?.record;
+      if (result?.data?.schema !== 'WILSY-HR-ORGANIZATION-COMMAND/V1'
+        || result?.data?.tenant_id !== tenantId || saved?.record_id !== recordId) {
+        setOrganizationCommandState({status:'UNVERIFIED',message:'Command response could not be verified.'});
+        return;
+      }
+      const snapshot = await api.get('/hr/workforce/structure',{headers:{'X-Tenant-ID':tenantId}});
+      if (tenantScopeKeyRef.current !== scope || invalidatedSessionScopeKeyRef.current === scope) return;
+      const read = snapshot?.data;
+      const check = read?.items?.find(entry => entry.kind === saved.kind && entry.record_id === recordId);
+      if (read?.schema !== 'WILSY-HR-ORGANIZATION-REGISTRY/V1'
+        || read?.tenant_id !== tenantId || read?.source !== 'EOS_HR_ORGANIZATION_REGISTRY'
+        || check?.revision !== saved.revision || check?.status !== saved.status) {
+        setOrganizationCommandState({status:'UNVERIFIED',message:'Command acknowledged; fresh registry readback has not confirmed the change. Retry safely.'});
+        return;
+      }
+      delete organizationCommandKeysRef.current[signature];
+      setWorkforceStructure(read);
+      setWorkforceStructureStatus('VERIFIED');
+      setOrganizationFormOpen(false);
+      setOrganizationCommandState({status:'VERIFIED',message:saved.kind + ' ' + recordId + ' · ' + saved.status + ' · revision ' + saved.revision + ' verified after readback.'});
+    } catch (error) {
+      if (tenantScopeKeyRef.current !== scope) return;
+      if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(scope, hrReadErrorCode(error));return;
+      }
+      setOrganizationCommandState({
+        status:error?.response?.status === 403 ? 'DENIED' : 'UNVERIFIED',
+        message:error?.response?.status === 403
+          ? 'This capacity does not have the independent organization command permission.'
+          : 'Organization command or readback failed. No success is claimed; retry with the retained idempotency key.',
+      });
+    }
+  };
 
   // The text box remains responsive while EOS only receives a settled query.
   // Search is always executed server-side against the current authorized tenant.
@@ -4912,7 +5056,69 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                         </div>}
                   </section>
                 </div>
-                <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Employee-derived departments and headcount requisitions are separate records. Approved departments, effective-dated positions and manager hierarchies require their own governed register before they can appear as verified structures.</p>
+                <section aria-labelledby="organization-registry-heading" style={{border:'1px solid #d1deec',borderRadius:11,marginTop:18,overflow:'hidden'}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,padding:'15px 17px',background:'#f8fafd',borderBottom:'1px solid #dbe5f0'}}>
+                    <div>
+                      <h3 id="organization-registry-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Governed structure</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Real departments and positions · drafts require independent approval.</p>
+                    </div>
+                    {workforceStructureStatus === 'VERIFIED' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      <button type="button" onClick={() => {setOrganizationKind('departments');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create department</button>
+                      <button type="button" onClick={() => {setOrganizationKind('positions');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create position</button>
+                    </div>}
+                  </div>
+                  {workforceStructureStatus === 'PENDING' && <p role="status" style={{padding:17,color:'#4b607a'}}>Checking the approved structure register…</p>}
+                  {workforceStructureStatus === 'DENIED' && <p role="alert" style={{padding:17,color:'#4b607a'}}>Access to the organization register is denied for this capacity.</p>}
+                  {workforceStructureStatus === 'UNAVAILABLE' && <p role="status" style={{padding:17,color:'#4b607a'}}>The organization register could not be verified. No approved structure is displayed.</p>}
+                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <div style={{padding:'15px 17px'}}>
+                    {workforceStructure.items.length === 0
+                      ? <p style={{fontSize:13,color:'#526781'}}>No department or position proposals yet. Create a draft to begin the governed approval process.</p>
+                      : <div style={{display:'grid',gap:8}}>
+                          {workforceStructure.items.map(item => <div key={item.kind+':'+item.record_id}
+                            style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',border:'1px solid #dce6f1',borderRadius:8,padding:'12px 14px'}}>
+                            <div>
+                              <strong style={{fontSize:13,color:'#143454'}}>{item.name}</strong>
+                              <p style={{fontSize:12,color:'#526781',marginTop:4}}>{item.kind === 'POSITION' ? 'Position' : 'Department'} · {item.record_id} · {item.status} · Revision {item.revision}</p>
+                              {item.kind === 'POSITION' && <p style={{fontSize:12,color:'#526781'}}>Department {item.department_id} · Planned capacity {item.capacity}</p>}
+                            </div>
+                            <div style={{display:'flex',gap:7}}>
+                              {item.status === 'DRAFT' && <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => runOrganizationCommand('submit',item)}
+                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Submit for approval</button>}
+                              {item.status === 'SUBMITTED' && <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => runOrganizationCommand('approve',item)}
+                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Approve as checker</button>}
+                            </div>
+                          </div>)}
+                        </div>}
+                  </div>}
+                  {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
+                    style={{display:'grid',gap:11,padding:'17px',borderTop:'1px solid #dce6f1',background:'#fff'}} aria-label="Organization draft form">
+                    <strong style={{color:'#142f50',fontSize:15}}>New {organizationKind === 'departments' ? 'department' : 'position'} draft</strong>
+                    {[
+                      {key:'record_id',label:'Unique code',required:true},
+                      {key:'name',label:'Name',required:true},
+                      ...(organizationKind === 'positions' ? [{key:'department_id',label:'Approved department code',required:true},{key:'capacity',label:'Planned capacity',required:true}] : []),
+                      {key:'parent_id',label:'Parent code (optional)',required:false},
+                      {key:'effective_from',label:'Effective from (YYYY-MM-DD)',required:true},
+                    ].map(field => <label key={field.key} style={{display:'grid',gap:5,fontSize:12,fontWeight:650,color:'#304e6e'}}>
+                      {field.label}
+                      <input required={field.required} maxLength={field.key==='name'?180:120}
+                        value={organizationForm[field.key]} onChange={event => setOrganizationForm(prev => ({...prev,[field.key]:event.target.value}))}
+                        style={{border:'1px solid #9bb1cd',borderRadius:7,color:'#142f50',background:'#fff',padding:'10px 12px',fontSize:13}}/>
+                    </label>)}
+                    <div style={{display:'flex',gap:9,alignItems:'center',flexWrap:'wrap'}}>
+                      <button type="submit" disabled={organizationCommandState.status==='PENDING'}
+                        style={{background:'#173c70',color:'#fff',borderRadius:8,padding:'10px 14px',fontWeight:700}}>Save draft</button>
+                      <button type="button" onClick={() => setOrganizationFormOpen(false)}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'10px 14px',color:'#173c70'}}>Cancel</button>
+                    </div>
+                  </form>}
+                  {!!organizationCommandState.message && <p role="status" style={{fontSize:12,color:organizationCommandState.status==='VERIFIED'?'#194c3d':'#7a302d',padding:'10px 17px'}}>
+                    {organizationCommandState.message}
+                  </p>}
+                </section>
+                <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Observed staff assignments, requested headcount and approved organizational records are separate authorities. Drafts do not create hires or approve budget.</p>
               </React.Fragment>}
             </section>}
           </section>}
@@ -5575,7 +5781,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING
+ * VERSION: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
