@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE
+ * VERSION: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -11,22 +11,23 @@
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
- * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
- * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
- * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+ * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
+ * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
+ * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
+ * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
+ * CHANGELOG: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
 CHANGELOG:
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.21.0-WORKFORCE-ORGANIZATION-PLANNING exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -4821,63 +4822,97 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               </div>}
             </React.Fragment>}
             {workforceView === 'organization' && <section aria-labelledby="workforce-organization-heading"
-              style={{padding:'20px 22px',borderTop:'1px solid #dbe5f0',background:'#fff'}}>
-              <div style={{display:'flex',gap:14,alignItems:'center',justifyContent:'space-between',flexWrap:'wrap'}}>
-                <div>
-                  <h2 id="workforce-organization-heading" style={{color:'#142b49',fontSize:21,fontWeight:750}}>Organization</h2>
-                  <p style={{color:'#526781',fontSize:13,marginTop:4}}>Observed workforce distribution from authorized EOS employee records</p>
+              style={{padding:'22px',borderTop:'1px solid #dbe5f0',background:'#fff',color:'#142b49'}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:20}}>
+                <div style={{display:'grid',gap:5}}>
+                  <h2 id="workforce-organization-heading" style={{fontSize:22,fontWeight:750,color:'#102744',margin:0}}>Organization &amp; positions</h2>
+                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>See where people work and plan positions before the first hire.</p>
                 </div>
                 <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
-                  style={{padding:'9px 12px',border:'1px solid #9eb2ca',borderRadius:8,color:'#173c70',fontWeight:700}}>
+                  style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
                   Refresh organization
                 </button>
               </div>
-              {workforceOrganizationState === 'PENDING' && <p role="status" style={{marginTop:18,color:'#526781'}}>Verifying organization source…</p>}
-              {workforceOrganizationState === 'DENIED' && <p role="alert" style={{marginTop:18,color:'#526781'}}>This capacity is not authorized to view the organization source.</p>}
-              {workforceOrganizationState === 'UNAVAILABLE' && <p role="status" style={{marginTop:18,color:'#526781'}}>EOS could not verify the organization distribution. No structure is inferred.</p>}
+              {workforceOrganizationState === 'PENDING' && <p role="status" style={{padding:16,color:'#4b607a'}}>Checking your organization…</p>}
+              {workforceOrganizationState === 'DENIED' && <p role="alert" style={{padding:16,color:'#4b607a'}}>Organization information is not available to this operating capacity.</p>}
+              {workforceOrganizationState === 'UNAVAILABLE' && <div role="status" style={{display:'grid',gap:10,padding:16,border:'1px solid #d3deeb',borderRadius:10}}>
+                <strong style={{color:'#142b49'}}>Organization is temporarily unavailable</strong>
+                <p style={{fontSize:13,color:'#4b607a'}}>The current organization records could not be confirmed. Previous records are not shown as an empty organization.</p>
+                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
+                  style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'9px 13px',color:'#173c70',fontWeight:700}}>Try again</button>
+              </div>}
               {workforceOrganizationState === 'VERIFIED' && workforceOrganization && <React.Fragment>
-                <p style={{marginTop:18,fontSize:13,color:'#375371'}} aria-live="polite">
-                  <strong style={{color:'#163959'}}>{workforceOrganization.department_count}</strong> observed departments ·
-                  {' '}<strong style={{color:'#163959'}}>{workforceOrganization.active_employees}</strong> active employees
-                  {workforceOrganization.unassigned_employees > 0 ? ` · ${workforceOrganization.unassigned_employees} without a department` : ''}
-                </p>
-                {workforceOrganization.departments.length === 0
-                  ? <div role="status" style={{borderTop:'1px solid #dae4ee',marginTop:18,padding:'20px 0',color:'#4c627a'}}>
-                      <div>
-                        <h3 style={{fontSize:17,color:'#142d4b',fontWeight:750,marginBottom:6}}>No organization structure yet</h3>
-                        <p style={{fontSize:13,lineHeight:1.6,color:'#526781'}}>Start by planning roles and building your workforce. Departments shown here will come from real employee assignments; approved department management will be a separate service.</p>
-                      </div>
-                      <button type="button" onClick={() => changeTab('jobOpenings')}
-                        style={{marginTop:14,padding:'9px 13px',border:'1px solid #9eb2ca',borderRadius:8,color:'#173c70',
-                          background:'#fff',fontSize:12,fontWeight:700}}>Plan roles <ArrowUpRight size={14} aria-hidden /></button>
+                <div aria-label="Current observed organization" style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:18}}>
+                  {[
+                    {label:'Departments with people',value:workforceOrganization.department_count},
+                    {label:'Active employees',value:workforceOrganization.active_employees},
+                    {label:'Without a department',value:workforceOrganization.unassigned_employees},
+                  ].map(metric => <div key={metric.label} style={{display:'flex',alignItems:'baseline',gap:8,padding:'10px 13px',background:'#f5f8fc',border:'1px solid #dce5f0',borderRadius:9}}>
+                    <span style={{fontSize:20,fontWeight:800,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{metric.value}</span>
+                    <span style={{fontSize:12,color:'#405a78'}}>{metric.label}</span>
+                  </div>)}
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,410px),1fr))',gap:16,alignItems:'start'}}>
+                  <section aria-labelledby="observed-departments-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
+                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
+                      <h3 id="observed-departments-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Departments</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Shown from active employee assignments, not an approved department register.</p>
                     </div>
-                  : <div style={{border:'1px solid #d4e0ed',borderRadius:10,overflow:'hidden',marginTop:16}}>
-                      {workforceOrganization.departments.map((unit,i) => <div key={unit.name}
-                        style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,padding:'14px 16px',
-                          borderBottom:i === workforceOrganization.departments.length-1 ? 'none' : '1px solid #e1e8f1'}}>
-                        <div style={{minWidth:0}}>
-                          <strong style={{color:'#172f4e',fontSize:14}}>{unit.name}</strong>
-                          <p style={{fontSize:12,color:'#536982',marginTop:4}}>Current employee records · not an approved position allocation</p>
+                    {workforceOrganization.departments.length === 0
+                      ? <div style={{padding:'21px 17px',display:'grid',gap:8}} role="status">
+                          <strong style={{fontSize:15,color:'#142f50'}}>No departments with people yet</strong>
+                          <p style={{fontSize:13,color:'#4b607a',lineHeight:1.6}}>You can plan positions before hiring. Departments will appear here once authorized employee assignments exist.</p>
                         </div>
-                        <button type="button" onClick={() => {
-                          setWorkforceView('directory');
-                          setWorkforceSearchDraft(unit.name);
-                          setSearchTerm(unit.name);
-                          setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
-                        }} style={{flexShrink:0,padding:'8px 11px',borderRadius:7,border:'1px solid #b8c9dd',color:'#173c70',background:'#fff',fontSize:12,fontWeight:700}}
-                          aria-label={`Search workforce in ${unit.name}, ${unit.active_employees} active employees`}>
-                          {unit.active_employees} people · View
-                        </button>
-                      </div>)}
-                    </div>}
-                <p style={{fontSize:12,color:'#526781',lineHeight:1.6,marginTop:15}}>
-                  This is an observed directory distribution, not an approved organization chart, position inventory or headcount authority.
-                  Approved positions and reporting relationships require their separately governed EOS lifecycle.
-                </p>
-                <button type="button" onClick={() => changeTab('jobOpenings')}
-                  style={{marginTop:11,padding:'9px 13px',border:'1px solid #9eb2ca',borderRadius:8,color:'#173c70',background:'#fff',fontSize:12,fontWeight:700}}>
-                  Plan roles <ArrowUpRight size={14} aria-hidden />
-                </button>
+                      : workforceOrganization.departments.map((unit,i) => <div key={unit.name}
+                          style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'13px 17px',borderBottom:i === workforceOrganization.departments.length-1 ? 'none' : '1px solid #e1e8f1'}}>
+                          <div style={{minWidth:0}}>
+                            <strong style={{fontSize:13,color:'#163551'}}>{unit.name}</strong>
+                            <p style={{fontSize:12,color:'#526781',marginTop:3}}>{unit.active_employees} active {unit.active_employees === 1 ? 'person' : 'people'}</p>
+                          </div>
+                          <button type="button" onClick={() => {
+                            setWorkforceView('directory');
+                            setWorkforceSearchDraft(unit.name);
+                            setSearchTerm(unit.name);
+                            setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
+                          }} aria-label={'Search workforce in ' + unit.name + ', ' + unit.active_employees + ' active employees'}
+                            style={{padding:'9px 12px',borderRadius:8,background:'#fff',color:'#173c70',border:'1px solid #afc2d8',fontSize:12,fontWeight:700,minHeight:40}}>View people</button>
+                        </div>)}
+                  </section>
+                  <section aria-labelledby="position-planning-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
+                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
+                      <h3 id="position-planning-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Position planning</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Existing requisitions and independent approval decisions.</p>
+                    </div>
+                    {isVerifiedReadState(datasetReadStates.jobOpenings) && !datasetReadStates.jobOpenings?.revalidating
+                      ? <div style={{padding:'18px 17px',display:'grid',gap:13}}>
+                          <div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'baseline'}}>
+                            <span style={{fontSize:13,color:'#405a78'}}>Headcount requests</span>
+                            <strong style={{fontSize:21,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{datasets.jobOpenings.total}</strong>
+                          </div>
+                          <p style={{fontSize:12,color:'#526781'}}>Approved requests on the loaded page: {datasets.jobOpenings.items.filter(item => item.status === 'APPROVED').length}. This is not a total approved-position count.</p>
+                          {datasets.jobOpenings.total === 0
+                            ? <p style={{fontSize:13,lineHeight:1.6,color:'#4b607a'}}>No position requests yet. Begin with a role, department and business justification, then submit it for independent approval.</p>
+                            : <div style={{display:'grid',gap:8}}>
+                                {datasets.jobOpenings.items.slice(0,4).map(item => <div key={item.id}
+                                  style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',borderTop:'1px solid #e1e8f1',paddingTop:9}}>
+                                  <span style={{fontSize:13,color:'#183551',fontWeight:650}}>{item.title || 'Untitled request'}</span>
+                                  <span style={{fontSize:12,color:'#526781'}}>{item.status || 'Status unavailable'}</span>
+                                </div>)}
+                                {datasets.jobOpenings.hasMore && <span style={{fontSize:11,color:'#526781'}}>Additional requests are available in Headcount &amp; roles.</span>}
+                              </div>}
+                          <button type="button" onClick={() => changeTab('jobOpenings')}
+                            style={{justifySelf:'start',padding:'10px 14px',minHeight:40,borderRadius:8,background:'#173c70',color:'#fff',fontSize:13,fontWeight:750}}>
+                            {datasets.jobOpenings.total === 0 ? 'Request headcount' : 'Manage headcount requests'} <ArrowUpRight size={14} aria-hidden />
+                          </button>
+                        </div>
+                      : <div style={{padding:'18px 17px',display:'grid',gap:10}}>
+                          <p role="status" style={{fontSize:13,color:'#4b607a'}}>Headcount requests are not currently verified. No position count is inferred.</p>
+                          <button type="button" onClick={() => changeTab('jobOpenings')}
+                            style={{justifySelf:'start',padding:'9px 12px',border:'1px solid #afc2d8',borderRadius:8,color:'#173c70',fontSize:12,fontWeight:700}}>Inspect headcount source</button>
+                        </div>}
+                  </section>
+                </div>
+                <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Employee-derived departments and headcount requisitions are separate records. Approved departments, effective-dated positions and manager hierarchies require their own governed register before they can appear as verified structures.</p>
               </React.Fragment>}
             </section>}
           </section>}
@@ -5540,7 +5575,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE
+ * VERSION: v2.21.0-WORKFORCE-ORGANIZATION-PLANNING
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
