@@ -5105,10 +5105,10 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                           placeholder={organizationKind === 'departments' ? 'Enter your department name' : 'Enter the position title'}
                           onChange={event => setOrganizationForm(prev => ({...prev,name:event.target.value}))}/>
                       </label>
-                      <label>
-                        <span>Unique code</span>
+                      <div className={styles.organizationCodeField}>
+                        <label htmlFor="wilsy-organization-record-code">Unique code</label>
                         <div className={styles.organizationCodeInput}>
-                          <input required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
+                          <input id="wilsy-organization-record-code" required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
                             value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
                             onChange={event => setOrganizationForm(prev => ({...prev,record_id:event.target.value}))}/>
                           <button type="button" onClick={() => {
@@ -5117,7 +5117,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                           }} disabled={!organizationForm.name.trim()}>Suggest code</button>
                         </div>
                         <small>Editable suggestion, not a reserved code. EOS verifies uniqueness when saved.</small>
-                      </label>
+                      </div>
                       {organizationKind === 'positions' && <>
                         <label>
                           <span>Approved department code</span>
