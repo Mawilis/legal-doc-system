@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT
+ * VERSION: v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,22 +9,23 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT covers exact-tenant organizational draft POST, independently verified registry readback and denied command without false success.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts the source-denied organization without relying on retired EOS-voice copy; foreign-tenant response remains concealed and authority checks unchanged.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT uses the actual canonical requisition envelope (requisition_id, position_title, department_id) and bounded pagination semantics; rejects invented fixture shapes.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies visible observed zeros, absent duplicate actions, independent headcount totals, page-scoped approved counts, and governed navigation without fabricating a position master.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT closes the candidate-intake dialog before the headcount handoff, preserving authentic modal interaction and proving no candidate write occurs without an explicit source-authorized command.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
- *   v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION independently resets command transport and supplies deterministic secure random command IDs in mounted tests, preserving production crypto and exact idempotency assertions.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION covers exact-tenant organizational draft POST, independently verified registry readback and denied command without false success.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION asserts the source-denied organization without relying on retired EOS-voice copy; foreign-tenant response remains concealed and authority checks unchanged.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION uses the actual canonical requisition envelope (requisition_id, position_title, department_id) and bounded pagination semantics; rejects invented fixture shapes.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION verifies visible observed zeros, absent duplicate actions, independent headcount totals, page-scoped approved counts, and governed navigation without fabricating a position master.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION closes the candidate-intake dialog before the headcount handoff, preserving authentic modal interaction and proving no candidate write occurs without an explicit source-authorized command.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
+ *   v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
  *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
@@ -224,11 +225,13 @@ const renderDashboard = () => render(<HrDashboard />);
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 beforeEach(() => {
   setAuthenticatedScope('TENANT-HR-A', 'PRINCIPAL-HR-A');
   mockState.apiGet.mockReset();
+  mockState.apiPost.mockReset();
   mockState.candidateRead.mockReset().mockResolvedValue(emptyPage);
   mockState.offerRead.mockReset().mockResolvedValue(emptyPage);
   mockState.candidateCreate.mockReset();
@@ -255,6 +258,7 @@ beforeEach(() => {
 describe('production People Overview source contracts', () => {
 
   it('creates an organization draft only after an exact-tenant persisted readback', async () => {
+    vi.stubGlobal('crypto',{randomUUID:()=>'org-command-unique-uuid-0001'});
     const scope = 'TENANT-HR-A';
     let created = false;
     const registry = () => ({data: {
@@ -304,6 +308,7 @@ describe('production People Overview source contracts', () => {
   });
 
   it('does not display a successful organization record when write permission is denied',async () => {
+    vi.stubGlobal('crypto',{randomUUID:()=>'org-command-unique-uuid-0002'});
     mockState.apiGet.mockImplementation(path => {
       if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
       if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
@@ -600,7 +605,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.4.0-ORGANIZATION-COMMAND-READBACK-CERT
+ * VERSION: v1.4.1-ORGANIZATION-CRYPTO-TEST-ISOLATION
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
