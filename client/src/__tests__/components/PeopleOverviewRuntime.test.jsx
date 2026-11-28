@@ -300,7 +300,7 @@ describe('production People Overview source contracts', () => {
     fireEvent.change(suggestions, {target: {value: 'Legal Practice'}});
     expect(within(form).getByLabelText('Name')).toHaveValue('Legal Practice');
     expect(within(form).getByLabelText('Unique code')).toHaveValue('DEP-LEGAL-PRACTICE');
-    expect(within(form).getByLabelText('Effective from (YYYY-MM-DD)').value).toMatch(/^\\d{4}-\\d{2}-\\d{2}$/);
+    expect(within(form).getByLabelText('Effective from (YYYY-MM-DD)').value).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
     expect(mockState.apiPost).not.toHaveBeenCalled();
     fireEvent.change(activity, {target: {value: 'agriculture'}});
     expect(within(form).getByLabelText('Name')).toHaveValue('Legal Practice');
