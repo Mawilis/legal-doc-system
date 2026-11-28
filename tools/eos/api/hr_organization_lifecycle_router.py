@@ -87,6 +87,30 @@ def _transaction(callback):
         raise HTTPException(503, "ORGANIZATION_CHANGE_TRANSACTION_UNAVAILABLE") from error
 
 
+def _run_command(callback, *, tenant, actor, key, operation, payload):
+    """Transactional replay of an identical actor-scoped command key."""
+    fingerprint = org._org_fingerprint(
+        tenant=tenant, actor=actor, key=key, command=operation, payload=payload,
+    )
+
+    def run(records, changes, versions, events, tx):
+        identity = {"tenant_id": tenant, "actor_id": actor, "key": key}
+        prior = events.find_one(identity, session=tx)
+        if prior is not None:
+            if prior.get("fingerprint") != fingerprint or "response" not in prior:
+                raise HTTPException(409, "ORGANIZATION_IDEMPOTENCY_CONFLICT")
+            return prior["response"]
+        response = callback(records, changes, versions, events, tx)
+        updated = events.update_one(identity, {
+            "$set": {"fingerprint": fingerprint, "response": response},
+        }, session=tx)
+        if updated.matched_count != 1:
+            raise HTTPException(503, "ORGANIZATION_COMMAND_EVIDENCE_MISSING")
+        return response
+
+    return _transaction(run)
+
+
 def _record(records, tenant: str, record_id: str, tx):
     row = records.find_one({"tenant_id": tenant, "kind": "DEPARTMENT",
                             "record_id": record_id}, session=tx)
@@ -207,7 +231,8 @@ def propose_department_change(
         _event(events, tenant, actor, key, "CHANGE_DRAFT", change, tx)
         return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
                 "tenant_id": tenant, "change": _safe_change(change)}
-    return _transaction(apply)
+    return _run_command(apply, tenant=tenant, actor=actor, key=key,
+        operation="CHANGE_DRAFT", payload={"record_id": record_id, **payload})
 
 
 @router.post("/departments/{record_id}/changes/{change_id}/submit")
@@ -237,7 +262,9 @@ def submit_department_change(
         _event(events, tenant, actor, key, "CHANGE_SUBMIT", updated, tx)
         return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
                 "tenant_id": tenant, "change": _safe_change(updated)}
-    return _transaction(apply)
+    return _run_command(apply, tenant=tenant, actor=actor, key=key,
+        operation="CHANGE_SUBMIT", payload={"record_id": record_id, "change_id": change_id,
+                                            "expected_revision": body.expected_revision})
 
 
 @router.post("/departments/{record_id}/changes/{change_id}/decision")
@@ -296,7 +323,9 @@ def decide_department_change(
         _event(events, tenant, actor, key, "CHANGE_DECIDE_" + body.decision, updated, tx)
         return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
                 "tenant_id": tenant, "change": _safe_change(updated)}
-    return _transaction(apply)
+    return _run_command(apply, tenant=tenant, actor=actor, key=key,
+        operation="CHANGE_DECIDE", payload={"record_id": record_id, "change_id": change_id,
+                                            **body.model_dump()})
 
 
 def _apply_change(records, versions, current, change, tenant, tx):
@@ -365,7 +394,8 @@ def activate_due_department_change(
         _event(events, tenant, actor, key, "CHANGE_ACTIVATE", updated, tx)
         return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
                 "tenant_id": tenant, "change": _safe_change(updated)}
-    return _transaction(apply)
+    return _run_command(apply, tenant=tenant, actor=actor, key=key,
+        operation="CHANGE_ACTIVATE", payload={"record_id": record_id, "change_id": change_id})
 
 
 @router.get("/productivity")
