@@ -348,6 +348,9 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
     fireEvent.click(await screen.findByRole('button', {name: 'Create position'}));
     const form = screen.getByRole('form', {name: 'Organization draft form'});
+    fireEvent.change(within(form).getByLabelText('Name'), {target: {value: 'Clinical coordinator'}});
+    fireEvent.click(within(form).getByRole('button', {name: 'Suggest code'}));
+    expect(within(form).getByLabelText('Unique code')).toHaveValue('POS-CLINICAL-COORDINATOR');
     const department = within(form).getByLabelText('Approved department code');
     expect(within(department).getByRole('option', {name: /Approved operations/})).toHaveValue('DEP-APPROVED');
     expect(within(department).queryByRole('option', {name: /Unapproved unit/})).not.toBeInTheDocument();
