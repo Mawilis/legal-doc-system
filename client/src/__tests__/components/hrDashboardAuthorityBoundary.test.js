@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS HR Dashboard Authority and Read-State Regression Certificate
- * VERSION: v1.8.11-COMPACT-OVERVIEW-READABILITY-CONTRACT
+ * VERSION: v1.8.12-PEOPLE-FIRST-USE-AUTHORITY-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Prevents dashboard consumers from presenting unavailable or stale HR
  *          sources as empty success and guards the exact session invalidation boundary.
@@ -8,9 +8,10 @@
  * COLLABORATION / OWNERSHIP: Client HR dashboard and hrService contract maintainers.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.8.11-COMPACT-OVERVIEW-READABILITY-CONTRACT tracks the compact, sentence-case People operating surface without changing IAM, source provenance, verified-empty semantics or full-page loading protections.
- *   v1.8.11-COMPACT-OVERVIEW-READABILITY-CONTRACT reconciles retired overview strings with current source-verified actions and tests nonblocking exact-session shell admission; existing IAM, privacy, provenance and footer assertions remain intact.
- *   v1.8.11-COMPACT-OVERVIEW-READABILITY-CONTRACT inspects the real shared footer component and its verified employer props instead of hardcoding old inline JSX in Headquarters.
+ *   v1.8.12-PEOPLE-FIRST-USE-AUTHORITY-CERT preserves verified-empty gating, headcount-first candidate admission, server-controlled candidate commands, and verified-only progressive navigation while retiring the obsolete EOS-voice presentation assertion.
+ *   v1.8.12-PEOPLE-FIRST-USE-AUTHORITY-CERT tracks the compact, sentence-case People operating surface without changing IAM, source provenance, verified-empty semantics or full-page loading protections.
+ *   v1.8.12-PEOPLE-FIRST-USE-AUTHORITY-CERT reconciles retired overview strings with current source-verified actions and tests nonblocking exact-session shell admission; existing IAM, privacy, provenance and footer assertions remain intact.
+ *   v1.8.12-PEOPLE-FIRST-USE-AUTHORITY-CERT inspects the real shared footer component and its verified employer props instead of hardcoding old inline JSX in Headquarters.
  *   v1.8.8-ACCEPTED-PEOPLE-AUTHORITY-UX-CERT reconciles accepted compact People chrome, per-source access diagnostics, accessible back ownership and high-contrast status palette.
  *   v1.8.7-BOUNDED-INDEPENDENT-PEOPLE-READS asserts the Overview's independent source reads and strictly selected-source navigation without redundant HR fanout per search keystroke.
  *   v1.8.6-HR-ADMISSION-FAIL-CLOSED-ASSERTION certifies the existing safe employee-admission-denial command instead of incorrectly treating its protective text as a legacy UI regression.
@@ -165,7 +166,14 @@ describe('HR dashboard authority and read-state boundary', () => {
   it('shows no employees only after a valid authoritative empty workforce response', () => {
     expect(dashboard).toContain("api.get('/hr/workforce'");
     expect(dashboard).toContain('shownState?.status === HR_READ_STATE.VERIFIED_EMPTY');
-    expect(dashboard).toContain('EOS verified no records for this view.');
+    expect(dashboard).toContain('No people yet');
+    expect(dashboard).toContain('No candidates yet');
+    expect(dashboard).toContain('shownState?.status === HR_READ_STATE.VERIFIED_EMPTY');
+    expect(dashboard).toContain('hiringPipelineVerified');
+    expect(dashboard).toContain('hiringHasApprovedRequisition');
+    expect(dashboard).toContain("beginHiringCommand('candidateCreate')");
+    expect(dashboard).toContain('firstUseVerified');
+    expect(dashboard).toContain('secondaryPeopleModules');
     expect(dashboard).toContain('isVerifiedReadState(shownState)');
     expect(dashboard).toContain('Employee admission unavailable');
     expect(dashboard).toContain('A directory read cannot create employment, principal, membership, capacity or IAM state.');
@@ -330,7 +338,7 @@ describe('HR dashboard authority and read-state boundary', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardAuthorityBoundary.test.js
- * VERSION: v1.8.11-COMPACT-OVERVIEW-READABILITY-CONTRACT
+ * VERSION: v1.8.12-PEOPLE-FIRST-USE-AUTHORITY-CERT
  * AUTHORITY BOUNDARY: Regression assertions only; Python EOS owns HR authorization and truth.
  * TENANT POSTURE: Checks exact principal, tenant and session scope without fixture credentials.
  * FAIL-CLOSED POSTURE: Prevents denied, unavailable, malformed and unauthenticated reads from becoming empty success.
