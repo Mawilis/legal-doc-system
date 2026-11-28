@@ -214,9 +214,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(accountMenu.getByText(state.actors.tenant_owner.email, {exact: true})).toHaveCount(0);
       await expect(accountMenu.getByText(/@example\.com/)).toHaveCount(0);
       await expect(accountMenu.getByText('Synthetic Browser Certification Tenant', {exact: true})).toBeVisible();
-      await expect(accountMenu.getByText('Selected capacity: Owner', {exact: true})).toBeVisible();
+      await expect(accountMenu.getByText('Operating as: Owner', {exact: true})).toBeVisible();
       await expect(accountMenu.getByRole('menuitem', {name: 'Sign out'})).toBeEnabled();
-      await expect(accountMenu.getByRole('menuitem', {name: /Kernel diagnostics|Profile|Preferences|Security & sessions/})).toHaveCount(0);
+      await expect(accountMenu.getByRole('menuitem', {name: /My profile/})).toBeEnabled();
+      await expect(accountMenu.getByRole('menuitem', {name: /Security & sessions/})).toBeEnabled();
+      await expect(accountMenu.getByRole('menuitem', {name: /Kernel diagnostics|Preferences/})).toHaveCount(0);
       await expect(accountMenu.getByText('Unavailable', {exact: true})).toHaveCount(0);
       if (evidenceDirectory) {
         await page.screenshot({
