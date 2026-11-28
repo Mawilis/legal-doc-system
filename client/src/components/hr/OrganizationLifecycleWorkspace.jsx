@@ -42,6 +42,8 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
   const [selection, setSelection] = useState('');
   const [history, setHistory] = useState(null);
   const [impact, setImpact] = useState(null);
+  const [asOfDate, setAsOfDate] = useState('');
+  const [asOfVersion, setAsOfVersion] = useState(null);
   const [reasonById, setReasonById] = useState({});
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState('');
@@ -88,6 +90,8 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
     setSelection('');
     setHistory(null);
     setImpact(null);
+    setAsOfDate('');
+    setAsOfVersion(null);
     setNotice('');
     void load();
     return () => {sequence.current += 1;};
@@ -95,7 +99,7 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
 
   const select = async id => {
     setSelection(id);
-    setImpact(null); setHistory(null);
+    setImpact(null); setHistory(null); setAsOfVersion(null);
     if (!id) return;
     const current = sequence.current;
     try {
@@ -117,6 +121,30 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
       setNotice(error?.response?.status === 403
         ? 'This capacity cannot inspect organizational impact.'
         : 'Impact and history could not be verified. Change actions must not proceed.');
+    }
+  };
+
+  const inspectAsOf = async () => {
+    if (!selection || !asOfDate) return;
+    const scope = scopeKey;
+    setAsOfVersion(null);
+    try {
+      const read = await api.get(ROOT + '/departments/' + encodeURIComponent(selection) +
+        '/as-of', {headers:headers(),params:{on:asOfDate}});
+      if (snapshot.current !== scope) return;
+      if (read.data?.schema !== 'WILSY-HR-ORGANIZATION-AS-OF/V1' ||
+          read.data?.tenant_id !== tenantId ||
+          read.data?.record_id !== selection ||
+          read.data?.as_of !== asOfDate ||
+          typeof read.data?.record?.name !== 'string') {
+        throw new Error('ORGANIZATION_HISTORICAL_READ_UNVERIFIED');
+      }
+      setAsOfVersion(read.data.record);
+    } catch(error) {
+      if (snapshot.current !== scope) return;
+      setNotice(error?.response?.status === 404
+        ? 'No verified department version exists for that date.'
+        : 'Historical department state could not be verified.');
     }
   };
 
@@ -209,6 +237,39 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
           {openEditor ? 'Close change draft' : 'Propose a department change'}
         </button>
         <span>{queue.items.length} verified change proposals</span>
+      </div>
+      <div className={styles.inspector} aria-label="Department impact and historical reporting">
+        <label>Inspect a department
+          <select value={selection} onChange={event => void select(event.target.value)}>
+            <option value="">Choose a source-verified department</option>
+            {departments.map(dep => <option key={dep.record_id} value={dep.record_id}>
+              {dep.name} · {dep.record_id} · {dep.status}
+            </option>)}
+          </select>
+        </label>
+        {selection && impact && history && <>
+          <p><strong>Impact:</strong> {impact.dependent_positions.length} approved positions and
+            {' '}{impact.dependent_departments.length} child departments.
+            {impact.retirement_blocked ? ' Retirement is blocked.' : ' No direct retirement blockers found.'}
+          </p>
+          <div className={styles.history}>
+            <strong>Effective-version history · {history.count} recorded revisions</strong>
+            {history.items.map(version => <div key={version.revision}>
+              Revision {version.revision} · {version.name} · {version.status} ·
+              {' '}effective {String(version.effective_from)}
+            </div>)}
+            {history.count === 0 && <p>No historical amendments have been recorded yet.</p>}
+          </div>
+          <div className={styles.asOf}>
+            <label>As of date
+              <input type="date" value={asOfDate}
+                onChange={event => {setAsOfDate(event.target.value);setAsOfVersion(null);}}/>
+            </label>
+            <button type="button" onClick={() => void inspectAsOf()} disabled={!asOfDate}>Inspect verified snapshot</button>
+            {asOfVersion && <p role="status">On {asOfDate}: {asOfVersion.name} ·
+              {' '}{asOfVersion.status} · Revision {asOfVersion.revision}</p>}
+          </div>
+        </>}
       </div>
       {openEditor && <form className={styles.form} onSubmit={submitDraft} aria-label="Department lifecycle change form">
         <label>Approved department
