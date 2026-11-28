@@ -40,6 +40,7 @@ _LIMIT = 200
 
 
 class ChangeDraft(BaseModel):
+    """Bounded change request; never mutates approved organization directly."""
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     change_type: Literal["AMEND", "RETIRE"]
     name: str | None = Field(default=None, min_length=2, max_length=180)
@@ -63,6 +64,7 @@ class ProductivityObservation(BaseModel):
 
 
 class ChangeDecision(BaseModel):
+    """Independent checker decision bound to one expected proposal revision."""
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     expected_revision: int = Field(ge=1, strict=True)
     decision: Literal["APPROVE", "REJECT"]
@@ -70,15 +72,18 @@ class ChangeDecision(BaseModel):
 
 
 class ExpectedRevision(BaseModel):
+    """Revision precondition required for maker submission."""
     model_config = ConfigDict(extra="forbid")
     expected_revision: int = Field(ge=1, strict=True)
 
 
 def _now() -> str:
+    """Return a timezone-aware UTC audit timestamp; no business mutation."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def _coll(db: Any, name: str):
+    """Return a majority-consistent collection; callers must apply exact tenant filters."""
     return db.get_collection(
         name, read_concern=ReadConcern("majority"),
         write_concern=WriteConcern(w="majority", j=True),
@@ -86,6 +91,7 @@ def _coll(db: Any, name: str):
 
 
 def _transaction(callback):
+    """Own a majority Mongo transaction over proposals, versions and audit events; fail closed."""
     client, db = get_client(), get_database()
     if client is None or db is None:
         raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
@@ -137,6 +143,7 @@ def _run_command(callback, *, tenant, actor, key, operation, payload):
 
 
 def _record(records, tenant: str, record_id: str, tx):
+    """Resolve an exact-tenant department in a source transaction or deny opaque absence."""
     row = records.find_one({"tenant_id": tenant, "kind": "DEPARTMENT",
                             "record_id": record_id}, session=tx)
     if row is None:
@@ -145,6 +152,7 @@ def _record(records, tenant: str, record_id: str, tx):
 
 
 def _impact(records, tenant: str, record_id: str, tx=None):
+    """Inspect bounded approved child departments and positions; block unverified staffing retirement."""
     cursor = records.find({
         "tenant_id": tenant, "status": "APPROVED",
         "$or": [{"parent_id": record_id, "kind": "DEPARTMENT"},
@@ -174,6 +182,7 @@ def _impact(records, tenant: str, record_id: str, tx=None):
 
 
 def _safe_change(row):
+    """Project non-sensitive change data for authorized same-tenant consumers only."""
     return {k: row.get(k) for k in (
         "change_id", "record_id", "change_type", "status", "revision",
         "effective_from", "name", "parent_id", "reason", "decision_reason",
@@ -181,6 +190,7 @@ def _safe_change(row):
 
 
 def _event(events, tenant, actor, key, action, change, tx):
+    """Persist an actor-scoped immutable change event in the transaction."""
     events.insert_one({
         "tenant_id": tenant, "actor_id": actor, "key": key,
         "action": action, "change_id": change["change_id"],
@@ -193,6 +203,7 @@ def _event(events, tenant, actor, key, action, change, tx):
 def list_department_changes(
     auth: TenantAuthorizationContext = Depends(org._ORG_READ),
 ):
+    """Read bounded exact-tenant change queue with maker flags, never other actor identities."""
     db = get_database()
     if db is None:
         raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
@@ -222,6 +233,7 @@ def read_department_impact(
     record_id: str,
     auth: TenantAuthorizationContext = Depends(org._ORG_READ),
 ):
+    """Authorize and inspect source-related dependents without leaking employee PII."""
     db = get_database()
     if db is None:
         raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
@@ -237,6 +249,7 @@ def read_department_impact(
 def read_department_history(
     record_id: str, auth: TenantAuthorizationContext = Depends(org._ORG_READ),
 ):
+    """Return bounded effective-version evidence for an authorized tenant department."""
     db = get_database()
     if db is None:
         raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
@@ -299,6 +312,7 @@ def propose_department_change(
     key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
     auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
 ):
+    """Create idempotent audited draft against an approved source revision; no approval."""
     if body.clear_parent and body.parent_id is not None:
         raise HTTPException(422, "ORGANIZATION_PARENT_CONFLICT")
     if body.change_type == "RETIRE" and (body.name is not None
@@ -345,6 +359,7 @@ def submit_department_change(
     key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
     auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
 ):
+    """Allow the original maker to submit a proposal with optimistic concurrency."""
     tenant, actor = auth.tenant_id, auth.identity.identity_id
     def apply(records, changes, versions, events, tx):
         change = changes.find_one({"tenant_id": tenant, "record_id": record_id,
@@ -377,6 +392,7 @@ def decide_department_change(
     key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
     auth: TenantAuthorizationContext = Depends(org._ORG_DECIDE),
 ):
+    """Require a distinct checker; apply or schedule change atomically after impact checks."""
     tenant, actor = auth.tenant_id, auth.identity.identity_id
     def apply(records, changes, versions, events, tx):
         change = changes.find_one({"tenant_id": tenant, "record_id": record_id,
@@ -442,6 +458,7 @@ def _check_hierarchy(records, current, change, tenant, tx):
 
 
 def _apply_change(records, versions, current, change, tenant, tx):
+    """Persist previous and new effective versions with a compare-and-set source update."""
     snapshot = {k: current.get(k) for k in ("name", "parent_id", "effective_from", "status")}
     if change["change_type"] == "AMEND":
         fields = {"name": change.get("name") or current["name"],
