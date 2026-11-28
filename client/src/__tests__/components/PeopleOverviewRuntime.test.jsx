@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.2.5-FIRST-USE-MODAL-BOUNDARY
+ * VERSION: v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,18 +9,19 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY closes the candidate-intake dialog before the headcount handoff, preserving authentic modal interaction and proving no candidate write occurs without an explicit source-authorized command.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
- *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT verifies visible observed zeros, absent duplicate actions, independent headcount totals, page-scoped approved counts, and governed navigation without fabricating a position master.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT closes the candidate-intake dialog before the headcount handoff, preserving authentic modal interaction and proving no candidate write occurs without an explicit source-authorized command.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
+ *   v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
  *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
@@ -304,15 +305,55 @@ describe('production People Overview source contracts', () => {
     renderDashboard();
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
-    expect(await screen.findByRole('heading', {name: 'Organization'})).toBeInTheDocument();
+    expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
     await waitFor(() => expect(mockState.apiGet).toHaveBeenCalledWith(
       '/hr/workforce/organization',
       expect.objectContaining({headers: {'X-Tenant-ID': 'TENANT-HR-A'}}),
     ));
-    expect(await screen.findByText(/No department distribution exists/)).toBeInTheDocument();
+    expect(await screen.findByText('No departments with people yet')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current observed organization')).toHaveTextContent('0');
+    expect(screen.getByRole('heading', {name: 'Position planning'})).toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: 'Plan roles'})).not.toBeInTheDocument();
     expect(screen.queryByText('Engineering')).not.toBeInTheDocument();
   });
 
+
+  it('shows authorized headcount planning without claiming approved positions from a partial page', async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/headcount-requisitions/overview') return Promise.resolve({data: {
+        schema: 'WILSY-HEADCOUNT-OVERVIEW/V1',
+        source: 'EOS_HEADCOUNT_REQUISITIONS',
+        tenant_id: 'TENANT-HR-A',
+        items: [{id: 'REQ-1', title: 'Clinical coordinator', status: 'SUBMITTED'}],
+        total: 4, limit: 12, offset: 0, hasMore: true,
+      }});
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/organization') return Promise.resolve({data: {
+        schema: 'WILSY-HR-WORKFORCE-ORGANIZATION/V1',
+        source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+        tenant_id: 'TENANT-HR-A',
+        status: 'OBSERVED_EMPLOYEE_DISTRIBUTION',
+        active_employees: 2, unassigned_employees: 0, department_count: 1,
+        departments: [{name: 'Operations', active_employees: 2}],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'), {response: {status: 404}}));
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
+    expect(await screen.findByText('Operations')).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /Search workforce in Operations, 2 active employees/})).toBeInTheDocument();
+    expect(await screen.findByRole('heading', {name: 'Position planning'})).toBeInTheDocument();
+    expect(screen.getByText('Clinical coordinator')).toBeInTheDocument();
+    expect(screen.getByText(/Approved requests on the loaded page: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/Additional requests are available/)).toBeInTheDocument();
+    const action = screen.getByRole('button', {name: /Manage headcount requests/});
+    expect(action).toBeInTheDocument();
+    fireEvent.click(action);
+    expect(await screen.findByRole('heading', {name: /Headcount & roles/})).toBeInTheDocument();
+  });
 
   it('opens verified observed department members through the existing tenant-scoped directory search', async () => {
     mockState.apiGet.mockImplementation(path => {
@@ -470,7 +511,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.2.5-FIRST-USE-MODAL-BOUNDARY
+ * VERSION: v1.3.0-WORKFORCE-ORGANIZATION-PLANNING-CERT
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
