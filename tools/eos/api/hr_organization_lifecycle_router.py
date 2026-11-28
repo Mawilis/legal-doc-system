@@ -158,6 +158,34 @@ def _event(events, tenant, actor, key, action, change, tx):
     }, session=tx)
 
 
+@router.get("/changes")
+def list_department_changes(
+    auth: TenantAuthorizationContext = Depends(org._ORG_READ),
+):
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    rows = list(_coll(db, _CHANGES).find(
+        {"tenant_id": auth.tenant_id},
+        {"_id": 0, "change_id": 1, "record_id": 1, "change_type": 1,
+         "status": 1, "revision": 1, "effective_from": 1,
+         "name": 1, "parent_id": 1, "reason": 1, "decision_reason": 1,
+         "created_by": 1, "submitted_by": 1},
+    ).sort("created_at", -1).limit(_LIMIT + 1))
+    if len(rows) > _LIMIT:
+        raise HTTPException(503, "ORGANIZATION_CHANGE_RESULT_BOUND_EXCEEDED")
+    return {
+        "schema": "WILSY-HR-ORGANIZATION-CHANGES/V1",
+        "tenant_id": auth.tenant_id, "source": "EOS_HR_ORGANIZATION_CHANGES",
+        "count": len(rows),
+        "items": [
+            {**_safe_change(row), "current_principal_is_maker":
+             auth.identity.identity_id in (row.get("created_by"), row.get("submitted_by"))}
+            for row in rows
+        ],
+    }
+
+
 @router.get("/departments/{record_id}/impact")
 def read_department_impact(
     record_id: str,
