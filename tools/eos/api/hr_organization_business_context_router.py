@@ -118,6 +118,8 @@ def _transact(callback):
 
 def _command(callback, tenant, actor, key, command, payload):
     """Replay actor-scoped identical commands and reject mismatched idempotency fingerprints."""
+    if not isinstance(actor, str) or not actor.strip():
+        raise HTTPException(503, "BUSINESS_CONTEXT_ACTOR_INVALID")
     fingerprint = org._org_fingerprint(
         tenant=tenant, actor=actor, key=key, command=command, payload=payload,
     )
