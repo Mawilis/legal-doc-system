@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Tenant Authority Policy Certification.
-VERSION: v1.16.1-PARTICIPANT-ELIGIBILITY-MATRIX-LOCK
+VERSION: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, WILSY platform-employer
@@ -13,14 +13,15 @@ role separation, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
-CHANGELOG: v1.16.1-PARTICIPANT-ELIGIBILITY-MATRIX-LOCK distinguishes canonical declared
+CHANGELOG: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT validates own-tenant and WILSY platform-employer organization maker/checker pairs against eligible HR capacities, preserving unrelated owner, headcount, payroll and employee admission denial.
+CHANGELOG: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT distinguishes canonical declared
 business roles with registered policy entries from unmapped roles, and pins
 participant-only additive operations in existing exact legal/provider matrices.
-CHANGELOG: v1.16.1-PARTICIPANT-ELIGIBILITY-MATRIX-LOCK checks participant-only project read/write
+CHANGELOG: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT checks participant-only project read/write
 capacity across existing tenant business models while preserving the
 owner-exclusive project-wide operations and fail-closed unknown roles.
 CHANGELOG:
-2026-11-17 v1.16.1-PARTICIPANT-ELIGIBILITY-MATRIX-LOCK aligns the expected
+2026-11-17 v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT aligns the expected
 canonical runtime version after its separately governed CRM edit eligibility
 release; all policy eligibility assertions and denial coverage are preserved.
 2026-11-16 v1.15.0-PROJECT-OWNER-ELIGIBILITY-CERT verifies the exact five Project operations are eligible only for existing tenant_owner capacity; authorization-role assignment and entitlement remain independent.
@@ -225,6 +226,24 @@ def test_headcount_business_eligibility_preserves_independent_roles() -> None:
         tenant_role_operation_eligibility("tenant_owner", operation) == DENY
         for operation in expected
     )
+
+
+def test_organization_business_eligibility_uses_independent_checker() -> None:
+    """Organization draft authorship, HR checker and Owner are separate capacities."""
+    pairs = {
+        "hr_organization_create": "hr:organization:create",
+        "hr_organization_decide": "hr:organization:decide",
+    }
+    for operation, permission in pairs.items():
+        assert operation in OPERATIONS
+        assert BUSINESS_ROLE_OPERATION_PERMISSIONS[operation] == permission
+        assert permission_for_business_role_operation(operation) == permission
+        assert tenant_role_operation_eligibility("tenant_owner", operation) == DENY
+    assert tenant_role_operation_eligibility("tenant_hr_manager", "hr_organization_create") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_hr_manager", "hr_organization_decide") == DENY
+    assert tenant_role_operation_eligibility("tenant_hr_director", "hr_organization_create") == ELIGIBLE
+    assert tenant_role_operation_eligibility("tenant_hr_director", "hr_organization_decide") == ELIGIBLE
+
 
 LEGACY = ("AUDITOR", "SOVEREIGN_ARCHITECT", "ENTERPRISE_ADMIN", "FOUNDER", "SUPER_ADMIN", "ADMIN", "admin", "GLOBAL_ROOT", "WILSY_ROOT", "MASTER", "unknown")
 
@@ -1022,6 +1041,8 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
         "platform_employer_headcount_requisition_read": "platform_employer:headcount_requisition:read",
         "platform_employer_headcount_requisition_create": "platform_employer:headcount_requisition:create",
         "platform_employer_headcount_requisition_decide": "platform_employer:headcount_requisition:decide",
+        "platform_employer_organization_create": "platform_employer:organization:create",
+        "platform_employer_organization_decide": "platform_employer:organization:decide",
         "platform_employer_hiring_candidate_read": "platform_employer:hiring_candidate:read",
         "platform_employer_hiring_candidate_create": "platform_employer:hiring_candidate:create",
         "platform_employer_hiring_candidate_transition": "platform_employer:hiring_candidate:transition",
@@ -1036,7 +1057,7 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
         "platform_employer_employee_admission_create":
             "platform_employer:employee_admission:create",
     }
-    assert len(expected) == 16
+    assert len(expected) == 18
     assert set(expected) == set(PLATFORM_EMPLOYER_OPERATIONS)
     for operation, permission in expected.items():
         assert BUSINESS_ROLE_OPERATION_PERMISSIONS[operation] == permission
@@ -1046,6 +1067,7 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
         "platform_employer_employee_directory_read",
         "platform_employer_headcount_requisition_read",
         "platform_employer_headcount_requisition_create",
+        "platform_employer_organization_create",
         "platform_employer_hiring_candidate_read",
         "platform_employer_hiring_candidate_create",
         "platform_employer_hiring_candidate_transition",
@@ -1060,6 +1082,8 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
         "platform_employer_employee_directory_read",
         "platform_employer_headcount_requisition_read",
         "platform_employer_headcount_requisition_decide",
+        "platform_employer_organization_create",
+        "platform_employer_organization_decide",
         "platform_employer_hiring_candidate_read",
         "platform_employer_hiring_candidate_evidence_read",
         "platform_employer_hiring_offer_read",
@@ -1114,7 +1138,7 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
 
 
 # ARTIFACT: tests/unit/test_tenant_authority_policy.py
-# VERSION: v1.16.1-PARTICIPANT-ELIGIBILITY-MATRIX-LOCK
+# VERSION: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT
 # AUTHORITY BOUNDARY: certification of policy facts only; no role or permission assignment
 # TENANT POSTURE: Projects business eligibility is owner-capacity only and remains conjunctive with tenant-scoped assignment, membership and entitlement
 # FAIL-CLOSED POSTURE: every non-owner business capacity remains denied; eligibility alone creates no IAM assignment or entitlement
