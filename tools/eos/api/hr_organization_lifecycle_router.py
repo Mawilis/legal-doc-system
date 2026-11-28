@@ -1,8 +1,18 @@
-"""Source-owned organization change governance, version history and impact evidence.
-
-No IAM, employee, staffing or financial authority is created. Proposal creation
-and decisions reuse independent existing hr:organization permissions.
+"""TITLE: WILSY OS Governed Department Lifecycle HTTP Authority
+VERSION: v1.0.0-M03-HR03-GOVERNED-DEPARTMENT-LIFECYCLE
+AUTHORITY: WILSY OS Core Governance
+EPITOME: Exact-tenant amendment, reorganization, retirement, impact, historical versions and source-owned productivity with independent checker decisions.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr_organization_lifecycle_router.py
+COLLABORATION / OWNERSHIP: WILSY OS HR Organization / Python EOS engineering
+CERTIFICATION / UPDATE DATE: 2026-11-28
+CHANGELOG: v1.0.0-M03-HR03-GOVERNED-DEPARTMENT-LIFECYCLE adds governed source, consumer and evidence contracts without expanding IAM grants.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 technical controls.
+SECURITY / PRIVACY POSTURE: Bounded readback and event labels; no personnel/financial secrets, no fabricated external entity verification.
+TENANT BOUNDARY: Exact authenticated EOS tenant; no root or Owner fallback.
+AUTHORITY BOUNDARY: EOS source grants are separately required; maker and checker cannot be the same principal.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -590,3 +600,11 @@ def read_organization_productivity(
         "client_completion_time": None, "manual_field_count": None,
         "validation_failure_rate": None, "accessibility_certified": False,
     }
+
+# ARTIFACT: tools/eos/api/hr_organization_lifecycle_router.py
+# VERSION: v1.0.0-M03-HR03-GOVERNED-DEPARTMENT-LIFECYCLE
+# AUTHORITY BOUNDARY: Exact-tenant EOS authority and regression evidence; no grants or financial execution.
+# TENANT POSTURE: Exact authorized tenant only; no cross-tenant records, Owner or root fallback.
+# FAIL-CLOSED POSTURE: Missing or contradictory evidence is denied/unavailable, never approved.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
