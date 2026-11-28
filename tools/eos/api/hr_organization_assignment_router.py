@@ -23,7 +23,7 @@ from typing import Any, Literal
 from uuid import uuid4
 import re
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
@@ -213,6 +213,82 @@ def list_assignments(
         )} for a in current],
         "legacy_employee_fields_synchronized": False,
         "verified_operating_entity_connected": False,
+    }
+
+
+@router.get("/planning")
+def read_position_utilization(
+    limit: int = Query(default=50, ge=1, le=50),
+    offset: int = Query(default=0, ge=0, le=100000),
+    organization: TenantAuthorizationContext = Depends(_ORG_READ),
+    workforce: TenantAuthorizationContext = Depends(_MAKER),
+):
+    """Read approved-position capacity versus governed assignment occupancy.
+
+    This is never an employer headcount, payroll, legal entity or budget forecast.
+    Directory text labels are not counted as confirmed graph assignments.
+    """
+    if organization.tenant_id != workforce.tenant_id or (
+        organization.identity.identity_id != workforce.identity.identity_id
+    ):
+        raise HTTPException(403, "HR_ASSIGNMENT_SCOPE_MISMATCH")
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "HR_ASSIGNMENT_SOURCE_UNAVAILABLE")
+    tenant = organization.tenant_id
+    position_filter = {"tenant_id": tenant, "kind": "POSITION", "status": "APPROVED"}
+    try:
+        positions = _collection(db, _ORG_COLLECTION)
+        total = positions.count_documents(position_filter)
+        page = list(positions.find(position_filter, {
+            "_id": 0, "record_id": 1, "department_id": 1, "name": 1,
+            "capacity": 1, "effective_from": 1, "revision": 1,
+        }).sort("record_id", 1).skip(offset).limit(limit))
+        identifiers = [position["record_id"] for position in page]
+        grouped = list(_collection(db, _ASSIGNMENTS).aggregate([
+            {"$match": {"tenant_id": tenant, "position_id": {"$in": identifiers}}},
+            {"$group": {"_id": "$position_id", "assigned": {"$sum": 1}}},
+            {"$limit": limit + 1},
+        ])) if identifiers else []
+    except Exception as exc:
+        raise HTTPException(503, "HR_ASSIGNMENT_PLANNING_SOURCE_UNAVAILABLE") from exc
+    if len(page) > limit or len(grouped) > limit or not isinstance(total, int) or total < 0:
+        raise HTTPException(503, "HR_ASSIGNMENT_PLANNING_INVALID")
+    counts = {}
+    for group in grouped:
+        count = group.get("assigned")
+        if group.get("_id") not in identifiers or type(count) is not int or count < 0:
+            raise HTTPException(503, "HR_ASSIGNMENT_PLANNING_INVALID")
+        counts[group["_id"]] = count
+    items = []
+    for position in page:
+        capacity = position.get("capacity")
+        if type(capacity) is not int or capacity < 1:
+            raise HTTPException(503, "HR_ASSIGNMENT_POSITION_CAPACITY_UNVERIFIED")
+        assigned = counts.get(position["record_id"], 0)
+        if assigned > capacity:
+            raise HTTPException(503, "HR_ASSIGNMENT_POSITION_OVERBOOKED")
+        items.append({
+            "position_id": position["record_id"],
+            "department_id": position["department_id"],
+            "name": position["name"],
+            "approved_capacity": capacity,
+            "governed_assignments": assigned,
+            "unfilled_graph_slots": capacity - assigned,
+            "effective_from": position["effective_from"],
+            "position_currently_effective": (
+                position["effective_from"] <= date.today().isoformat()
+            ),
+        })
+    return {
+        "schema": "WILSY-HR-POSITION-UTILIZATION/V1",
+        "source": "EOS_APPROVED_POSITION_ASSIGNMENT_GRAPH",
+        "tenant_id": tenant, "items": items,
+        "total": total, "offset": offset, "limit": limit,
+        "has_more": offset + len(items) < total,
+        "legacy_employee_fields_synchronized": False,
+        "entity_authority_verified": False,
+        "funded_headcount_verified": False,
     }
 
 
