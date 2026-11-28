@@ -5104,7 +5104,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                                 disabled={organizationCommandState.status === 'PENDING'}
                                 onClick={() => {setOrganizationReviewId(item.kind+':'+item.record_id);setOrganizationDecisionReason('');setOrganizationCommandState({status:'IDLE',message:''});}}
                                 style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Review decision</button>}
-                              {item.status === 'SUBMITTED' && item.current_principal_is_maker && <span style={{fontSize:12,color:'#526781'}}>Awaiting independent checker</span>
+                              {item.status === 'SUBMITTED' && item.current_principal_is_maker && <span style={{fontSize:12,color:'#526781'}}>Awaiting independent checker</span>}
                             </div>
                           </div>)}
                         </div>}
