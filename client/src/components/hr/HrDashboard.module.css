@@ -2248,3 +2248,43 @@
   font-size: 12px;
   line-height: 1.4;
 }
+
+
+/* Department catalog is reference vocabulary, not tenant-approved truth. */
+.peopleSurface .organizationGuidedPick {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #bfcee0;
+  border-radius: 10px;
+  background: #f4f8fd;
+}
+.peopleSurface .organizationGuidedTitle {
+  display: grid;
+  gap: 4px;
+}
+.peopleSurface .organizationGuidedTitle strong {
+  color: #143354 !important;
+  font-size: 16px;
+  font-weight: 780;
+}
+.peopleSurface .organizationGuidedTitle p,
+.peopleSurface .organizationCatalogNotice {
+  margin: 0;
+  color: #385371 !important;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.peopleSurface .organizationGuidedPick .organizationDraftGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.peopleSurface .organizationGuidedPick select,
+.peopleSurface .organizationGuidedPick input {
+  background: #fff !important;
+}
+@media (max-width: 850px) {
+  .peopleSurface .organizationGuidedPick .organizationDraftGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
