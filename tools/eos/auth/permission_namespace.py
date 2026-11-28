@@ -1,15 +1,16 @@
 """TITLE: WILSY OS Permission Namespace Semantic Canon.
-VERSION: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS
+VERSION: v1.66.0-GOVERNED-ORGANIZATION-PERMISSION-PAIRS
 AUTHORITY: Canonical permission vocabulary and scope metadata only.
 EPITOME: Defines exact, non-self-authorizing permission metadata.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/permission_namespace.py
 COLLABORATION / OWNERSHIP: WILSY OS Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS adds separate own-tenant,
+CHANGELOG: v1.66.0-GOVERNED-ORGANIZATION-PERMISSION-PAIRS defines exact tenant and canonical platform-employer organization create/decide metadata only, without granting possession, admission, financial execution or bypass authority.
+CHANGELOG: v1.66.0-GOVERNED-ORGANIZATION-PERMISSION-PAIRS adds separate own-tenant,
 project-record-gated reader and contributor permission metadata. Neither
 implies project-owner scope, participant possession, employee admission,
 financial authority or access without current authenticated IAM.
-CHANGELOG: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS defines a separate own-tenant
+CHANGELOG: v1.66.0-GOVERNED-ORGANIZATION-PERMISSION-PAIRS defines a separate own-tenant
            CRM task-edit permission; metadata alone grants no assignment,
            entitlement, command, transaction or cross-tenant access.
 CHANGELOG: v1.63.0-PROJECT-PERMISSION-VOCABULARY — Preserves exact permission namespace semantics.
@@ -281,7 +282,7 @@ from types import MappingProxyType
 from typing import Final
 
 
-VERSION = "v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS"
+VERSION = "v1.66.0-GOVERNED-ORGANIZATION-PERMISSION-PAIRS"
 
 
 class PermissionDisposition(StrEnum):
@@ -383,6 +384,14 @@ _PERMISSIONS: Final = MappingProxyType(
                 (
                     "platform_employer:headcount_requisition:create",
                     "create and submit WILSY platform-employer headcount requisitions",
+                ),
+                (
+                    "platform_employer:organization:create",
+                    "propose and submit WILSY employer department and position drafts",
+                ),
+                (
+                    "platform_employer:organization:decide",
+                    "independently decide WILSY employer organization proposals",
                 ),
                 (
                     "platform_employer:headcount_requisition:decide",
@@ -893,6 +902,18 @@ _PERMISSIONS: Final = MappingProxyType(
             "hr:headcount_requisition:decide",
             "TENANT", "TENANT",
             "approve or reject submitted own-tenant headcount requisitions",
+            tenant=True, workforce=True,
+        ),
+        "hr:organization:create": _meta(
+            "hr:organization:create",
+            "TENANT", "TENANT",
+            "create and submit own-tenant department and position drafts only",
+            tenant=True, workforce=True,
+        ),
+        "hr:organization:decide": _meta(
+            "hr:organization:decide",
+            "TENANT", "TENANT",
+            "independently approve or reject own-tenant organization proposals",
             tenant=True, workforce=True,
         ),
         "hr:employee_directory:read": _meta(
@@ -1459,7 +1480,7 @@ __all__ = [
 ]
 
 # ARTIFACT: tools/eos/auth/permission_namespace.py
-# VERSION: v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS
+# VERSION: v1.66.0-GOVERNED-ORGANIZATION-PERMISSION-PAIRS
 # AUTHORITY BOUNDARY: canonical permission vocabulary semantics only; no possession or authorization authority
 # TENANT POSTURE: conflict-review, client-matter, client-visibility and other tenant permissions require separately proven exact ACTIVE tenant membership
 # FAIL-CLOSED POSTURE: unknown, malformed, ambiguous and legacy values never manufacture authority
