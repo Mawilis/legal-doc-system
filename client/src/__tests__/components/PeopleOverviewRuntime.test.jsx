@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS People Overview Production Source Runtime Contract
- * VERSION: v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE
+ * VERSION: v1.2.5-FIRST-USE-MODAL-BOUNDARY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
@@ -9,17 +9,18 @@
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
  * CHANGELOG:
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
- *   v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY closes the candidate-intake dialog before the headcount handoff, preserving authentic modal interaction and proving no candidate write occurs without an explicit source-authorized command.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies candidate intake remains accessible across paginated headcount, opens the existing EOS command modal, and performs no write before the governed submission.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY asserts both header and inline candidate intake remain disabled until a verified approved requisition exists, without relaxing backend command validation.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies genuine zero-employee HR Director progressive navigation, Workforce first actions, Hiring pipeline, candidate admission guard and Headcount handoff without synthetic persisted state.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies that an observed department navigates into existing authorized server-side directory search without inventing organization commands.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY asserts source-verified empty organization, exact tenant and schema verification, and foreign organization concealment in the Workforce subview.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY confirms global search exposes the accessible directory employee button, not a retired standalone table text node; source, tenant, detail and denial assertions remain in force.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY uses a canonical opaque synthetic employee identifier and waits for independently verified detail before asserting profile content; no production authority changed.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY certifies the authenticated Workforce directory and exact-tenant detail read, safe preview and denial-without-profile; earlier EOS provenance and tenant-invalidated contracts remain intact.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies accessible Ready status for individually verified EOS sources after sentence-case UI simplification; retained tenant, provenance, denial and command-journey assertions remain unchanged.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY asserts the actual EOS-derived workforce metric, source readiness labels and governed empty-state headcount entry instead of retired presentation strings; prior tenant, denial and legacy-route assertions remain in force.
+ *   v1.2.5-FIRST-USE-MODAL-BOUNDARY verifies that separate denied HR sources display an accurate capacity-specific warning without false zero.
  *   v1.0.2-HEADCOUNT-OVERVIEW-PAGE-RUNTIME models the source-bound paginated Python EOS headcount Overview envelope in mounted People runtime tests.
  *   v1.0.1-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY expects the single governed capacity-recovery state rather than multiple denied notices and empty metrics.
  *   v1.0.0-PEOPLE-OVERVIEW-LIVE-SOURCE-CONTRACT — Exercises authenticated Python EOS workforce overview, exact-tenant source read and context-aware global People search.
@@ -277,6 +278,8 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(screen.getByRole('button', {name: 'Start candidate intake'}));
     expect(await screen.findByRole('dialog', {name: 'Python EOS hiring command'})).toBeInTheDocument();
     expect(mockState.candidateCreate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', {name: 'Close hiring command'}));
+    expect(screen.queryByRole('dialog', {name: 'Python EOS hiring command'})).not.toBeInTheDocument();
     expect(screen.getByRole('button', {name: 'Request headcount'})).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', {name: 'Request headcount'}));
     expect(await screen.findByRole('heading', {name: /Headcount & roles/})).toBeInTheDocument();
@@ -467,7 +470,7 @@ describe('production People Overview source contracts', () => {
 
 /**
  * ARTIFACT: client/src/__tests__/components/PeopleOverviewRuntime.test.jsx
- * VERSION: v1.2.4-SERVER-AUTHORITATIVE-CANDIDATE-INTAKE
+ * VERSION: v1.2.5-FIRST-USE-MODAL-BOUNDARY
  * AUTHORITY BOUNDARY: Source-read regression; Python EOS owns IAM and workforce truth.
  * TENANT POSTURE: Synthetic tenant and employee examples only.
  * FAIL-CLOSED POSTURE: Denied source never materializes false workforce counts.
