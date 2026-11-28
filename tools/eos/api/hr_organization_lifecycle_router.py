@@ -255,7 +255,7 @@ def read_department_staffing_reconciliation(
         # Employee source is legacy label-based. Only aggregate counts;
         # do not return employee identifiers or unbounded group values.
         groups = list(db["employees"].aggregate([
-            {"$match": {"tenantId": tenant, "isActive": True}},
+            {"$match": {"tenantId": tenant, "isActive": True, "deletedAt": None}},
             {"$group": {"_id": "$employment.department", "count": {"$sum": 1}}},
             {"$limit": _LIMIT + 1},
         ]))
