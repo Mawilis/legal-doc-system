@@ -3,11 +3,12 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST
+ * Version:        v2.6.2-ORGANIZATION-PANEL-READABILITY
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
+ * Change log: 2026-11-28 v2.6.2-ORGANIZATION-PANEL-READABILITY enforces readable dark navy headings, metrics and source text inside Workforce Organization, keeps one-line action label and icon, and protects footer clearance in responsive workspaces; no IAM or business authority changes.
  * Change log: 2026-11-28 v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST fixes the Workforce search icon to high-contrast navy on white, with an explicit stroke override and stable size; no other surface, source or authority changes.
  * Change log: 2026-11-28 v2.6.0-WORKFORCE-DIRECTORY-OPERATING-SURFACE establishes a high-contrast, responsive EOS workforce directory, restrained search and paging toolbar, verified-empty guidance, permission-safe employee detail, and keyboard focus semantics.
  * Change log: 2026-11-27 v2.5.11-LIFECYCLE-SOURCE-HIGH-CONTRAST restores high-contrast navy/slate lifecycle source labels and status on light buttons, with scoped focus/hover styling, without changing approved navigation gold or OS tenant semantics.
@@ -16,7 +17,7 @@
  * Change log: 2026-11-27 v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE restores continuous light work canvas and high-contrast per-source inspection.\n * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
  *             retained governed HR command dialogs to light OS surfaces.
  * TITLE: WILSY OS People Operating Workspace Dialog Styles
- * VERSION: v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST
+ * VERSION: v2.6.2-ORGANIZATION-PANEL-READABILITY
  * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
  * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
@@ -2019,8 +2020,57 @@
   .peopleSurface .workforceDetails { padding: 16px; }
 }
 
+
+/* Workforce Organization is a light business-operation surface. Legacy HR
+   gold/white heading rules must never override semantic source content. */
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] h2,
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] h3,
+.peopleSurface #observed-departments-heading,
+.peopleSurface #position-planning-heading {
+  color: #142b49 !important;
+  -webkit-text-fill-color: #142b49 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] strong,
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] [aria-label="Current observed organization"] span:first-child {
+  color: #142b49 !important;
+  -webkit-text-fill-color: #142b49 !important;
+  opacity: 1 !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] p,
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] span {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] button {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  width: max-content;
+  max-width: 100%;
+  min-height: 40px;
+  white-space: nowrap;
+  text-transform: none !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] button svg {
+  flex: 0 0 14px;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] {
+  padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+}
+@media (max-width: 540px) {
+  .peopleSurface section[aria-labelledby="workforce-organization-heading"] button {
+    width: auto;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
 /* ARTIFACT: client/src/components/hr/HrDashboard.module.css
- * VERSION: v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST
+ * VERSION: v2.6.2-ORGANIZATION-PANEL-READABILITY
  * AUTHORITY BOUNDARY: Presentation only; source authorization remains exclusively Python EOS-owned.
  * TENANT POSTURE: No employee or tenant state in CSS; exact tenant boundary unchanged.
  * FAIL-CLOSED POSTURE: Source unavailability, denial and verified results remain distinct.
