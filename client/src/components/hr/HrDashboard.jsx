@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.20.1-FIRST-USE-ADMISSION-GUARD
+ * VERSION: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -11,20 +11,21 @@
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v2.20.1-FIRST-USE-ADMISSION-GUARD gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
- * CHANGELOG: v2.20.1-FIRST-USE-ADMISSION-GUARD replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+ * CHANGELOG: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
+ * CHANGELOG: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
+ * CHANGELOG: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
 CHANGELOG:
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.20.1-FIRST-USE-ADMISSION-GUARD exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -4402,8 +4403,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 onClick={() => loadDashboard()} disabled={isRefreshing}>
                 <RefreshCw size={17} className={isRefreshing ? 'animate-spin' : undefined} aria-hidden="true" />
               </button>
-              {actionLabel && <button type="button" disabled={isRefreshing || !tenantScopeKey || !isVerifiedReadState(activeReadState)
-                || (activeTab === 'candidates' && !hiringHasApprovedRequisition)}
+              {actionLabel && <button type="button" disabled={isRefreshing || !tenantScopeKey || !isVerifiedReadState(activeReadState)}
                 className="rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
                 onClick={startSourceCommand}><Plus size={15} className="mr-1 inline-block" aria-hidden />{actionLabel}</button>}
             </div>
@@ -4912,16 +4912,16 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               <div style={{display:'flex',gap:9,flexWrap:'wrap'}}>
                 <button type="button" onClick={() => changeTab('jobOpenings')}
                   style={{background:'#173c70',color:'#fff',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700}}>Request headcount</button>
-                <button type="button" disabled={!hiringHasApprovedRequisition}
+                <button type="button"
                   onClick={() => beginHiringCommand('candidateCreate')}
-                  title={hiringHasApprovedRequisition ? 'Create a candidate under an approved requisition' : 'An approved requisition must be visible before candidate intake'}
-                  style={{border:'1px solid #afc2d8',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700,color:'#173c70',opacity:hiringHasApprovedRequisition?1:.6}}>
-                  Create candidate
+                  title="Candidate intake requires an approved requisition; EOS independently verifies the submitted ID"
+                  style={{border:'1px solid #afc2d8',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700,color:'#173c70'}}>
+                  Start candidate intake
                 </button>
                 <button type="button" onClick={() => changeTab('offers')}
                   style={{border:'1px solid #afc2d8',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700,color:'#173c70'}}>View offers</button>
               </div>
-              {!hiringHasApprovedRequisition && <p style={{fontSize:12,color:'#4b607a'}}>Candidate intake requires an approved requisition. Open Headcount &amp; roles to begin; approval is checked again when the command runs.</p>}
+              {!hiringHasApprovedRequisition && <p style={{fontSize:12,color:'#4b607a'}}>Candidate intake requires an approved requisition, which may be outside the current page. The submitted requisition ID is independently checked before creation.</p>}
             </div>}
             {isVerifiedReadState(shownState) && !shownState?.revalidating && shownDataset.total > 0 && <div style={{padding:'15px 20px',display:'grid',gap:10}}>
               <p style={{fontSize:12,color:'#526982'}}>Current authorized candidate page · {shownDataset.total} total candidates</p>
@@ -5536,7 +5536,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.20.1-FIRST-USE-ADMISSION-GUARD
+ * VERSION: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
