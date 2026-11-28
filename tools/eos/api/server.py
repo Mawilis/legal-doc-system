@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+VERSION: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -18,7 +18,8 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-11-27
-CHANGELOG: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+CHANGELOG: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION mounts HR business activity context and department change routers before the workforce detail reader, preserving independent tenant IAM and legacy route hygiene.
+CHANGELOG: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION
   unmounts the overlapping /api/employees legacy HTTP router. The existing
   /api/hr/workforce route remains the sole governed employee directory read.
   No employees, IAM grants, documents, or financial authorities are changed.
@@ -392,7 +393,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP"
+VERSION = "v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -1364,7 +1365,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+# VERSION: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.
