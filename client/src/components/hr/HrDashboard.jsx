@@ -5136,9 +5136,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                             onChange={event => setOrganizationForm(prev => ({...prev,capacity:event.target.value}))}/>
                         </label>
                       </>}
-                      <label>
-                        <span>Parent code (optional)</span>
-                        <select value={organizationForm.parent_id}
+                      <div className={styles.organizationCodeField}>
+                        <label htmlFor="wilsy-organization-parent-code">Parent code (optional)</label>
+                        <select id="wilsy-organization-parent-code" value={organizationForm.parent_id}
                           onChange={event => setOrganizationForm(prev => ({...prev,parent_id:event.target.value}))}>
                           <option value="">Top level · no parent</option>
                           {workforceStructure.items.filter(unit =>
@@ -5148,7 +5148,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                           ).map(unit => <option key={unit.record_id} value={unit.record_id}>{unit.name} · {unit.record_id}</option>)}
                         </select>
                         <small>Only approved, same-tenant {organizationKind === 'departments' ? 'departments' : 'positions'} from EOS are selectable.</small>
-                      </label>
+                      </div>
                       <label>
                         <span>Effective from (YYYY-MM-DD)</span>
                         <input type="date" required value={organizationForm.effective_from}
