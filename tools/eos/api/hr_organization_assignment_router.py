@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Governed Employee Organization Assignment Authority
-VERSION: v1.0.0-M03-HR03-GOVERNED-ASSIGNMENTS
+VERSION: v1.1.0-M03-HR03-ASSIGNMENT-VERSIONS-AND-PLANNING
 AUTHORITY: Python EOS HR employee-relation and organization source owners.
 EPITOME: Establish exact-tenant, effective-dated employee→position→department
          assignment proposals with independent review, source CAS and history.
@@ -7,6 +7,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr
 COLLABORATION / OWNERSHIP: HR employee relation and organization IAM; canonical
          legacy employee employment.department remains separate and unmodified.
 CERTIFICATION / UPDATE DATE: 2026-11-28
+CHANGELOG: v1.1.0-M03-HR03-ASSIGNMENT-VERSIONS-AND-PLANNING adds immutable assignment history, capacity-safe serializable position occupancy and paginated graph-only utilization; legacy employee records remain source-owned and unchanged.
 CHANGELOG: v1.0.0 creates source-owned HR graph assignment registry and commands.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Opaque employee IDs and position references only.
@@ -525,7 +526,7 @@ def decide_assignment(
 
 
 # ARTIFACT: tools/eos/api/hr_organization_assignment_router.py
-# VERSION: v1.0.0-M03-HR03-GOVERNED-ASSIGNMENTS
+# VERSION: v1.1.0-M03-HR03-ASSIGNMENT-VERSIONS-AND-PLANNING
 # AUTHORITY BOUNDARY: Conjunctive employee-relation and organization permission; no grants.
 # TENANT POSTURE: Exact source-checked tenant, distinct maker/checker.
 # FAIL-CLOSED POSTURE: Future activation, absent entity, orphaned staffing denied.
