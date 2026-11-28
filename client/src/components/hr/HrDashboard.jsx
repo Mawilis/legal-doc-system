@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE
+ * VERSION: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -11,21 +11,22 @@
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
- * CHANGELOG: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
- * CHANGELOG: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+ * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
+ * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
+ * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
+ * CHANGELOG: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
 CHANGELOG:
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -4842,10 +4843,13 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 </p>
                 {workforceOrganization.departments.length === 0
                   ? <div role="status" style={{borderTop:'1px solid #dae4ee',marginTop:18,padding:'20px 0',color:'#4c627a'}}>
-                      <p>No department distribution exists in the verified active workforce. Approved positions and requisitions remain under their own EOS authority.</p>
+                      <div>
+                        <h3 style={{fontSize:17,color:'#142d4b',fontWeight:750,marginBottom:6}}>No organization structure yet</h3>
+                        <p style={{fontSize:13,lineHeight:1.6,color:'#526781'}}>Start by planning roles and building your workforce. Departments shown here will come from real employee assignments; approved department management will be a separate service.</p>
+                      </div>
                       <button type="button" onClick={() => changeTab('jobOpenings')}
                         style={{marginTop:14,padding:'9px 13px',border:'1px solid #9eb2ca',borderRadius:8,color:'#173c70',
-                          background:'#fff',fontSize:12,fontWeight:700}}>Open headcount &amp; roles <ArrowUpRight size={14} aria-hidden /></button>
+                          background:'#fff',fontSize:12,fontWeight:700}}>Plan roles <ArrowUpRight size={14} aria-hidden /></button>
                     </div>
                   : <div style={{border:'1px solid #d4e0ed',borderRadius:10,overflow:'hidden',marginTop:16}}>
                       {workforceOrganization.departments.map((unit,i) => <div key={unit.name}
@@ -4872,7 +4876,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 </p>
                 <button type="button" onClick={() => changeTab('jobOpenings')}
                   style={{marginTop:11,padding:'9px 13px',border:'1px solid #9eb2ca',borderRadius:8,color:'#173c70',background:'#fff',fontSize:12,fontWeight:700}}>
-                  Open headcount &amp; roles <ArrowUpRight size={14} aria-hidden />
+                  Plan roles <ArrowUpRight size={14} aria-hidden />
                 </button>
               </React.Fragment>}
             </section>}
@@ -5536,7 +5540,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.20.2-HIRING-SOURCE-AUTHORITATIVE-INTAKE
+ * VERSION: v2.20.3-PEOPLE-ORGANIZATION-FIRST-USE
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
