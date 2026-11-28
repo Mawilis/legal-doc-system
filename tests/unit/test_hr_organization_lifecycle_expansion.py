@@ -334,6 +334,63 @@ def test_productivity_aggregates_client_metrics_without_a_200_event_ceiling(monk
     assert result["accessibility_certified"] is False
 
 
+
+def test_staffing_reconciliation_is_exact_tenant_and_never_claims_employee_linkage(monkeypatch):
+    class _Employees:
+        def aggregate(self, stages):
+            assert stages[0] == {
+                "$match": {"tenantId": "TENANT-SYNTHETIC-A",
+                           "isActive": True, "deletedAt": None},
+            }
+            assert stages[1]["$group"]["_id"] == "$employment.department"
+            return [
+                {"_id": "Operations", "count": 5},
+                {"_id": "Unknown legacy label", "count": 2},
+                {"_id": "Finance", "count": 1},
+            ]
+    class _ReconcileDb(_Db):
+        def __getitem__(self, name):
+            assert name == "employees"
+            return _Employees()
+    rows = [
+        {"tenant_id":"TENANT-SYNTHETIC-A","kind":"DEPARTMENT",
+         "record_id":"DEP-OPS","status":"APPROVED","name":"Operations"},
+        {"tenant_id":"TENANT-SYNTHETIC-A","kind":"DEPARTMENT",
+         "record_id":"DEP-FIN-1","status":"APPROVED","name":"Finance"},
+        {"tenant_id":"TENANT-SYNTHETIC-A","kind":"DEPARTMENT",
+         "record_id":"DEP-FIN-2","status":"APPROVED","name":"FINANCE"},
+        {"tenant_id":"FOREIGN-TENANT","kind":"DEPARTMENT",
+         "record_id":"DEP-FOREIGN","status":"APPROVED","name":"Unknown legacy label"},
+    ]
+    db = _ReconcileDb({org._ORG_COLLECTION:_Collection(rows)})
+    monkeypatch.setattr(lifecycle,"get_database",lambda:db)
+    answer = lifecycle.read_department_staffing_reconciliation(
+        auth=_identity(),directory_authority=_identity(),
+    )
+    assert answer["source_total_active"] == 8
+    assert answer["candidate_matches"] == [{
+        "department_id":"DEP-OPS","employee_count":5,
+        "relationship":"LABEL_CANDIDATE_NOT_AUTHORIZED_ASSIGNMENT",
+    }]
+    assert answer["unmatched_active_employees"] == 2
+    assert answer["ambiguous_active_employees"] == 1
+    assert answer["employee_assignment_linkage_certified"] is False
+    assert answer["retirement_approval_permitted"] is False
+
+
+def test_staffing_reconciliation_denies_cross_tenant_before_database(monkeypatch):
+    monkeypatch.setattr(lifecycle, "get_database",
+                        lambda: (_ for _ in ()).throw(
+                            AssertionError("Cross-tenant request cannot read Mongo")))
+    with pytest.raises(HTTPException) as denied:
+        lifecycle.read_department_staffing_reconciliation(
+            auth=_identity("TENANT-SYNTHETIC-A"),
+            directory_authority=_identity("TENANT-SYNTHETIC-B"),
+        )
+    assert denied.value.status_code == 403
+    assert denied.value.detail == "ORGANIZATION_STAFFING_SCOPE_MISMATCH"
+
+
 # ARTIFACT: tests/unit/test_hr_organization_lifecycle_expansion.py
 # VERSION: v1.0.0-M03-HR03-ORGANIZATION-LIFECYCLE-CERT
 # AUTHORITY BOUNDARY: Exact-tenant EOS authority and regression evidence; no grants or financial execution.
