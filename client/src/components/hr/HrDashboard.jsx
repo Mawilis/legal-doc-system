@@ -135,6 +135,7 @@ import FounderHeadcountStart, { HeadcountDraftSubmit, HeadcountIndependentDecisi
 import styles from './HrDashboard.module.css';
 import { ORGANIZATION_BUSINESS_MODELS, getDepartmentSuggestions } from './organizationDepartmentCatalog.js';
 import OrganizationLifecycleWorkspace from './OrganizationLifecycleWorkspace.jsx';
+import BusinessActivityContextWorkspace from './BusinessActivityContextWorkspace.jsx';
 import { workStatusClasses } from '../../theme/workStatus.js';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
@@ -2409,6 +2410,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [organizationDecisionReason, setOrganizationDecisionReason] = useState('');
   const [organizationKind, setOrganizationKind] = useState('departments');
   const [departmentModel, setDepartmentModel] = useState('general');
+  const [approvedBusinessActivityIds, setApprovedBusinessActivityIds] = useState([]);
+  const departmentModelManuallyChosenRef = useRef(false);
   const [departmentTemplate, setDepartmentTemplate] = useState('');
   const [departmentCatalogSearch, setDepartmentCatalogSearch] = useState('');
   const [organizationForm, setOrganizationForm] = useState({record_id:'',name:'',parent_id:'',department_id:'',effective_from:'',capacity:'1'});
@@ -5048,6 +5051,16 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   {workforceStructureStatus === 'PENDING' && <p role="status" style={{padding:17,color:'#4b607a'}}>Checking the approved structure register…</p>}
                   {workforceStructureStatus === 'DENIED' && <p role="alert" style={{padding:17,color:'#4b607a'}}>Access to the organization register is denied for this capacity.</p>}
                   {workforceStructureStatus === 'UNAVAILABLE' && <div role="status" style={{padding:17,display:'grid',gap:8,color:'#4b607a'}}><p>The organization register could not be verified. No approved structure is displayed.</p><p style={{fontSize:12}}>Source: /api/hr/workforce/structure · {workforceStructureFailureCode || 'UNVERIFIED'}. Verify the authenticated response in Network. The runtime returned this status; do not infer an empty register or bypass authorization.</p><button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)} style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'8px 12px',color:'#173c70'}}>Retry registry read</button></div>}
+                  {workforceStructureStatus === 'VERIFIED' && workforceStructure &&
+                    <div style={{padding:'0 17px'}}>
+                      <BusinessActivityContextWorkspace tenantId={tenantId} scopeKey={tenantScopeKey}
+                        onApproved={ids => {
+                          setApprovedBusinessActivityIds(ids);
+                          if (!departmentModelManuallyChosenRef.current && ids.length) {
+                            setDepartmentModel(ids[0]);
+                          }
+                        }}/>
+                    </div>}
                   {workforceStructureStatus === 'VERIFIED' && workforceStructure && <div style={{padding:'15px 17px'}}>
                     {workforceStructure.items.length === 0
                       ? <p style={{fontSize:13,color:'#526781'}}>No department or position proposals yet. Create a draft to begin the governed approval process.</p>
@@ -5106,12 +5119,15 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                     {organizationKind === 'departments' && <section className={styles.organizationGuidedPick} aria-label="Choose a department from a business model">
                       <div className={styles.organizationGuidedTitle}>
                         <strong>Choose a department</strong>
-                        <p>Select a business activity and a suggested department, or enter a custom department below. Suggestions never create tenant records.</p>
+                        <p>{approvedBusinessActivityIds.length && approvedBusinessActivityIds.includes(departmentModel)
+                            ? 'Starting from your approved business profile. Choose a suggestion or customise the department.'
+                            : 'Choose any activity and suggested department, or enter a custom department below. No tenant records are created by suggestions.'}</p>
                       </div>
                       <div className={styles.organizationDraftGrid}>
                         <label>
                           <span>Business activity</span>
                           <select value={departmentModel} onChange={event => {
+                            departmentModelManuallyChosenRef.current = true;
                             setDepartmentModel(event.target.value);
                             setDepartmentTemplate('');
                             setDepartmentCatalogSearch('');
