@@ -5094,15 +5094,21 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               style={{padding:'22px',borderTop:'1px solid #dbe5f0',background:'#fff',color:'#142b49'}}>
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:20}}>
                 <div style={{display:'grid',gap:5}}>
-                  <h2 id="workforce-organization-heading" style={{fontSize:22,fontWeight:750,color:'#102744',margin:0}}>Organization &amp; positions</h2>
-                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>Create and approve governed departments and positions before assigning people.</p>
+                  <h2 id="workforce-organization-heading" style={{fontSize:22,fontWeight:750,color:'#102744',margin:0,scrollMarginTop:185}}>{organizationFormOpen ? 'New ' + (organizationKind === 'departments' ? 'department' : 'position') + ' draft' : 'Organization & positions'}</h2>
+                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>{organizationFormOpen ? 'Create an EOS proposal. Approval remains a separate independent action.' : 'Create and approve governed departments and positions before assigning people.'}</p>
                 </div>
-                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
-                  style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
-                  Refresh organization
-                </button>
+                {organizationFormOpen
+                  ? <button type="button" onClick={() => setOrganizationFormOpen(false)}
+                      style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
+                      Back to organization
+                    </button>
+                  : <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
+                      style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
+                      Refresh organization
+                    </button>}
               </div>
               <section aria-labelledby="organization-registry-heading" style={{border:'1px solid #d1deec',borderRadius:11,marginTop:0,overflow:'hidden'}}>
+                  {!organizationFormOpen && <React.Fragment>}
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,padding:'15px 17px',background:'#f8fafd',borderBottom:'1px solid #dbe5f0'}}>
                     <div>
                       <h3 id="organization-registry-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Governed structure</h3>
@@ -5172,6 +5178,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       </div>
                     </section>;
                   })()}
+                  </React.Fragment>}
                   {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form
                     className={styles.organizationDraftForm}
                     onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
@@ -5307,14 +5314,14 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   {!!organizationCommandState.message && <p role="status" style={{fontSize:12,color:organizationCommandState.status==='VERIFIED'?'#194c3d':'#7a302d',padding:'10px 17px'}}>
                     {organizationCommandState.message}
                   </p>}
-                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationLifecycleWorkspace
+                  {!organizationFormOpen && workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationLifecycleWorkspace
                     tenantId={tenantId} scopeKey={tenantScopeKey} structure={workforceStructure}
                     onUpdated={() => setWorkforceOrganizationRefresh(value => value + 1)}/>}
-                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationAssignmentWorkspace
+                  {!organizationFormOpen && workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationAssignmentWorkspace
                     tenantId={tenantId} scopeKey={tenantScopeKey} structure={workforceStructure}/>}
                 </section>
 
-              <section aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
+              {!organizationFormOpen && <section aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
                 <button type="button" aria-expanded={supportingOrganizationOpen} onClick={() => setSupportingOrganizationOpen(open => !open)} style={{width:'100%',textAlign:'left',cursor:'pointer',padding:'12px 15px',fontSize:13,fontWeight:700,color:'#173c70',background:'#f8fafd'}}>{supportingOrganizationOpen ? '▾' : '▸'} Observed workforce and headcount planning <span style={{fontSize:12,fontWeight:400,color:'#526781'}}>· Separate source records</span></button>
                 {supportingOrganizationOpen && <div style={{padding:'14px 15px'}}>
               {workforceOrganizationState === 'PENDING' && <p role="status" style={{padding:16,color:'#4b607a'}}>Checking your organization…</p>}
@@ -5399,7 +5406,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Observed staff assignments, requested headcount and approved organizational records are separate authorities. Drafts do not create hires or approve budget.</p>
               </React.Fragment>}
                 </div>}
-              </section>
+              </section>}
             </section>}
           </section>}
           {activeTab === 'candidates' && <section aria-labelledby="people-hiring-heading"
