@@ -2418,6 +2418,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [organizationCommandState, setOrganizationCommandState] = useState({status:'IDLE', message:''});
   const workforceStructureSequenceRef = useRef(0);
   const organizationCommandKeysRef = useRef({});
+  const organizationDraftUsageRef = useRef(null);
 
   const workforceOrganizationSequenceRef = useRef(0);
   const [selectedWorkforceEmployeeId, setSelectedWorkforceEmployeeId] = useState(null);
@@ -3125,6 +3126,43 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
    * Pending-key retention makes safe retries use the same idempotency evidence.
    * Neither UI state nor this function grants department approval or IAM.
    */
+  const beginOrganizationDraftUsage = () => {
+    organizationDraftUsageRef.current = {
+      sessionId: crypto.randomUUID().replaceAll('-', ''),
+      started: Date.now(), modifiedFields: new Set(),
+      selectedTemplates: 0, validationFailures: 0,
+    };
+  };
+
+  const trackOrganizationDraftField = (name) => {
+    organizationDraftUsageRef.current?.modifiedFields.add(name);
+  };
+
+  const reportOrganizationDraftUsage = (scope) => {
+    const usage = organizationDraftUsageRef.current;
+    organizationDraftUsageRef.current = null;
+    if (!usage || scope !== tenantScopeKeyRef.current) return;
+    // Product analytics are explicitly CLIENT_REPORTED. Never send field contents,
+    // names, employee identifiers, business justifications, principals or secrets.
+    const observations = [
+      {event:'FORM_OPENED',count:1},
+      ...(usage.selectedTemplates ? [{event:'CATALOG_SELECTED',
+        count:Math.min(usage.selectedTemplates,20)}] : []),
+      ...(usage.modifiedFields.size ? [{event:'MANUAL_FIELD_EDITED',
+        count:Math.min(usage.modifiedFields.size,20)}] : []),
+      ...(usage.validationFailures ? [{event:'VALIDATION_FAILED',
+        count:Math.min(usage.validationFailures,20)}] : []),
+      {event:'DRAFT_VERIFIED',count:1,
+        elapsed_ms:Math.max(0, Math.min(3600000,Date.now()-usage.started))},
+    ];
+    for (const observation of observations) {
+      void api.post('/hr/workforce/structure/productivity/observations', {
+        session_id:usage.sessionId,...observation,
+      }, {headers:{'X-Tenant-ID':tenantId,'Idempotency-Key':crypto.randomUUID()}})
+        .catch(() => { /* Metrics failure never becomes business success or blocks EOS. */ });
+    }
+  };
+
   const runOrganizationCommand = async (action, item = null) => {
     if (organizationCommandState.status === 'PENDING' || !tenantScopeKey
       || workforceStructureStatus !== 'VERIFIED') return;
@@ -3149,6 +3187,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       || payload.name.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(payload.effective_from)
       || (kind === 'positions' && (!payload.department_id || !Number.isInteger(payload.capacity)
         || payload.capacity < 1 || payload.capacity > 500)))) {
+      if (organizationDraftUsageRef.current) organizationDraftUsageRef.current.validationFailures += 1;
       setOrganizationCommandState({status:'INVALID',message:'Enter a valid identifier, name, effective date and approved department for a position.'});
       return;
     }
@@ -3194,6 +3233,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       setOrganizationReviewId(null);
       setOrganizationDecisionReason('');
       setOrganizationCommandState({status:'VERIFIED',message:saved.kind + ' ' + recordId + ' · ' + saved.status + ' · revision ' + saved.revision + ' verified after readback.'});
+      if (action === 'create') reportOrganizationDraftUsage(scope);
     } catch (error) {
       if (tenantScopeKeyRef.current !== scope) return;
       if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
@@ -5042,9 +5082,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       <p style={{fontSize:12,color:'#526781',marginTop:4}}>Create, submit and independently approve departments and positions through EOS.</p>
                     </div>
                     {workforceStructureStatus === 'VERIFIED' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                      <button type="button" onClick={() => {setOrganizationKind('departments');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
+                      <button type="button" onClick={() => {setOrganizationKind('departments');setOrganizationFormOpen(true);beginOrganizationDraftUsage();setOrganizationCommandState({status:'IDLE',message:''});}}
                         style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create department</button>
-                      <button type="button" onClick={() => {setOrganizationKind('positions');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
+                      <button type="button" onClick={() => {setOrganizationKind('positions');setOrganizationFormOpen(true);beginOrganizationDraftUsage();setOrganizationCommandState({status:'IDLE',message:''});}}
                         style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create position</button>
                     </div>}
                   </div>
@@ -5148,6 +5188,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                             const name = event.target.value;
                             setDepartmentTemplate(name);
                             if (!name) return;
+                            if (organizationDraftUsageRef.current) organizationDraftUsageRef.current.selectedTemplates += 1;
                             const slug = name.normalize('NFKD').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0,105);
                             setOrganizationForm(previous => ({
                               ...previous, name, record_id:slug ? 'DEP-' + slug : previous.record_id,
@@ -5173,7 +5214,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                         <span>Name</span>
                         <input required maxLength={180} value={organizationForm.name}
                           placeholder={organizationKind === 'departments' ? 'Enter your department name' : 'Enter the position title'}
-                          onChange={event => setOrganizationForm(prev => ({...prev,name:event.target.value}))}/>
+                          onChange={event => {trackOrganizationDraftField('name');setOrganizationForm(prev => ({...prev,name:event.target.value}));}}/>
                       </label>
                       <div className={styles.organizationCodeField}>
                         <div className={styles.organizationCodeLabelRow}>
@@ -5186,7 +5227,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                         <div className={styles.organizationCodeInput}>
                           <input id="wilsy-organization-record-code" required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
                             value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
-                            onChange={event => setOrganizationForm(prev => ({...prev,record_id:event.target.value}))}/>
+                            onChange={event => {trackOrganizationDraftField('record_id');setOrganizationForm(prev => ({...prev,record_id:event.target.value}));}}/>
                           <button type="button" onClick={() => {
                             const slug = organizationForm.name.normalize('NFKD').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0,105);
                             if (slug) setOrganizationForm(prev => ({...prev,record_id:(organizationKind === 'departments' ? 'DEP-' : 'POS-') + slug}));
@@ -5214,7 +5255,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       <div className={styles.organizationCodeField}>
                         <label htmlFor="wilsy-organization-parent-code">Parent code (optional)</label>
                         <select id="wilsy-organization-parent-code" value={organizationForm.parent_id}
-                          onChange={event => setOrganizationForm(prev => ({...prev,parent_id:event.target.value}))}>
+                          onChange={event => {trackOrganizationDraftField('parent_id');setOrganizationForm(prev => ({...prev,parent_id:event.target.value}));}}>
                           <option value="">Top level · no parent</option>
                           {workforceStructure.items.filter(unit =>
                             unit.status === 'APPROVED' &&
@@ -5227,7 +5268,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       <label>
                         <span>Effective from (YYYY-MM-DD)</span>
                         <input type="date" required value={organizationForm.effective_from}
-                          onChange={event => setOrganizationForm(prev => ({...prev,effective_from:event.target.value}))}/>
+                          onChange={event => {trackOrganizationDraftField('effective_from');setOrganizationForm(prev => ({...prev,effective_from:event.target.value}));}}/>
                       </label>
                     </div>
                     <div className={styles.organizationDraftActions}>
