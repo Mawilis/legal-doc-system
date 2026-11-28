@@ -115,14 +115,20 @@ def test_structure_static_route_precedes_employee_detail_and_preserves_iam(
 
     app = FastAPI()
     app.include_router(subject.router)
-    paths = [route.path for route in app.routes]
+    # Inspect the concrete workforce routes, not FastAPI's included-router
+    # compatibility wrappers (which do not necessarily expose `.path`).
+    routes = [
+        route for route in subject.router.routes
+        if hasattr(route, "path") and hasattr(route, "matches")
+    ]
+    paths = [route.path for route in routes]
     structure = "/api/hr/workforce/structure"
     employee = "/api/hr/workforce/{employee_id}"
     assert paths.index(structure) < paths.index(employee)
 
     request_scope = {"type": "http", "method": "GET", "path": structure, "root_path": ""}
     first_match = next(
-        route for route in app.routes
+        route for route in routes
         if route.matches(request_scope)[0] == Match.FULL
     )
     assert first_match.path == structure
