@@ -566,8 +566,8 @@ def read_organization_productivity(
         {"tenant_id": auth.tenant_id},
         {"_id": 0, "change_id": 1, "action": 1, "occurred_at": 1},
     ).sort("occurred_at", -1).limit(_LIMIT + 1))
-    if len(rows) > _LIMIT:
-        raise HTTPException(503, "ORGANIZATION_PRODUCTIVITY_BOUND_EXCEEDED")
+    recent_events_truncated = len(rows) > _LIMIT
+    rows = rows[:_LIMIT]
     drafts = {r["change_id"]: r["occurred_at"] for r in rows if r["action"] == "CHANGE_DRAFT"}
     elapsed = []
     for item in rows:
@@ -576,31 +576,42 @@ def read_organization_productivity(
                        - datetime.fromisoformat(drafts[item["change_id"]])).total_seconds()
             if seconds >= 0:
                 elapsed.append(seconds)
-    observations = list(_coll(db, _OBSERVATIONS).find(
-        {"tenant_id": auth.tenant_id},
-        {"_id": 0, "event": 1, "count": 1, "elapsed_ms": 1},
-    ).limit(_LIMIT + 1))
-    if len(observations) > _LIMIT:
-        raise HTTPException(503, "ORGANIZATION_PRODUCTIVITY_BOUND_EXCEEDED")
-    observed = {event: sum(row["count"] for row in observations
-                           if row["event"] == event) for event in (
+    try:
+        summary_rows = list(_coll(db, _OBSERVATIONS).aggregate([
+            {"$match": {"tenant_id": auth.tenant_id}},
+            {"$group": {
+                "_id": "$event", "count": {"$sum": "$count"},
+                "samples": {"$sum": 1}, "mean_elapsed_ms": {"$avg": "$elapsed_ms"},
+            }},
+            {"$limit": 6},
+        ]))
+    except Exception as error:
+        raise HTTPException(503, "ORGANIZATION_PRODUCTIVITY_UNAVAILABLE") from error
+    allowed_events = {
         "FORM_OPENED", "CATALOG_SELECTED", "MANUAL_FIELD_EDITED",
         "VALIDATION_FAILED", "DRAFT_VERIFIED",
-    )}
-    observed_times = [row["elapsed_ms"] for row in observations
-                      if row["event"] == "DRAFT_VERIFIED" and
-                      row.get("elapsed_ms") is not None]
+    }
+    if len(summary_rows) > len(allowed_events) or any(
+        row["_id"] not in allowed_events for row in summary_rows
+    ):
+        raise HTTPException(503, "ORGANIZATION_PRODUCTIVITY_INVALID_AGGREGATE")
+    observed = {name: 0 for name in allowed_events}
+    sample_count = 0
+    mean_form_duration = None
+    for row in summary_rows:
+        observed[row["_id"]] = int(row["count"])
+        sample_count += int(row["samples"])
+        if row["_id"] == "DRAFT_VERIFIED" and row.get("mean_elapsed_ms") is not None:
+            mean_form_duration = round(row["mean_elapsed_ms"] / 1000, 2)
     return {
         "client_report_source": "CLIENT_REPORTED",
-        "client_observation_sample": len(observations),
+        "client_observation_sample": sample_count,
         "client_observed": observed,
-        "client_mean_form_to_verified_seconds": (
-            round(sum(observed_times) / len(observed_times) / 1000, 2)
-            if observed_times else None
-        ),
+        "client_mean_form_to_verified_seconds": mean_form_duration,
         "schema": "WILSY-HR-ORGANIZATION-PRODUCTIVITY/V1",
         "tenant_id": auth.tenant_id, "source": "EOS_ORGANIZATION_CHANGE_EVENTS",
         "bounded_events": len(rows),
+        "recent_events_truncated": recent_events_truncated,
         "change_drafts": sum(r["action"] == "CHANGE_DRAFT" for r in rows),
         "approved_changes": sum(r["action"] == "CHANGE_DECIDE_APPROVE" for r in rows),
         "rejected_changes": sum(r["action"] == "CHANGE_DECIDE_REJECT" for r in rows),
