@@ -2390,11 +2390,11 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   tenantScopeKeyRef.current = tenantScopeKey;
   const previousTenantScopeKeyRef = useRef(tenantScopeKey);
   const user = authUser || {};
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => window.location.pathname.startsWith('/people/workforce') ? 'employees' : 'overview');
   const [morePeopleModulesOpen, setMorePeopleModulesOpen] = useState(false);
   const [peopleQueueFilter, setPeopleQueueFilter] = useState('all');
   const [peopleVerificationHelpOpen, setPeopleVerificationHelpOpen] = useState(false);
-  const [workforceView, setWorkforceView] = useState('directory');
+  const [workforceView, setWorkforceView] = useState(() => window.location.pathname === '/people/workforce/organization' ? 'organization' : 'directory');
   const [workforceOrganization, setWorkforceOrganization] = useState(null);
   const [workforceOrganizationState, setWorkforceOrganizationState] = useState('IDLE');
   const [workforceOrganizationRefresh, setWorkforceOrganizationRefresh] = useState(0);
@@ -2505,7 +2505,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
-    setWorkforceView('directory');
+    openWorkforceSubview('directory');
     setSelectedWorkforceEmployeeId(null);
     setWorkforceDetail(null);
     setWorkforceDetailStatus('IDLE');
@@ -2545,7 +2545,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
-    setWorkforceView('directory');
+    openWorkforceSubview('directory');
     setSearchTerm('');
     setWorkforceSearchDraft('');
     setSelectedWorkforceEmployeeId(null);
@@ -3225,6 +3225,14 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
    * @returns {void}
    * @collaboration HR navigation must change the business process, not repaint the same list.
    */
+  const openWorkforceSubview = (nextView) => {
+    setWorkforceView(nextView);
+    const nextPath = nextView === 'organization' ? '/people/workforce/organization' : '/people/workforce';
+    if (window.location.pathname !== nextPath && ['/','/dashboard','/headquarters','/people/workforce','/people/workforce/organization'].includes(window.location.pathname)) {
+      window.history.pushState(window.history.state, '', nextPath);
+    }
+  };
+
   const changeTab = (tabId) => {
     workforceDetailSequenceRef.current += 1;
     setSelectedWorkforceEmployeeId(null);
@@ -3235,6 +3243,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       setWorkforceSearchDraft('');
     }
     setActiveTab(tabId);
+    if (tabId !== 'employees' && window.location.pathname.startsWith('/people/workforce')) window.history.replaceState(window.history.state, '', '/');
     setMorePeopleModulesOpen(false);
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
@@ -4943,7 +4952,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 ? <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
                     <button type="button" onClick={() => changeTab('jobOpenings')}>Request headcount <ArrowUpRight size={15} aria-hidden /></button>
                     <button type="button" onClick={() => changeTab('candidates')}>Hiring pipeline <ArrowUpRight size={15} aria-hidden /></button>
-                    <button type="button" onClick={() => setWorkforceView('organization')}>View organization <ArrowUpRight size={15} aria-hidden /></button>
+                    <button type="button" onClick={() => openWorkforceSubview('organization')}>View organization <ArrowUpRight size={15} aria-hidden /></button>
                   </div>
                 : <button type="button" onClick={() => setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}))}>First page</button>}
             </div>}
@@ -5127,7 +5136,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                             <p style={{fontSize:12,color:'#526781',marginTop:3}}>{unit.active_employees} active {unit.active_employees === 1 ? 'person' : 'people'}</p>
                           </div>
                           <button type="button" onClick={() => {
-                            setWorkforceView('directory');
+                            openWorkforceSubview('directory');
                             setWorkforceSearchDraft(unit.name);
                             setSearchTerm(unit.name);
                             setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
