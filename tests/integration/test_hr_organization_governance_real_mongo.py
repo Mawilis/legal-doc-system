@@ -27,6 +27,7 @@ from pymongo import MongoClient
 from tools.eos.api import hr_workforce_directory_router as org
 from tools.eos.api import hr_organization_business_context_router as business
 from tools.eos.api import hr_organization_lifecycle_router as lifecycle
+from tools.eos.api import hr_organization_assignment_router as assignment
 
 _VERSION = "v1.0.0-M03-HR03-REAL-MONGO-TRANSACTION-CERT"
 
@@ -67,6 +68,8 @@ def mongo(monkeypatch):
     monkeypatch.setattr(lifecycle, "get_database", lambda: db)
     monkeypatch.setattr(business, "get_client", lambda: client)
     monkeypatch.setattr(business, "get_database", lambda: db)
+    monkeypatch.setattr(assignment, "get_client", lambda: client)
+    monkeypatch.setattr(assignment, "get_database", lambda: db)
     try:
         yield db, client
     finally:
@@ -237,6 +240,117 @@ def test_authorized_http_structure_paths_do_not_fall_through_to_employee_detail(
     source = client.get("/api/hr/workforce/structure")
     assert source.status_code == 200, source.text
     assert source.json()["items"][0]["record_id"] == "DEP-HTTP"
+
+
+
+def test_governed_assignment_move_with_approval_and_persistent_versions(mongo):
+    """Use real Mongo to verify exact-tenant employee→position→department graph."""
+    db, _ = mongo
+    tenant = "TENANT-SYNTHETIC-A"
+    maker, checker = _auth(tenant, "HR-MAKER"), _auth(tenant, "HR-CHECKER")
+    foreign = _auth("TENANT-SYNTHETIC-B", "HR-CHECKER")
+    db["employees"].insert_one({
+        "tenantId": tenant, "employeeId": "EMP-ONE",
+        "isActive": True, "deletedAt": None,
+        "employment": {"department": "Legacy unknown text"},
+    })
+    for dep in ("DEP-OPERATIONS", "DEP-SERVICES"):
+        db[org._ORG_COLLECTION].insert_one({
+            "tenant_id": tenant, "kind": "DEPARTMENT", "record_id": dep,
+            "name": dep, "status": "APPROVED", "revision": 2,
+            "effective_from": "2026-01-01",
+        })
+    for pos, dep in (("POS-ONE", "DEP-OPERATIONS"), ("POS-TWO", "DEP-SERVICES")):
+        db[org._ORG_COLLECTION].insert_one({
+            "tenant_id": tenant, "kind": "POSITION",
+            "record_id": pos, "department_id": dep,
+            "name": pos, "status": "APPROVED", "revision": 2,
+            "effective_from": "2026-01-01", "capacity": 1,
+        })
+
+    def approve(position, key):
+        created = assignment.propose_assignment(
+            assignment.AssignmentDraft(
+                employee_id="EMP-ONE", position_id=position,
+                effective_from=date(2026, 11, 28),
+                reason="Governed source-owned position and department placement",
+            ),
+            key=key + "-draft", organization=maker, workforce=maker,
+        )["proposal"]
+        submitted = assignment.submit_assignment(
+            created["proposal_id"],
+            assignment.AssignmentRevision(expected_revision=1),
+            key=key + "-submit", organization=maker, workforce=maker,
+        )["proposal"]
+        with pytest.raises(HTTPException) as denied:
+            assignment.decide_assignment(
+                created["proposal_id"],
+                assignment.AssignmentDecision(
+                    expected_revision=submitted["revision"],
+                    decision="APPROVE", reason="Maker cannot approve own assignment",
+                ),
+                key=key + "-maker-denied", organization=maker, workforce=maker,
+            )
+        assert denied.value.status_code == 403
+        result = assignment.decide_assignment(
+            created["proposal_id"],
+            assignment.AssignmentDecision(
+                expected_revision=submitted["revision"],
+                decision="APPROVE", reason="Independently verified employment placement",
+            ),
+            key=key + "-decision", organization=checker, workforce=checker,
+        )
+        assert result["proposal"]["status"] == "APPROVED"
+        return result
+
+    result = approve("POS-ONE", "hr03-assign-one")
+    replay = assignment.decide_assignment(
+        result["proposal"]["proposal_id"],
+        assignment.AssignmentDecision(
+            expected_revision=2, decision="APPROVE",
+            reason="Independently verified employment placement",
+        ),
+        key="hr03-assign-one-decision", organization=checker, workforce=checker,
+    )
+    assert replay == result
+    first = db[assignment._ASSIGNMENTS].find_one(
+        {"tenant_id": tenant, "employee_id": "EMP-ONE"})
+    assert first["revision"] == 1
+    assert first["department_id"] == "DEP-OPERATIONS"
+    approve("POS-TWO", "hr03-assign-two")
+    second = db[assignment._ASSIGNMENTS].find_one(
+        {"tenant_id": tenant, "employee_id": "EMP-ONE"})
+    assert second["revision"] == 2
+    assert second["department_id"] == "DEP-SERVICES"
+    assert db[assignment._ASSIGNMENTS].count_documents({"tenant_id": tenant}) == 1
+    assert db[assignment._ASSIGNMENTS].count_documents(
+        {"tenant_id": foreign.tenant_id}) == 0
+    read = assignment.list_assignments(organization=checker, workforce=checker)
+    assert read["current"][0]["department_id"] == "DEP-SERVICES"
+    assert read["legacy_employee_fields_synchronized"] is False
+    legacy = db["employees"].find_one({"employeeId": "EMP-ONE"})
+    assert legacy["employment"]["department"] == "Legacy unknown text"
+
+
+def test_assignment_fails_closed_on_foreign_employee_or_absent_position(mongo):
+    """Never create assignment graph edges from guessed tenant identifiers."""
+    db, _ = mongo
+    own = _auth("TENANT-SYNTHETIC-A", "HR-MAKER")
+    db["employees"].insert_one({
+        "tenantId": "TENANT-SYNTHETIC-B", "employeeId": "EMP-FOREIGN",
+        "isActive": True, "deletedAt": None,
+    })
+    with pytest.raises(HTTPException) as missing:
+        assignment.propose_assignment(
+            assignment.AssignmentDraft(
+                employee_id="EMP-FOREIGN", position_id="POS-MISSING",
+                effective_from=date(2026, 11, 28),
+                reason="Prevent cross tenant employee relationship",
+            ),
+            key="hr03-assignment-foreign-0001", organization=own, workforce=own,
+        )
+    assert missing.value.status_code == 404
+    assert db[assignment._PROPOSALS].count_documents({}) == 0
 
 
 # ARTIFACT: tests/integration/test_hr_organization_governance_real_mongo.py
