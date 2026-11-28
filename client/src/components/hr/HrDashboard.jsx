@@ -5108,7 +5108,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                     </button>}
               </div>
               <section aria-labelledby="organization-registry-heading" style={{border:'1px solid #d1deec',borderRadius:11,marginTop:0,overflow:'hidden'}}>
-                  {!organizationFormOpen && <React.Fragment>}
+                  {!organizationFormOpen && <React.Fragment>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,padding:'15px 17px',background:'#f8fafd',borderBottom:'1px solid #dbe5f0'}}>
                     <div>
                       <h3 id="organization-registry-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Governed structure</h3>
