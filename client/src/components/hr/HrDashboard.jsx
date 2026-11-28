@@ -4984,97 +4984,18 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:20}}>
                 <div style={{display:'grid',gap:5}}>
                   <h2 id="workforce-organization-heading" style={{fontSize:22,fontWeight:750,color:'#102744',margin:0}}>Organization &amp; positions</h2>
-                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>See where people work and plan positions before the first hire.</p>
+                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>Create and approve governed departments and positions before assigning people.</p>
                 </div>
                 <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
                   style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
                   Refresh organization
                 </button>
               </div>
-              {workforceOrganizationState === 'PENDING' && <p role="status" style={{padding:16,color:'#4b607a'}}>Checking your organization…</p>}
-              {workforceOrganizationState === 'DENIED' && <p role="alert" style={{padding:16,color:'#4b607a'}}>Organization information is not available to this operating capacity.</p>}
-              {workforceOrganizationState === 'UNAVAILABLE' && <div role="status" style={{display:'grid',gap:10,padding:16,border:'1px solid #d3deeb',borderRadius:10}}>
-                <strong style={{color:'#142b49'}}>Organization is temporarily unavailable</strong>
-                <p style={{fontSize:13,color:'#4b607a'}}>The current organization records could not be confirmed. Previous records are not shown as an empty organization.</p>
-                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
-                  style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'9px 13px',color:'#173c70',fontWeight:700}}>Try again</button>
-              </div>}
-              {workforceOrganizationState === 'VERIFIED' && workforceOrganization && <React.Fragment>
-                <div aria-label="Current observed organization" style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:18}}>
-                  {[
-                    {label:'Departments with people',value:workforceOrganization.department_count},
-                    {label:'Active employees',value:workforceOrganization.active_employees},
-                    {label:'Without a department',value:workforceOrganization.unassigned_employees},
-                  ].map(metric => <div key={metric.label} style={{display:'flex',alignItems:'baseline',gap:8,padding:'10px 13px',background:'#f5f8fc',border:'1px solid #dce5f0',borderRadius:9}}>
-                    <span style={{fontSize:20,fontWeight:800,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{metric.value}</span>
-                    <span style={{fontSize:12,color:'#405a78'}}>{metric.label}</span>
-                  </div>)}
-                </div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,410px),1fr))',gap:16,alignItems:'start'}}>
-                  <section aria-labelledby="observed-departments-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
-                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
-                      <h3 id="observed-departments-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Departments</h3>
-                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Shown from active employee assignments, not an approved department register.</p>
-                    </div>
-                    {workforceOrganization.departments.length === 0
-                      ? <div style={{padding:'21px 17px',display:'grid',gap:8}} role="status">
-                          <strong style={{fontSize:15,color:'#142f50'}}>No departments with people yet</strong>
-                          <p style={{fontSize:13,color:'#4b607a',lineHeight:1.6}}>You can plan positions before hiring. Departments will appear here once authorized employee assignments exist.</p>
-                        </div>
-                      : workforceOrganization.departments.map((unit,i) => <div key={unit.name}
-                          style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'13px 17px',borderBottom:i === workforceOrganization.departments.length-1 ? 'none' : '1px solid #e1e8f1'}}>
-                          <div style={{minWidth:0}}>
-                            <strong style={{fontSize:13,color:'#163551'}}>{unit.name}</strong>
-                            <p style={{fontSize:12,color:'#526781',marginTop:3}}>{unit.active_employees} active {unit.active_employees === 1 ? 'person' : 'people'}</p>
-                          </div>
-                          <button type="button" onClick={() => {
-                            setWorkforceView('directory');
-                            setWorkforceSearchDraft(unit.name);
-                            setSearchTerm(unit.name);
-                            setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
-                          }} aria-label={'Search workforce in ' + unit.name + ', ' + unit.active_employees + ' active employees'}
-                            style={{padding:'9px 12px',borderRadius:8,background:'#fff',color:'#173c70',border:'1px solid #afc2d8',fontSize:12,fontWeight:700,minHeight:40}}>View people</button>
-                        </div>)}
-                  </section>
-                  <section aria-labelledby="position-planning-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
-                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
-                      <h3 id="position-planning-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Position planning</h3>
-                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Existing requisitions and independent approval decisions.</p>
-                    </div>
-                    {isVerifiedReadState(datasetReadStates.jobOpenings) && !datasetReadStates.jobOpenings?.revalidating
-                      ? <div style={{padding:'18px 17px',display:'grid',gap:13}}>
-                          <div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'baseline'}}>
-                            <span style={{fontSize:13,color:'#405a78'}}>Headcount requests</span>
-                            <strong style={{fontSize:21,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{datasets.jobOpenings.total}</strong>
-                          </div>
-                          <p style={{fontSize:12,color:'#526781'}}>Approved requests on the loaded page: {datasets.jobOpenings.items.filter(item => item.status === 'APPROVED').length}. This is not a total approved-position count.</p>
-                          {datasets.jobOpenings.total === 0
-                            ? <p style={{fontSize:13,lineHeight:1.6,color:'#4b607a'}}>No position requests yet. Begin with a role, department and business justification, then submit it for independent approval.</p>
-                            : <div style={{display:'grid',gap:8}}>
-                                {datasets.jobOpenings.items.slice(0,4).map(item => <div key={item.id}
-                                  style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',borderTop:'1px solid #e1e8f1',paddingTop:9}}>
-                                  <span style={{fontSize:13,color:'#183551',fontWeight:650}}>{item.title || 'Untitled request'}</span>
-                                  <span style={{fontSize:12,color:'#526781'}}>{item.status || 'Status unavailable'}</span>
-                                </div>)}
-                                {datasets.jobOpenings.hasMore && <span style={{fontSize:11,color:'#526781'}}>Additional requests are available in Headcount &amp; roles.</span>}
-                              </div>}
-                          <button type="button" onClick={() => changeTab('jobOpenings')}
-                            style={{justifySelf:'start',padding:'10px 14px',minHeight:40,borderRadius:8,background:'#173c70',color:'#fff',fontSize:13,fontWeight:750}}>
-                            {datasets.jobOpenings.total === 0 ? 'Request headcount' : 'Manage headcount requests'} <ArrowUpRight size={14} aria-hidden />
-                          </button>
-                        </div>
-                      : <div style={{padding:'18px 17px',display:'grid',gap:10}}>
-                          <p role="status" style={{fontSize:13,color:'#4b607a'}}>Headcount requests are not currently verified. No position count is inferred.</p>
-                          <button type="button" onClick={() => changeTab('jobOpenings')}
-                            style={{justifySelf:'start',padding:'9px 12px',border:'1px solid #afc2d8',borderRadius:8,color:'#173c70',fontSize:12,fontWeight:700}}>Inspect headcount source</button>
-                        </div>}
-                  </section>
-                </div>
-                <section aria-labelledby="organization-registry-heading" style={{border:'1px solid #d1deec',borderRadius:11,marginTop:18,overflow:'hidden'}}>
+              <section aria-labelledby="organization-registry-heading" style={{border:'1px solid #d1deec',borderRadius:11,marginTop:0,overflow:'hidden'}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,padding:'15px 17px',background:'#f8fafd',borderBottom:'1px solid #dbe5f0'}}>
                     <div>
                       <h3 id="organization-registry-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Governed structure</h3>
-                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Real departments and positions · drafts require independent approval.</p>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Create, submit and independently approve departments and positions through EOS.</p>
                     </div>
                     {workforceStructureStatus === 'VERIFIED' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                       <button type="button" onClick={() => {setOrganizationKind('departments');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
@@ -5156,8 +5077,93 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                     {organizationCommandState.message}
                   </p>}
                 </section>
+
+              <details aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
+                <summary style={{cursor:'pointer',padding:'12px 15px',fontSize:13,fontWeight:700,color:'#173c70',background:'#f8fafd'}}>Observed workforce and headcount planning <span style={{fontSize:12,fontWeight:400,color:'#526781'}}>· Separate source records</span></summary>
+                <div style={{padding:'14px 15px'}}>
+              {workforceOrganizationState === 'PENDING' && <p role="status" style={{padding:16,color:'#4b607a'}}>Checking your organization…</p>}
+              {workforceOrganizationState === 'DENIED' && <p role="alert" style={{padding:16,color:'#4b607a'}}>Organization information is not available to this operating capacity.</p>}
+              {workforceOrganizationState === 'UNAVAILABLE' && <div role="status" style={{display:'grid',gap:10,padding:16,border:'1px solid #d3deeb',borderRadius:10}}>
+                <strong style={{color:'#142b49'}}>Organization is temporarily unavailable</strong>
+                <p style={{fontSize:13,color:'#4b607a'}}>The current organization records could not be confirmed. Previous records are not shown as an empty organization.</p>
+                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
+                  style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'9px 13px',color:'#173c70',fontWeight:700}}>Try again</button>
+              </div>}
+              {workforceOrganizationState === 'VERIFIED' && workforceOrganization && <React.Fragment>
+                <div aria-label="Current observed organization" style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:18}}>
+                  {[
+                    {label:'Departments with people',value:workforceOrganization.department_count},
+                    {label:'Active employees',value:workforceOrganization.active_employees},
+                    {label:'Without a department',value:workforceOrganization.unassigned_employees},
+                  ].map(metric => <div key={metric.label} style={{display:'flex',alignItems:'baseline',gap:8,padding:'10px 13px',background:'#f5f8fc',border:'1px solid #dce5f0',borderRadius:9}}>
+                    <span style={{fontSize:20,fontWeight:800,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{metric.value}</span>
+                    <span style={{fontSize:12,color:'#405a78'}}>{metric.label}</span>
+                  </div>)}
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,410px),1fr))',gap:16,alignItems:'start'}}>
+                  <section aria-labelledby="observed-departments-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
+                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
+                      <h3 id="observed-departments-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Departments</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Shown from active employee assignments, not an approved department register.</p>
+                    </div>
+                    {workforceOrganization.departments.length === 0
+                      ? <div style={{padding:'21px 17px',display:'grid',gap:8}} role="status">
+                          <strong style={{fontSize:15,color:'#142f50'}}>No departments with people yet</strong>
+                          <p style={{fontSize:13,color:'#4b607a',lineHeight:1.6}}>You can plan positions before hiring. Departments will appear here once authorized employee assignments exist.</p>
+                        </div>
+                      : workforceOrganization.departments.map((unit,i) => <div key={unit.name}
+                          style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'13px 17px',borderBottom:i === workforceOrganization.departments.length-1 ? 'none' : '1px solid #e1e8f1'}}>
+                          <div style={{minWidth:0}}>
+                            <strong style={{fontSize:13,color:'#163551'}}>{unit.name}</strong>
+                            <p style={{fontSize:12,color:'#526781',marginTop:3}}>{unit.active_employees} active {unit.active_employees === 1 ? 'person' : 'people'}</p>
+                          </div>
+                          <button type="button" onClick={() => {
+                            setWorkforceView('directory');
+                            setWorkforceSearchDraft(unit.name);
+                            setSearchTerm(unit.name);
+                            setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
+                          }} aria-label={'Search workforce in ' + unit.name + ', ' + unit.active_employees + ' active employees'}
+                            style={{padding:'9px 12px',borderRadius:8,background:'#fff',color:'#173c70',border:'1px solid #afc2d8',fontSize:12,fontWeight:700,minHeight:40}}>View people</button>
+                        </div>)}
+                  </section>
+                  <section aria-labelledby="position-planning-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
+                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
+                      <h3 id="position-planning-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Position planning</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Existing requisitions and independent approval decisions.</p>
+                    </div>
+                    {isVerifiedReadState(datasetReadStates.jobOpenings) && !datasetReadStates.jobOpenings?.revalidating
+                      ? <div style={{padding:'18px 17px',display:'grid',gap:13}}>
+                          <div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'baseline'}}>
+                            <span style={{fontSize:13,color:'#405a78'}}>Headcount requests</span>
+                            <strong style={{fontSize:21,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{datasets.jobOpenings.total}</strong>
+                          </div>
+                          <p style={{fontSize:12,color:'#526781'}}>Approved requests on the loaded page: {datasets.jobOpenings.items.filter(item => item.status === 'APPROVED').length}. This is not a total approved-position count.</p>
+                          {datasets.jobOpenings.total === 0
+                            ? <p style={{fontSize:13,lineHeight:1.6,color:'#4b607a'}}>No position requests yet. Begin with a role, department and business justification, then submit it for independent approval.</p>
+                            : <div style={{display:'grid',gap:8}}>
+                                {datasets.jobOpenings.items.slice(0,4).map(item => <div key={item.id}
+                                  style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',borderTop:'1px solid #e1e8f1',paddingTop:9}}>
+                                  <span style={{fontSize:13,color:'#183551',fontWeight:650}}>{item.title || 'Untitled request'}</span>
+                                  <span style={{fontSize:12,color:'#526781'}}>{item.status || 'Status unavailable'}</span>
+                                </div>)}
+                                {datasets.jobOpenings.hasMore && <span style={{fontSize:11,color:'#526781'}}>Additional requests are available in Headcount &amp; roles.</span>}
+                              </div>}
+                          <button type="button" onClick={() => changeTab('jobOpenings')}
+                            style={{justifySelf:'start',padding:'10px 14px',minHeight:40,borderRadius:8,background:'#173c70',color:'#fff',fontSize:13,fontWeight:750}}>
+                            {datasets.jobOpenings.total === 0 ? 'Request headcount' : 'Manage headcount requests'} <ArrowUpRight size={14} aria-hidden />
+                          </button>
+                        </div>
+                      : <div style={{padding:'18px 17px',display:'grid',gap:10}}>
+                          <p role="status" style={{fontSize:13,color:'#4b607a'}}>Headcount requests are not currently verified. No position count is inferred.</p>
+                          <button type="button" onClick={() => changeTab('jobOpenings')}
+                            style={{justifySelf:'start',padding:'9px 12px',border:'1px solid #afc2d8',borderRadius:8,color:'#173c70',fontSize:12,fontWeight:700}}>Inspect headcount source</button>
+                        </div>}
+                  </section>
+                </div>
                 <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Observed staff assignments, requested headcount and approved organizational records are separate authorities. Drafts do not create hires or approve budget.</p>
               </React.Fragment>}
+                </div>
+              </details>
             </section>}
           </section>}
           {activeTab === 'candidates' && <section aria-labelledby="people-hiring-heading"
