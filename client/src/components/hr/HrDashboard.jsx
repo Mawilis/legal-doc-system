@@ -5236,7 +5236,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                           </details>
                         </div>
                         <div className={styles.organizationCodeInput}>
-                          <input id="wilsy-organization-record-code" required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
+                          <input id="wilsy-organization-record-code" required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:\\-]*"
                             value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
                             onChange={event => {trackOrganizationDraftField('record_id');setOrganizationForm(prev => ({...prev,record_id:event.target.value}));}}/>
                           <button type="button" onClick={() => {
