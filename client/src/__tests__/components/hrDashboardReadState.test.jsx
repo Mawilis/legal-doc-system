@@ -266,7 +266,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
     expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
     await openLane('Hiring');
     expect(await screen.findByText('CAN-EOS-2026-01')).toBeInTheDocument();
-    expect(screen.getByText('REQ-EOS-2026-01')).toBeInTheDocument();
+    expect(screen.getByText(/Requisition REQ-EOS-2026-01/)).toBeInTheDocument();
     expect(screen.queryByText('PROFILE-PRIVATE-REF')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create candidate', exact: true })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Advance with evidence' })).toBeInTheDocument();
@@ -337,7 +337,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
       );
       fireEvent.change(screen.getByLabelText('Decision reason *'), { target: { value: 'Reviewed candidate profile' } });
       fireEvent.click(runCommand);
-      expect(await screen.findByText(updatedCandidate.candidate_id)).toBeInTheDocument();
+      expect(await screen.findByText(/Requisition REQ-APPROVED-UI-1 · SCREENING/)).toBeInTheDocument();
       expect(mockState.candidateTransition).toHaveBeenCalledWith(candidate.candidate_id, {
         expected_revision: 1,
         target_stage: 'SCREENING',
