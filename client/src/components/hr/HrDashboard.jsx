@@ -5107,10 +5107,16 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       </label>
                       <label>
                         <span>Unique code</span>
-                        <input required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
-                          value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
-                          onChange={event => setOrganizationForm(prev => ({...prev,record_id:event.target.value}))}/>
-                        <small>Permanent source identifier. Choose a code that is unique in this employer.</small>
+                        <div className={styles.organizationCodeInput}>
+                          <input required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
+                            value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
+                            onChange={event => setOrganizationForm(prev => ({...prev,record_id:event.target.value}))}/>
+                          <button type="button" onClick={() => {
+                            const slug = organizationForm.name.normalize('NFKD').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0,105);
+                            if (slug) setOrganizationForm(prev => ({...prev,record_id:(organizationKind === 'departments' ? 'DEP-' : 'POS-') + slug}));
+                          }} disabled={!organizationForm.name.trim()}>Suggest code</button>
+                        </div>
+                        <small>Editable suggestion, not a reserved code. EOS verifies uniqueness when saved.</small>
                       </label>
                       {organizationKind === 'positions' && <>
                         <label>
