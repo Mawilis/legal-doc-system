@@ -295,6 +295,9 @@ def propose_department_change(
 ):
     if body.clear_parent and body.parent_id is not None:
         raise HTTPException(422, "ORGANIZATION_PARENT_CONFLICT")
+    if body.change_type == "RETIRE" and (body.name is not None
+                                        or body.parent_id is not None or body.clear_parent):
+        raise HTTPException(422, "ORGANIZATION_RETIREMENT_FIELDS_INVALID")
     if body.change_type == "AMEND" and body.name is None and body.parent_id is None and not body.clear_parent:
         raise HTTPException(422, "ORGANIZATION_CHANGE_FIELDS_REQUIRED")
     tenant, actor = auth.tenant_id, auth.identity.identity_id
@@ -312,6 +315,8 @@ def propose_department_change(
         current = _record(records, tenant, record_id, tx)
         if current["status"] != "APPROVED":
             raise HTTPException(409, "ORGANIZATION_APPROVED_RECORD_REQUIRED")
+        if payload["effective_from"] < str(current.get("effective_from") or ""):
+            raise HTTPException(409, "ORGANIZATION_BACKDATED_CHANGE_NOT_SUPPORTED")
         change = {
             **payload, "tenant_id": tenant, "record_id": record_id,
             "change_id": uuid4().hex, "status": "DRAFT", "revision": 1,
@@ -379,6 +384,8 @@ def decide_department_change(
         current = _record(records, tenant, record_id, tx)
         if current["status"] != "APPROVED" or current["revision"] != change["base_revision"]:
             raise HTTPException(409, "ORGANIZATION_SOURCE_CHANGED")
+        if change["effective_from"] < str(current.get("effective_from") or ""):
+            raise HTTPException(409, "ORGANIZATION_BACKDATED_CHANGE_NOT_SUPPORTED")
         if body.decision == "APPROVE":
             if change["change_type"] == "RETIRE" and _impact(records, tenant, record_id, tx)["retirement_blocked"]:
                 raise HTTPException(409, "ORGANIZATION_RETIREMENT_HAS_DEPENDENCIES")
@@ -482,6 +489,8 @@ def activate_due_department_change(
         current = _record(records, tenant, record_id, tx)
         if current["revision"] != change["base_revision"] or current["status"] != "APPROVED":
             raise HTTPException(409, "ORGANIZATION_SOURCE_CHANGED")
+        if change["effective_from"] < str(current.get("effective_from") or ""):
+            raise HTTPException(409, "ORGANIZATION_BACKDATED_CHANGE_NOT_SUPPORTED")
         if change["change_type"] == "RETIRE" and _impact(records, tenant, record_id, tx)["retirement_blocked"]:
             raise HTTPException(409, "ORGANIZATION_RETIREMENT_HAS_DEPENDENCIES")
         if change["change_type"] == "AMEND":
