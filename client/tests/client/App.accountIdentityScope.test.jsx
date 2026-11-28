@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY account identity scope transition certificate
- * VERSION: v1.4.0-CAPACITY-HOME-UNIFORM-FOOTER-CERT
+ * VERSION: v1.5.0-EOS-VERIFIED-ACCOUNT-EMAIL-ONLY
  * AUTHORITY: Client projection test only; Python EOS remains the authority.
  * EPITOME: Prove that the Top App Bar account menu follows a same-principal
  *          EOS tenant and selected-capacity transition without retaining the
@@ -9,7 +9,8 @@
  *   /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/App.accountIdentityScope.test.jsx
  * COLLABORATION / OWNERSHIP: App authenticated chrome and AuthProvider contract.
  * CERTIFICATION / UPDATE DATE: 2026-11-15
- * CHANGELOG: v1.4.0-CAPACITY-HOME-UNIFORM-FOOTER-CERT asserts Owner/HR logo home resolution, no logout, one shared footer outside HQ, and fail-closed tenant identity on that footer.
+ * CHANGELOG: v1.5.0-EOS-VERIFIED-ACCOUNT-EMAIL-ONLY asserts authenticated workspaceEmail only, rejects sign-in candidate identities and preserves device-local settings.
+CHANGELOG: v1.4.0-CAPACITY-HOME-UNIFORM-FOOTER-CERT asserts Owner/HR logo home resolution, no logout, one shared footer outside HQ, and fail-closed tenant identity on that footer.
  * CHANGELOG: v1.3.0-PLAIN-LANGUAGE-ACCOUNT-LABELS certifies concise account versus sign-in provenance without implying unverified address ownership.
  * CHANGELOG: v1.4.0-CAPACITY-HOME-UNIFORM-FOOTER-CERT distinguishes EOS credential email from a sign-in fallback without assigning email-control verification authority.
  * CHANGELOG: v1.1.0-FOCUSED-ACCOUNT-PROFILE-CERT verifies focused account navigation, explicit sign-in email provenance, and durable device menu density.
@@ -164,7 +165,7 @@ describe('Top App Bar account identity scope', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
     const menu = screen.getByRole('menu', { name: 'Account menu' });
     expect(menu).toHaveTextContent('alex.tenant-a@example.test');
-    expect(menu).toHaveTextContent('Account email');
+    expect(menu).toHaveTextContent('Verified account email');
     expect(menu).not.toHaveTextContent('EOS credential source');
     expect(menu).not.toHaveTextContent('workspace email not provided');
   });
@@ -175,9 +176,11 @@ describe('Top App Bar account identity scope', () => {
     render(renderAccount(auth));
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
     const menu = screen.getByRole('menu', { name: 'Account menu' });
-    expect(menu).toHaveTextContent('Sign-in email');
+    expect(menu).not.toHaveTextContent('Sign-in email');
+    expect(menu).not.toHaveTextContent(candidate.email);
     fireEvent.click(screen.getByRole('menuitem', { name: /My profile/ }));
-    expect(menu).toHaveTextContent('Sign-in email, not independently verified by EOS');
+    expect(menu).toHaveTextContent('Not verified by EOS');
+    expect(menu).not.toHaveTextContent(candidate.email);
     expect(screen.getByRole('menuitem', { name: /Back to account/ })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Personal settings/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('menuitem', { name: /Back to account/ }));
@@ -249,7 +252,7 @@ describe('Top App Bar account identity scope', () => {
 });
 
 // ARTIFACT: client/tests/client/App.accountIdentityScope.test.jsx
-// VERSION: v1.4.0-CAPACITY-HOME-UNIFORM-FOOTER-CERT
+// VERSION: v1.5.0-EOS-VERIFIED-ACCOUNT-EMAIL-ONLY
 // AUTHORITY BOUNDARY: Client projection test only; EOS owns identity and access.
 // TENANT POSTURE: Exact synthetic tenant projections; no persistence.
 // FAIL-CLOSED POSTURE: Mismatched or stale rendered identity fails assertions.
