@@ -258,6 +258,23 @@ beforeEach(() => {
 
 describe('production People Overview source contracts', () => {
 
+  it('keeps Workforce and Organization URLs across view changes and remounts', async () => {
+    const view = renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    expect(window.location.pathname).toBe('/people/workforce');
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    expect(window.location.pathname).toBe('/people/workforce/organization');
+    expect(screen.getByRole('button', {name: 'Organization', exact: true})).toHaveAttribute('aria-pressed', 'true');
+
+    view.unmount();
+    const remount = renderDashboard();
+    expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'Organization', exact: true})).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', {name: 'Directory', exact: true}));
+    expect(window.location.pathname).toBe('/people/workforce');
+    remount.unmount();
+  });
+
   it('creates an organization draft only after an exact-tenant persisted readback', async () => {
     vi.stubGlobal('crypto',{randomUUID:()=>'org-command-unique-uuid-0001'});
     const scope = 'TENANT-HR-A';
