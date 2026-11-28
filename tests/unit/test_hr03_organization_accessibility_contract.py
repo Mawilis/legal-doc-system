@@ -39,12 +39,14 @@ def _contrast(fg: str, bg: str) -> float:
 def _rules(filename: str, selector: str) -> str:
     """Return the last CSS rule for a specific, well-defined source selector."""
     source = (ROOT / filename).read_text(encoding="utf-8")
-    found = list(re.finditer(
-        re.escape(selector) + r"\s*\{([^{}]*)\}", source,
-        flags=re.DOTALL,
-    ))
+    found = [
+        match.group(2) for match in re.finditer(
+            r"([^{}]+)\{([^{}]*)\}", source, flags=re.DOTALL,
+        )
+        if selector in [part.strip() for part in match.group(1).split(",")]
+    ]
     assert found, f"Missing accessibility selector {filename}: {selector}"
-    return found[-1].group(1)
+    return found[-1]
 
 
 def _color(rule: str, property_name: str) -> str:
