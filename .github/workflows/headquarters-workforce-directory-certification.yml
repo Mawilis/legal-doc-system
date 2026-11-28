@@ -6,8 +6,8 @@
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/headquarters-workforce-directory-certification.yml
 # COLLABORATION / OWNERSHIP: Python EOS workforce authority and Headquarters client.
 # CERTIFICATION / UPDATE DATE: 2026-11-27
-# # CHANGELOG: v1.3.0-M03-HR03-ASSIGNMENT-TRANSACTION-AND-CLIENT-CERT adds governed employee assignment source compilation, real-Mongo move/replay/version and client accessibility tests.
-CHANGELOG: v1.2.0-M03-HR03-ORGANIZATION-TRANSACTION-CERT adds
+# CHANGELOG: v1.3.0-M03-HR03-ASSIGNMENT-TRANSACTION-AND-CLIENT-CERT adds governed employee assignment source compilation, real-Mongo move/replay/version and client accessibility tests.
+# CHANGELOG: v1.2.0-M03-HR03-ORGANIZATION-TRANSACTION-CERT adds
 #            the HR01 FastAPI regression test to the actual pytest invocation.
 # CHANGELOG: v1.2.0-M03-HR03-ORGANIZATION-TRANSACTION-CERT adds source-owned context, amendment, reconciliation, disposable Mongo and client UI certificates.
 # CHANGELOG: v1.1.0-M03-HR01-EMPLOYEE-HTTP-SECURITY-CERT adds exact
