@@ -34,6 +34,7 @@ class ChangeDraft(BaseModel):
     change_type: Literal["AMEND", "RETIRE"]
     name: str | None = Field(default=None, min_length=2, max_length=180)
     parent_id: str | None = Field(default=None, min_length=1, max_length=120)
+    clear_parent: bool = False
     effective_from: date
     reason: str = Field(min_length=5, max_length=2000)
 
@@ -238,13 +239,53 @@ def read_department_history(
             "record_id": record_id, "items": rows, "count": len(rows)}
 
 
+@router.get("/departments/{record_id}/as-of")
+def read_department_at_date(
+    record_id: str, on: date = Query(...),
+    auth: TenantAuthorizationContext = Depends(org._ORG_READ),
+):
+    """Bounded historical snapshot; never imply a missing older version exists."""
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    record = org._org_collection(db, org._ORG_COLLECTION).find_one(
+        {"tenant_id": auth.tenant_id, "kind": "DEPARTMENT",
+         "record_id": record_id}, {"_id": 0},
+    )
+    if record is None:
+        raise HTTPException(404, "ORGANIZATION_NOT_FOUND")
+    rows = list(_coll(db, _VERSIONS).find(
+        {"tenant_id": auth.tenant_id, "record_id": record_id},
+        {"_id": 0, "revision": 1, "name": 1, "parent_id": 1,
+         "status": 1, "effective_from": 1},
+    ).limit(_LIMIT + 1))
+    if len(rows) > _LIMIT:
+        raise HTTPException(503, "ORGANIZATION_HISTORY_BOUND_EXCEEDED")
+    if not rows:
+        rows = [{k: record.get(k) for k in (
+            "revision", "name", "parent_id", "status", "effective_from",
+        )}]
+    applicable = [row for row in rows
+                  if str(row.get("effective_from") or "") <= on.isoformat()]
+    if not applicable:
+        raise HTTPException(404, "ORGANIZATION_NO_VERIFIED_VERSION_FOR_DATE")
+    chosen = max(applicable, key=lambda row: (
+        str(row.get("effective_from") or ""), row["revision"],
+    ))
+    return {"schema": "WILSY-HR-ORGANIZATION-AS-OF/V1",
+            "tenant_id": auth.tenant_id, "record_id": record_id,
+            "as_of": on.isoformat(), "record": chosen}
+
+
 @router.post("/departments/{record_id}/changes", status_code=201)
 def propose_department_change(
     record_id: str, body: ChangeDraft,
     key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
     auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
 ):
-    if body.change_type == "AMEND" and body.name is None and body.parent_id is None:
+    if body.clear_parent and body.parent_id is not None:
+        raise HTTPException(422, "ORGANIZATION_PARENT_CONFLICT")
+    if body.change_type == "AMEND" and body.name is None and body.parent_id is None and not body.clear_parent:
         raise HTTPException(422, "ORGANIZATION_CHANGE_FIELDS_REQUIRED")
     tenant, actor = auth.tenant_id, auth.identity.identity_id
     payload = body.model_dump(mode="json")
@@ -331,24 +372,8 @@ def decide_department_change(
         if body.decision == "APPROVE":
             if change["change_type"] == "RETIRE" and _impact(records, tenant, record_id, tx)["retirement_blocked"]:
                 raise HTTPException(409, "ORGANIZATION_RETIREMENT_HAS_DEPENDENCIES")
-            if change.get("parent_id"):
-                if change["parent_id"] == record_id:
-                    raise HTTPException(422, "ORGANIZATION_SELF_REFERENCE")
-                ancestor = change["parent_id"]
-                for _ in range(64):
-                    row = records.find_one({
-                        "tenant_id": tenant, "kind": "DEPARTMENT",
-                        "record_id": ancestor, "status": "APPROVED",
-                    }, session=tx)
-                    if row is None:
-                        raise HTTPException(409, "ORGANIZATION_PARENT_NOT_APPROVED")
-                    ancestor = row.get("parent_id")
-                    if ancestor == record_id:
-                        raise HTTPException(409, "ORGANIZATION_PARENT_CYCLE")
-                    if not ancestor:
-                        break
-                else:
-                    raise HTTPException(409, "ORGANIZATION_HIERARCHY_DEPTH_EXCEEDED")
+            if change["change_type"] == "AMEND":
+                _check_hierarchy(records, current, change, tenant, tx)
         scheduled = body.decision == "APPROVE" and change["effective_from"] > date.today().isoformat()
         decision_status = ("APPROVED_SCHEDULED" if scheduled else "APPROVED") if body.decision == "APPROVE" else "REJECTED"
         if body.decision == "APPROVE" and not scheduled:
@@ -370,12 +395,36 @@ def decide_department_change(
                                             **body.model_dump()})
 
 
+def _check_hierarchy(records, current, change, tenant, tx):
+    """Reject cycles and nonapproved parents on decision AND activation."""
+    target = change.get("parent_id")
+    if change.get("clear_parent") or not target:
+        return
+    if target == current["record_id"]:
+        raise HTTPException(422, "ORGANIZATION_SELF_REFERENCE")
+    ancestor = target
+    for _ in range(64):
+        row = records.find_one({
+            "tenant_id": tenant, "kind": "DEPARTMENT",
+            "record_id": ancestor, "status": "APPROVED",
+        }, session=tx)
+        if row is None:
+            raise HTTPException(409, "ORGANIZATION_PARENT_NOT_APPROVED")
+        ancestor = row.get("parent_id")
+        if ancestor == current["record_id"]:
+            raise HTTPException(409, "ORGANIZATION_PARENT_CYCLE")
+        if not ancestor:
+            return
+    raise HTTPException(409, "ORGANIZATION_HIERARCHY_DEPTH_EXCEEDED")
+
+
 def _apply_change(records, versions, current, change, tenant, tx):
     snapshot = {k: current.get(k) for k in ("name", "parent_id", "effective_from", "status")}
     if change["change_type"] == "AMEND":
         fields = {"name": change.get("name") or current["name"],
-                  "parent_id": change.get("parent_id") if change.get("parent_id") is not None
-                    else current.get("parent_id"),
+                  "parent_id": None if change.get("clear_parent") else (
+                    change.get("parent_id") if change.get("parent_id") is not None
+                    else current.get("parent_id")),
                   "effective_from": change["effective_from"]}
     else:
         fields = {"status": "RETIRED", "effective_from": change["effective_from"]}
@@ -425,6 +474,8 @@ def activate_due_department_change(
             raise HTTPException(409, "ORGANIZATION_SOURCE_CHANGED")
         if change["change_type"] == "RETIRE" and _impact(records, tenant, record_id, tx)["retirement_blocked"]:
             raise HTTPException(409, "ORGANIZATION_RETIREMENT_HAS_DEPENDENCIES")
+        if change["change_type"] == "AMEND":
+            _check_hierarchy(records, current, change, tenant, tx)
         _apply_change(records, versions, current, change, tenant, tx)
         updated = changes.find_one_and_update({
             "tenant_id": tenant, "change_id": change_id, "status": "APPROVED_SCHEDULED",
