@@ -230,6 +230,76 @@ def list_department_changes(
     }
 
 
+@router.get("/staffing-reconciliation")
+def read_department_staffing_reconciliation(
+    auth: TenantAuthorizationContext = Depends(org._ORG_READ),
+    directory_authority: TenantAuthorizationContext = Depends(org._DIRECTORY_AUTHORITY),
+):
+    """Cross-source own-tenant read-only reconciliation; never writes employee IDs.
+
+    Both organization and employee-directory permissions must pass. Label
+    matches are observational candidates, not verified employee assignments
+    or sufficient authority to retire any department.
+    """
+    if auth.tenant_id != directory_authority.tenant_id:
+        raise HTTPException(403, "ORGANIZATION_STAFFING_SCOPE_MISMATCH")
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    tenant = auth.tenant_id
+    try:
+        departments = list(org._org_collection(db, org._ORG_COLLECTION).find(
+            {"tenant_id": tenant, "kind": "DEPARTMENT", "status": "APPROVED"},
+            {"_id": 0, "record_id": 1, "name": 1},
+        ).limit(_LIMIT + 1))
+        # Employee source is legacy label-based. Only aggregate counts;
+        # do not return employee identifiers or unbounded group values.
+        groups = list(db["employees"].aggregate([
+            {"$match": {"tenantId": tenant, "isActive": True}},
+            {"$group": {"_id": "$employment.department", "count": {"$sum": 1}}},
+            {"$limit": _LIMIT + 1},
+        ]))
+    except Exception as error:
+        raise HTTPException(503, "ORGANIZATION_STAFFING_SOURCE_UNAVAILABLE") from error
+    if len(departments) > _LIMIT or len(groups) > _LIMIT:
+        raise HTTPException(503, "ORGANIZATION_STAFFING_RESULT_BOUND_EXCEEDED")
+    by_name = {}
+    for dep in departments:
+        label = str(dep.get("name") or "").strip().casefold()
+        if not label:
+            raise HTTPException(503, "ORGANIZATION_STAFFING_INVALID_DEPARTMENT")
+        by_name.setdefault(label, []).append(dep["record_id"])
+    candidates = []
+    unmatched_count = 0
+    ambiguous_count = 0
+    for group in groups:
+        count = group.get("count")
+        if type(count) is not int or count < 0:
+            raise HTTPException(503, "ORGANIZATION_STAFFING_INVALID_AGGREGATE")
+        raw_label = group.get("_id")
+        label = raw_label.strip().casefold() if isinstance(raw_label, str) else ""
+        eligible = by_name.get(label, []) if label else []
+        if len(eligible) == 1:
+            candidates.append({"department_id": eligible[0], "employee_count": count,
+                               "relationship": "LABEL_CANDIDATE_NOT_AUTHORIZED_ASSIGNMENT"})
+        elif eligible:
+            ambiguous_count += count
+        else:
+            unmatched_count += count
+    return {
+        "schema": "WILSY-HR-STAFFING-RECONCILIATION/V1",
+        "tenant_id": tenant,
+        "source": "EOS_LEGACY_EMPLOYEE_DEPARTMENT_LABELS",
+        "reconciliation_kind": "READ_ONLY_OBSERVATION",
+        "candidate_matches": candidates,
+        "unmatched_active_employees": unmatched_count,
+        "ambiguous_active_employees": ambiguous_count,
+        "employee_assignment_linkage_certified": False,
+        "retirement_approval_permitted": False,
+        "source_total_active": sum(item["count"] for item in groups),
+    }
+
+
 @router.get("/departments/{record_id}/impact")
 def read_department_impact(
     record_id: str,
