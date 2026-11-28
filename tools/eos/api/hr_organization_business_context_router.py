@@ -1,9 +1,18 @@
-"""Governed own-tenant business activity context for HR organization suggestions.
-
-Tenant-declared activities are not legal-entity or external classification proof.
-Only independently approved context is used for HR defaults. EOS authorizes
-every operation; no ownership, staffing, entitlement or IAM changes occur.
+"""TITLE: WILSY OS Governed Business Activity Context
+VERSION: v1.0.0-M03-HR03-GOVERNED-BUSINESS-CONTEXT
+AUTHORITY: WILSY OS Core Governance
+EPITOME: Independently approved, exact-tenant business-activity profiles for department suggestions, separate from external legal-entity evidence.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr_organization_business_context_router.py
+COLLABORATION / OWNERSHIP: WILSY OS HR Organization / Python EOS engineering
+CERTIFICATION / UPDATE DATE: 2026-11-28
+CHANGELOG: v1.0.0-M03-HR03-GOVERNED-BUSINESS-CONTEXT adds governed source, consumer and evidence contracts without expanding IAM grants.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 technical controls.
+SECURITY / PRIVACY POSTURE: Bounded readback and event labels; no personnel/financial secrets, no fabricated external entity verification.
+TENANT BOUNDARY: Exact authenticated EOS tenant; no root or Owner fallback.
+AUTHORITY BOUNDARY: EOS source grants are separately required; maker and checker cannot be the same principal.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
 """
+
 from __future__ import annotations
 
 from typing import Any, Literal
@@ -253,3 +262,11 @@ def decide_business_activity_context(
                 "tenant_id": tenant, "proposal": _pub(updated)}
     return _command(apply, tenant, actor, key, "CONTEXT_DECIDE",
                     {"id": proposal_id, **body.model_dump()})
+
+# ARTIFACT: tools/eos/api/hr_organization_business_context_router.py
+# VERSION: v1.0.0-M03-HR03-GOVERNED-BUSINESS-CONTEXT
+# AUTHORITY BOUNDARY: Exact-tenant EOS authority and regression evidence; no grants or financial execution.
+# TENANT POSTURE: Exact authorized tenant only; no cross-tenant records, Owner or root fallback.
+# FAIL-CLOSED POSTURE: Missing or contradictory evidence is denied/unavailable, never approved.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
