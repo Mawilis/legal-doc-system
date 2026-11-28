@@ -400,7 +400,9 @@ describe('production People Overview source contracts', () => {
     const governed = screen.getByRole('heading', {name: 'Governed structure'});
     const secondary = screen.getByText(/Observed workforce and headcount planning/);
     expect(governed.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(secondary.closest('details')).not.toHaveAttribute('open');
+    expect(secondary).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(secondary);
+    expect(secondary).toHaveAttribute('aria-expanded', 'true');
 
     await waitFor(() => expect(mockState.apiGet).toHaveBeenCalledWith(
       '/hr/workforce/organization',
@@ -441,6 +443,7 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
     expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: /Observed workforce and headcount planning/}));
     expect(await screen.findByText('Operations')).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /Search workforce in Operations, 2 active employees/})).toBeInTheDocument();
     expect(await screen.findByRole('heading', {name: 'Position planning'})).toBeInTheDocument();
