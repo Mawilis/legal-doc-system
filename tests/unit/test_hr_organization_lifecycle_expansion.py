@@ -243,6 +243,63 @@ def test_business_context_effective_model_and_productivity_envelopes_are_explici
             count=10000, elapsed_ms=12500,
         )
 
+
+def test_hierarchy_reorganization_rejects_cycle_and_unknown_parents():
+    records = _Collection([
+        {"tenant_id": "TENANT-SYNTHETIC-A", "kind": "DEPARTMENT",
+         "record_id": "DEP-CHILD", "parent_id": "DEP-ROOT", "status": "APPROVED"},
+    ])
+    current = {"record_id": "DEP-ROOT"}
+    with pytest.raises(HTTPException) as cycle:
+        lifecycle._check_hierarchy(
+            records, current, {"parent_id": "DEP-CHILD"},
+            "TENANT-SYNTHETIC-A", None,
+        )
+    assert cycle.value.detail == "ORGANIZATION_PARENT_CYCLE"
+    with pytest.raises(HTTPException) as missing:
+        lifecycle._check_hierarchy(
+            records, current, {"parent_id": "DEP-UNKNOWN"},
+            "TENANT-SYNTHETIC-A", None,
+        )
+    assert missing.value.detail == "ORGANIZATION_PARENT_NOT_APPROVED"
+    lifecycle._check_hierarchy(
+        records, current, {"clear_parent": True, "parent_id": None},
+        "TENANT-SYNTHETIC-A", None,
+    )
+
+
+def test_bounded_as_of_read_cannot_show_a_future_version_or_another_tenant(monkeypatch):
+    records = _Collection([
+        {"tenant_id": "TENANT-SYNTHETIC-A", "kind": "DEPARTMENT",
+         "record_id": "DEP-ROOT", "status": "APPROVED",
+         "revision": 3, "name": "New Structure", "effective_from": "2026-12-01"},
+    ])
+    versions = _Collection([
+        {"tenant_id": "TENANT-SYNTHETIC-A", "record_id": "DEP-ROOT",
+         "revision": 1, "status": "APPROVED", "name": "Original",
+         "effective_from": "2026-01-01", "parent_id": None},
+        {"tenant_id": "TENANT-SYNTHETIC-A", "record_id": "DEP-ROOT",
+         "revision": 3, "status": "APPROVED", "name": "New Structure",
+         "effective_from": "2026-12-01", "parent_id": None},
+        {"tenant_id": "FOREIGN-TENANT", "record_id": "DEP-ROOT",
+         "revision": 4, "status": "RETIRED", "name": "Foreign",
+         "effective_from": "2026-06-01", "parent_id": None},
+    ])
+    db = _Db({org._ORG_COLLECTION: records, lifecycle._VERSIONS: versions})
+    monkeypatch.setattr(lifecycle, "get_database", lambda: db)
+    snapshot = lifecycle.read_department_at_date(
+        "DEP-ROOT", date(2026, 11, 28), auth=_identity(),
+    )
+    assert snapshot["record"]["name"] == "Original"
+    assert snapshot["record"]["revision"] == 1
+    assert snapshot["record"]["status"] == "APPROVED"
+    with pytest.raises(HTTPException) as before:
+        lifecycle.read_department_at_date(
+            "DEP-ROOT", date(2025, 12, 31), auth=_identity(),
+        )
+    assert before.value.status_code == 404
+
+
 # ARTIFACT: tests/unit/test_hr_organization_lifecycle_expansion.py
 # VERSION: v1.0.0-M03-HR03-ORGANIZATION-LIFECYCLE-CERT
 # AUTHORITY BOUNDARY: Exact-tenant EOS authority and regression evidence; no grants or financial execution.
