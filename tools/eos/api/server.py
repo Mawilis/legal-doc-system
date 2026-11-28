@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+VERSION: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -18,7 +18,8 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
 CERTIFICATION / UPDATE DATE: 2026-11-27
-CHANGELOG: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+CHANGELOG: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION mounts HR business activity context and department change routers before the workforce detail reader, preserving independent tenant IAM and legacy route hygiene.
+CHANGELOG: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION
   unmounts the overlapping /api/employees legacy HTTP router. The existing
   /api/hr/workforce route remains the sole governed employee directory read.
   No employees, IAM grants, documents, or financial authorities are changed.
@@ -215,6 +216,9 @@ from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
 from .hr_workforce_directory_router import router as hr_workforce_directory_router
+from .hr_organization_lifecycle_router import router as hr_organization_lifecycle_router
+from .hr_organization_business_context_router import router as hr_organization_business_context_router
+from .hr_organization_assignment_router import router as hr_organization_assignment_router
 from .company_operating_document_router import router as company_operating_document_router
 from .projects_router import router as projects_router
 from tools.eos.saas.projects.project_attachment_clearance_registry import (
@@ -390,7 +394,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP"
+VERSION = "v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -1340,6 +1344,9 @@ class WilsyAPIServer:
         app.include_router(payshap_webhook_router)
         app.include_router(electrum_payshap_completion_router)
         app.include_router(hr_document_router)
+        app.include_router(hr_organization_assignment_router)
+        app.include_router(hr_organization_business_context_router)
+        app.include_router(hr_organization_lifecycle_router)
         app.include_router(hr_workforce_directory_router)
         app.include_router(company_operating_document_router, prefix="/api")
         app.include_router(projects_router, prefix="/api")
@@ -1360,7 +1367,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+# VERSION: v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

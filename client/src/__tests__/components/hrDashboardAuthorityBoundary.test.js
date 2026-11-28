@@ -259,7 +259,7 @@ describe('HR dashboard authority and read-state boundary', () => {
   });
 
   it('implements the supplied Hire-to-Exit prototype hierarchy without fictitious HR data', () => {
-    expect(dashboard).toContain("useState('overview')");
+    expect(dashboard).toContain("window.location.pathname.startsWith('/people/workforce')");
     expect(dashboard).toContain("id: 'overview', title: 'Overview'");
     expect(dashboard).toContain('data-testid="people-lifecycle-overview"');
     expect(dashboard).toContain('People <em>at work.</em>');

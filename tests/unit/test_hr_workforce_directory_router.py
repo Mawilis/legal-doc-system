@@ -106,6 +106,48 @@ def _client(monkeypatch: pytest.MonkeyPatch, database: object) -> TestClient:
     return TestClient(app)
 
 
+def test_structure_static_route_precedes_employee_detail_and_preserves_iam(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The organization path must not be consumed as an employee identifier."""
+    from fastapi import HTTPException
+    from starlette.routing import Match
+
+    app = FastAPI()
+    app.include_router(subject.router)
+    # Inspect the concrete workforce routes, not FastAPI's included-router
+    # compatibility wrappers (which do not necessarily expose `.path`).
+    routes = [
+        route for route in subject.router.routes
+        if hasattr(route, "path") and hasattr(route, "matches")
+    ]
+    paths = [route.path for route in routes]
+    structure = "/api/hr/workforce/structure"
+    employee = "/api/hr/workforce/{employee_id}"
+    assert paths.index(structure) < paths.index(employee)
+
+    request_scope = {"type": "http", "method": "GET", "path": structure, "root_path": ""}
+    first_match = next(
+        route for route in routes
+        if route.matches(request_scope)[0] == Match.FULL
+    )
+    assert first_match.path == structure
+
+    app.dependency_overrides[subject._ORG_READ] = lambda: (_ for _ in ()).throw(
+        HTTPException(status_code=403, detail="ORGANIZATION_READ_DENIED")
+    )
+    app.dependency_overrides[subject._DIRECTORY_AUTHORITY] = lambda: (_ for _ in ()).throw(
+        AssertionError("Employee lookup must not authorize organization register")
+    )
+    monkeypatch.setattr(
+        subject, "get_database",
+        lambda: (_ for _ in ()).throw(AssertionError("Denied read cannot touch MongoDB")),
+    )
+    denied = TestClient(app).get(structure)
+    assert denied.status_code == 403
+    assert denied.json()["detail"] == "ORGANIZATION_READ_DENIED"
+
+
 def test_directory_uses_authorised_tenant_and_only_directory_safe_projection(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

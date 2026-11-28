@@ -1,0 +1,381 @@
+"""TITLE: WILSY OS HR03 Real Mongo Organization Governance Certificate
+VERSION: v1.0.0-M03-HR03-REAL-MONGO-TRANSACTION-CERT
+AUTHORITY: WILSY OS Core Governance
+EPITOME: Certify live replica-set transactions for tenant-scoped HR business activity,
+department amendment, revision history, abort rollback and command replay.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integration/test_hr_organization_governance_real_mongo.py
+COLLABORATION / OWNERSHIP: WILSY OS HR Organization engineering
+CERTIFICATION / UPDATE DATE: 2026-11-28
+CHANGELOG: v1.0.0-M03-HR03-REAL-MONGO-TRANSACTION-CERT adds disposable local-only Mongo evidence.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 test isolation.
+SECURITY / PRIVACY POSTURE: Synthetic test-only data, UUID database, bounded cleanup, never production.
+TENANT BOUNDARY: Distinct synthetic tenants, no root/founder credentials or fixtures.
+AUTHORITY BOUNDARY: Direct source command certificates; HTTP IAM separately tested.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+"""
+from __future__ import annotations
+
+import os
+from datetime import date
+from types import SimpleNamespace
+from uuid import uuid4
+
+import pytest
+from fastapi import HTTPException
+from pymongo import MongoClient
+
+from tools.eos.api import hr_workforce_directory_router as org
+from tools.eos.api import hr_organization_business_context_router as business
+from tools.eos.api import hr_organization_lifecycle_router as lifecycle
+from tools.eos.api import hr_organization_assignment_router as assignment
+
+_VERSION = "v1.0.0-M03-HR03-REAL-MONGO-TRANSACTION-CERT"
+
+
+def _auth(tenant: str, actor: str):
+    """Synthetic already-authorized context; only integration service behavior tested."""
+    return SimpleNamespace(
+        tenant_id=tenant, identity=SimpleNamespace(identity_id=actor),
+    )
+
+
+@pytest.fixture
+def mongo(monkeypatch):
+    """Admit disposable loopback replica-set only; never fall back to Atlas."""
+    uri = os.environ.get("WILSY_HR03_TEST_MONGO_URI", "")
+    if not uri or not uri.startswith("mongodb://") or uri.startswith("mongodb+srv://"):
+        pytest.skip("HR03 disposable loopback replica-set URI absent; not certified")
+    from pymongo.uri_parser import parse_uri
+    try:
+        nodes = parse_uri(uri).get("nodelist") or []
+    except Exception:
+        pytest.skip("Invalid HR03 Mongo test URI; not certified")
+    if not nodes or any(host not in ("127.0.0.1", "localhost", "::1")
+                        for host, _port in nodes):
+        pytest.skip("HR03 certification requires exclusively loopback Mongo hosts")
+    client = MongoClient(uri, serverSelectionTimeoutMS=2000, retryWrites=True)
+    try:
+        topology = client.admin.command("hello")
+        if not topology.get("setName"):
+            pytest.skip("HR03 Mongo instance is not a replica-set; not certified")
+    except Exception:
+        pytest.skip("HR03 disposable Mongo replica-set unavailable; not certified")
+    db_name = "wilsy_hr03_cert_" + uuid4().hex
+    db = client[db_name]
+    monkeypatch.setattr(org, "get_client", lambda: client)
+    monkeypatch.setattr(org, "get_database", lambda: db)
+    monkeypatch.setattr(lifecycle, "get_client", lambda: client)
+    monkeypatch.setattr(lifecycle, "get_database", lambda: db)
+    monkeypatch.setattr(business, "get_client", lambda: client)
+    monkeypatch.setattr(business, "get_database", lambda: db)
+    monkeypatch.setattr(assignment, "get_client", lambda: client)
+    monkeypatch.setattr(assignment, "get_database", lambda: db)
+    try:
+        yield db, client
+    finally:
+        client.drop_database(db_name)
+        client.close()
+
+
+def test_independent_activity_profile_and_exact_tenant_readback(mongo):
+    """Approve a tenant's activity profile; reject cross-tenant and self decision."""
+    db, _ = mongo
+    tenant_a, tenant_b = "TENANT-SYNTHETIC-A", "TENANT-SYNTHETIC-B"
+    maker, checker = _auth(tenant_a, "HR-MAKER"), _auth(tenant_a, "HR-CHECKER")
+    proposal = business.draft_business_activity_context(
+        business.ActivityContextDraft(
+            activity_ids=["technology", "legal"],
+            reason="Synthetic mixed professional operating context",
+        ), key="hr03-context-create-0000001", auth=maker,
+    )["proposal"]
+    submitted = business.submit_business_activity_context(
+        proposal["proposal_id"],
+        business.ContextRevision(expected_revision=1),
+        key="hr03-context-submit-0000001", auth=maker,
+    )["proposal"]
+    with pytest.raises(HTTPException) as self_decision:
+        business.decide_business_activity_context(
+            proposal["proposal_id"],
+            business.ContextDecision(expected_revision=submitted["revision"],
+                decision="APPROVE",reason="Self-decision must remain denied"),
+            key="hr03-context-self-denial-01",auth=maker,
+        )
+    assert self_decision.value.status_code == 403
+    approved = business.decide_business_activity_context(
+        proposal["proposal_id"],
+        business.ContextDecision(expected_revision=submitted["revision"],
+            decision="APPROVE", reason="Independent synthetic classification check"),
+        key="hr03-context-approve-00001", auth=checker,
+    )["proposal"]
+    assert approved["status"] == "APPROVED"
+    own = business.read_business_activity_context(auth=checker)
+    foreign = business.read_business_activity_context(auth=_auth(tenant_b, "HR-OTHER"))
+    assert own["activity_ids"] == ["technology", "legal"]
+    assert own["revision"] == 1
+    assert foreign["activity_ids"] == []
+    assert foreign["status"] == "UNCONFIGURED"
+    assert own["entity_status"] == "ENTITY_SOURCE_NOT_CONNECTED"
+
+
+def test_governed_department_amendment_versions_and_exact_replay(mongo):
+    """One maker/checker change creates immutable versions and exact replay."""
+    db, _ = mongo
+    tenant = "TENANT-SYNTHETIC-A"
+    maker, checker = _auth(tenant, "HR-MAKER"), _auth(tenant, "HR-CHECKER")
+    db[org._ORG_COLLECTION].insert_one({
+        "tenant_id": tenant, "record_id": "DEP-OPERATIONS",
+        "kind": "DEPARTMENT", "status": "APPROVED", "revision": 3,
+        "name": "Operations", "parent_id": None, "effective_from": "2026-01-01",
+        "created_by": "HR-ORIGINAL", "submitted_by": "HR-ORIGINAL",
+    })
+    request = lifecycle.ChangeDraft(
+        change_type="AMEND", name="Operations and Delivery",
+        effective_from=date(2026, 11, 27),
+        reason="Updated operating model for delivery division",
+    )
+    proposed = lifecycle.propose_department_change(
+        "DEP-OPERATIONS", request,
+        key="hr03-department-change-create-01", auth=maker,
+    )
+    replay = lifecycle.propose_department_change(
+        "DEP-OPERATIONS", request,
+        key="hr03-department-change-create-01", auth=maker,
+    )
+    assert proposed == replay
+    assert db[lifecycle._CHANGES].count_documents({"tenant_id":tenant}) == 1
+    change = proposed["change"]
+    submitted = lifecycle.submit_department_change(
+        "DEP-OPERATIONS", change["change_id"],
+        lifecycle.ExpectedRevision(expected_revision=change["revision"]),
+        key="hr03-department-change-submit-01", auth=maker,
+    )["change"]
+    with pytest.raises(HTTPException) as denied:
+        lifecycle.decide_department_change(
+            "DEP-OPERATIONS", change["change_id"],
+            lifecycle.ChangeDecision(expected_revision=submitted["revision"],
+                decision="APPROVE", reason="Self-checker not permitted"),
+            key="hr03-department-change-deny-001", auth=maker,
+        )
+    assert denied.value.status_code == 403
+    result = lifecycle.decide_department_change(
+        "DEP-OPERATIONS", change["change_id"],
+        lifecycle.ChangeDecision(expected_revision=submitted["revision"],
+            decision="APPROVE", reason="Second independent principal approved"),
+        key="hr03-department-change-decide-01", auth=checker,
+    )
+    assert result["change"]["status"] == "APPROVED"
+    current = db[org._ORG_COLLECTION].find_one(
+        {"tenant_id":tenant, "record_id":"DEP-OPERATIONS"})
+    assert current["revision"] == 4
+    assert current["name"] == "Operations and Delivery"
+    before = lifecycle.read_department_at_date(
+        "DEP-OPERATIONS", date(2026,11,1),auth=checker)
+    after = lifecycle.read_department_at_date(
+        "DEP-OPERATIONS", date(2026,11,28),auth=checker)
+    assert before["record"]["name"] == "Operations"
+    assert after["record"]["name"] == "Operations and Delivery"
+    assert db[lifecycle._VERSIONS].count_documents({
+        "tenant_id":tenant,"record_id":"DEP-OPERATIONS"}) == 2
+    assert db[lifecycle._CHANGE_EVENTS].count_documents({
+        "tenant_id":tenant}) == 3
+
+
+def test_aborted_transaction_preserves_current_department_and_events(mongo):
+    """Mongo rollback cannot leave partial approved department or evidence."""
+    db, client = mongo
+    tenant = "TENANT-SYNTHETIC-A"
+    records = db[org._ORG_COLLECTION]
+    versions = db[lifecycle._VERSIONS]
+    records.insert_one({
+        "tenant_id":tenant,"kind":"DEPARTMENT","record_id":"DEP-ROLLBACK",
+        "name":"Before","parent_id":None,"effective_from":"2026-01-01",
+        "status":"APPROVED","revision":1,
+    })
+    change = {
+        "change_type":"AMEND","effective_from":"2026-11-27",
+        "name":"After","parent_id":None,"clear_parent":False,
+    }
+    with client.start_session() as session:
+        session.start_transaction()
+        original = records.find_one({
+            "tenant_id":tenant,"kind":"DEPARTMENT","record_id":"DEP-ROLLBACK",
+        }, session=session)
+        lifecycle._apply_change(records,versions,original,change,tenant,session)
+        session.abort_transaction()
+    assert records.find_one({"tenant_id":tenant,"record_id":"DEP-ROLLBACK"})["name"] == "Before"
+    assert versions.count_documents({"tenant_id":tenant,"record_id":"DEP-ROLLBACK"}) == 0
+
+
+
+def test_authorized_http_structure_paths_do_not_fall_through_to_employee_detail(mongo):
+    """FastAPI dispatch and exact-tenant readback against disposable real Mongo."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    db, _ = mongo
+    tenant = "TENANT-SYNTHETIC-A"
+    db[org._ORG_COLLECTION].insert_one({
+        "tenant_id": tenant, "kind": "DEPARTMENT", "record_id": "DEP-HTTP",
+        "name": "Governed Operating Department", "status": "APPROVED",
+        "revision": 1, "effective_from": "2026-01-01",
+        "created_by": "HR-MAKER", "submitted_by": "HR-MAKER",
+    })
+    app = FastAPI()
+    app.include_router(business.router)
+    app.include_router(lifecycle.router)
+    app.include_router(org.router)
+    app.dependency_overrides[org._ORG_READ] = lambda: _auth(tenant, "HR-READER")
+    app.dependency_overrides[org._DIRECTORY_AUTHORITY] = (
+        lambda: _auth(tenant, "HR-READER")
+    )
+    client = TestClient(app)
+    context = client.get("/api/hr/workforce/structure/context")
+    assert context.status_code == 200, context.text
+    assert context.json()["tenant_id"] == tenant
+    changes = client.get("/api/hr/workforce/structure/changes")
+    assert changes.status_code == 200, changes.text
+    assert changes.json()["schema"] == "WILSY-HR-ORGANIZATION-CHANGES/V1"
+    staffing = client.get("/api/hr/workforce/structure/staffing-reconciliation")
+    assert staffing.status_code == 200, staffing.text
+    assert staffing.json()["retirement_approval_permitted"] is False
+    source = client.get("/api/hr/workforce/structure")
+    assert source.status_code == 200, source.text
+    assert source.json()["items"][0]["record_id"] == "DEP-HTTP"
+
+
+
+def test_governed_assignment_move_with_approval_and_persistent_versions(mongo):
+    """Use real Mongo to verify exact-tenant employee→position→department graph."""
+    db, _ = mongo
+    tenant = "TENANT-SYNTHETIC-A"
+    maker, checker = _auth(tenant, "HR-MAKER"), _auth(tenant, "HR-CHECKER")
+    foreign = _auth("TENANT-SYNTHETIC-B", "HR-CHECKER")
+    db["employees"].insert_one({
+        "tenantId": tenant, "employeeId": "EMP-ONE",
+        "isActive": True, "deletedAt": None,
+        "employment": {"department": "Legacy unknown text"},
+    })
+    for dep in ("DEP-OPERATIONS", "DEP-SERVICES"):
+        db[org._ORG_COLLECTION].insert_one({
+            "tenant_id": tenant, "kind": "DEPARTMENT", "record_id": dep,
+            "name": dep, "status": "APPROVED", "revision": 2,
+            "effective_from": "2026-01-01",
+        })
+    for pos, dep in (("POS-ONE", "DEP-OPERATIONS"), ("POS-TWO", "DEP-SERVICES")):
+        db[org._ORG_COLLECTION].insert_one({
+            "tenant_id": tenant, "kind": "POSITION",
+            "record_id": pos, "department_id": dep,
+            "name": pos, "status": "APPROVED", "revision": 2,
+            "effective_from": "2026-01-01", "capacity": 1,
+        })
+
+    def approve(position, key):
+        created = assignment.propose_assignment(
+            assignment.AssignmentDraft(
+                employee_id="EMP-ONE", position_id=position,
+                effective_from=date(2026, 11, 28),
+                reason="Governed source-owned position and department placement",
+            ),
+            key=key + "-draft", organization=maker, workforce=maker,
+        )["proposal"]
+        submitted = assignment.submit_assignment(
+            created["proposal_id"],
+            assignment.AssignmentRevision(expected_revision=1),
+            key=key + "-submit", organization=maker, workforce=maker,
+        )["proposal"]
+        with pytest.raises(HTTPException) as denied:
+            assignment.decide_assignment(
+                created["proposal_id"],
+                assignment.AssignmentDecision(
+                    expected_revision=submitted["revision"],
+                    decision="APPROVE", reason="Maker cannot approve own assignment",
+                ),
+                key=key + "-maker-denied", organization=maker, workforce=maker,
+            )
+        assert denied.value.status_code == 403
+        result = assignment.decide_assignment(
+            created["proposal_id"],
+            assignment.AssignmentDecision(
+                expected_revision=submitted["revision"],
+                decision="APPROVE", reason="Independently verified employment placement",
+            ),
+            key=key + "-decision", organization=checker, workforce=checker,
+        )
+        assert result["proposal"]["status"] == "APPROVED"
+        return result
+
+    result = approve("POS-ONE", "hr03-assign-one")
+    replay = assignment.decide_assignment(
+        result["proposal"]["proposal_id"],
+        assignment.AssignmentDecision(
+            expected_revision=2, decision="APPROVE",
+            reason="Independently verified employment placement",
+        ),
+        key="hr03-assign-one-decision", organization=checker, workforce=checker,
+    )
+    assert replay == result
+    first = db[assignment._ASSIGNMENTS].find_one(
+        {"tenant_id": tenant, "employee_id": "EMP-ONE"})
+    assert first["revision"] == 1
+    assert first["department_id"] == "DEP-OPERATIONS"
+    approve("POS-TWO", "hr03-assign-two")
+    second = db[assignment._ASSIGNMENTS].find_one(
+        {"tenant_id": tenant, "employee_id": "EMP-ONE"})
+    assert second["revision"] == 2
+    assert second["department_id"] == "DEP-SERVICES"
+    versions = assignment.read_assignment_history(
+        "EMP-ONE", organization=checker, workforce=checker,
+    )
+    assert versions["count"] == 2
+    assert [item["department_id"] for item in versions["items"]] == [
+        "DEP-OPERATIONS", "DEP-SERVICES",
+    ]
+    assert versions["legacy_employee_fields_synchronized"] is False
+    assert db[assignment._ASSIGNMENTS].count_documents({"tenant_id": tenant}) == 1
+    plan = assignment.read_position_utilization(
+        limit=50, offset=0, organization=checker, workforce=checker,
+    )
+    assert plan["source"] == "EOS_APPROVED_POSITION_ASSIGNMENT_GRAPH"
+    assert plan["total"] == 2
+    utilization = {row["position_id"]: row for row in plan["items"]}
+    assert utilization["POS-TWO"]["governed_assignments"] == 1
+    assert utilization["POS-TWO"]["unfilled_graph_slots"] == 0
+    assert utilization["POS-ONE"]["governed_assignments"] == 0
+    assert plan["funded_headcount_verified"] is False
+
+    assert db[assignment._ASSIGNMENTS].count_documents(
+        {"tenant_id": foreign.tenant_id}) == 0
+    read = assignment.list_assignments(organization=checker, workforce=checker)
+    assert read["current"][0]["department_id"] == "DEP-SERVICES"
+    assert read["legacy_employee_fields_synchronized"] is False
+    legacy = db["employees"].find_one({"employeeId": "EMP-ONE"})
+    assert legacy["employment"]["department"] == "Legacy unknown text"
+
+
+def test_assignment_fails_closed_on_foreign_employee_or_absent_position(mongo):
+    """Never create assignment graph edges from guessed tenant identifiers."""
+    db, _ = mongo
+    own = _auth("TENANT-SYNTHETIC-A", "HR-MAKER")
+    db["employees"].insert_one({
+        "tenantId": "TENANT-SYNTHETIC-B", "employeeId": "EMP-FOREIGN",
+        "isActive": True, "deletedAt": None,
+    })
+    with pytest.raises(HTTPException) as missing:
+        assignment.propose_assignment(
+            assignment.AssignmentDraft(
+                employee_id="EMP-FOREIGN", position_id="POS-MISSING",
+                effective_from=date(2026, 11, 28),
+                reason="Prevent cross tenant employee relationship",
+            ),
+            key="hr03-assignment-foreign-0001", organization=own, workforce=own,
+        )
+    assert missing.value.status_code == 404
+    assert db[assignment._PROPOSALS].count_documents({}) == 0
+
+
+# ARTIFACT: tests/integration/test_hr_organization_governance_real_mongo.py
+# VERSION: v1.0.0-M03-HR03-REAL-MONGO-TRANSACTION-CERT
+# AUTHORITY BOUNDARY: Disposable real Mongo certificate, never a grant.
+# TENANT POSTURE: Synthetic UUID database, separate tenant A/B, local only.
+# FAIL-CLOSED POSTURE: Unavailable replica-set is a skipped, NOT certified gate.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

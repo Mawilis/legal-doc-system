@@ -1,14 +1,15 @@
 """WILSY OS system-services startup regression certificate.
 
 TITLE: System Services Case Startup Certificate
-VERSION: v1.0.9-AI-PROVIDER-COMPOSITION-CERT
+VERSION: v1.0.10-HR03-COMPOSITION-VERSION-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves canonical startup installs system-service case indexes without
          creating cases, permission grants, or tenant authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_system_services_case_startup.py
 COLLABORATION / OWNERSHIP: Python EOS API composition and system-services owners.
 CERTIFICATION / UPDATE DATE: 2026-11-20
-CHANGELOG: v1.0.9-AI-PROVIDER-COMPOSITION-CERT pins the canonical provider composition version while preserving all index ownership, readiness, tenant and IAM denial assertions.
+CHANGELOG: v1.0.10-HR03-COMPOSITION-VERSION-CERT pins the mounted HR03 organization lifecycle composition version, retaining independent auth and subsystem assertions.
+CHANGELOG: v1.0.10-HR03-COMPOSITION-VERSION-CERT pins the canonical provider composition version while preserving all index ownership, readiness, tenant and IAM denial assertions.
 CHANGELOG: v1.0.8-TRUSTED-SCAN-INDEX-COMPOSITION-CERT verifies the trusted scan-clearance index bootstrap version without rolling back source indexes.
 CHANGELOG: v1.0.8-TRUSTED-SCAN-INDEX-COMPOSITION-CERT pins
   task quarantined attachment manifest and command replay indexes to
@@ -22,7 +23,7 @@ indexes in canonical EOS readiness, without creating message records.
 CHANGELOG: v1.0.8-TRUSTED-SCAN-INDEX-COMPOSITION-CERT pins additive task/dependency indexes
 at canonical EOS startup; no synthetic tasks or IAM are created.
 CHANGELOG: v1.0.8-TRUSTED-SCAN-INDEX-COMPOSITION-CERT pins additive exact-tenant participant indexes at canonical startup; no grants or records are issued.
- 2026-11-18 v1.0.9-AI-PROVIDER-COMPOSITION-CERT aligns canonical
+ 2026-11-18 v1.0.10-HR03-COMPOSITION-VERSION-CERT aligns canonical
 server-version certification with additive Project Notes startup indexes;
 no existing Global Principal or System Services authority is changed.
 CHANGELOG: v1.0.8-TRUSTED-SCAN-INDEX-COMPOSITION-CERT aligns the public composition
@@ -76,11 +77,11 @@ def test_system_services_startup_does_not_create_cases_or_grants() -> None:
 
 
 def test_system_services_server_version_tracks_governed_router_composition() -> None:
-    assert server.VERSION == "v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP"
+    assert server.VERSION == "v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION"
 
 
 # ARTIFACT: System Services Case Startup Certificate
-# VERSION: v1.0.9-AI-PROVIDER-COMPOSITION-CERT
+# VERSION: v1.0.10-HR03-COMPOSITION-VERSION-CERT
 # AUTHORITY BOUNDARY: startup index ownership and composition version only
 # TENANT POSTURE: no tenant data is read or mutated
 # FAIL-CLOSED POSTURE: readiness is not converted into case or IAM authority

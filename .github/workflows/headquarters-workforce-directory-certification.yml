@@ -1,13 +1,15 @@
 # TITLE: WILSY OS Headquarters Workforce Directory Certification
-# VERSION: v1.1.1-M03-HR01-WORKFORCE-PYTEST-ENFORCED
+# VERSION: v1.3.0-M03-HR03-ASSIGNMENT-TRANSACTION-AND-CLIENT-CERT
 # AUTHORITY: WILSY OS Core Governance; certification only.
 # EPITOME: Certifies workforce authorization, synthetic UI, and disposable Mongo
 #          without expanding real tenant or project assignment authority.
 # ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/.github/workflows/headquarters-workforce-directory-certification.yml
 # COLLABORATION / OWNERSHIP: Python EOS workforce authority and Headquarters client.
 # CERTIFICATION / UPDATE DATE: 2026-11-27
-# CHANGELOG: v1.1.1-M03-HR01-WORKFORCE-PYTEST-ENFORCED adds
+# CHANGELOG: v1.3.0-M03-HR03-ASSIGNMENT-TRANSACTION-AND-CLIENT-CERT adds governed employee assignment source compilation, real-Mongo move/replay/version and client accessibility tests.
+# CHANGELOG: v1.2.0-M03-HR03-ORGANIZATION-TRANSACTION-CERT adds
 #            the HR01 FastAPI regression test to the actual pytest invocation.
+# CHANGELOG: v1.2.0-M03-HR03-ORGANIZATION-TRANSACTION-CERT adds source-owned context, amendment, reconciliation, disposable Mongo and client UI certificates.
 # CHANGELOG: v1.1.0-M03-HR01-EMPLOYEE-HTTP-SECURITY-CERT adds exact
 #            employee registry/router code and authenticated HTTP boundary
 #            regression tests to the current replica-backed workforce gate.
@@ -26,6 +28,23 @@ on:
   pull_request:
     paths:
       - "tools/eos/api/hr_workforce_directory_router.py"
+      - "tools/eos/api/hr_organization_lifecycle_router.py"
+      - "tools/eos/api/hr_organization_assignment_router.py"
+      - "tools/eos/api/hr_organization_business_context_router.py"
+      - "tests/unit/test_hr_organization_lifecycle_expansion.py"
+      - "tests/unit/test_hr03_organization_accessibility_contract.py"
+      - "tests/integration/test_hr_organization_governance_real_mongo.py"
+      - "client/src/components/hr/HrDashboard.jsx"
+      - "client/src/components/hr/OrganizationLifecycleWorkspace.jsx"
+      - "client/src/components/hr/BusinessActivityContextWorkspace.jsx"
+      - "client/src/components/hr/organizationDepartmentCatalog.js"
+      - "client/src/__tests__/components/hrBusinessActivityContext.test.jsx"
+      - "client/src/__tests__/components/hrOrganizationLifecycleWorkspace.test.jsx"
+      - "client/src/components/hr/OrganizationAssignmentWorkspace.jsx"
+      - "client/src/components/hr/OrganizationAssignmentWorkspace.module.css"
+      - "client/src/__tests__/components/hrOrganizationAssignmentWorkspace.test.jsx"
+      - "client/src/__tests__/components/hrOrganizationCodePattern.test.js"
+      - "client/src/__tests__/components/PeopleOverviewRuntime.test.jsx"
       - "tools/eos/api/employee_router.py"
       - "tools/eos/saas/employee/employee_registry.py"
       - "client/src/components/billing/BillingHUD.jsx"
@@ -54,6 +73,7 @@ jobs:
     timeout-minutes: 27
     env:
       TEST_VENDOR_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
+      WILSY_HR03_TEST_MONGO_URI: mongodb://localhost:27017/?replicaSet=wilsyVendorCertRS
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
       - uses: actions/checkout@v4
@@ -88,6 +108,12 @@ jobs:
         run: |
           python -m py_compile \
             tools/eos/api/hr_workforce_directory_router.py \
+            tools/eos/api/hr_organization_lifecycle_router.py \
+            tools/eos/api/hr_organization_assignment_router.py \
+            tools/eos/api/hr_organization_business_context_router.py \
+            tests/unit/test_hr_organization_lifecycle_expansion.py \
+            tests/unit/test_hr03_organization_accessibility_contract.py \
+            tests/integration/test_hr_organization_governance_real_mongo.py \
             tools/eos/api/employee_router.py \
             tools/eos/saas/employee/employee_registry.py \
             tools/eos/api/server.py \
@@ -102,6 +128,9 @@ jobs:
         run: |
           python -m pytest -q \
             tests/unit/test_hr_workforce_directory_router.py \
+            tests/unit/test_hr_organization_lifecycle_expansion.py \
+            tests/unit/test_hr03_organization_accessibility_contract.py \
+            tests/integration/test_hr_organization_governance_real_mongo.py \
             tests/unit/test_hr_workforce_directory_authority.py \
             tests/unit/test_m03_hr01_employee_scope.py \
             tests/unit/test_permission_namespace.py \
@@ -120,13 +149,22 @@ jobs:
         run: npm ci --include=dev
       - name: Run Headquarters authenticated workspace component tests
         working-directory: client
-        run: npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
+        run: |
+          npx vitest run --config vitest.config.js --maxWorkers=1 --testTimeout=15000 \
+            src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx \
+            src/__tests__/components/PeopleOverviewRuntime.test.jsx \
+            src/__tests__/components/hrBusinessActivityContext.test.jsx \
+            src/__tests__/components/hrOrganizationLifecycleWorkspace.test.jsx \
+            src/__tests__/components/hrOrganizationAssignmentWorkspace.test.jsx \
+            src/__tests__/components/hrOrganizationCodePattern.test.js \
+            src/__tests__/components/hrDashboardReadState.test.jsx \
+            src/__tests__/components/hrDashboardAuthorityBoundary.test.js
       - name: Build authenticated client
         working-directory: client
         run: npm run build
 
 # ARTIFACT: headquarters-workforce-directory-certification.yml
-# VERSION: v1.1.1-M03-HR01-WORKFORCE-PYTEST-ENFORCED
+# VERSION: v1.3.0-M03-HR03-ASSIGNMENT-TRANSACTION-AND-CLIENT-CERT
 # AUTHORITY BOUNDARY: Workflow asserts existing IAM and UI; no grants.
 # TENANT POSTURE: Synthetic tests and disposable Mongo only.
 # FAIL-CLOSED POSTURE: Tests and build remain mandatory.

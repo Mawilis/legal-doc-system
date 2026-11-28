@@ -229,6 +229,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/');
   setAuthenticatedScope('TENANT-HR-A', 'PRINCIPAL-HR-A');
   mockState.apiGet.mockReset();
   mockState.apiPost.mockReset();
@@ -256,6 +257,58 @@ beforeEach(() => {
 });
 
 describe('production People Overview source contracts', () => {
+
+  it('keeps Workforce and Organization URLs across view changes and remounts', async () => {
+    const view = renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    expect(window.location.pathname).toBe('/people/workforce');
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    expect(window.location.pathname).toBe('/people/workforce/organization');
+    expect(screen.getByRole('button', {name: 'Organization', exact: true})).toHaveAttribute('aria-pressed', 'true');
+
+    view.unmount();
+    const remount = renderDashboard();
+    expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'Organization', exact: true})).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', {name: 'Directory', exact: true}));
+    expect(window.location.pathname).toBe('/people/workforce');
+    remount.unmount();
+  });
+
+  it('offers business-model department choices without creating tenant records before save', async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/structure') return Promise.resolve({data: {
+        schema: 'WILSY-HR-ORGANIZATION-REGISTRY/V1', source: 'EOS_HR_ORGANIZATION_REGISTRY',
+        tenant_id: 'TENANT-HR-A', count: 1, items: [
+          {kind: 'DEPARTMENT', record_id: 'DEP-LITIGATION', name: 'Litigation',
+            status: 'APPROVED', revision: 2, effective_from: '2026-11-01'},
+        ],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'), {response: {status: 404}}));
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(await screen.findByRole('button', {name: 'Create department'}));
+    const form = screen.getByRole('form', {name: 'Organization draft form'});
+    const activity = within(form).getByLabelText('Business activity');
+    fireEvent.change(activity, {target: {value: 'legal'}});
+    const suggestions = within(form).getByLabelText('Suggested department');
+    expect(within(suggestions).queryByRole('option', {name: 'Litigation'})).not.toBeInTheDocument();
+    fireEvent.change(suggestions, {target: {value: 'Legal Practice'}});
+    expect(within(form).getByLabelText('Name')).toHaveValue('Legal Practice');
+    expect(within(form).getByLabelText('Unique code')).toHaveValue('DEP-LEGAL-PRACTICE');
+    expect(within(form).getByLabelText('Effective from (YYYY-MM-DD)').value).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+    expect(mockState.apiPost).not.toHaveBeenCalled();
+    fireEvent.change(activity, {target: {value: 'agriculture'}});
+    expect(within(form).getByLabelText('Name')).toHaveValue('Legal Practice');
+    expect(within(form).getByRole('option', {name: 'Crop Production'})).toBeInTheDocument();
+    fireEvent.change(within(form).getByLabelText('Name'), {target: {value: 'Our custom department'}});
+    expect(within(form).getByLabelText('Name')).toHaveValue('Our custom department');
+    expect(mockState.apiPost).not.toHaveBeenCalled();
+  });
 
   it('creates an organization draft only after an exact-tenant persisted readback', async () => {
     vi.stubGlobal('crypto',{randomUUID:()=>'org-command-unique-uuid-0001'});
@@ -297,14 +350,62 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(await screen.findByRole('button',{name:'Workforce',exact:true}));
     fireEvent.click(screen.getByRole('button',{name:'Organization',exact:true}));
     fireEvent.click(await screen.findByRole('button',{name:'Create department'}));
+    expect(screen.getByRole('heading',{name:'New department draft',level:2})).toBeInTheDocument();
+    expect(screen.queryByRole('heading',{name:'Governed structure'})).not.toBeInTheDocument();
+    expect(screen.queryByText(/No department or position proposals yet/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'Back to organization'})).toBeInTheDocument();
     const form = screen.getByRole('form',{name:'Organization draft form'});
     fireEvent.change(within(form).getByLabelText('Unique code'),{target:{value:'DEP-OPS'}});
     fireEvent.change(within(form).getByLabelText('Name'),{target:{value:'Operations'}});
     fireEvent.change(within(form).getByLabelText('Effective from (YYYY-MM-DD)'),{target:{value:'2026-12-01'}});
     fireEvent.click(within(form).getByRole('button',{name:'Save draft'}));
-    await waitFor(() => expect(mockState.apiPost).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(
+      mockState.apiPost.mock.calls.filter(([path]) => path === '/hr/workforce/structure/departments')
+    ).toHaveLength(1));
     expect(await screen.findByText(/DEP-OPS · DRAFT · Revision 1/)).toBeInTheDocument();
     expect(screen.getByText(/verified after readback/)).toBeInTheDocument();
+  });
+
+  it('selects only source-approved departments for new positions and parent hierarchy', async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/structure') return Promise.resolve({data: {
+        schema: 'WILSY-HR-ORGANIZATION-REGISTRY/V1',
+        source: 'EOS_HR_ORGANIZATION_REGISTRY',
+        tenant_id: 'TENANT-HR-A',
+        count: 2,
+        items: [
+          {kind: 'DEPARTMENT', record_id: 'DEP-APPROVED', name: 'Approved operations',
+            status: 'APPROVED', revision: 3, effective_from: '2026-11-20'},
+          {kind: 'DEPARTMENT', record_id: 'DEP-DRAFT', name: 'Unapproved unit',
+            status: 'DRAFT', revision: 1, effective_from: '2026-11-25'},
+        ],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'), {response: {status: 404}}));
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(await screen.findByRole('button', {name: 'Create position'}));
+    const form = screen.getByRole('form', {name: 'Organization draft form'});
+    fireEvent.change(within(form).getByLabelText('Name'), {target: {value: 'Clinical coordinator'}});
+    fireEvent.click(within(form).getByRole('button', {name: 'Suggest code'}));
+    expect(within(form).getByLabelText('Unique code')).toHaveValue('POS-CLINICAL-COORDINATOR');
+    expect(within(form).queryByText(/Editable suggestion, not a reserved code/)).not.toBeInTheDocument();
+    const codeHelp = within(form).getByLabelText('Why does a department need a unique code?');
+    expect(codeHelp).toBeInTheDocument();
+    expect(codeHelp.closest('details')).not.toHaveAttribute('open');
+    fireEvent.click(codeHelp);
+    expect(codeHelp.closest('details')).toHaveAttribute('open');
+    expect(within(form).getByText(/EOS checks availability when you save the draft/)).toBeInTheDocument();
+    const department = within(form).getByLabelText('Approved department code');
+    expect(within(department).getByRole('option', {name: /Approved operations/})).toHaveValue('DEP-APPROVED');
+    expect(within(department).queryByRole('option', {name: /Unapproved unit/})).not.toBeInTheDocument();
+    const parent = within(form).getByLabelText('Parent code (optional)');
+    expect(within(parent).queryByRole('option', {name: /Unapproved unit/})).not.toBeInTheDocument();
+    expect(within(form).getByLabelText('Effective from (YYYY-MM-DD)')).toHaveAttribute('type', 'date');
+    expect(within(form).getByLabelText('Planned capacity')).toHaveAttribute('type', 'number');
   });
 
   it('does not display a successful organization record when write permission is denied',async () => {
@@ -335,7 +436,7 @@ describe('production People Overview source contracts', () => {
     fireEvent.change(within(form).getByLabelText('Name'),{target:{value:'Test department'}});
     fireEvent.change(within(form).getByLabelText('Effective from (YYYY-MM-DD)'),{target:{value:'2026-12-01'}});
     fireEvent.click(within(form).getByRole('button',{name:'Save draft'}));
-    expect(await screen.findByText(/does not have the independent organization command permission/)).toBeInTheDocument();
+    expect(await screen.findByText(/EOS denied this capacity the required organization command permission/)).toBeInTheDocument();
     expect(screen.queryByText(/verified after readback/)).not.toBeInTheDocument();
   });
 
@@ -397,6 +498,13 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
     expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
+    const governed = screen.getByRole('heading', {name: 'Governed structure'});
+    const secondary = screen.getByText(/Observed workforce and headcount planning/);
+    expect(governed.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(secondary).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(secondary);
+    expect(secondary).toHaveAttribute('aria-expanded', 'true');
+
     await waitFor(() => expect(mockState.apiGet).toHaveBeenCalledWith(
       '/hr/workforce/organization',
       expect.objectContaining({headers: {'X-Tenant-ID': 'TENANT-HR-A'}}),
@@ -436,6 +544,7 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
     expect(await screen.findByRole('heading', {name: 'Organization & positions'})).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: /Observed workforce and headcount planning/}));
     expect(await screen.findByText('Operations')).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /Search workforce in Operations, 2 active employees/})).toBeInTheDocument();
     expect(await screen.findByRole('heading', {name: 'Position planning'})).toBeInTheDocument();
@@ -466,6 +575,7 @@ describe('production People Overview source contracts', () => {
     renderDashboard();
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: /Observed workforce and headcount planning/}));
     const department = await screen.findByRole('button', {name: /Search workforce in Engineering, 2 active employees/});
     fireEvent.click(department);
     expect(await screen.findByRole('heading', {name: 'Workforce directory'})).toBeInTheDocument();
@@ -497,6 +607,7 @@ describe('production People Overview source contracts', () => {
     renderDashboard();
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: /Observed workforce and headcount planning/}));
     expect(await screen.findByText('Organization is temporarily unavailable')).toBeInTheDocument();
     expect(screen.getByText(/The current organization records could not be confirmed/)).toBeInTheDocument();
     expect(screen.queryByText('Foreign Department')).not.toBeInTheDocument();

@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
+ * VERSION: v3.14.2-EOS-BOOTSTRAP-EMAIL-PROVENANCE-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,8 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-26.
+ * CHANGELOG: v3.14.2-EOS-BOOTSTRAP-EMAIL-PROVENANCE-CERT binds account email to exact READY EOS bootstrap tenant/principal, never a credential candidate, and preserves authorized menu security assertions.
+ * CHANGELOG: v3.14.1-VERIFIED-ACCOUNT-AND-MENU-ACTIONS-CERT asserts EOS verified operating capacity, excludes credential email and tests functional profile/security items without relaxing IAM or daily work journeys.
  * CHANGELOG: v3.14.0-NONFOUNDER-SCOPE-CERT adds a real browser
  *          Partner session and owner-only CRM denial with independently
  *          verified per-principal work isolation in the existing tenant.
@@ -202,7 +204,12 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
         && response.request().method() === 'GET'
       ));
       await page.goto('/headquarters');
-      expect((await bootstrap).status()).toBe(200);
+      const bootstrapResponse = await bootstrap;
+      expect(bootstrapResponse.status()).toBe(200);
+      const sourceBootstrap = await bootstrapResponse.json();
+      expect(sourceBootstrap?.status).toBe('READY');
+      expect(sourceBootstrap?.workspace?.tenantId).toBe(state.tenant_id);
+      expect(sourceBootstrap?.user?.id).toBe(actor.principal_id);
       const transportStatus = page.getByRole('status', {
         name: 'Authenticated; secure transport not confirmed',
       });
@@ -211,12 +218,22 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await accountTrigger.click();
       const accountMenu = page.getByRole('menu', {name: 'Account menu'});
       await expect(accountMenu.getByText('Synthetic Owner', {exact: true})).toBeVisible();
-      await expect(accountMenu.getByText(state.actors.tenant_owner.email, {exact: true})).toHaveCount(0);
-      await expect(accountMenu.getByText(/@example\.com/)).toHaveCount(0);
+      const sourceEmail = sourceBootstrap?.user?.email;
+      if (typeof sourceEmail === 'string' && sourceEmail.length) {
+        // The menu may show the EOS workspace-bootstrap projection; the
+        // credential-only login candidate is never accepted as its source.
+        await expect(accountMenu.getByText(sourceEmail, {exact: true})).toBeVisible();
+        await expect(accountMenu.getByText('Verified account email', {exact: true})).toBeVisible();
+      } else {
+        await expect(accountMenu.getByText(state.actors.tenant_owner.email, {exact: true})).toHaveCount(0);
+        await expect(accountMenu.getByText(/@example\.com/)).toHaveCount(0);
+      }
       await expect(accountMenu.getByText('Synthetic Browser Certification Tenant', {exact: true})).toBeVisible();
-      await expect(accountMenu.getByText('Selected capacity: Owner', {exact: true})).toBeVisible();
+      await expect(accountMenu.getByText('Operating as: Owner', {exact: true})).toBeVisible();
       await expect(accountMenu.getByRole('menuitem', {name: 'Sign out'})).toBeEnabled();
-      await expect(accountMenu.getByRole('menuitem', {name: /Kernel diagnostics|Profile|Preferences|Security & sessions/})).toHaveCount(0);
+      await expect(accountMenu.getByRole('menuitem', {name: /My profile/})).toBeEnabled();
+      await expect(accountMenu.getByRole('menuitem', {name: /Security & sessions/})).toBeEnabled();
+      await expect(accountMenu.getByRole('menuitem', {name: /Kernel diagnostics|Preferences/})).toHaveCount(0);
       await expect(accountMenu.getByText('Unavailable', {exact: true})).toHaveCount(0);
       if (evidenceDirectory) {
         await page.screenshot({
@@ -1097,7 +1114,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
+// VERSION: v3.14.2-EOS-BOOTSTRAP-EMAIL-PROVENANCE-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.

@@ -1,11 +1,12 @@
 """TITLE: MW-T12 disposable MongoDB backup/restore certificate rehearsal.
-VERSION: v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL
+VERSION: v1.3.0-HOSTNAME-VALIDATED-REPLICA-INIT
 AUTHORITY: WILSY OS Core Governance / AGENTS.md.
 EPITOME: Run a real synthetic Mongo dump, fault, restore and readback in a
          newly created network-disabled Docker container; never touch EOS.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/ops/mw_t12_disposable_mongo_recovery.py
 COLLABORATION / OWNERSHIP: Python EOS engineering operator / Docker.
 CERTIFICATION / UPDATE DATE: 2026-11-24.
+CHANGELOG: v1.3.0-HOSTNAME-VALIDATED-REPLICA-INIT uses MongoDB 7 compatible hostname member identity and refuses failed replSetInitiate responses without enabling networking or weakening rollback verification.
 CHANGELOG: v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL distinguishes synthetic
            container start, shell, backup export and restore command failure
            with fixed nonsecret codes; no raw stderr, Mongo or credentials.
@@ -35,7 +36,7 @@ import sys
 import time
 from typing import Any
 
-VERSION = "v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL"
+VERSION = "v1.3.0-HOSTNAME-VALIDATED-REPLICA-INIT"
 IMAGE = "mongo:7"
 
 
@@ -129,7 +130,19 @@ def primary(container: str) -> None:
         time.sleep(1)
     else:
         raise _startup_failure(container)
-    mongo(container, 'rs.initiate({_id:"mwT12",members:[{_id:0,host:"127.0.0.1:27017"}]})')
+    # MongoDB 5+ rejects IP-only replica member identities under split-horizon
+    # validation. DNS "localhost" resolves strictly inside this network-disabled
+    # disposable container; no host port or external network is introduced.
+    initiated = mongo(
+        container, 'JSON.stringify(rs.initiate({_id:"mwT12",'
+        'members:[{_id:0,host:"localhost:27017"}]}))',
+    )
+    try:
+        initiation_result = json.loads(initiated)
+    except (ValueError, TypeError) as error:
+        raise RecoveryGateError("MONGO_REPLICA_INIT_INVALID") from None
+    if not isinstance(initiation_result, dict) or initiation_result.get("ok") != 1:
+        raise RecoveryGateError("MONGO_REPLICA_INIT_REJECTED")
     for _ in range(45):
         try:
             if mongo(container, "db.hello().isWritablePrimary") == "true":
@@ -263,7 +276,7 @@ if __name__ == "__main__":
 
 
 # ARTIFACT: tools/eos/ops/mw_t12_disposable_mongo_recovery.py
-# VERSION: v1.2.0-PHASE-BOUNDED-DOCKER-DENIAL
+# VERSION: v1.3.0-HOSTNAME-VALIDATED-REPLICA-INIT
 # AUTHORITY BOUNDARY: Disposable Mongo component rehearsal only, not EOS recovery.
 # TENANT POSTURE: No canonical or external tenant state is touched.
 # FAIL-CLOSED POSTURE: Any Docker, isolation, backup, fault, restore, readback or cleanup failure denies success.

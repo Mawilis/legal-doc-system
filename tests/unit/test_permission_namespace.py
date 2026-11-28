@@ -391,7 +391,7 @@ def test_participant_permissions_are_separately_owned_and_nonpossessory(
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.65.0-PROJECT-PARTICIPANT-PERMISSION-PAIRS"
+    assert POLICY_VERSION == "v1.66.1-ORGANIZATION-CONFIDENTIAL-READ"
 
 
 def test_practitioner_binding_provision_permission_is_exact_and_bounded() -> None:

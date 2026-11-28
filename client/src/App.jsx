@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
+ * VERSION: v20.4.15-VERIFIED-ACCOUNT-EMAIL-ONLY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,7 +24,8 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
- * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER prevents duplicate footer at the Owner's default Headquarters landing routes, where the nested workspace owns the footer.
+ * CHANGELOG: v20.4.15-VERIFIED-ACCOUNT-EMAIL-ONLY keeps sign-in candidates outside account identity and recovery chrome; only EOS workspaceEmail is displayed, with no authentication or IAM change.
+CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER prevents duplicate footer at the Owner's default Headquarters landing routes, where the nested workspace owns the footer.
  * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER sends the global logo to the EOS-selected capacity home (Owner Headquarters, HR Director/Manager People), and uses one canonical footer on other protected routes without duplicating the Headquarters footer.
  * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH removes the implicit HR Projects-denial event that opened a logout-and-Owner-login prompt; account capacity change remains explicit, EOS governed and MFA bound.
  * CHANGELOG: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY opens the existing confirmation when HR-denied Projects explicitly requests Owner capacity; reauthentication and EOS authorisation remain mandatory.
@@ -293,9 +294,8 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? [exactChromeText(sessionUser.firstName), exactChromeText(sessionUser.lastName)].filter(Boolean).join(' ')
     : '';
   const accountEmail = safeAccountEmail(sessionUser?.workspaceEmail);
-  // The authenticated compatibility field may originate from the credential
-  // candidate: useful for the operator, but not independently EOS-verified.
-  const signInEmail = safeAccountEmail(sessionUser?.email);
+  // Login-credential email is not EOS-verified account identity. Never render
+  // it as profile, account-menu, recovery or SYSTEM identity evidence.
   const verifiedTenantId = activeTenant?.tenantId
     || activeTenant?.tenant_id || activeTenant?.id || null;
   const tenantIdentity = sessionUser?.tenantId
@@ -543,7 +543,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
+    <div className={`flex flex-col bg-[#080f1d] text-slate-100 ${isHrCapacity ? 'h-dvh min-h-0 overflow-hidden' : 'min-h-screen'}`} data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
       {isPlatformOwnerWorkspace && <style>{'body:has([data-wilsy-platform-owner="true"])::after{display:none!important}'}</style>}
       <header className="sticky top-0 z-40 flex h-[72px] w-full min-w-0 items-center gap-2 border-b border-white/10 bg-gradient-to-r from-[#0b1830] via-[#112444] to-[#0b1830] px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-4 xl:px-5">
         <button type="button" aria-label="WILSY home" onClick={() => navigate(currentHomeRoute)} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[228px] xl:w-[228px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
@@ -636,7 +636,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/40 bg-[#263b5a] text-base font-bold text-amber-100" aria-hidden="true">{initials || <UserRound size={19}/>}</span>
                   <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
-                  {(accountEmail || signInEmail) && <div className="mt-1 min-w-0"><p className="break-all text-xs text-slate-100">{accountEmail || signInEmail}</p><p className="mt-0.5 text-[10px] text-slate-300">{accountEmail ? 'Account email' : 'Sign-in email'}</p></div>}
+                  {accountEmail && <div className="mt-1 min-w-0"><p className="break-all text-xs text-slate-100">{accountEmail}</p><p className="mt-0.5 text-[10px] text-slate-300">Verified account email</p></div>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-200">Operating as: {selectedCapacityLabel}</p>}
@@ -709,7 +709,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                         <p className="mb-2 text-sm font-semibold text-white">Verified profile</p>
                         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
                           <dt className="text-slate-300">Name</dt><dd className="break-words">{displayName || 'Not provided by EOS'}</dd>
-                          <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || signInEmail || 'Not supplied'}{!accountEmail && signInEmail && <span className="block text-amber-200">Sign-in email, not independently verified by EOS</span>}</dd>
+                          <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || 'Not verified by EOS'}</dd>
                           <dt className="text-slate-300">Employer</dt><dd>{organisationName || 'Not verified'}</dd>
                           <dt className="text-slate-300">Tenant</dt><dd className="break-all">{currentTenantReference || 'Not verified'}</dd>
                         </dl>
@@ -719,7 +719,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                         <p className="mt-2 text-emerald-200">Current EOS workspace session authenticated.</p>
                         <p className="mt-2">Sign out revokes the current session through the existing provider flow. Other device sessions and MFA methods require independent EOS evidence.</p>
                         <div className="mt-3">
-                          <RecoveryContactSecurityControl key={accountScope} compact email={accountEmail || signInEmail} />
+                          <RecoveryContactSecurityControl key={accountScope} compact email={accountEmail || undefined} />
                         </div>
                         <p className="mt-2 text-slate-300">Recovery email verification proves mailbox control for password recovery; it does not certify your general account email or grant another role.</p>
                       </>}
@@ -768,10 +768,11 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
         </div>
       </header>
 
-      <div className="min-h-0 flex-1">{children}</div>
-      {location.pathname !== '/headquarters' && !(isOwnerCapacity && ['/', '/dashboard'].includes(location.pathname)) && (
+      <div className={isHrCapacity ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : "min-h-0 flex-1"} data-wilsy-workspace-scroll={isHrCapacity ? "true" : undefined}>{children}</div>
+      {!(isOwnerCapacity && ['/headquarters', '/', '/dashboard'].includes(location.pathname)) && (
         <WilsySystemFooter
           surface={isHrCapacity ? 'People · Hire to Exit' : isOwnerCapacity ? 'Headquarters · Enterprise operations' : 'WILSY OS · Authorized workspace'}
+          className={isHrCapacity ? 'relative z-30 shrink-0' : ''}
           employerName={showTenantContext ? organisationName : ''}
           employerReference={showTenantContext ? currentTenantReference : ''}
         />
@@ -992,6 +993,11 @@ const SovereignRouter = () => {
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
           ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
+          : <Navigate to="/" replace />
+      } />
+      <Route path="/people/workforce/*" element={
+        isAuthenticated && user && !systemServicesSession
+          ? <ErrorBoundary><SovereignDashboardController user={user} onLogout={logout} /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -1356,7 +1362,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
+ * VERSION: v20.4.15-VERIFIED-ACCOUNT-EMAIL-ONLY
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

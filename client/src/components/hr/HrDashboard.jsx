@@ -3,7 +3,9 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON
+ * VERSION: v2.24.0-M03-HR03-GOVERNED-ASSIGNMENT-COMPOSITION
+ * CHANGELOG: v2.24.0-M03-HR03-GOVERNED-ASSIGNMENT-COMPOSITION mounts independent Employee→Position→Department workbench with no new grants or legacy employee writes.
+CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY introduces approved tenant-context suggestions, governed change workspace and bounded client-reported form effort without altering EOS business authority.
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -11,25 +13,25 @@
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces canned approval reasons with checker-authored evidence, suppresses own-proposal review using a session-relative maker flag, and preserves EOS checker authority and durable readback.
- * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON introduces the separate source-verified organization register, an authorized draft/submit/checker UI and independently validated readback, current tenant isolation, retained command idempotency and denied/unknown outcomes. No client-side permission grant or admission is inferred.
- * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
- * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
- * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
- * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
- * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+ * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY replaces canned approval reasons with checker-authored evidence, suppresses own-proposal review using a session-relative maker flag, and preserves EOS checker authority and durable readback.
+ * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY introduces the separate source-verified organization register, an authorized draft/submit/checker UI and independently validated readback, current tenant isolation, retained command idempotency and denied/unknown outcomes. No client-side permission grant or admission is inferred.
+ * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
+ * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
+ * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
+ * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
+ * CHANGELOG: v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
 CHANGELOG:
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.23.0-M03-HR03-INTELLIGENT-ORGANIZATION-PARITY exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -133,6 +135,10 @@ import { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import FounderHeadcountStart, { HeadcountDraftSubmit, HeadcountIndependentDecision } from './FounderHeadcountStart';
 import styles from './HrDashboard.module.css';
+import { ORGANIZATION_BUSINESS_MODELS, getDepartmentSuggestions } from './organizationDepartmentCatalog.js';
+import OrganizationLifecycleWorkspace from './OrganizationLifecycleWorkspace.jsx';
+import BusinessActivityContextWorkspace from './BusinessActivityContextWorkspace.jsx';
+import OrganizationAssignmentWorkspace from './OrganizationAssignmentWorkspace.jsx';
 import { workStatusClasses } from '../../theme/workStatus.js';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
@@ -2390,24 +2396,40 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   tenantScopeKeyRef.current = tenantScopeKey;
   const previousTenantScopeKeyRef = useRef(tenantScopeKey);
   const user = authUser || {};
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => window.location.pathname.startsWith('/people/workforce') ? 'employees' : 'overview');
   const [morePeopleModulesOpen, setMorePeopleModulesOpen] = useState(false);
   const [peopleQueueFilter, setPeopleQueueFilter] = useState('all');
   const [peopleVerificationHelpOpen, setPeopleVerificationHelpOpen] = useState(false);
-  const [workforceView, setWorkforceView] = useState('directory');
+  const [workforceView, setWorkforceView] = useState(() => window.location.pathname === '/people/workforce/organization' ? 'organization' : 'directory');
   const [workforceOrganization, setWorkforceOrganization] = useState(null);
   const [workforceOrganizationState, setWorkforceOrganizationState] = useState('IDLE');
   const [workforceOrganizationRefresh, setWorkforceOrganizationRefresh] = useState(0);
   const [workforceStructure, setWorkforceStructure] = useState(null);
   const [workforceStructureStatus, setWorkforceStructureStatus] = useState('IDLE');
+  const [workforceStructureFailureCode, setWorkforceStructureFailureCode] = useState(null);
+  const [supportingOrganizationOpen, setSupportingOrganizationOpen] = useState(false);
   const [organizationFormOpen, setOrganizationFormOpen] = useState(false);
   const [organizationReviewId, setOrganizationReviewId] = useState(null);
   const [organizationDecisionReason, setOrganizationDecisionReason] = useState('');
   const [organizationKind, setOrganizationKind] = useState('departments');
+  const [departmentModel, setDepartmentModel] = useState('general');
+  const [approvedBusinessActivityIds, setApprovedBusinessActivityIds] = useState([]);
+  const departmentModelManuallyChosenRef = useRef(false);
+  const [departmentTemplate, setDepartmentTemplate] = useState('');
+  const [departmentCatalogSearch, setDepartmentCatalogSearch] = useState('');
   const [organizationForm, setOrganizationForm] = useState({record_id:'',name:'',parent_id:'',department_id:'',effective_from:'',capacity:'1'});
   const [organizationCommandState, setOrganizationCommandState] = useState({status:'IDLE', message:''});
   const workforceStructureSequenceRef = useRef(0);
   const organizationCommandKeysRef = useRef({});
+  const organizationDraftUsageRef = useRef(null);
+  // Tenant/capacity changes must never carry a prior employer's inferred
+  // department catalogue preference or in-progress UX measurement.
+  useEffect(() => {
+    departmentModelManuallyChosenRef.current = false;
+    organizationDraftUsageRef.current = null;
+    setApprovedBusinessActivityIds([]);
+    setDepartmentModel('general');
+  }, [tenantScopeKey]);
 
   const workforceOrganizationSequenceRef = useRef(0);
   const [selectedWorkforceEmployeeId, setSelectedWorkforceEmployeeId] = useState(null);
@@ -2495,13 +2517,15 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     organizationCommandKeysRef.current = {};
     setWorkforceStructure(null);
     setWorkforceStructureStatus('IDLE');
+    setWorkforceStructureFailureCode(null);
+    setSupportingOrganizationOpen(false);
     setOrganizationFormOpen(false);
     setOrganizationReviewId(null);
     setOrganizationDecisionReason('');
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
-    setWorkforceView('directory');
+    setWorkforceView(window.location.pathname === '/people/workforce/organization' ? 'organization' : 'directory');
     setSelectedWorkforceEmployeeId(null);
     setWorkforceDetail(null);
     setWorkforceDetailStatus('IDLE');
@@ -2533,13 +2557,15 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     organizationCommandKeysRef.current = {};
     setWorkforceStructure(null);
     setWorkforceStructureStatus('IDLE');
+    setWorkforceStructureFailureCode(null);
+    setSupportingOrganizationOpen(false);
     setOrganizationFormOpen(false);
     setOrganizationReviewId(null);
     setOrganizationDecisionReason('');
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
-    setWorkforceView('directory');
+    setWorkforceView(window.location.pathname === '/people/workforce/organization' ? 'organization' : 'directory');
     setSearchTerm('');
     setWorkforceSearchDraft('');
     setSelectedWorkforceEmployeeId(null);
@@ -3070,6 +3096,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     const seq = ++workforceStructureSequenceRef.current;
     setWorkforceStructure(null);
     setWorkforceStructureStatus('PENDING');
+    setWorkforceStructureFailureCode(null);
     void api.get('/hr/workforce/structure', {headers: {'X-Tenant-ID': tenantId}})
       .then(response => {
         if (seq !== workforceStructureSequenceRef.current
@@ -3083,11 +3110,12 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
           && Number.isSafeInteger(data?.count)
           && Array.isArray(items) && items.length === data.count && items.length <= 200
           && items.every(item => ['DEPARTMENT','POSITION'].includes(item?.kind)
-            && ['DRAFT','SUBMITTED','APPROVED','REJECTED'].includes(item?.status)
+            && ['DRAFT','SUBMITTED','APPROVED','REJECTED','RETIRED'].includes(item?.status)
             && typeof item?.record_id === 'string' && typeof item?.name === 'string'
             && Number.isSafeInteger(item?.revision) && item.revision >= 1);
-        if (!valid) { setWorkforceStructureStatus('UNAVAILABLE'); return; }
+        if (!valid) { setWorkforceStructureFailureCode('INVALID_SOURCE_ENVELOPE'); setWorkforceStructureStatus('UNAVAILABLE'); return; }
         setWorkforceStructure(data);
+        setWorkforceStructureFailureCode(null);
         setWorkforceStructureStatus('VERIFIED');
       })
       .catch(error => {
@@ -3096,6 +3124,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
           invalidateHrSessionScope(scope, hrReadErrorCode(error));
           return;
         }
+        setWorkforceStructureFailureCode(error?.response?.status === 403 ? 'PERMISSION_DENIED' : error?.response?.status === 404 ? 'HTTP_404_REGISTRY_NOT_FOUND' : error?.response?.status === 503 ? 'SOURCE_UNAVAILABLE_503' : error?.response?.status ? 'HTTP_' + error.response.status : 'TRANSPORT_UNAVAILABLE');
         setWorkforceStructureStatus(error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
       });
     return () => { workforceStructureSequenceRef.current += 1; };
@@ -3108,6 +3137,43 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
    * Pending-key retention makes safe retries use the same idempotency evidence.
    * Neither UI state nor this function grants department approval or IAM.
    */
+  const beginOrganizationDraftUsage = () => {
+    organizationDraftUsageRef.current = {
+      sessionId: crypto.randomUUID().replaceAll('-', ''),
+      started: Date.now(), modifiedFields: new Set(),
+      selectedTemplates: 0, validationFailures: 0,
+    };
+  };
+
+  const trackOrganizationDraftField = (name) => {
+    organizationDraftUsageRef.current?.modifiedFields.add(name);
+  };
+
+  const reportOrganizationDraftUsage = (scope) => {
+    const usage = organizationDraftUsageRef.current;
+    organizationDraftUsageRef.current = null;
+    if (!usage || scope !== tenantScopeKeyRef.current) return;
+    // Product analytics are explicitly CLIENT_REPORTED. Never send field contents,
+    // names, employee identifiers, business justifications, principals or secrets.
+    const observations = [
+      {event:'FORM_OPENED',count:1},
+      ...(usage.selectedTemplates ? [{event:'CATALOG_SELECTED',
+        count:Math.min(usage.selectedTemplates,20)}] : []),
+      ...(usage.modifiedFields.size ? [{event:'MANUAL_FIELD_EDITED',
+        count:Math.min(usage.modifiedFields.size,20)}] : []),
+      ...(usage.validationFailures ? [{event:'VALIDATION_FAILED',
+        count:Math.min(usage.validationFailures,20)}] : []),
+      {event:'DRAFT_VERIFIED',count:1,
+        elapsed_ms:Math.max(0, Math.min(3600000,Date.now()-usage.started))},
+    ];
+    for (const observation of observations) {
+      void api.post('/hr/workforce/structure/productivity/observations', {
+        session_id:usage.sessionId,...observation,
+      }, {headers:{'X-Tenant-ID':tenantId,'Idempotency-Key':crypto.randomUUID()}})
+        .catch(() => { /* Metrics failure never becomes business success or blocks EOS. */ });
+    }
+  };
+
   const runOrganizationCommand = async (action, item = null) => {
     if (organizationCommandState.status === 'PENDING' || !tenantScopeKey
       || workforceStructureStatus !== 'VERIFIED') return;
@@ -3132,6 +3198,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       || payload.name.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(payload.effective_from)
       || (kind === 'positions' && (!payload.department_id || !Number.isInteger(payload.capacity)
         || payload.capacity < 1 || payload.capacity > 500)))) {
+      if (organizationDraftUsageRef.current) organizationDraftUsageRef.current.validationFailures += 1;
       setOrganizationCommandState({status:'INVALID',message:'Enter a valid identifier, name, effective date and approved department for a position.'});
       return;
     }
@@ -3177,16 +3244,44 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       setOrganizationReviewId(null);
       setOrganizationDecisionReason('');
       setOrganizationCommandState({status:'VERIFIED',message:saved.kind + ' ' + recordId + ' · ' + saved.status + ' · revision ' + saved.revision + ' verified after readback.'});
+      if (action === 'create') reportOrganizationDraftUsage(scope);
     } catch (error) {
       if (tenantScopeKeyRef.current !== scope) return;
       if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
         invalidateHrSessionScope(scope, hrReadErrorCode(error));return;
       }
+      const status = error?.response?.status;
+      const rawDetail = error?.response?.data?.detail;
+      // Expose only an allowlisted bounded EOS code. Validation envelopes may
+      // contain PII or arbitrary user input and must never be echoed to the UI.
+      const code = typeof rawDetail === 'string' && /^ORGANIZATION_[A-Z0-9_]{1,100}$/.test(rawDetail)
+        ? rawDetail : null;
+      const codeHint = code ? ' · ' + code : '';
+      // Only display allowlisted request-field and validation-type diagnostics.
+      // Never render the raw EOS error message, input or PII.
+      const allowedFields = new Set(['record_id','name','effective_from','parent_id','department_id','capacity','kind','idempotency-key','x-tenant-id']);
+      const allowedTypes = new Set(['missing','string_pattern_mismatch','string_too_short','string_too_long','date_from_datetime_parsing','date_from_datetime_inexact','date_type','date_parsing','literal_error','int_type','greater_than_equal','less_than_equal','extra_forbidden']);
+      const validationIssues = Array.isArray(rawDetail) ? rawDetail.flatMap(issue => {
+        const location = Array.isArray(issue?.loc) ? issue.loc.map(String) : [];
+        const field = location.at(-1)?.toLowerCase();
+        const type = typeof issue?.type === 'string' ? issue.type : '';
+        return allowedFields.has(field) && allowedTypes.has(type) ? [field + ' (' + type.replaceAll('_',' ') + ')'] : [];
+      }).slice(0,3) : [];
+      const validationHint = validationIssues.length ? ' · Fields: ' + validationIssues.join(', ') : '';
+      const message = status === 403
+        ? 'EOS denied this capacity the required organization command permission.'
+        : status === 405 || status === 404
+          ? 'EOS route unavailable (HTTP ' + status + '). The running Python EOS must load the current Organization routers.'
+          : status === 422
+            ? 'EOS rejected the organization proposal (HTTP 422' + codeHint + validationHint + '). Verify the indicated request fields before retrying.'
+            : status === 409
+              ? 'EOS reported an organization conflict (HTTP 409' + codeHint + '). Refresh the registry before another attempt.'
+              : status === 503
+                ? 'EOS organization source unavailable (HTTP 503' + codeHint + '). No draft is confirmed.'
+                : 'Organization command or readback failed' + (status ? ' (HTTP ' + status + ')' : '') + '. No success is claimed.';
       setOrganizationCommandState({
-        status:error?.response?.status === 403 ? 'DENIED' : 'UNVERIFIED',
-        message:error?.response?.status === 403
-          ? 'This capacity does not have the independent organization command permission.'
-          : 'Organization command or readback failed. No success is claimed; retry with the retained idempotency key.',
+        status:status === 403 ? 'DENIED' : 'UNVERIFIED',
+        message:message + ' The original idempotency key is retained for a safe retry.',
       });
     }
   };
@@ -3216,6 +3311,31 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
    * @returns {void}
    * @collaboration HR navigation must change the business process, not repaint the same list.
    */
+  const openWorkforceSubview = (nextView) => {
+    if (nextView !== 'directory' && nextView !== 'organization') return;
+    setActiveTab('employees');
+    setWorkforceView(nextView);
+    const nextPath = nextView === 'organization' ? '/people/workforce/organization' : '/people/workforce';
+    if (window.location.pathname !== nextPath && ['/','/dashboard','/headquarters','/people/workforce','/people/workforce/organization'].includes(window.location.pathname)) {
+      window.history.pushState(window.history.state, '', nextPath);
+    }
+  };
+
+  useEffect(() => {
+    const syncPeopleRoute = () => {
+      const path = window.location.pathname;
+      if (path === '/people/workforce/organization') {
+        setActiveTab('employees');
+        setWorkforceView('organization');
+      } else if (path === '/people/workforce') {
+        setActiveTab('employees');
+        setWorkforceView('directory');
+      }
+    };
+    window.addEventListener('popstate', syncPeopleRoute);
+    return () => window.removeEventListener('popstate', syncPeopleRoute);
+  }, []);
+
   const changeTab = (tabId) => {
     workforceDetailSequenceRef.current += 1;
     setSelectedWorkforceEmployeeId(null);
@@ -3226,6 +3346,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       setWorkforceSearchDraft('');
     }
     setActiveTab(tabId);
+    if (tabId === 'employees') openWorkforceSubview(workforceView);
+    else if (window.location.pathname.startsWith('/people/workforce')) window.history.replaceState(window.history.state, '', '/');
     setMorePeopleModulesOpen(false);
     pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
@@ -4859,7 +4981,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 {id:'directory',label:'Directory'},
                 {id:'organization',label:'Organization'},
               ].map(view => <button type="button" key={view.id}
-                onClick={() => {setWorkforceView(view.id); setSelectedWorkforceEmployeeId(null);}}
+                onClick={() => {openWorkforceSubview(view.id); setSelectedWorkforceEmployeeId(null);}}
                 aria-pressed={workforceView === view.id}
                 style={{padding:'8px 15px',fontSize:13,fontWeight:700,borderRadius:7,
                   border:'1px solid #b8c9dd',
@@ -4934,7 +5056,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 ? <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
                     <button type="button" onClick={() => changeTab('jobOpenings')}>Request headcount <ArrowUpRight size={15} aria-hidden /></button>
                     <button type="button" onClick={() => changeTab('candidates')}>Hiring pipeline <ArrowUpRight size={15} aria-hidden /></button>
-                    <button type="button" onClick={() => setWorkforceView('organization')}>View organization <ArrowUpRight size={15} aria-hidden /></button>
+                    <button type="button" onClick={() => openWorkforceSubview('organization')}>View organization <ArrowUpRight size={15} aria-hidden /></button>
                   </div>
                 : <button type="button" onClick={() => setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}))}>First page</button>}
             </div>}
@@ -4983,14 +5105,236 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
               style={{padding:'22px',borderTop:'1px solid #dbe5f0',background:'#fff',color:'#142b49'}}>
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:20}}>
                 <div style={{display:'grid',gap:5}}>
-                  <h2 id="workforce-organization-heading" style={{fontSize:22,fontWeight:750,color:'#102744',margin:0}}>Organization &amp; positions</h2>
-                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>See where people work and plan positions before the first hire.</p>
+                  <h2 id="workforce-organization-heading" style={{fontSize:22,fontWeight:750,color:'#102744',margin:0,scrollMarginTop:185}}>{organizationFormOpen ? 'New ' + (organizationKind === 'departments' ? 'department' : 'position') + ' draft' : 'Organization & positions'}</h2>
+                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>{organizationFormOpen ? 'Create an EOS proposal. Approval remains a separate independent action.' : 'Create and approve governed departments and positions before assigning people.'}</p>
                 </div>
-                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
-                  style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
-                  Refresh organization
-                </button>
+                {organizationFormOpen
+                  ? <button type="button" onClick={() => setOrganizationFormOpen(false)}
+                      style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
+                      Back to organization
+                    </button>
+                  : <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
+                      style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
+                      Refresh organization
+                    </button>}
               </div>
+              <section aria-labelledby={organizationFormOpen ? undefined : 'organization-registry-heading'} aria-label={organizationFormOpen ? 'Organization draft editor' : undefined} style={{border:'1px solid #d1deec',borderRadius:11,marginTop:0,overflow:'hidden'}}>
+                  {!organizationFormOpen && <React.Fragment>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,padding:'15px 17px',background:'#f8fafd',borderBottom:'1px solid #dbe5f0'}}>
+                    <div>
+                      <h3 id="organization-registry-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Governed structure</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Create, submit and independently approve departments and positions through EOS.</p>
+                    </div>
+                    {workforceStructureStatus === 'VERIFIED' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      <button type="button" onClick={() => {setOrganizationKind('departments');setOrganizationFormOpen(true);beginOrganizationDraftUsage();setOrganizationCommandState({status:'IDLE',message:''});}}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create department</button>
+                      <button type="button" onClick={() => {setOrganizationKind('positions');setOrganizationFormOpen(true);beginOrganizationDraftUsage();setOrganizationCommandState({status:'IDLE',message:''});}}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create position</button>
+                    </div>}
+                  </div>
+                  {workforceStructureStatus === 'PENDING' && <p role="status" style={{padding:17,color:'#4b607a'}}>Checking the approved structure register…</p>}
+                  {workforceStructureStatus === 'DENIED' && <p role="alert" style={{padding:17,color:'#4b607a'}}>Access to the organization register is denied for this capacity.</p>}
+                  {workforceStructureStatus === 'UNAVAILABLE' && <div role="status" style={{padding:17,display:'grid',gap:8,color:'#4b607a'}}><p>The organization register could not be verified. No approved structure is displayed.</p><p style={{fontSize:12}}>Source: /api/hr/workforce/structure · {workforceStructureFailureCode || 'UNVERIFIED'}. Verify the authenticated response in Network. The runtime returned this status; do not infer an empty register or bypass authorization.</p><button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)} style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'8px 12px',color:'#173c70'}}>Retry registry read</button></div>}
+                  {workforceStructureStatus === 'VERIFIED' && workforceStructure &&
+                    <div style={{padding:'0 17px'}}>
+                      <BusinessActivityContextWorkspace tenantId={tenantId} scopeKey={tenantScopeKey}
+                        onApproved={ids => {
+                          setApprovedBusinessActivityIds(ids);
+                          if (!departmentModelManuallyChosenRef.current && ids.length) {
+                            setDepartmentModel(ids[0]);
+                          }
+                        }}/>
+                    </div>}
+                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <div style={{padding:'15px 17px'}}>
+                    {workforceStructure.items.length === 0
+                      ? <p style={{fontSize:13,color:'#526781'}}>No department or position proposals yet. Create a draft to begin the governed approval process.</p>
+                      : <div style={{display:'grid',gap:8}}>
+                          {workforceStructure.items.map(item => <div key={item.kind+':'+item.record_id}
+                            style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',border:'1px solid #dce6f1',borderRadius:8,padding:'12px 14px'}}>
+                            <div>
+                              <strong style={{fontSize:13,color:'#143454'}}>{item.name}</strong>
+                              <p style={{fontSize:12,color:'#526781',marginTop:4}}>{item.kind === 'POSITION' ? 'Position' : 'Department'} · {item.record_id} · {item.status} · Revision {item.revision}</p>
+                              {item.kind === 'POSITION' && <p style={{fontSize:12,color:'#526781'}}>Department {item.department_id} · Planned capacity {item.capacity}</p>}
+                            </div>
+                            <div style={{display:'flex',gap:7}}>
+                              {item.status === 'DRAFT' && <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => runOrganizationCommand('submit',item)}
+                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Submit for approval</button>}
+                              {item.status === 'SUBMITTED' && !item.current_principal_is_maker && <button type="button"
+                                disabled={organizationCommandState.status === 'PENDING'}
+                                onClick={() => {setOrganizationReviewId(item.kind+':'+item.record_id);setOrganizationDecisionReason('');setOrganizationCommandState({status:'IDLE',message:''});}}
+                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Review decision</button>}
+                              {item.status === 'SUBMITTED' && item.current_principal_is_maker && <span style={{fontSize:12,color:'#526781'}}>Awaiting independent checker</span>}
+                            </div>
+                          </div>)}
+                        </div>}
+                  </div>}
+                  {workforceStructureStatus === 'VERIFIED' && organizationReviewId && (() => {
+                    const entry = workforceStructure.items.find(item => item.kind+':'+item.record_id === organizationReviewId);
+                    if (!entry || entry.status !== 'SUBMITTED' || entry.current_principal_is_maker) return null;
+                    return <section aria-label="Organization independent review" style={{padding:'15px 17px',borderTop:'1px solid #dce6f1',display:'grid',gap:11}}>
+                      <strong style={{color:'#142f50',fontSize:14}}>Review {entry.name}</strong>
+                      <label style={{display:'grid',gap:5,fontSize:12,color:'#304e6e',fontWeight:650}}>
+                        Your decision reason
+                        <textarea rows={3} minLength={5} maxLength={2000} required value={organizationDecisionReason}
+                          onChange={event => setOrganizationDecisionReason(event.target.value)}
+                          style={{padding:'10px 12px',border:'1px solid #aabbd0',borderRadius:8,color:'#142f50',background:'#fff',fontSize:13}}/>
+                      </label>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:9}}>
+                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('approve',entry)}
+                          style={{padding:'9px 13px',borderRadius:8,background:'#173c70',color:'#fff',fontWeight:700}}>Approve proposal</button>
+                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('reject',entry)}
+                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70',fontWeight:700}}>Reject proposal</button>
+                        <button type="button" onClick={() => {setOrganizationReviewId(null);setOrganizationDecisionReason('');}}
+                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70'}}>Cancel</button>
+                      </div>
+                    </section>;
+                  })()}
+                  </React.Fragment>}
+                  {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form
+                    className={styles.organizationDraftForm}
+                    onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
+                    aria-label="Organization draft form">
+                    <div className={styles.organizationDraftHeading}>
+                      <div>
+                        <strong>New {organizationKind === 'departments' ? 'department' : 'position'} draft</strong>
+                        <p>Save a proposal first. Submitting and independent approval are separate EOS actions.</p>
+                      </div>
+                      <span>Draft · not approved</span>
+                    </div>
+                    {organizationKind === 'departments' && <section className={styles.organizationGuidedPick} aria-label="Choose a department from a business model">
+                      <div className={styles.organizationGuidedTitle}>
+                        <strong>Choose a department</strong>
+                        <p>{approvedBusinessActivityIds.length && approvedBusinessActivityIds.includes(departmentModel)
+                            ? 'Starting from your approved business profile. Choose a suggestion or customise the department.'
+                            : 'Choose any activity and suggested department, or enter a custom department below. No tenant records are created by suggestions.'}</p>
+                      </div>
+                      <div className={styles.organizationDraftGrid}>
+                        <label>
+                          <span>Business activity</span>
+                          <select value={departmentModel} onChange={event => {
+                            departmentModelManuallyChosenRef.current = true;
+                            setDepartmentModel(event.target.value);
+                            setDepartmentTemplate('');
+                            setDepartmentCatalogSearch('');
+                          }}>
+                            {ORGANIZATION_BUSINESS_MODELS.map(model =>
+                              <option key={model.id} value={model.id}>{model.label}</option>)}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Find a suggested department</span>
+                          <input type="search" value={departmentCatalogSearch}
+                            onChange={event => setDepartmentCatalogSearch(event.target.value)}
+                            placeholder="Filter the suggested department list"/>
+                        </label>
+                        <label>
+                          <span>Suggested department</span>
+                          <select value={departmentTemplate} onChange={event => {
+                            const name = event.target.value;
+                            setDepartmentTemplate(name);
+                            if (!name) return;
+                            if (organizationDraftUsageRef.current) organizationDraftUsageRef.current.selectedTemplates += 1;
+                            const slug = name.normalize('NFKD').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0,105);
+                            setOrganizationForm(previous => ({
+                              ...previous, name, record_id:slug ? 'DEP-' + slug : previous.record_id,
+                              effective_from:previous.effective_from || (() => {
+                                const now = new Date();
+                                return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+                              })(),
+                            }));
+                          }}>
+                            <option value="">Choose a suggestion or enter custom details</option>
+                            {getDepartmentSuggestions(departmentModel, departmentCatalogSearch, workforceStructure.items)
+                              .map(name => <option key={name} value={name}>{name}</option>)}
+                          </select>
+                        </label>
+                      </div>
+                      <p className={styles.organizationCatalogNotice}>
+                        Suggestions are optional reference vocabulary, not approved departments or an inferred tenant industry.
+                        A mixed-activity business can choose a different activity for each draft. Only EOS approval makes a department official.
+                      </p>
+                    </section>}
+                    <div className={styles.organizationDraftGrid}>
+                      <label>
+                        <span>Name</span>
+                        <input required maxLength={180} value={organizationForm.name}
+                          placeholder={organizationKind === 'departments' ? 'Enter your department name' : 'Enter the position title'}
+                          onChange={event => {trackOrganizationDraftField('name');setOrganizationForm(prev => ({...prev,name:event.target.value}));}}/>
+                      </label>
+                      <div className={styles.organizationCodeField}>
+                        <div className={styles.organizationCodeLabelRow}>
+                          <label htmlFor="wilsy-organization-record-code">Unique code</label>
+                          <details className={styles.organizationCodeHelp}>
+                            <summary aria-label="Why does a department need a unique code?" title="About this code">?</summary>
+                            <p>Codes identify records in EOS. You can edit this suggestion; EOS checks availability when you save the draft.</p>
+                          </details>
+                        </div>
+                        <div className={styles.organizationCodeInput}>
+                          <input id="wilsy-organization-record-code" required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:\-]*"
+                            value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
+                            onChange={event => {trackOrganizationDraftField('record_id');setOrganizationForm(prev => ({...prev,record_id:event.target.value}));}}/>
+                          <button type="button" onClick={() => {
+                            const slug = organizationForm.name.normalize('NFKD').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0,105);
+                            if (slug) setOrganizationForm(prev => ({...prev,record_id:(organizationKind === 'departments' ? 'DEP-' : 'POS-') + slug}));
+                          }} disabled={!organizationForm.name.trim()}>Suggest code</button>
+                        </div>
+                      </div>
+                      {organizationKind === 'positions' && <>
+                        <label>
+                          <span>Approved department code</span>
+                          <select required value={organizationForm.department_id}
+                            onChange={event => setOrganizationForm(prev => ({...prev,department_id:event.target.value}))}>
+                            <option value="">Select an approved department</option>
+                            {workforceStructure.items.filter(unit => unit.kind === 'DEPARTMENT' && unit.status === 'APPROVED').map(unit =>
+                              <option key={unit.record_id} value={unit.record_id}>{unit.name} · {unit.record_id}</option>)}
+                          </select>
+                          {!workforceStructure.items.some(unit => unit.kind === 'DEPARTMENT' && unit.status === 'APPROVED') &&
+                            <small role="status">Approve a department before creating a position. No unapproved records are offered.</small>}
+                        </label>
+                        <label>
+                          <span>Planned capacity</span>
+                          <input type="number" required min="1" max="500" step="1" value={organizationForm.capacity}
+                            onChange={event => setOrganizationForm(prev => ({...prev,capacity:event.target.value}))}/>
+                        </label>
+                      </>}
+                      <div className={styles.organizationCodeField}>
+                        <label htmlFor="wilsy-organization-parent-code">Parent code (optional)</label>
+                        <select id="wilsy-organization-parent-code" value={organizationForm.parent_id}
+                          onChange={event => {trackOrganizationDraftField('parent_id');setOrganizationForm(prev => ({...prev,parent_id:event.target.value}));}}>
+                          <option value="">Top level · no parent</option>
+                          {workforceStructure.items.filter(unit =>
+                            unit.status === 'APPROVED' &&
+                            unit.kind === (organizationKind === 'departments' ? 'DEPARTMENT' : 'POSITION') &&
+                            unit.record_id !== organizationForm.record_id
+                          ).map(unit => <option key={unit.record_id} value={unit.record_id}>{unit.name} · {unit.record_id}</option>)}
+                        </select>
+                        <small>Only approved, same-tenant {organizationKind === 'departments' ? 'departments' : 'positions'} from EOS are selectable.</small>
+                      </div>
+                      <label>
+                        <span>Effective from (YYYY-MM-DD)</span>
+                        <input type="date" required value={organizationForm.effective_from}
+                          onChange={event => {trackOrganizationDraftField('effective_from');setOrganizationForm(prev => ({...prev,effective_from:event.target.value}));}}/>
+                      </label>
+                    </div>
+                    <div className={styles.organizationDraftActions}>
+                      <button type="submit" disabled={organizationCommandState.status === 'PENDING' ||
+                        (organizationKind === 'positions' && !workforceStructure.items.some(unit => unit.kind === 'DEPARTMENT' && unit.status === 'APPROVED'))}>Save draft</button>
+                      <button type="button" onClick={() => setOrganizationFormOpen(false)}>Cancel</button>
+                    </div>
+                  </form>}
+                  {!!organizationCommandState.message && <p role="status" style={{fontSize:12,color:organizationCommandState.status==='VERIFIED'?'#194c3d':'#7a302d',padding:'10px 17px'}}>
+                    {organizationCommandState.message}
+                  </p>}
+                  {!organizationFormOpen && workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationLifecycleWorkspace
+                    tenantId={tenantId} scopeKey={tenantScopeKey} structure={workforceStructure}
+                    onUpdated={() => setWorkforceOrganizationRefresh(value => value + 1)}/>}
+                  {!organizationFormOpen && workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationAssignmentWorkspace
+                    tenantId={tenantId} scopeKey={tenantScopeKey} structure={workforceStructure}/>}
+                </section>
+
+              {!organizationFormOpen && <section aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
+                <button type="button" aria-expanded={supportingOrganizationOpen} onClick={() => setSupportingOrganizationOpen(open => !open)} style={{width:'100%',textAlign:'left',cursor:'pointer',padding:'12px 15px',fontSize:13,fontWeight:700,color:'#173c70',background:'#f8fafd'}}>{supportingOrganizationOpen ? '▾' : '▸'} Observed workforce and headcount planning <span style={{fontSize:12,fontWeight:400,color:'#526781'}}>· Separate source records</span></button>
+                {supportingOrganizationOpen && <div style={{padding:'14px 15px'}}>
               {workforceOrganizationState === 'PENDING' && <p role="status" style={{padding:16,color:'#4b607a'}}>Checking your organization…</p>}
               {workforceOrganizationState === 'DENIED' && <p role="alert" style={{padding:16,color:'#4b607a'}}>Organization information is not available to this operating capacity.</p>}
               {workforceOrganizationState === 'UNAVAILABLE' && <div role="status" style={{display:'grid',gap:10,padding:16,border:'1px solid #d3deeb',borderRadius:10}}>
@@ -5028,7 +5372,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                             <p style={{fontSize:12,color:'#526781',marginTop:3}}>{unit.active_employees} active {unit.active_employees === 1 ? 'person' : 'people'}</p>
                           </div>
                           <button type="button" onClick={() => {
-                            setWorkforceView('directory');
+                            openWorkforceSubview('directory');
                             setWorkforceSearchDraft(unit.name);
                             setSearchTerm(unit.name);
                             setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
@@ -5070,94 +5414,10 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                         </div>}
                   </section>
                 </div>
-                <section aria-labelledby="organization-registry-heading" style={{border:'1px solid #d1deec',borderRadius:11,marginTop:18,overflow:'hidden'}}>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,padding:'15px 17px',background:'#f8fafd',borderBottom:'1px solid #dbe5f0'}}>
-                    <div>
-                      <h3 id="organization-registry-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Governed structure</h3>
-                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Real departments and positions · drafts require independent approval.</p>
-                    </div>
-                    {workforceStructureStatus === 'VERIFIED' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                      <button type="button" onClick={() => {setOrganizationKind('departments');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
-                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create department</button>
-                      <button type="button" onClick={() => {setOrganizationKind('positions');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
-                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create position</button>
-                    </div>}
-                  </div>
-                  {workforceStructureStatus === 'PENDING' && <p role="status" style={{padding:17,color:'#4b607a'}}>Checking the approved structure register…</p>}
-                  {workforceStructureStatus === 'DENIED' && <p role="alert" style={{padding:17,color:'#4b607a'}}>Access to the organization register is denied for this capacity.</p>}
-                  {workforceStructureStatus === 'UNAVAILABLE' && <p role="status" style={{padding:17,color:'#4b607a'}}>The organization register could not be verified. No approved structure is displayed.</p>}
-                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <div style={{padding:'15px 17px'}}>
-                    {workforceStructure.items.length === 0
-                      ? <p style={{fontSize:13,color:'#526781'}}>No department or position proposals yet. Create a draft to begin the governed approval process.</p>
-                      : <div style={{display:'grid',gap:8}}>
-                          {workforceStructure.items.map(item => <div key={item.kind+':'+item.record_id}
-                            style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',border:'1px solid #dce6f1',borderRadius:8,padding:'12px 14px'}}>
-                            <div>
-                              <strong style={{fontSize:13,color:'#143454'}}>{item.name}</strong>
-                              <p style={{fontSize:12,color:'#526781',marginTop:4}}>{item.kind === 'POSITION' ? 'Position' : 'Department'} · {item.record_id} · {item.status} · Revision {item.revision}</p>
-                              {item.kind === 'POSITION' && <p style={{fontSize:12,color:'#526781'}}>Department {item.department_id} · Planned capacity {item.capacity}</p>}
-                            </div>
-                            <div style={{display:'flex',gap:7}}>
-                              {item.status === 'DRAFT' && <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => runOrganizationCommand('submit',item)}
-                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Submit for approval</button>}
-                              {item.status === 'SUBMITTED' && !item.current_principal_is_maker && <button type="button"
-                                disabled={organizationCommandState.status === 'PENDING'}
-                                onClick={() => {setOrganizationReviewId(item.kind+':'+item.record_id);setOrganizationDecisionReason('');setOrganizationCommandState({status:'IDLE',message:''});}}
-                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Review decision</button>}
-                              {item.status === 'SUBMITTED' && item.current_principal_is_maker && <span style={{fontSize:12,color:'#526781'}}>Awaiting independent checker</span>
-                            </div>
-                          </div>)}
-                        </div>}
-                  </div>}
-                  {workforceStructureStatus === 'VERIFIED' && organizationReviewId && (() => {
-                    const entry = workforceStructure.items.find(item => item.kind+':'+item.record_id === organizationReviewId);
-                    if (!entry || entry.status !== 'SUBMITTED' || entry.current_principal_is_maker) return null;
-                    return <section aria-label="Organization independent review" style={{padding:'15px 17px',borderTop:'1px solid #dce6f1',display:'grid',gap:11}}>
-                      <strong style={{color:'#142f50',fontSize:14}}>Review {entry.name}</strong>
-                      <label style={{display:'grid',gap:5,fontSize:12,color:'#304e6e',fontWeight:650}}>
-                        Your decision reason
-                        <textarea rows={3} minLength={5} maxLength={2000} required value={organizationDecisionReason}
-                          onChange={event => setOrganizationDecisionReason(event.target.value)}
-                          style={{padding:'10px 12px',border:'1px solid #aabbd0',borderRadius:8,color:'#142f50',background:'#fff',fontSize:13}}/>
-                      </label>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:9}}>
-                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('approve',entry)}
-                          style={{padding:'9px 13px',borderRadius:8,background:'#173c70',color:'#fff',fontWeight:700}}>Approve proposal</button>
-                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('reject',entry)}
-                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70',fontWeight:700}}>Reject proposal</button>
-                        <button type="button" onClick={() => {setOrganizationReviewId(null);setOrganizationDecisionReason('');}}
-                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70'}}>Cancel</button>
-                      </div>
-                    </section>;
-                  })()}
-                  {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
-                    style={{display:'grid',gap:11,padding:'17px',borderTop:'1px solid #dce6f1',background:'#fff'}} aria-label="Organization draft form">
-                    <strong style={{color:'#142f50',fontSize:15}}>New {organizationKind === 'departments' ? 'department' : 'position'} draft</strong>
-                    {[
-                      {key:'record_id',label:'Unique code',required:true},
-                      {key:'name',label:'Name',required:true},
-                      ...(organizationKind === 'positions' ? [{key:'department_id',label:'Approved department code',required:true},{key:'capacity',label:'Planned capacity',required:true}] : []),
-                      {key:'parent_id',label:'Parent code (optional)',required:false},
-                      {key:'effective_from',label:'Effective from (YYYY-MM-DD)',required:true},
-                    ].map(field => <label key={field.key} style={{display:'grid',gap:5,fontSize:12,fontWeight:650,color:'#304e6e'}}>
-                      {field.label}
-                      <input required={field.required} maxLength={field.key==='name'?180:120}
-                        value={organizationForm[field.key]} onChange={event => setOrganizationForm(prev => ({...prev,[field.key]:event.target.value}))}
-                        style={{border:'1px solid #9bb1cd',borderRadius:7,color:'#142f50',background:'#fff',padding:'10px 12px',fontSize:13}}/>
-                    </label>)}
-                    <div style={{display:'flex',gap:9,alignItems:'center',flexWrap:'wrap'}}>
-                      <button type="submit" disabled={organizationCommandState.status==='PENDING'}
-                        style={{background:'#173c70',color:'#fff',borderRadius:8,padding:'10px 14px',fontWeight:700}}>Save draft</button>
-                      <button type="button" onClick={() => setOrganizationFormOpen(false)}
-                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'10px 14px',color:'#173c70'}}>Cancel</button>
-                    </div>
-                  </form>}
-                  {!!organizationCommandState.message && <p role="status" style={{fontSize:12,color:organizationCommandState.status==='VERIFIED'?'#194c3d':'#7a302d',padding:'10px 17px'}}>
-                    {organizationCommandState.message}
-                  </p>}
-                </section>
                 <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Observed staff assignments, requested headcount and approved organizational records are separate authorities. Drafts do not create hires or approve budget.</p>
               </React.Fragment>}
+                </div>}
+              </section>}
             </section>}
           </section>}
           {activeTab === 'candidates' && <section aria-labelledby="people-hiring-heading"
@@ -5819,7 +6079,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON
+ * VERSION: v2.24.0-M03-HR03-GOVERNED-ASSIGNMENT-COMPOSITION
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.

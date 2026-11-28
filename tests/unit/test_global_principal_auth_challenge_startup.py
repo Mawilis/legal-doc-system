@@ -1,7 +1,7 @@
 """WILSY OS startup certification for global credential and challenge indexes.
 
 TITLE: Global Principal Authentication Startup Index Certificate
-VERSION: v1.0.11-AI-PROVIDER-COMPOSITION-CERT
+VERSION: v1.0.12-HR03-COMPOSITION-VERSION-CERT
 AUTHORITY: Verifies canonical EOS startup owns global credential and challenge index DDL.
 EPITOME: Proves unique credential and one-time challenge indexes are installed
          before readiness is asserted and are never created by request handlers.
@@ -9,7 +9,8 @@ ABSOLUTE CANONICAL PATH:
     /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_global_principal_auth_challenge_startup.py
 COLLABORATION / OWNERSHIP: Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-20.
-CHANGELOG: v1.0.11-AI-PROVIDER-COMPOSITION-CERT pins the canonical provider composition version while preserving all index ownership, readiness, tenant and IAM denial assertions.
+CHANGELOG: v1.0.12-HR03-COMPOSITION-VERSION-CERT pins the mounted HR03 organization lifecycle composition version, retaining independent auth and subsystem assertions.
+CHANGELOG: v1.0.12-HR03-COMPOSITION-VERSION-CERT pins the canonical provider composition version while preserving all index ownership, readiness, tenant and IAM denial assertions.
 CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT verifies the trusted scan-clearance index bootstrap version without rolling back source indexes.
 CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins
   task quarantined attachment manifest and command replay indexes to
@@ -23,11 +24,11 @@ indexes in canonical EOS readiness, without creating message records.
 CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins additive task/dependency indexes
 at canonical EOS startup; no synthetic tasks or IAM are created.
 CHANGELOG: v1.0.10-TRUSTED-SCAN-INDEX-BOOTSTRAP-CERT pins additive exact-tenant participant indexes at canonical startup; no grants or records are issued.
- 2026-11-18 v1.0.11-AI-PROVIDER-COMPOSITION-CERT aligns canonical
+ 2026-11-18 v1.0.12-HR03-COMPOSITION-VERSION-CERT aligns canonical
 server-version certification with additive Project Notes startup indexes;
 no existing Global Principal or System Services authority is changed.
 CHANGELOG:
-    v1.0.11-AI-PROVIDER-COMPOSITION-CERT binds the
+    v1.0.12-HR03-COMPOSITION-VERSION-CERT binds the
     composition version assertion to the mounted authenticated legacy QR route.
     v1.0.1-GLOBAL-PRINCIPAL-CHALLENGE-STARTUP-TESTS adds the durable global
     authentication rate-limit index to the required startup readiness set.
@@ -104,11 +105,11 @@ def test_global_auth_index_readiness_defaults_and_shutdown_fail_closed():
 
 
 def test_server_version_is_the_governed_global_auth_route_bootstrap():
-    assert server.VERSION == "v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP"
+    assert server.VERSION == "v1.60.0-M03-HR03-ORGANIZATION-LIFECYCLE-COMPOSITION"
 
 
 # ARTIFACT: test_global_principal_auth_challenge_startup.py
-# VERSION: v1.0.11-AI-PROVIDER-COMPOSITION-CERT
+# VERSION: v1.0.12-HR03-COMPOSITION-VERSION-CERT
 # AUTHORITY BOUNDARY: startup index ownership and readiness certification only
 # TENANT POSTURE: global credential indexes remain tenant-neutral; challenge index stores no raw token
 # FAIL-CLOSED POSTURE: readiness remains false unless connected startup completes both index declarations
