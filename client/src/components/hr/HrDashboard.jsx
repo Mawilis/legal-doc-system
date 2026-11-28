@@ -3250,11 +3250,27 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
         invalidateHrSessionScope(scope, hrReadErrorCode(error));return;
       }
+      const status = error?.response?.status;
+      const rawDetail = error?.response?.data?.detail;
+      // Expose only an allowlisted bounded EOS code. Validation envelopes may
+      // contain PII or arbitrary user input and must never be echoed to the UI.
+      const code = typeof rawDetail === 'string' && /^ORGANIZATION_[A-Z0-9_]{1,100}$/.test(rawDetail)
+        ? rawDetail : null;
+      const codeHint = code ? ' · ' + code : '';
+      const message = status === 403
+        ? 'EOS denied this capacity the required organization command permission.'
+        : status === 405 || status === 404
+          ? 'EOS route unavailable (HTTP ' + status + '). The running Python EOS must load the current Organization routers.'
+          : status === 422
+            ? 'EOS rejected the department proposal (HTTP 422' + codeHint + '). Confirm the request contract and response validation errors before retrying.'
+            : status === 409
+              ? 'EOS reported an organization conflict (HTTP 409' + codeHint + '). Refresh the registry before another attempt.'
+              : status === 503
+                ? 'EOS organization source unavailable (HTTP 503' + codeHint + '). No draft is confirmed.'
+                : 'Organization command or readback failed' + (status ? ' (HTTP ' + status + ')' : '') + '. No success is claimed.';
       setOrganizationCommandState({
-        status:error?.response?.status === 403 ? 'DENIED' : 'UNVERIFIED',
-        message:error?.response?.status === 403
-          ? 'This capacity does not have the independent organization command permission.'
-          : 'Organization command or readback failed. No success is claimed; retry with the retained idempotency key.',
+        status:status === 403 ? 'DENIED' : 'UNVERIFIED',
+        message:message + ' The original idempotency key is retained for a safe retry.',
       });
     }
   };
