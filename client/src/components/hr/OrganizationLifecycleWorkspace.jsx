@@ -293,7 +293,17 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
         <span>{metrics.mean_draft_to_decision_seconds === null
           ? 'Decision duration not yet measurable'
           : 'Mean draft-to-decision: ' + Math.round(metrics.mean_draft_to_decision_seconds / 60) + ' min'}</span>
-        <small>EOS events only · Manual entries, completion time and accessibility audits are not yet measured</small>
+        {metrics.client_observation_sample > 0 && <>
+          <span>Manual fields: {metrics.client_observed?.MANUAL_FIELD_EDITED ?? 0}</span>
+          <span>Validation failures: {metrics.client_observed?.VALIDATION_FAILED ?? 0}</span>
+          <span>Template selections: {metrics.client_observed?.CATALOG_SELECTED ?? 0}</span>
+          <span>{metrics.client_mean_form_to_verified_seconds == null
+            ? 'Form completion duration unavailable'
+            : 'Mean form-to-verified draft: ' + metrics.client_mean_form_to_verified_seconds + 's'}</span>
+        </>}
+        <small>Approval timings: EOS source events. Form effort: client-reported,
+          bounded and non-identifying ({metrics.client_observation_sample ?? 0} observations).
+          Accessibility audit results remain unverified.</small>
       </div>}
     </>}
     {notice && <p role="status" className={styles.notice}>{notice}</p>}
