@@ -2077,3 +2077,125 @@
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
+
+
+/* Governed Organization: accessible operational form, independently scoped from
+   legacy HR gold labels and generic modal styling. */
+.peopleSurface .organizationDraftForm {
+  display: grid;
+  gap: 16px;
+  padding: 18px clamp(14px, 2vw, 24px);
+  background: #fff;
+  color: #172c49;
+  border-top: 1px solid #d6e1ef;
+}
+.peopleSurface .organizationDraftHeading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+}
+.peopleSurface .organizationDraftHeading strong {
+  color: #142b49 !important;
+  font-size: 17px;
+  font-weight: 750;
+}
+.peopleSurface .organizationDraftHeading p {
+  margin: 5px 0 0;
+  color: #425a77 !important;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.peopleSurface .organizationDraftHeading > span {
+  color: #304b6d !important;
+  background: #eef3fa;
+  border: 1px solid #cad9e9;
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.peopleSurface .organizationDraftGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+}
+.peopleSurface .organizationDraftGrid label {
+  display: flex !important;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  color: #183755 !important;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  opacity: 1 !important;
+}
+.peopleSurface .organizationDraftGrid label > span {
+  color: #183755 !important;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  opacity: 1 !important;
+}
+.peopleSurface .organizationDraftGrid input,
+.peopleSurface .organizationDraftGrid select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #8fa8c5 !important;
+  border-radius: 8px;
+  background: #fff !important;
+  color: #132e4b !important;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: normal;
+  box-shadow: none;
+}
+.peopleSurface .organizationDraftGrid input::placeholder {
+  color: #526b87 !important;
+  opacity: 1;
+}
+.peopleSurface .organizationDraftGrid input:focus-visible,
+.peopleSurface .organizationDraftGrid select:focus-visible {
+  outline: 2px solid #24518a;
+  outline-offset: 2px;
+}
+.peopleSurface .organizationDraftGrid small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #465f79 !important;
+  font-weight: 400;
+}
+.peopleSurface .organizationDraftActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: center;
+}
+.peopleSurface .organizationDraftActions button {
+  border-radius: 8px;
+  padding: 10px 15px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 750;
+  border: 1px solid #b0c2d8;
+  background: #fff;
+  color: #173c70;
+}
+.peopleSurface .organizationDraftActions button[type="submit"] {
+  background: #173c70;
+  color: #fff;
+  border-color: #173c70;
+}
+.peopleSurface .organizationDraftActions button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+@media (max-width: 700px) {
+  .peopleSurface .organizationDraftGrid { grid-template-columns: minmax(0, 1fr); }
+}
