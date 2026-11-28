@@ -2420,6 +2420,14 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const workforceStructureSequenceRef = useRef(0);
   const organizationCommandKeysRef = useRef({});
   const organizationDraftUsageRef = useRef(null);
+  // Tenant/capacity changes must never carry a prior employer's inferred
+  // department catalogue preference or in-progress UX measurement.
+  useEffect(() => {
+    departmentModelManuallyChosenRef.current = false;
+    organizationDraftUsageRef.current = null;
+    setApprovedBusinessActivityIds([]);
+    setDepartmentModel('general');
+  }, [tenantScopeKey]);
 
   const workforceOrganizationSequenceRef = useRef(0);
   const [selectedWorkforceEmployeeId, setSelectedWorkforceEmployeeId] = useState(null);
