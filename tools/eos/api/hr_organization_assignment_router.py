@@ -176,7 +176,9 @@ def list_assignments(
     workforce: TenantAuthorizationContext = Depends(_MAKER),
 ):
     """Read exact-tenant organizational assignment source, without PII."""
-    if organization.tenant_id != workforce.tenant_id:
+    if organization.tenant_id != workforce.tenant_id or (
+        organization.identity.identity_id != workforce.identity.identity_id
+    ):
         raise HTTPException(403, "HR_ASSIGNMENT_SCOPE_MISMATCH")
     db = get_database()
     if db is None:
