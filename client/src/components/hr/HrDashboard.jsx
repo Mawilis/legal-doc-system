@@ -2400,6 +2400,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [workforceOrganizationRefresh, setWorkforceOrganizationRefresh] = useState(0);
   const [workforceStructure, setWorkforceStructure] = useState(null);
   const [workforceStructureStatus, setWorkforceStructureStatus] = useState('IDLE');
+  const [workforceStructureFailureCode, setWorkforceStructureFailureCode] = useState(null);
+  const [supportingOrganizationOpen, setSupportingOrganizationOpen] = useState(false);
   const [organizationFormOpen, setOrganizationFormOpen] = useState(false);
   const [organizationReviewId, setOrganizationReviewId] = useState(null);
   const [organizationDecisionReason, setOrganizationDecisionReason] = useState('');
@@ -2495,6 +2497,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     organizationCommandKeysRef.current = {};
     setWorkforceStructure(null);
     setWorkforceStructureStatus('IDLE');
+    setWorkforceStructureFailureCode(null);
+    setSupportingOrganizationOpen(false);
     setOrganizationFormOpen(false);
     setOrganizationReviewId(null);
     setOrganizationDecisionReason('');
@@ -2533,6 +2537,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     organizationCommandKeysRef.current = {};
     setWorkforceStructure(null);
     setWorkforceStructureStatus('IDLE');
+    setWorkforceStructureFailureCode(null);
+    setSupportingOrganizationOpen(false);
     setOrganizationFormOpen(false);
     setOrganizationReviewId(null);
     setOrganizationDecisionReason('');
@@ -3070,6 +3076,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     const seq = ++workforceStructureSequenceRef.current;
     setWorkforceStructure(null);
     setWorkforceStructureStatus('PENDING');
+    setWorkforceStructureFailureCode(null);
     void api.get('/hr/workforce/structure', {headers: {'X-Tenant-ID': tenantId}})
       .then(response => {
         if (seq !== workforceStructureSequenceRef.current
@@ -3086,8 +3093,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
             && ['DRAFT','SUBMITTED','APPROVED','REJECTED'].includes(item?.status)
             && typeof item?.record_id === 'string' && typeof item?.name === 'string'
             && Number.isSafeInteger(item?.revision) && item.revision >= 1);
-        if (!valid) { setWorkforceStructureStatus('UNAVAILABLE'); return; }
+        if (!valid) { setWorkforceStructureFailureCode('INVALID_SOURCE_ENVELOPE'); setWorkforceStructureStatus('UNAVAILABLE'); return; }
         setWorkforceStructure(data);
+        setWorkforceStructureFailureCode(null);
         setWorkforceStructureStatus('VERIFIED');
       })
       .catch(error => {
@@ -3096,6 +3104,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
           invalidateHrSessionScope(scope, hrReadErrorCode(error));
           return;
         }
+        setWorkforceStructureFailureCode(error?.response?.status === 403 ? 'PERMISSION_DENIED' : error?.response?.status === 404 ? 'ROUTE_NOT_FOUND' : error?.response?.status === 503 ? 'SOURCE_UNAVAILABLE_503' : error?.response?.status ? 'HTTP_' + error.response.status : 'TRANSPORT_UNAVAILABLE');
         setWorkforceStructureStatus(error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
       });
     return () => { workforceStructureSequenceRef.current += 1; };
@@ -5006,7 +5015,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   </div>
                   {workforceStructureStatus === 'PENDING' && <p role="status" style={{padding:17,color:'#4b607a'}}>Checking the approved structure register…</p>}
                   {workforceStructureStatus === 'DENIED' && <p role="alert" style={{padding:17,color:'#4b607a'}}>Access to the organization register is denied for this capacity.</p>}
-                  {workforceStructureStatus === 'UNAVAILABLE' && <p role="status" style={{padding:17,color:'#4b607a'}}>The organization register could not be verified. No approved structure is displayed.</p>}
+                  {workforceStructureStatus === 'UNAVAILABLE' && <div role="status" style={{padding:17,display:'grid',gap:8,color:'#4b607a'}}><p>The organization register could not be verified. No approved structure is displayed.</p><p style={{fontSize:12}}>Source: /api/hr/workforce/structure · {workforceStructureFailureCode || 'UNVERIFIED'}. Check the running Python EOS route and authorized source before creating records.</p><button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)} style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'8px 12px',color:'#173c70'}}>Retry registry read</button></div>}
                   {workforceStructureStatus === 'VERIFIED' && workforceStructure && <div style={{padding:'15px 17px'}}>
                     {workforceStructure.items.length === 0
                       ? <p style={{fontSize:13,color:'#526781'}}>No department or position proposals yet. Create a draft to begin the governed approval process.</p>
@@ -5078,9 +5087,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   </p>}
                 </section>
 
-              <details aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
-                <summary style={{cursor:'pointer',padding:'12px 15px',fontSize:13,fontWeight:700,color:'#173c70',background:'#f8fafd'}}>Observed workforce and headcount planning <span style={{fontSize:12,fontWeight:400,color:'#526781'}}>· Separate source records</span></summary>
-                <div style={{padding:'14px 15px'}}>
+              <section aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
+                <button type="button" aria-expanded={supportingOrganizationOpen} onClick={() => setSupportingOrganizationOpen(open => !open)} style={{width:'100%',textAlign:'left',cursor:'pointer',padding:'12px 15px',fontSize:13,fontWeight:700,color:'#173c70',background:'#f8fafd'}}>{supportingOrganizationOpen ? '▾' : '▸'} Observed workforce and headcount planning <span style={{fontSize:12,fontWeight:400,color:'#526781'}}>· Separate source records</span></button>
+                {supportingOrganizationOpen && <div style={{padding:'14px 15px'}}>
               {workforceOrganizationState === 'PENDING' && <p role="status" style={{padding:16,color:'#4b607a'}}>Checking your organization…</p>}
               {workforceOrganizationState === 'DENIED' && <p role="alert" style={{padding:16,color:'#4b607a'}}>Organization information is not available to this operating capacity.</p>}
               {workforceOrganizationState === 'UNAVAILABLE' && <div role="status" style={{display:'grid',gap:10,padding:16,border:'1px solid #d3deeb',borderRadius:10}}>
@@ -5162,8 +5171,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 </div>
                 <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Observed staff assignments, requested headcount and approved organizational records are separate authorities. Drafts do not create hires or approve budget.</p>
               </React.Fragment>}
-                </div>
-              </details>
+                </div>}
+              </section>
             </section>}
           </section>}
           {activeTab === 'candidates' && <section aria-labelledby="people-hiring-heading"
