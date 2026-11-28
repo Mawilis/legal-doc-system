@@ -475,6 +475,7 @@ describe('production People Overview source contracts', () => {
     renderDashboard();
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: /Observed workforce and headcount planning/}));
     const department = await screen.findByRole('button', {name: /Search workforce in Engineering, 2 active employees/});
     fireEvent.click(department);
     expect(await screen.findByRole('heading', {name: 'Workforce directory'})).toBeInTheDocument();
@@ -506,6 +507,7 @@ describe('production People Overview source contracts', () => {
     renderDashboard();
     fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
     fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: /Observed workforce and headcount planning/}));
     expect(await screen.findByText('Organization is temporarily unavailable')).toBeInTheDocument();
     expect(screen.getByText(/The current organization records could not be confirmed/)).toBeInTheDocument();
     expect(screen.queryByText('Foreign Department')).not.toBeInTheDocument();
