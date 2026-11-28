@@ -3,8 +3,9 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Legal Workspace Journey Certificate
- * VERSION: v1.6.1-VERIFIED-CAPACITY-AND-SYSTEM-EMAIL-CERT
+ * VERSION: v1.6.2-ACCOUNT-MENU-A11Y-ACTION-CERT
  * AUTHORITY: Client integration evidence only; Python EOS remains authoritative.
+ * CHANGELOG: v1.6.2-ACCOUNT-MENU-A11Y-ACTION-CERT asserts functional Security & sessions and first-menuitem focus with Escape returning focus, preserving exact EOS identity requirements.
  * CHANGELOG: v1.6.1-VERIFIED-CAPACITY-AND-SYSTEM-EMAIL-CERT requires current EOS operating-as capacity text and excludes SYSTEM sign-in email candidates.
  * CHANGELOG: v1.6.1-VERIFIED-CAPACITY-AND-SYSTEM-EMAIL-CERT proves SYSTEM promotion displays no tenant or login-email candidate in the account menu.
  * CHANGELOG: v1.5.0-ACCOUNT-LOGOUT-DELEGATION-CERT proves the menu Sign out action delegates once to the existing canonical AuthProvider logout callback.
@@ -322,7 +323,7 @@ describe('authenticated Legal workspace journey', () => {
     expect(menu.querySelector('img')).toBeNull();
     expect(menu).not.toHaveTextContent('Kernel diagnostics');
     expect(menu).not.toHaveTextContent('Preferences');
-    expect(menu).not.toHaveTextContent('Security & sessions');
+    expect(screen.getByRole('menuitem', { name: /Security & sessions/ })).toBeEnabled();
     expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeEnabled();
 
     const secondUser = {
@@ -467,8 +468,9 @@ describe('authenticated Legal workspace journey', () => {
     expect(menu).toHaveTextContent('Name not provided by EOS');
     expect(menu).not.toHaveTextContent('@');
     expect(menu).toHaveTextContent('Operating as: Owner');
-    expect(screen.getByRole('menuitem', { name: 'Sign out' })).toHaveFocus();
-    fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Sign out' }), { key: 'Escape' });
+    const firstMenuAction = screen.getByRole('menuitem', { name: /My profile/ });
+    expect(firstMenuAction).toHaveFocus();
+    fireEvent.keyDown(firstMenuAction, { key: 'Escape' });
     expect(screen.queryByRole('menu', { name: 'Account menu' })).not.toBeInTheDocument();
     await waitFor(() => expect(trigger).toHaveFocus());
   });
@@ -525,7 +527,7 @@ describe('authenticated Legal workspace journey', () => {
 
 /*
  * ARTIFACT: App.authenticatedLegalWorkspaceJourney.test.jsx
- * VERSION: v1.6.1-VERIFIED-CAPACITY-AND-SYSTEM-EMAIL-CERT
+ * VERSION: v1.6.2-ACCOUNT-MENU-A11Y-ACTION-CERT
  * AUTHORITY BOUNDARY: Synthetic authenticated journey test only.
  * TENANT POSTURE: Server-issued exact tenant only.
  * FAIL-CLOSED POSTURE: No implicit billing permission or login bypass.
