@@ -275,6 +275,41 @@ describe('production People Overview source contracts', () => {
     remount.unmount();
   });
 
+  it('offers business-model department choices without creating tenant records before save', async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/structure') return Promise.resolve({data: {
+        schema: 'WILSY-HR-ORGANIZATION-REGISTRY/V1', source: 'EOS_HR_ORGANIZATION_REGISTRY',
+        tenant_id: 'TENANT-HR-A', count: 1, items: [
+          {kind: 'DEPARTMENT', record_id: 'DEP-LITIGATION', name: 'Litigation',
+            status: 'APPROVED', revision: 2, effective_from: '2026-11-01'},
+        ],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'), {response: {status: 404}}));
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(await screen.findByRole('button', {name: 'Create department'}));
+    const form = screen.getByRole('form', {name: 'Organization draft form'});
+    const activity = within(form).getByLabelText('Business activity');
+    fireEvent.change(activity, {target: {value: 'legal'}});
+    const suggestions = within(form).getByLabelText('Suggested department');
+    expect(within(suggestions).queryByRole('option', {name: 'Litigation'})).not.toBeInTheDocument();
+    fireEvent.change(suggestions, {target: {value: 'Legal Practice'}});
+    expect(within(form).getByLabelText('Name')).toHaveValue('Legal Practice');
+    expect(within(form).getByLabelText('Unique code')).toHaveValue('DEP-LEGAL-PRACTICE');
+    expect(within(form).getByLabelText('Effective from (YYYY-MM-DD)').value).toMatch(/^\\d{4}-\\d{2}-\\d{2}$/);
+    expect(mockState.apiPost).not.toHaveBeenCalled();
+    fireEvent.change(activity, {target: {value: 'agriculture'}});
+    expect(within(form).getByLabelText('Name')).toHaveValue('Legal Practice');
+    expect(within(form).getByRole('option', {name: 'Crop Production'})).toBeInTheDocument();
+    fireEvent.change(within(form).getByLabelText('Name'), {target: {value: 'Our custom department'}});
+    expect(within(form).getByLabelText('Name')).toHaveValue('Our custom department');
+    expect(mockState.apiPost).not.toHaveBeenCalled();
+  });
+
   it('creates an organization draft only after an exact-tenant persisted readback', async () => {
     vi.stubGlobal('crypto',{randomUUID:()=>'org-command-unique-uuid-0001'});
     const scope = 'TENANT-HR-A';
