@@ -1,5 +1,5 @@
 """TITLE: WILSY authenticated workforce directory projection.
-VERSION: v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ
+VERSION: v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE
 AUTHORITY: Existing Python EOS tenant authorization and canonical employee directory read.
 EPITOME: Projects a bounded set of directory-safe employee fields from the
          existing employees source for authenticated HR or platform-employer
@@ -8,12 +8,13 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/hr
 COLLABORATION / OWNERSHIP: Mounted once by tools/eos/api/server.py at /api/hr/workforce; consumed by Headquarters and HR directory views.
 CERTIFICATION / UPDATE DATE: 2026-11-28.
 CHANGELOG:
-  v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ requires exact new organization-register read permission instead of exposing draft staffing proposals through the employee-directory read gate.
-  v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ identifies the requester's own draft/decision conflict without exposing other principal IDs or weakening the independent server-side checker requirement.
-  v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ orders static /structure paths before the existing employee identifier route so FastAPI dispatch cannot misinterpret structure commands as a person ID.
-  v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ introduces independent HR organization create/decide IAM, durable transaction-owned draft/submit/checker lifecycle, exact-tenant department and position references, majority read/write, optimistic revisions, SHA3-512 command idempotency and event evidence. No automatic grants, employee admission or staffing allocation.
-  v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ adds a bounded exact-tenant, employee-derived department distribution, separately authorized through existing directory IAM. It never asserts approved departments, positions, reporting trees or headcount allocations and fails closed on partial or malformed aggregation.
-  v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ rejects whitespace-only search parameters before issuing a directory-wide regex query; canonical IAM, explicit projection, bounded list and exact-tenant detail read remain unchanged.
+  v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE consolidates duplicate imports and removes unused UUID import; does not modify EOS organization command or read semantics.
+  v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE requires exact new organization-register read permission instead of exposing draft staffing proposals through the employee-directory read gate.
+  v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE identifies the requester's own draft/decision conflict without exposing other principal IDs or weakening the independent server-side checker requirement.
+  v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE orders static /structure paths before the existing employee identifier route so FastAPI dispatch cannot misinterpret structure commands as a person ID.
+  v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE introduces independent HR organization create/decide IAM, durable transaction-owned draft/submit/checker lifecycle, exact-tenant department and position references, majority read/write, optimistic revisions, SHA3-512 command idempotency and event evidence. No automatic grants, employee admission or staffing allocation.
+  v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE adds a bounded exact-tenant, employee-derived department distribution, separately authorized through existing directory IAM. It never asserts approved departments, positions, reporting trees or headcount allocations and fails closed on partial or malformed aggregation.
+  v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE rejects whitespace-only search parameters before issuing a directory-wide regex query; canonical IAM, explicit projection, bounded list and exact-tenant detail read remain unchanged.
   v1.2.0-M03-WORKFORCE-DIRECTORY-DETAIL — Adds a separately authorized, strictly exact-tenant, directory-only employee detail read with opaque not-found behavior and bounded identity selectors; reuses the canonical employee projection without employment write or protected file access.
   v1.1.1-M03-SINGLE-SOURCE-AGGREGATE — Reads employee and department measures in one exact-tenant
   Mongo aggregation instead of two unsynchronized count/distinct calls.
@@ -30,18 +31,13 @@ FINANCIAL AUTHORITY BOUNDARY: No payroll execution, payment, settlement or comme
 """
 from __future__ import annotations
 
-import re
-from datetime import datetime, timezone
-from typing import Any
-
-from fastapi import APIRouter, Depends, HTTPException, Query
 import hashlib
 import json
-import uuid
+import re
 from datetime import date, datetime, timezone
-from typing import Literal
+from typing import Any, Literal
 
-from fastapi import Header
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.errors import DuplicateKeyError
 from pymongo.read_concern import ReadConcern
@@ -672,7 +668,7 @@ async def read_workforce_directory_employee(
 
 
 # ARTIFACT: hr_workforce_directory_router.py
-# VERSION: v1.4.3-CONFIDENTIAL-ORGANIZATION-REGISTRY-READ
+# VERSION: v1.4.4-ORGANIZATION-ROUTER-IMPORT-HYGIENE
 # AUTHORITY BOUNDARY: Existing directory reads remain read-only; independent hr:organization:create and hr:organization:decide permissions gate new registry commands; no permission grant or employee/IAM admission is created.
 # TENANT POSTURE: Exact authorized tenant is applied to every employee query; employer alternate pair is canonical-WILSY-only.
 # FAIL-CLOSED POSTURE: Missing database, malformed authorization, or source read failure returns unavailable and never an empty-success projection.
