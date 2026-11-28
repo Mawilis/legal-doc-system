@@ -5100,13 +5100,13 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                     </div>
                     <div className={styles.organizationDraftGrid}>
                       <label>
-                        <span>Name *</span>
+                        <span>Name</span>
                         <input required maxLength={180} value={organizationForm.name}
                           placeholder={organizationKind === 'departments' ? 'Enter your department name' : 'Enter the position title'}
                           onChange={event => setOrganizationForm(prev => ({...prev,name:event.target.value}))}/>
                       </label>
                       <label>
-                        <span>Unique code *</span>
+                        <span>Unique code</span>
                         <input required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
                           value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
                           onChange={event => setOrganizationForm(prev => ({...prev,record_id:event.target.value}))}/>
@@ -5114,7 +5114,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       </label>
                       {organizationKind === 'positions' && <>
                         <label>
-                          <span>Approved department code *</span>
+                          <span>Approved department code</span>
                           <select required value={organizationForm.department_id}
                             onChange={event => setOrganizationForm(prev => ({...prev,department_id:event.target.value}))}>
                             <option value="">Select an approved department</option>
@@ -5125,7 +5125,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                             <small role="status">Approve a department before creating a position. No unapproved records are offered.</small>}
                         </label>
                         <label>
-                          <span>Planned capacity *</span>
+                          <span>Planned capacity</span>
                           <input type="number" required min="1" max="500" step="1" value={organizationForm.capacity}
                             onChange={event => setOrganizationForm(prev => ({...prev,capacity:event.target.value}))}/>
                         </label>
@@ -5144,7 +5144,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                         <small>Only approved, same-tenant {organizationKind === 'departments' ? 'departments' : 'positions'} from EOS are selectable.</small>
                       </label>
                       <label>
-                        <span>Effective from (YYYY-MM-DD) *</span>
+                        <span>Effective from (YYYY-MM-DD)</span>
                         <input type="date" required value={organizationForm.effective_from}
                           onChange={event => setOrganizationForm(prev => ({...prev,effective_from:event.target.value}))}/>
                       </label>
