@@ -1,13 +1,14 @@
 /**
  * TITLE: WILSY OS Source-owned Workforce Assignment Workspace
- * VERSION: v1.0.0-M03-HR03-EMPLOYEE-POSITION-ASSIGNMENT-CLIENT
+ * VERSION: v1.1.0-M03-HR03-ASSIGNMENT-AND-POSITION-UTILIZATION-CLIENT
  * AUTHORITY: EOS employee-relation/organization IAM, never client permission claims.
  * EPITOME: Select an authorized employee and approved position, then propose,
  *          submit or independently decide durable organization assignments.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/OrganizationAssignmentWorkspace.jsx
  * COLLABORATION / OWNERSHIP: WILSY OS HR People.
  * CERTIFICATION / UPDATE DATE: 2026-11-28
- * CHANGELOG: v1.0.0 adds exact-tenant readback and source-owned assignment actions.
+ * CHANGELOG: v1.1.0-M03-HR03-ASSIGNMENT-AND-POSITION-UTILIZATION-CLIENT adds verified position planning pages, source-backed operator choices and maker-checker readback.
+CHANGELOG: v1.0.0 adds exact-tenant readback and source-owned assignment actions.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Directory-safe display names only; no protected files.
  * TENANT BOUNDARY: Current principal/tenant selected session, no root fallback.
@@ -317,7 +318,7 @@ export default function OrganizationAssignmentWorkspace({tenantId,scopeKey,struc
 }
 /**
  * ARTIFACT: client/src/components/hr/OrganizationAssignmentWorkspace.jsx
- * VERSION: v1.0.0-M03-HR03-EMPLOYEE-POSITION-ASSIGNMENT-CLIENT
+ * VERSION: v1.1.0-M03-HR03-ASSIGNMENT-AND-POSITION-UTILIZATION-CLIENT
  * TENANT POSTURE: Current authenticated tenant and principal; no scope fallback.
  * AUTHORITY BOUNDARY: Client sends proposed commands; Python EOS decides.
  * FAIL-CLOSED POSTURE: Only verified source responses can display durable success.
