@@ -1,7 +1,18 @@
-"""Organization lifecycle expansion: fail-closed cross-tenant and maker-checker certificates.
-
-Synthetic-only source fixtures. No real tenant, permissions or Mongo are changed.
+"""TITLE: WILSY OS Organization Governance Regression Certificate
+VERSION: v1.0.0-M03-HR03-ORGANIZATION-LIFECYCLE-CERT
+AUTHORITY: WILSY OS Core Governance
+EPITOME: Synthetic exact-tenant and maker-checker, authorization and retirement impact contracts; no production records.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_hr_organization_lifecycle_expansion.py
+COLLABORATION / OWNERSHIP: WILSY OS HR Organization / Python EOS engineering
+CERTIFICATION / UPDATE DATE: 2026-11-28
+CHANGELOG: v1.0.0-M03-HR03-ORGANIZATION-LIFECYCLE-CERT adds governed source, consumer and evidence contracts without expanding IAM grants.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 technical controls.
+SECURITY / PRIVACY POSTURE: Bounded readback and event labels; no personnel/financial secrets, no fabricated external entity verification.
+TENANT BOUNDARY: Exact authenticated EOS tenant; no root or Owner fallback.
+AUTHORITY BOUNDARY: EOS source grants are separately required; maker and checker cannot be the same principal.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -231,3 +242,11 @@ def test_business_context_effective_model_and_productivity_envelopes_are_explici
             session_id="session_example_1234567", event="DRAFT_VERIFIED",
             count=10000, elapsed_ms=12500,
         )
+
+# ARTIFACT: tests/unit/test_hr_organization_lifecycle_expansion.py
+# VERSION: v1.0.0-M03-HR03-ORGANIZATION-LIFECYCLE-CERT
+# AUTHORITY BOUNDARY: Exact-tenant EOS authority and regression evidence; no grants or financial execution.
+# TENANT POSTURE: Exact authorized tenant only; no cross-tenant records, Owner or root fallback.
+# FAIL-CLOSED POSTURE: Missing or contradictory evidence is denied/unavailable, never approved.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
