@@ -215,6 +215,7 @@ from .wilsy_ai_legal_gateway_router import MODULE_ID as WILSY_AI_LEGAL_MODULE_ID
 from .tenant_authorization_http import TenantAuthorizationContext
 from .hr_document_router import router as hr_document_router
 from .hr_workforce_directory_router import router as hr_workforce_directory_router
+from .hr_organization_lifecycle_router import router as hr_organization_lifecycle_router
 from .company_operating_document_router import router as company_operating_document_router
 from .projects_router import router as projects_router
 from tools.eos.saas.projects.project_attachment_clearance_registry import (
@@ -1340,6 +1341,7 @@ class WilsyAPIServer:
         app.include_router(payshap_webhook_router)
         app.include_router(electrum_payshap_completion_router)
         app.include_router(hr_document_router)
+        app.include_router(hr_organization_lifecycle_router)
         app.include_router(hr_workforce_directory_router)
         app.include_router(company_operating_document_router, prefix="/api")
         app.include_router(projects_router, prefix="/api")
