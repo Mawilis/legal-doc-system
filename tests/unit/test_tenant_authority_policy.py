@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Tenant Authority Policy Certification.
-VERSION: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT
+VERSION: v1.17.1-ORGANIZATION-POLICY-PROVENANCE
 AUTHORITY: Pure policy-canon certification only.
 EPITOME: Proves immutable tenant eligibility, WILSY AI usage-capacity and
 billing-intelligence evidence-read eligibility, WILSY platform-employer
@@ -13,15 +13,16 @@ role separation, and non-authority boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-12.
-CHANGELOG: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT validates own-tenant and WILSY platform-employer organization maker/checker pairs against eligible HR capacities, preserving unrelated owner, headcount, payroll and employee admission denial.
-CHANGELOG: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT distinguishes canonical declared
+CHANGELOG: v1.17.1-ORGANIZATION-POLICY-PROVENANCE pins the canonical business-role policy source version after separately gated organization eligibility and preserves all substantive role denials.
+CHANGELOG: v1.17.1-ORGANIZATION-POLICY-PROVENANCE validates own-tenant and WILSY platform-employer organization maker/checker pairs against eligible HR capacities, preserving unrelated owner, headcount, payroll and employee admission denial.
+CHANGELOG: v1.17.1-ORGANIZATION-POLICY-PROVENANCE distinguishes canonical declared
 business roles with registered policy entries from unmapped roles, and pins
 participant-only additive operations in existing exact legal/provider matrices.
-CHANGELOG: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT checks participant-only project read/write
+CHANGELOG: v1.17.1-ORGANIZATION-POLICY-PROVENANCE checks participant-only project read/write
 capacity across existing tenant business models while preserving the
 owner-exclusive project-wide operations and fail-closed unknown roles.
 CHANGELOG:
-2026-11-17 v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT aligns the expected
+2026-11-17 v1.17.1-ORGANIZATION-POLICY-PROVENANCE aligns the expected
 canonical runtime version after its separately governed CRM edit eligibility
 release; all policy eligibility assertions and denial coverage are preserved.
 2026-11-16 v1.15.0-PROJECT-OWNER-ELIGIBILITY-CERT verifies the exact five Project operations are eligible only for existing tenant_owner capacity; authorization-role assignment and entitlement remain independent.
@@ -144,7 +145,7 @@ from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 import pytest
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert VERSION == "v1.60.0-PROJECT-PARTICIPANT-ELIGIBILITY"
+    assert VERSION == "v1.69.0-ORGANIZATION-ROLE-ELIGIBILITY"
 
 
 def test_projects_have_exact_operation_vocabulary_and_owner_capacity_only() -> None:
@@ -1138,7 +1139,7 @@ def test_platform_employer_operations_have_granular_least_privilege_eligibility(
 
 
 # ARTIFACT: tests/unit/test_tenant_authority_policy.py
-# VERSION: v1.17.0-ORGANIZATION-BUSINESS-ROLE-POLICY-CERT
+# VERSION: v1.17.1-ORGANIZATION-POLICY-PROVENANCE
 # AUTHORITY BOUNDARY: certification of policy facts only; no role or permission assignment
 # TENANT POSTURE: Projects business eligibility is owner-capacity only and remains conjunctive with tenant-scoped assignment, membership and entitlement
 # FAIL-CLOSED POSTURE: every non-owner business capacity remains denied; eligibility alone creates no IAM assignment or entitlement
