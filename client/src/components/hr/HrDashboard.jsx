@@ -2505,7 +2505,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
-    openWorkforceSubview('directory');
+    setWorkforceView(window.location.pathname === '/people/workforce/organization' ? 'organization' : 'directory');
     setSelectedWorkforceEmployeeId(null);
     setWorkforceDetail(null);
     setWorkforceDetailStatus('IDLE');
@@ -2545,7 +2545,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
-    openWorkforceSubview('directory');
+    setWorkforceView(window.location.pathname === '/people/workforce/organization' ? 'organization' : 'directory');
     setSearchTerm('');
     setWorkforceSearchDraft('');
     setSelectedWorkforceEmployeeId(null);
@@ -3226,12 +3226,29 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
    * @collaboration HR navigation must change the business process, not repaint the same list.
    */
   const openWorkforceSubview = (nextView) => {
+    if (nextView !== 'directory' && nextView !== 'organization') return;
+    setActiveTab('employees');
     setWorkforceView(nextView);
     const nextPath = nextView === 'organization' ? '/people/workforce/organization' : '/people/workforce';
     if (window.location.pathname !== nextPath && ['/','/dashboard','/headquarters','/people/workforce','/people/workforce/organization'].includes(window.location.pathname)) {
       window.history.pushState(window.history.state, '', nextPath);
     }
   };
+
+  useEffect(() => {
+    const syncPeopleRoute = () => {
+      const path = window.location.pathname;
+      if (path === '/people/workforce/organization') {
+        setActiveTab('employees');
+        setWorkforceView('organization');
+      } else if (path === '/people/workforce') {
+        setActiveTab('employees');
+        setWorkforceView('directory');
+      }
+    };
+    window.addEventListener('popstate', syncPeopleRoute);
+    return () => window.removeEventListener('popstate', syncPeopleRoute);
+  }, []);
 
   const changeTab = (tabId) => {
     workforceDetailSequenceRef.current += 1;
@@ -4877,7 +4894,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                 {id:'directory',label:'Directory'},
                 {id:'organization',label:'Organization'},
               ].map(view => <button type="button" key={view.id}
-                onClick={() => {setWorkforceView(view.id); setSelectedWorkforceEmployeeId(null);}}
+                onClick={() => {openWorkforceSubview(view.id); setSelectedWorkforceEmployeeId(null);}}
                 aria-pressed={workforceView === view.id}
                 style={{padding:'8px 15px',fontSize:13,fontWeight:700,borderRadius:7,
                   border:'1px solid #b8c9dd',
