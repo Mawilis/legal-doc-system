@@ -337,6 +337,30 @@ def decide_assignment(
             }, session=tx)
             if occupied >= capacity:
                 raise HTTPException(409, "HR_ASSIGNMENT_POSITION_CAPACITY_EXCEEDED")
+            # Serialize concurrent approvals against the same position document.
+            # Without a common write, two snapshot transactions could each
+            # observe a free seat and jointly overbook a capacity-one position.
+            touched = org.update_one({
+                "tenant_id": tenant, "kind": "POSITION",
+                "record_id": row["position_id"], "status": "APPROVED",
+                "revision": position["revision"],
+            }, {"$inc": {"assignment_write_epoch": 1}}, session=tx)
+            if touched.matched_count != 1:
+                raise HTTPException(409, "HR_ASSIGNMENT_POSITION_CHANGED")
+            if existing and existing["position_id"] != row["position_id"]:
+                old_position = org.find_one({
+                    "tenant_id": tenant, "kind": "POSITION",
+                    "record_id": existing["position_id"], "status": "APPROVED",
+                }, session=tx)
+                if old_position is None:
+                    raise HTTPException(409, "HR_ASSIGNMENT_PREVIOUS_POSITION_UNAVAILABLE")
+                old_touched = org.update_one({
+                    "tenant_id": tenant, "kind": "POSITION",
+                    "record_id": existing["position_id"], "status": "APPROVED",
+                    "revision": old_position["revision"],
+                }, {"$inc": {"assignment_write_epoch": 1}}, session=tx)
+                if old_touched.matched_count != 1:
+                    raise HTTPException(409, "HR_ASSIGNMENT_PREVIOUS_POSITION_CHANGED")
             next_revision = row["base_revision"] + 1
             new_assignment = {
                 "tenant_id": tenant, "employee_id": row["employee_id"],
