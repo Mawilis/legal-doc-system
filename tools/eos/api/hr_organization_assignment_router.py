@@ -40,6 +40,7 @@ router = APIRouter(prefix="/api/hr/workforce/assignments", tags=["hr-organizatio
 _MAKER = RequireTenantAuthorization("hr:employee_relation:write", "hr_employee_relation_write")
 _PROPOSALS = "hr_organization_assignment_proposals"
 _ASSIGNMENTS = "hr_organization_assignments"
+_VERSIONS = "hr_organization_assignment_versions"
 _EVENTS = "hr_organization_assignment_events"
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,179}\Z")
 _MAX = 200
@@ -86,14 +87,16 @@ def _tx(callback):
         proposed = _collection(db, _PROPOSALS)
         assigned = _collection(db, _ASSIGNMENTS)
         events = _collection(db, _EVENTS)
+        versions = _collection(db, _VERSIONS)
         org = _collection(db, _ORG_COLLECTION)
         employees = _collection(db, "employees")
         proposed.create_index([("tenant_id", 1), ("proposal_id", 1)], unique=True)
         assigned.create_index([("tenant_id", 1), ("employee_id", 1)], unique=True)
         events.create_index([("tenant_id", 1), ("actor_id", 1), ("key", 1)], unique=True)
+        versions.create_index([("tenant_id", 1), ("employee_id", 1), ("revision", 1)], unique=True)
         with client.start_session() as session:
             return session.with_transaction(
-                lambda tx: callback(proposed, assigned, events, org, employees, tx),
+                lambda tx: callback(proposed, assigned, events, versions, org, employees, tx),
                 read_concern=ReadConcern("snapshot"),
                 write_concern=WriteConcern(w="majority", j=True),
                 read_preference=ReadPreference.PRIMARY,
@@ -151,14 +154,14 @@ def _command(tenant, actor, key, action, payload, callback):
         tenant=tenant, actor=actor, key=key, command="ASSIGNMENT:" + action,
         payload=payload,
     )
-    def apply(proposed, assigned, events, org, employees, tx):
+    def apply(proposed, assigned, events, versions, org, employees, tx):
         identity = {"tenant_id": tenant, "actor_id": actor, "key": key}
         prior = events.find_one(identity, session=tx)
         if prior:
             if prior.get("fingerprint") != fingerprint:
                 raise HTTPException(409, "HR_ASSIGNMENT_IDEMPOTENCY_CONFLICT")
             return prior["response"]
-        response = callback(proposed, assigned, org, employees, tx)
+        response = callback(proposed, assigned, versions, org, employees, tx)
         events.insert_one({
             **identity, "action": action, "fingerprint": fingerprint,
             "response": response, "occurred_at": _now(),
@@ -211,6 +214,42 @@ def list_assignments(
     }
 
 
+@router.get("/employees/{employee_id}/history")
+def read_assignment_history(
+    employee_id: str,
+    organization: TenantAuthorizationContext = Depends(_ORG_READ),
+    workforce: TenantAuthorizationContext = Depends(_MAKER),
+):
+    """Return persisted effective versions for one authorized employee ID."""
+    if organization.tenant_id != workforce.tenant_id or (
+        organization.identity.identity_id != workforce.identity.identity_id
+    ):
+        raise HTTPException(403, "HR_ASSIGNMENT_SCOPE_MISMATCH")
+    if not _ID.fullmatch(employee_id):
+        raise HTTPException(422, "HR_ASSIGNMENT_EMPLOYEE_ID_INVALID")
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "HR_ASSIGNMENT_SOURCE_UNAVAILABLE")
+    try:
+        rows = list(_collection(db, _VERSIONS).find({
+            "tenant_id": organization.tenant_id, "employee_id": employee_id,
+        }, {"_id": 0, "revision": 1, "position_id": 1,
+            "department_id": 1, "effective_from": 1,
+            "recorded_at": 1, "decision_id": 1},
+        ).sort("revision", 1).limit(_MAX + 1))
+    except Exception as exc:
+        raise HTTPException(503, "HR_ASSIGNMENT_HISTORY_UNAVAILABLE") from exc
+    if len(rows) > _MAX:
+        raise HTTPException(503, "HR_ASSIGNMENT_HISTORY_BOUND_EXCEEDED")
+    return {
+        "schema": "WILSY-HR-ASSIGNMENT-HISTORY/V1",
+        "source": "EOS_HR_ASSIGNMENT_VERSION_REGISTRY",
+        "tenant_id": organization.tenant_id, "employee_id": employee_id,
+        "items": rows, "count": len(rows),
+        "legacy_employee_fields_synchronized": False,
+    }
+
+
 @router.post("/proposals", status_code=201)
 def propose_assignment(
     body: AssignmentDraft,
@@ -225,7 +264,7 @@ def propose_assignment(
         raise HTTPException(403, "HR_ASSIGNMENT_SCOPE_MISMATCH")
     tenant, actor = organization.tenant_id, organization.identity.identity_id
     payload = body.model_dump(mode="json")
-    def apply(proposed, assigned, org, employees, tx):
+    def apply(proposed, assigned, versions, org, employees, tx):
         department_id = _verify_sources(
             org, employees, tenant, body.employee_id, body.position_id, tx,
         )
@@ -258,7 +297,7 @@ def submit_assignment(
     ):
         raise HTTPException(403, "HR_ASSIGNMENT_SCOPE_MISMATCH")
     tenant, actor = organization.tenant_id, organization.identity.identity_id
-    def apply(proposed, assigned, org, employees, tx):
+    def apply(proposed, assigned, versions, org, employees, tx):
         row = proposed.find_one({"tenant_id": tenant, "proposal_id": proposal_id}, session=tx)
         if row is None:
             raise HTTPException(404, "HR_ASSIGNMENT_PROPOSAL_NOT_FOUND")
@@ -293,7 +332,7 @@ def decide_assignment(
     ):
         raise HTTPException(403, "HR_ASSIGNMENT_SCOPE_MISMATCH")
     tenant, actor = organization.tenant_id, organization.identity.identity_id
-    def apply(proposed, assigned, org, employees, tx):
+    def apply(proposed, assigned, versions, org, employees, tx):
         row = proposed.find_one({"tenant_id": tenant, "proposal_id": proposal_id}, session=tx)
         if row is None:
             raise HTTPException(404, "HR_ASSIGNMENT_PROPOSAL_NOT_FOUND")
@@ -371,12 +410,27 @@ def decide_assignment(
             if existing is None:
                 assigned.insert_one(new_assignment, session=tx)
             else:
+                versions.update_one({
+                    "tenant_id": tenant, "employee_id": row["employee_id"],
+                    "revision": existing["revision"],
+                }, {"$setOnInsert": {
+                    "tenant_id": tenant, "employee_id": row["employee_id"],
+                    "revision": existing["revision"],
+                    "position_id": existing["position_id"],
+                    "department_id": existing["department_id"],
+                    "effective_from": existing["effective_from"],
+                    "decision_id": existing["decision_id"],
+                    "recorded_at": _now(),
+                }}, upsert=True, session=tx)
                 result = assigned.replace_one({
                     "tenant_id": tenant, "employee_id": row["employee_id"],
                     "revision": row["base_revision"],
                 }, new_assignment, session=tx)
                 if result.matched_count != 1:
                     raise HTTPException(409, "HR_ASSIGNMENT_SOURCE_CHANGED")
+            versions.insert_one({
+                **new_assignment, "recorded_at": _now(),
+            }, session=tx)
         updated = proposed.find_one_and_update({
             "tenant_id": tenant, "proposal_id": proposal_id,
             "status": "SUBMITTED", "revision": body.expected_revision,
