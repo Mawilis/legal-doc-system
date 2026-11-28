@@ -386,6 +386,13 @@ describe('production People Overview source contracts', () => {
     fireEvent.change(within(form).getByLabelText('Name'), {target: {value: 'Clinical coordinator'}});
     fireEvent.click(within(form).getByRole('button', {name: 'Suggest code'}));
     expect(within(form).getByLabelText('Unique code')).toHaveValue('POS-CLINICAL-COORDINATOR');
+    expect(within(form).queryByText(/Editable suggestion, not a reserved code/)).not.toBeInTheDocument();
+    const codeHelp = within(form).getByLabelText('Why does a department need a unique code?');
+    expect(codeHelp).toBeInTheDocument();
+    expect(codeHelp.closest('details')).not.toHaveAttribute('open');
+    fireEvent.click(codeHelp);
+    expect(codeHelp.closest('details')).toHaveAttribute('open');
+    expect(within(form).getByText(/EOS checks availability when you save the draft/)).toBeInTheDocument();
     const department = within(form).getByLabelText('Approved department code');
     expect(within(department).getByRole('option', {name: /Approved operations/})).toHaveValue('DEP-APPROVED');
     expect(within(department).queryByRole('option', {name: /Unapproved unit/})).not.toBeInTheDocument();
