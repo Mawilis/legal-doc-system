@@ -309,11 +309,34 @@ def decide_assignment(
         if body.decision == "APPROVE":
             if row["effective_from"] > date.today().isoformat():
                 raise HTTPException(409, "HR_ASSIGNMENT_FUTURE_ACTIVATION_NOT_CERTIFIED")
+            if existing and row["effective_from"] < existing["effective_from"]:
+                raise HTTPException(409, "HR_ASSIGNMENT_BACKDATED_MOVE_NOT_CERTIFIED")
             department_id = _verify_sources(
                 org, employees, tenant, row["employee_id"], row["position_id"], tx,
             )
             if department_id != row["department_id"]:
                 raise HTTPException(409, "HR_ASSIGNMENT_POSITION_DEPARTMENT_CHANGED")
+            position = org.find_one({
+                "tenant_id": tenant, "record_id": row["position_id"],
+                "kind": "POSITION", "status": "APPROVED",
+            }, session=tx)
+            department = org.find_one({
+                "tenant_id": tenant, "record_id": department_id,
+                "kind": "DEPARTMENT", "status": "APPROVED",
+            }, session=tx)
+            if (not position or not department or
+                row["effective_from"] < position.get("effective_from", "") or
+                row["effective_from"] < department.get("effective_from", "")):
+                raise HTTPException(409, "HR_ASSIGNMENT_NOT_EFFECTIVE_AT_START")
+            capacity = position.get("capacity")
+            if type(capacity) is not int or capacity < 1:
+                raise HTTPException(409, "HR_ASSIGNMENT_POSITION_CAPACITY_UNVERIFIED")
+            occupied = assigned.count_documents({
+                "tenant_id": tenant, "position_id": row["position_id"],
+                "employee_id": {"$ne": row["employee_id"]},
+            }, session=tx)
+            if occupied >= capacity:
+                raise HTTPException(409, "HR_ASSIGNMENT_POSITION_CAPACITY_EXCEEDED")
             next_revision = row["base_revision"] + 1
             new_assignment = {
                 "tenant_id": tenant, "employee_id": row["employee_id"],
