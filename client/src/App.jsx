@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
+ * VERSION: v20.4.15-VERIFIED-ACCOUNT-EMAIL-ONLY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -24,7 +24,8 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
- * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER prevents duplicate footer at the Owner's default Headquarters landing routes, where the nested workspace owns the footer.
+ * CHANGELOG: v20.4.15-VERIFIED-ACCOUNT-EMAIL-ONLY keeps sign-in candidates outside account identity and recovery chrome; only EOS workspaceEmail is displayed, with no authentication or IAM change.
+CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER prevents duplicate footer at the Owner's default Headquarters landing routes, where the nested workspace owns the footer.
  * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER sends the global logo to the EOS-selected capacity home (Owner Headquarters, HR Director/Manager People), and uses one canonical footer on other protected routes without duplicating the Headquarters footer.
  * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH removes the implicit HR Projects-denial event that opened a logout-and-Owner-login prompt; account capacity change remains explicit, EOS governed and MFA bound.
  * CHANGELOG: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY opens the existing confirmation when HR-denied Projects explicitly requests Owner capacity; reauthentication and EOS authorisation remain mandatory.
@@ -1361,7 +1362,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
+ * VERSION: v20.4.15-VERIFIED-ACCOUNT-EMAIL-ONLY
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime
