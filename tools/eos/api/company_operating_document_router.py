@@ -1,12 +1,33 @@
 """TITLE: WILSY OS Company Mission and Strategy HTTP Authority.
-VERSION: v1.2.0-AUTHENTICATED-FOUNDER-SESSION-EVIDENCE
+VERSION: v1.6.0-FOUNDER-SELECTED-OWNER-BOUNDARY
 AUTHORITY: Existing canonical tenant IAM; source lifecycle/registry own evidence.
 EPITOME: Expose approved company documents and separately authorized author/
 publication commands without reusing Legal agreements, HR files or Founder labels.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/company_operating_document_router.py
 COLLABORATION / OWNERSHIP: Headquarters shared viewer, RequireTenantAuthorization,
 company document lifecycle/registry; explicit operators own index provisioning.
-CERTIFICATION / UPDATE DATE: 2026-11-14
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.6.0-FOUNDER-SELECTED-OWNER-BOUNDARY requires canonical selected Owner capacity for existing Founder Strategy review, revision, ratification and project-link commands. Durable designation and source transactions remain independently mandatory; HR capacities gain no Owner authority.
+CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON adds a bounded read-only reason for denied Strategy read only when the authenticated Owner has separately verified Projects-list authority; no role grant or source write.
+CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON adds a read-only, authenticated check of exact current Strategy read and Projects list/detail admission separately from optional author/publish, without document read, IAM mutation or source fallback.
+CHANGELOG: v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON
+reuses the canonical audited project-link command for the exact durable
+Founder, requiring current project-read authority and Founder source in the
+same Mongo transaction as link creation; no author IAM grant is issued.
+CHANGELOG: v1.4.1-FOUNDER-REPOSITORY-CURRENTNESS-FAIL-CLOSED
+maps source-currentness/repository transport failures to HTTP 503 without
+exposing stack traces or bypassing publisher role and tenant isolation.
+CHANGELOG: v1.4.0-FOUNDER-DURABLE-STRATEGY-SELF-RATIFICATION
+admits separate Strategy-only Founder commands via existing READ session
+authority and source-verified durable designation; reuses canonical registry
+transactions and fingerprints. No staff/owner inherited publisher grant.
+CHANGELOG: v1.3.0-GOVERNED-STRATEGY-PROJECT-LINK composes an explicit
+read-only current exact-tenant Strategy project-link projection and an audited
+link command requiring *both* canonical Strategy author and Projects read IAM,
+current project entitlement, source publication/pillar/project revisions and
+caller-owned majority transactions. Link command is fail-closed until the
+separate registry's unique indexes are explicitly provisioned. No Strategy
+publication, completion percentage or financial authority is created.
 CHANGELOG: v1.2.0-AUTHENTICATED-FOUNDER-SESSION-EVIDENCE adds a
 read-only authenticated session-principal evidence endpoint; v1.1.0 adds a
 fixed-reader grant endpoint and existing-session currentness enforcement. All
@@ -37,19 +58,36 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.api.tenant_authorization_http import (
     OptionalTenantAuthorization, RequireTenantAuthorization, TenantAuthorizationContext,
 )
+from tools.eos.auth.tenant_authorization import authorize_tenant_operation
+from tools.eos.api.tenant_authorization_http import (
+    get_principal_authority_repository,
+    get_tenant_membership_repository,
+    get_role_assignment_repository,
+)
 from tools.eos.auth.authentication import get_current_identity
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.saas.auth.auth_registry import AuthRegistry
 from tools.eos.auth.company_document_reader_grant import CompanyDocumentReaderGrant, CompanyReaderGrantError
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
+from tools.eos.auth.founder_institutional_designation import (
+    read_founder_designation, FounderDesignationRejected,
+)
 from tools.eos.kernel import db as kernel_db
 from tools.eos.saas.company_operating_document_registry import CompanyOperatingDocumentRegistry
+from tools.eos.saas.strategy_project_relationship_registry import (
+    StrategyProjectLinkError, StrategyProjectRelationshipRegistry,
+)
+from tools.eos.saas.projects.project_registry import (
+    ProjectRegistry, ProjectNotFound, ProjectRegistryError, COLLECTION as PROJECT_COLLECTION,
+    EVENT_COLLECTION as PROJECT_EVENT_COLLECTION,
+)
+from tools.eos.api.projects_router import _require_active_projects_entitlement
 from tools.eos.saas.domain.company_operating_document import (
     CompanyDocumentClass, CompanyDocumentError, CompanyDocumentState,
     CompanyOperatingDocumentRevision, instant,
 )
 
-VERSION: Final = "v1.2.0-AUTHENTICATED-FOUNDER-SESSION-EVIDENCE"
+VERSION: Final = "v1.5.2-OWNER-STRATEGY-READ-DENIAL-REASON"
 def _require_current_company_session(identity: SovereignIdentity = Depends(get_current_identity)) -> None:
     """Reuse canonical authentication and session authority; never mint a session.
 
@@ -76,10 +114,14 @@ router = APIRouter(prefix="/company-operating-documents", tags=["Company Operati
 logger = logging.getLogger("WilsyOS.CompanyOperatingDocuments")
 _GRANT = RequireTenantAuthorization("tenant:role_assignment:write", "role_grant")
 _READ = RequireTenantAuthorization("company_operating_document:read", "company_operating_document_read")
+_PROJECT_READ = RequireTenantAuthorization("project:read", "project_detail")
 _AUTHOR = RequireTenantAuthorization("company_operating_document:author", "company_operating_document_author")
 _PUBLISH = RequireTenantAuthorization("company_operating_document:publish", "company_operating_document_publish")
 _MAY_AUTHOR = OptionalTenantAuthorization("company_operating_document:author", "company_operating_document_author")
 _MAY_PUBLISH = OptionalTenantAuthorization("company_operating_document:publish", "company_operating_document_publish")
+_STRATEGY_READ_CHECK = OptionalTenantAuthorization("company_operating_document:read", "company_operating_document_read")
+_PROJECT_DETAIL_CHECK = OptionalTenantAuthorization("project:read", "project_detail")
+_PROJECT_LIST_CHECK = OptionalTenantAuthorization("project:read", "project_list")
 
 
 class ReaderGrantInput(BaseModel):
@@ -186,6 +228,19 @@ class DraftInput(BaseModel):
     sections: list[SectionInput] = Field(min_length=1, max_length=24)
 
 
+class StrategyProjectLinkInput(BaseModel):
+    """Explicit current source revisions for one EOS-persisted Strategy association.
+
+    The tenant, current principal, real publication fingerprint, project source
+    snapshot, command evidence and majority transaction are server governed.
+    """
+    model_config = ConfigDict(extra="forbid", strict=True)
+    pillar_id: str = Field(pattern=r"^pillar-(?:one|two|three|four|five|six)$")
+    project_id: str = Field(pattern=r"^prj-[a-f0-9]{48}$")
+    expected_strategy_revision: int = Field(ge=1)
+    expected_project_revision: int = Field(ge=1)
+
+
 class RevisionInput(BaseModel):
     """Explicit expected revision; no client-supplied lifecycle status is admitted."""
 
@@ -209,6 +264,16 @@ def _error(code: str, status_code: int = 503) -> HTTPException:
 def _same_actor(candidate: TenantAuthorizationContext | None, base: TenantAuthorizationContext) -> bool:
     return bool(candidate is not None and candidate.tenant_id == base.tenant_id
                 and candidate.identity.identity_id == base.identity.identity_id)
+
+
+def _owner_capacity(context: TenantAuthorizationContext) -> bool:
+    """Observe the canonical IAM decision, never a browser/JWT role projection.
+
+    A durable Founder can own several active capacities. Only the Owner
+    decision may use Founder Strategy lifecycle authority; HR sessions remain
+    independent even when the same principal retains its Owner assignment.
+    """
+    return getattr(getattr(context, "decision", None), "business_role", None) == "tenant_owner"
 
 
 def _transaction(context: TenantAuthorizationContext, callback: Callable[..., Any], *, write: bool = False) -> Any:
@@ -238,8 +303,15 @@ def _transaction(context: TenantAuthorizationContext, callback: Callable[..., An
     except CompanyDocumentError as error:
         code = error.code
         conflict = any(marker in code for marker in ("CONFLICT", "ALREADY_PUBLISHED"))
-        denied = any(marker in code for marker in ("TENANT_DENIED", "OWNER_REQUIRED", "SUBMISSION_DENIED", "INDEPENDENT_APPROVER_REQUIRED"))
-        integrity = any(marker in code for marker in ("INTEGRITY", "PERSISTED", "LINEAGE", "READBACK", "INDEX", "HISTORY_LIMIT", "TRANSACTION_REQUIRED"))
+        denied = any(marker in code for marker in (
+            "TENANT_DENIED", "OWNER_REQUIRED", "SUBMISSION_DENIED",
+            "INDEPENDENT_APPROVER_REQUIRED", "FOUNDER_AUTHORITY_DENIED",
+            "FOUNDER_AUTHOR_REQUIRED", "FOUNDER_STRATEGY_ONLY",
+        ))
+        integrity = any(marker in code for marker in (
+            "INTEGRITY", "PERSISTED", "LINEAGE", "READBACK", "INDEX",
+            "HISTORY_LIMIT", "TRANSACTION_REQUIRED", "FOUNDER_SOURCE_UNAVAILABLE",
+        ))
         if integrity:
             logger.error("Company document integrity/source operation failed", extra={"error_code": code})
         raise _error(code, 409 if conflict else 403 if denied else 503 if integrity else 422) from error
@@ -253,11 +325,15 @@ def _transaction(context: TenantAuthorizationContext, callback: Callable[..., An
 
 def _actions(context: TenantAuthorizationContext, latest: CompanyOperatingDocumentRevision | None,
              author: TenantAuthorizationContext | None, publisher: TenantAuthorizationContext | None,
-             *, review: bool) -> list[str]:
+             *, review: bool, founder: bool = False) -> list[str]:
     actions = ["READ_HISTORY"]
     can_author, can_publish = _same_actor(author, context), _same_actor(publisher, context)
-    if can_author or can_publish:
+    if can_author or can_publish or founder:
         actions.append("REVIEW_DRAFTS")
+    if founder:
+        actions.append("FOUNDER_LINK_PROJECT")
+    if founder and (latest is None or latest.state is CompanyDocumentState.PUBLISHED):
+        actions.append("FOUNDER_CREATE_DRAFT")
     if can_author and (latest is None or latest.state is CompanyDocumentState.PUBLISHED):
         actions.append("CREATE_DRAFT")
     if review and latest is not None:
@@ -265,6 +341,11 @@ def _actions(context: TenantAuthorizationContext, latest: CompanyOperatingDocume
             actions.append("SUBMIT")
         if can_publish and latest.state is CompanyDocumentState.SUBMITTED and latest.author_principal_id != context.identity.identity_id:
             actions.append("PUBLISH")
+        if founder and latest.author_principal_id == context.identity.identity_id:
+            if latest.state is CompanyDocumentState.DRAFT:
+                actions.append("FOUNDER_SUBMIT")
+            elif latest.state is CompanyDocumentState.SUBMITTED:
+                actions.append("FOUNDER_RATIFY")
     return actions
 
 
@@ -283,10 +364,20 @@ def read_company_document(
     """
     response.headers["Cache-Control"] = "no-store"
     may_review = _same_actor(author, context) or _same_actor(publisher, context)
-    if review and not may_review:
-        raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
     now = datetime.now(timezone.utc)
     def load(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
+        founder = False
+        if classification is CompanyDocumentClass.STRATEGY and _owner_capacity(context):
+            try:
+                founder = read_founder_designation(
+                    principal_id=context.identity.identity_id,
+                    tenant_id=context.tenant_id, database=kernel_db.get_database(),
+                    session=session,
+                ) is not None
+            except (FounderDesignationRejected, RuntimeError, PyMongoError) as error:
+                raise _error("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
+        if review and not (may_review or founder):
+            raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
         history = registry.history(context.tenant_id, classification, session=session)
         latest = history[-1] if history else None
         permitted = history if review else tuple(item for item in history if item.state is CompanyDocumentState.PUBLISHED
@@ -300,12 +391,259 @@ def read_company_document(
             "classification": classification.value, "view": "review" if review else "published",
             "state": selected.state.value if selected else "NOT_YET_PUBLISHED",
             "document": selected.to_dict() if selected else None,
-            "current_revision": latest.revision if may_review and latest else selected.revision if selected else 0,
-            "available_actions": _actions(context, latest, author, publisher, review=review) if revision is None else ["READ_HISTORY"],
+            "current_revision": latest.revision if (may_review or founder) and latest else selected.revision if selected else 0,
+            "available_actions": _actions(context, latest, author, publisher, review=review, founder=founder) if revision is None else ["READ_HISTORY"],
             "relationships": {"state": "NOT_GOVERNED"}, "as_of": instant(now),
             "authority": {"publication_owned_by": "PYTHON_EOS", "financial_execution": False},
         }
     return _transaction(context, load)
+
+
+def _strategy_publication(registry: CompanyOperatingDocumentRegistry, tenant_id: str,
+                          session: Any, now: datetime) -> CompanyOperatingDocumentRevision:
+    """Require a currently effective independently published Strategy revision."""
+    history = registry.history(tenant_id, CompanyDocumentClass.STRATEGY, session=session)
+    permitted = [item for item in history if item.state is CompanyDocumentState.PUBLISHED
+                 and item.effective_from is not None and item.effective_from <= instant(now)]
+    if not permitted:
+        raise _error("STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED", 409)
+    return permitted[-1]
+
+
+def _project_source(database: Any, tenant_id: str, project_id: str, session: Any) -> Any:
+    """Verify currently entitled exact-tenant project without membership inference."""
+    _require_active_projects_entitlement(tenant_id, session)
+    registry = ProjectRegistry(database[PROJECT_COLLECTION], database[PROJECT_EVENT_COLLECTION])
+    try:
+        return registry.get(tenant_id=tenant_id, project_id=project_id, session=session)
+    except ProjectNotFound as error:
+        raise _error("STRATEGY_LINK_PROJECT_NOT_VERIFIED", 404) from error
+    except ProjectRegistryError as error:
+        raise _error("STRATEGY_LINK_PROJECT_SOURCE_UNAVAILABLE") from error
+
+
+def _same_scope(base: TenantAuthorizationContext, candidate: TenantAuthorizationContext) -> bool:
+    """Require identical authenticated principal and exact tenant at both authorities."""
+    return _same_actor(candidate, base)
+
+
+@router.get("/STRATEGY/authority-check")
+def inspect_strategy_read_authority(
+    response: Response,
+    identity: SovereignIdentity = Depends(get_current_identity),
+    document_read: TenantAuthorizationContext | None = Depends(_STRATEGY_READ_CHECK),
+    project_detail: TenantAuthorizationContext | None = Depends(_PROJECT_DETAIL_CHECK),
+    project_list: TenantAuthorizationContext | None = Depends(_PROJECT_LIST_CHECK),
+    author: TenantAuthorizationContext | None = Depends(_MAY_AUTHOR),
+    publisher: TenantAuthorizationContext | None = Depends(_MAY_PUBLISH),
+) -> dict[str, Any]:
+    """Observe current authenticated HTTP IAM outcomes without granting access.
+
+    Every check uses the exact central tenant authorization composer with the
+    browser's already validated session, selected capacity and tenant header.
+    Only positive admissions are returned; denials never become publication
+    evidence. Dependency outages continue to fail closed with HTTP 503.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    # Only an already-authorized Owner Projects session may inspect the
+    # non-PII Strategy denial class. No role or document evidence is returned.
+    reason = "NOT_DISCLOSED"
+    selected = (
+        identity.roles[0]
+        if identity.principal_scope == "GLOBAL" and len(identity.roles) == 1
+        else None
+    )
+    if (
+        selected == "tenant_owner"
+        and getattr(identity, "tenant_id", None) == WILSY_COMPANY_TENANT_ID
+        and project_list is not None
+        and document_read is None
+    ):
+        try:
+            reader = get_role_assignment_repository()
+            decision = authorize_tenant_operation(
+                principal_id=identity.identity_id,
+                tenant_id=identity.tenant_id,
+                permission_id="company_operating_document:read",
+                operation="company_operating_document_read",
+                principal_repository=get_principal_authority_repository(),
+                membership_repository=get_tenant_membership_repository(),
+                business_role_repository=reader,
+                role_assignment_repository=reader,
+                selected_business_role=selected,
+            )
+            reason = (
+                "INCONSISTENT_HTTP_ADMISSION" if decision.authorized
+                else decision.reason.value
+            )
+        except Exception:
+            reason = "AUTHORITY_SOURCE_UNAVAILABLE"
+    return {
+        "schema": "WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1",
+        "document_read_reason": reason,
+        "selected_capacity": (
+            identity.roles[0]
+            if identity.principal_scope == "GLOBAL" and len(identity.roles) == 1
+            else None
+        ),
+        "session_scope": identity.principal_scope,
+        "document_read": "AUTHORIZED" if document_read is not None else "DENIED",
+        "project_detail": "AUTHORIZED" if project_detail is not None else "DENIED",
+        "project_list": "AUTHORIZED" if project_list is not None else "DENIED",
+        "document_author": "AUTHORIZED" if author is not None else "DENIED",
+        "document_publish": "AUTHORIZED" if publisher is not None else "DENIED",
+        "grant_issued": False,
+        "document_read_performed": False,
+    }
+
+
+@router.get("/STRATEGY/project-links")
+def read_strategy_project_links(
+    response: Response,
+    context: TenantAuthorizationContext = Depends(_READ),
+    project_context: TenantAuthorizationContext = Depends(_PROJECT_READ),
+) -> dict[str, Any]:
+    """Show only current document and project evidence authorized for same actor.
+
+    A verified relationship does NOT imply a verified strategic outcome score.
+    Obsolete snapshots are marked as changed, never counted as progress.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if not _same_scope(context, project_context):
+        raise _error("STRATEGY_LINK_AUTHORITY_MISMATCH", 403)
+    now = datetime.now(timezone.utc)
+    def load(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
+        database = kernel_db.get_database()
+        if database is None:
+            raise _error("STRATEGY_LINK_SOURCE_UNAVAILABLE")
+        publication = _strategy_publication(registry, context.tenant_id, session, now)
+        relationships = StrategyProjectRelationshipRegistry(database)
+        rows = relationships.list_links(tenant_id=context.tenant_id, session=session)
+        items: list[dict[str, object]] = []
+        for row in rows:
+            project = _project_source(database, context.tenant_id, str(row["project_id"]), session)
+            pillar_id = str(row["pillar_id"])
+            pillar_is_current = any(section.section_id == pillar_id for section in publication.sections)
+            source_current = (pillar_is_current
+                and row["strategy_fingerprint"] == publication.fingerprint
+                and row["strategy_revision"] == publication.revision
+                and row["project_revision"] == project.revision)
+            items.append({"pillar_id": pillar_id, "project_id": project.project_id,
+                          "project_name": project.name, "project_status": project.status.value,
+                          "source_project_revision": project.revision,
+                          "source_strategy_revision": publication.revision,
+                          "state": "VERIFIED_CURRENT" if source_current else "SOURCE_CHANGED"})
+        return {"schema": "WILSY-STRATEGY-PROJECT-LINK-LIST/V1",
+                "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+                "classification": "STRATEGY", "strategy_revision": publication.revision,
+                "items": items, "source_verified": True, "strategy_progress": None,
+                "financial_execution": False}
+    try:
+        return _transaction(context, load)
+    except StrategyProjectLinkError as error:
+        raise _error(error.code) from error
+
+
+def _write_strategy_project_link(
+    payload: StrategyProjectLinkInput, response: Response,
+    idempotency_key: str | None,
+    context: TenantAuthorizationContext,
+    read_context: TenantAuthorizationContext,
+    project_context: TenantAuthorizationContext,
+    *, founder: bool = False,
+) -> dict[str, Any]:
+    """Create a source-owned audited relationship, never a strategy completion.
+
+    Independent company author, company read and project read rights are
+    mandatory. Both source objects and exact revisions are checked within the
+    same majority transaction as link and immutable event persistence.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    if not _same_scope(context, read_context) or not _same_scope(context, project_context):
+        raise _error("STRATEGY_LINK_AUTHORITY_MISMATCH", 403)
+    if founder and not _owner_capacity(context):
+        raise _error("STRATEGY_LINK_FOUNDER_OWNER_CAPACITY_REQUIRED", 403)
+    if not idempotency_key:
+        raise _error("STRATEGY_LINK_IDEMPOTENCY_REQUIRED", 422)
+    now = datetime.now(timezone.utc)
+    database = kernel_db.get_database()
+    if database is None:
+        raise _error("STRATEGY_LINK_SOURCE_UNAVAILABLE")
+    link_registry = StrategyProjectRelationshipRegistry(database)
+    try:
+        link_registry.require_indexes()
+    except StrategyProjectLinkError as error:
+        raise _error(error.code) from error
+
+    def persist(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
+        if founder:
+            try:
+                designation = read_founder_designation(
+                    principal_id=context.identity.identity_id,
+                    tenant_id=context.tenant_id, database=database, session=session,
+                )
+            except (FounderDesignationRejected, RuntimeError, PyMongoError) as error:
+                raise _error("STRATEGY_LINK_FOUNDER_SOURCE_UNAVAILABLE") from error
+            if designation is None:
+                raise _error("STRATEGY_LINK_FOUNDER_AUTHORITY_DENIED", 403)
+        publication = _strategy_publication(registry, context.tenant_id, session, now)
+        if publication.revision != payload.expected_strategy_revision:
+            raise _error("STRATEGY_LINK_PUBLICATION_REVISION_CONFLICT", 409)
+        if not any(section.section_id == payload.pillar_id for section in publication.sections):
+            raise _error("STRATEGY_LINK_PILLAR_NOT_VERIFIED", 409)
+        project = _project_source(database, context.tenant_id, payload.project_id, session)
+        if project.revision != payload.expected_project_revision or project.status.value != "active":
+            raise _error("STRATEGY_LINK_PROJECT_REVISION_CONFLICT", 409)
+        receipt = link_registry.link(
+            tenant_id=context.tenant_id, actor_id=context.identity.identity_id,
+            project_id=project.project_id, pillar_id=payload.pillar_id,
+            strategy_revision=publication.revision, strategy_fingerprint=publication.fingerprint,
+            project_revision=project.revision, idempotency_key=idempotency_key,
+            recorded_at=instant(now), session=session,
+        )
+        return {"schema": "WILSY-STRATEGY-PROJECT-LINK-RESULT/V1",
+                "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+                "classification": "STRATEGY", "pillar_id": payload.pillar_id,
+                "project_id": project.project_id, "strategy_revision": publication.revision,
+                "project_revision": project.revision,
+                "command_fingerprint": receipt["command_fingerprint"],
+                "relationship_state": "RECORDED_NOT_OUTCOME_CERTIFIED",
+                "strategy_progress": None, "financial_execution": False}
+    try:
+        return _transaction(context, persist)
+    except StrategyProjectLinkError as error:
+        conflict = "CONFLICT" in error.code or "ALREADY_EXISTS" in error.code
+        raise _error(error.code, 409 if conflict else 503) from error
+
+
+@router.post("/STRATEGY/project-links", status_code=201)
+def create_strategy_project_link(
+    payload: StrategyProjectLinkInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_AUTHOR),
+    read_context: TenantAuthorizationContext = Depends(_READ),
+    project_context: TenantAuthorizationContext = Depends(_PROJECT_READ),
+) -> dict[str, Any]:
+    """Independently admitted Strategy author linking, unchanged."""
+    return _write_strategy_project_link(payload, response, idempotency_key,
+                                        context, read_context, project_context)
+
+
+@router.post("/STRATEGY/founder-project-links", status_code=201)
+def create_founder_strategy_project_link(
+    payload: StrategyProjectLinkInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+    project_context: TenantAuthorizationContext = Depends(_PROJECT_READ),
+) -> dict[str, Any]:
+    """The exact current Founder may link only effective published Strategy.
+
+    Read and project permissions are current, while the durable Founder proof
+    is independently re-read in the same source transaction as the link event.
+    No author/publisher IAM assignment is created.
+    """
+    return _write_strategy_project_link(payload, response, idempotency_key,
+                                        context, context, project_context, founder=True)
 
 
 @router.get("/{classification}/revisions")
@@ -317,10 +655,21 @@ def company_document_history(
 ) -> dict[str, Any]:
     """Read permitted revision metadata; draft content/counts stay private."""
     response.headers["Cache-Control"] = "no-store"
-    if review and not (_same_actor(author, context) or _same_actor(publisher, context)):
-        raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
+    may_review = _same_actor(author, context) or _same_actor(publisher, context)
     now = datetime.now(timezone.utc)
     def load(registry: CompanyOperatingDocumentRegistry, session: Any) -> dict[str, Any]:
+        founder = False
+        if review and classification is CompanyDocumentClass.STRATEGY and _owner_capacity(context):
+            try:
+                founder = read_founder_designation(
+                    principal_id=context.identity.identity_id,
+                    tenant_id=context.tenant_id, database=kernel_db.get_database(),
+                    session=session,
+                ) is not None
+            except (FounderDesignationRejected, RuntimeError, PyMongoError) as error:
+                raise _error("COMPANY_DOCUMENT_FOUNDER_SOURCE_UNAVAILABLE") from error
+        if review and not (may_review or founder):
+            raise _error("COMPANY_DOCUMENT_REVIEW_DENIED", 403)
         history = registry.history(context.tenant_id, classification, session=session)
         visible = [item for item in history if review or (item.state is CompanyDocumentState.PUBLISHED
                    and item.effective_from is not None and item.effective_from <= instant(now))]
@@ -334,6 +683,8 @@ def company_document_history(
 def _command(classification: CompanyDocumentClass, context: TenantAuthorizationContext, action: str,
              payload: dict[str, Any], expected_revision: int, key: str | None, response: Response) -> dict[str, Any]:
     response.headers["Cache-Control"] = "no-store"
+    if action in {"FOUNDER_CREATE_DRAFT", "FOUNDER_SUBMIT", "FOUNDER_RATIFY"} and not _owner_capacity(context):
+        raise _error("COMPANY_DOCUMENT_FOUNDER_OWNER_CAPACITY_REQUIRED", 403)
     if not key:
         raise _error("COMPANY_DOCUMENT_IDEMPOTENCY_REQUIRED", 422)
     now = datetime.now(timezone.utc)
@@ -343,6 +694,47 @@ def _command(classification: CompanyDocumentClass, context: TenantAuthorizationC
     ), write=True)
     return {"schema": "WILSY-COMPANY-OPERATING-DOCUMENT-COMMAND-RESULT/V1", "tenant_id": context.tenant_id,
             "principal_id": context.identity.identity_id, "classification": classification.value, "document": record.to_dict()}
+
+
+@router.post("/STRATEGY/founder-drafts", status_code=201)
+def founder_strategy_draft(
+    payload: DraftInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, Any]:
+    """Create an Owner-selected Founder draft; registry rechecks designation in transaction."""
+    body = payload.model_dump()
+    expected = body.pop("expected_revision")
+    return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_CREATE_DRAFT",
+                    body, expected, idempotency_key, response)
+
+
+@router.post("/STRATEGY/founder-submit")
+def founder_strategy_submit(
+    payload: RevisionInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, Any]:
+    """Submit only the Owner-selected Founder's own source-verified Strategy revision."""
+    return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_SUBMIT",
+                    {}, payload.expected_revision, idempotency_key, response)
+
+
+class FounderRatifyInput(RevisionInput):
+    """Explicit date chosen by the Founder; decision basis remains server-owned."""
+    effective_from: str = Field(min_length=1, max_length=50)
+
+
+@router.post("/STRATEGY/founder-ratify")
+def founder_strategy_ratify(
+    payload: FounderRatifyInput, response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_READ),
+) -> dict[str, Any]:
+    """Ratify a submitted Founder-authored Strategy; reference is server owned."""
+    return _command(CompanyDocumentClass.STRATEGY, context, "FOUNDER_RATIFY",
+                    {"effective_from": payload.effective_from},
+                    payload.expected_revision, idempotency_key, response)
 
 
 @router.post("/{classification}/drafts", status_code=201)
@@ -378,7 +770,7 @@ def publish_company_document(classification: CompanyDocumentClass, payload: Publ
 
 
 # ARTIFACT: company_operating_document_router.py
-# VERSION: v1.2.0-AUTHENTICATED-FOUNDER-SESSION-EVIDENCE
+# VERSION: v1.6.0-FOUNDER-SELECTED-OWNER-BOUNDARY
 # AUTHORITY BOUNDARY: Current canonical IAM plus source-owned lifecycle commands.
 # TENANT POSTURE: Exact canonical WILSY company tenant; no root fallback.
 # FAIL-CLOSED POSTURE: Draft privacy, independent approval, indexes and readback required.

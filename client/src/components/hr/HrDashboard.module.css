@@ -3,11 +3,40 @@
  * Wilsy OS — Sovereign HR Operating Suite Styles
  * =============================================================================
  * File:           client/src/components/hr/HrDashboard.module.css
- * Version:        v2.1.0-CHROME-PARITY
+ * Version:        v2.6.2-ORGANIZATION-PANEL-READABILITY
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Billing-parity layout — top command bar, fixed vertical module
  *                 rail, scrollable workspace. Matches real HrDashboard.jsx DOM:
  *                 .hrShell > header.hrTopbar + main.hrFrame > aside.hrRail + section.hrWorkspace
+ * Change log: 2026-11-28 v2.6.2-ORGANIZATION-PANEL-READABILITY enforces readable dark navy headings, metrics and source text inside Workforce Organization, keeps one-line action label and icon, and protects footer clearance in responsive workspaces; no IAM or business authority changes.
+ * Change log: 2026-11-28 v2.6.1-WORKFORCE-SEARCH-ICON-CONTRAST fixes the Workforce search icon to high-contrast navy on white, with an explicit stroke override and stable size; no other surface, source or authority changes.
+ * Change log: 2026-11-28 v2.6.0-WORKFORCE-DIRECTORY-OPERATING-SURFACE establishes a high-contrast, responsive EOS workforce directory, restrained search and paging toolbar, verified-empty guidance, permission-safe employee detail, and keyboard focus semantics.
+ * Change log: 2026-11-27 v2.5.11-LIFECYCLE-SOURCE-HIGH-CONTRAST restores high-contrast navy/slate lifecycle source labels and status on light buttons, with scoped focus/hover styling, without changing approved navigation gold or OS tenant semantics.
+ * Change log: 2026-11-27 v2.5.10-OPERATING-SOURCE-INDEX presents the four live EOS sources as a low-height two-column operating index rather than a decorative KPI card grid. Each verified row remains keyboard-operable, with a right-aligned count, readable source description and clear navigation affordance.
+ * Change log: 2026-11-27 v2.5.9-HIGH-CONTRAST-COMPACT-PEOPLE-OVERVIEW makes verified source counts readable and actionable on the light canvas: no faded-gold data labels, compact row-like source controls, neutral empty-state review, and responsive keyboard-visible focus. Keeps existing EOS source binding and approved navy/gold navigation.
+ * Change log: 2026-11-27 v2.5.8-LEGIBLE-SOURCE-CONTINUOUS-WORKSPACE restores continuous light work canvas and high-contrast per-source inspection.\n * Change log: 2026-11-27 v2.5.7-OVERVIEW-CURRENT-SOURCE-ADMISSION condenses source admission and removes the forced navy tail from People workspace.\n * Change log: 2026-11-27 v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER aligns
+ *             retained governed HR command dialogs to light OS surfaces.
+ * TITLE: WILSY OS People Operating Workspace Dialog Styles
+ * VERSION: v2.6.2-ORGANIZATION-PANEL-READABILITY
+ * AUTHORITY: WILSY OS client presentation; Python EOS owns business truth.
+ * EPITOME: Shared OS visual semantics for source-owned HR dialogs and accessible forms.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.module.css
+ * COLLABORATION / OWNERSHIP: HR People workspace and shared WILSY OS design system.
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.5.2-COMPACT-HQ-RETURN-IN-PEOPLE-HEADER styles a small accessible back control in the existing People application heading, avoiding an extra navigation strip at all viewports.
+ * CHANGELOG: v2.5.1-ONE-FAIL-CLOSED-OVERVIEW-ADMISSION replaces repeated denied/empty Overview placeholder cards with one accessible source-admission recovery and exact current-capacity explanation.
+ * CHANGELOG: v2.5.0-HEADQUARTERS-LIGHT-OPERATING-CANVAS retains navy OS context header and gold navigation while matching Headquarters light operational canvas, compact hierarchy and accessible source-owned work rows.
+ * CHANGELOG: v2.4.2-SOURCE-UNVERIFIED-OVERVIEW-CONTEXT renders one legible source-unverified status instead of decorative empty executive metric cards when EOS has admitted none.
+ * CHANGELOG: v2.4.1-CURRENT-EMPLOYER-AUTHORITY-BANNER displays distinct nonleaking HR source denial in the lifecycle Overview with a safe route to source details and selected-tenant context.
+ * CHANGELOG: v2.4.0-PROTOTYPE-GROUNDED-PEOPLE-APP recreates prototype-inspired navy People application layout, compact gold navigation, verified activity and responsive lifecycle overview inside the sole WILSY OS shell.
+ * CHANGELOG: v2.3.1-HR01-DENIED-UNAVAILABLE-CONTRAST distinguishes red denied from amber unavailable with readable headlines and text.
+ * CHANGELOG: v2.3.0-HR01-SCOPED-CONTRAST-FIX enforces high-contrast notice titles, input/search placeholders and heading colours in the live People view, overriding legacy inherited palette only within People.
+ * CHANGELOG: v2.2.0-M03-PEOPLE-DIALOG-UNIFORMITY removes the legacy black/gold HR modal surface while retaining source-controlled input and button semantics.
+ * COMPLIANCE: AGENTS.md; WCAG 2.2 AA; POPIA section 19.
+ * SECURITY / PRIVACY POSTURE: Styles contain no secrets, employee data or persisted business state.
+ * TENANT BOUNDARY: No tenant scope or permissions are handled by CSS.
+ * AUTHORITY BOUNDARY: No mutation, billing or grant authority conveyed by styling.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  * Classification: Production Artifact
  * =============================================================================
  */
@@ -956,3 +985,1095 @@
 .hrWorkspace {
   min-height: 0;
 }
+
+/* M03 People: retained source-command dialogs use the WILSY workspace surface,
+   not the retired black/gold HR microsite. Existing logo lives in the OS shell. */
+.hrModal {
+  background: rgb(15 23 42 / 0.48);
+  color: #0f172a;
+}
+.hrModal > section {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 24px 80px rgb(15 23 42 / 0.18);
+}
+.hrModal header,
+.hrModal footer {
+  border-color: #e2e8f0;
+}
+.hrModal header h2,
+.hrModal strong,
+.hrModal label,
+.hrModal p {
+  color: #0f172a;
+}
+.hrModal header span,
+.hrModal .artifactTemplatePanel span,
+.hrModal .benefitMathPanel span {
+  color: #1e40af;
+}
+.hrModal header button,
+.hrModal footer button,
+.hrModal input,
+.hrModal select,
+.hrModal textarea {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+.hrModal input:focus-visible,
+.hrModal select:focus-visible,
+.hrModal textarea:focus-visible,
+.hrModal button:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+.hrModal footer button[data-primary='true'] {
+  background: #1e40af;
+  color: #ffffff;
+  border-color: #1e40af;
+}
+.hrModal .benefitMathPanel,
+.hrModal .artifactTemplatePanel,
+.hrModal .addressControl,
+.hrModal .countryControl,
+.hrModal .benefitPackageControl {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+.hrModal .benefitMathPanel strong,
+.hrModal .artifactTemplatePanel strong,
+.hrModal .benefitMathPanel small,
+.hrModal .artifactTemplatePanel small {
+  color: #334155;
+}
+.hrModal .benefitMathPanel b {
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+.hrModal .performanceGraph span {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.hrModal .performanceGraph span::before {
+  background: #2563eb;
+}
+.hrLoading {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+
+/* HR01: scoped final-render contrast, explicitly survives legacy HR and
+   inherited application input/heading rules without affecting the OS logo. */
+.peopleSurface {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  color-scheme: light;
+  min-width: 0;
+}
+.peopleSurface .peopleHeading {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+  line-height: 1.25;
+}
+.peopleSurface .peopleNotice[data-tone='denied'] {
+  color: #881337 !important;
+  background: #fff1f2 !important;
+  border: 1px solid #fda4af !important;
+  border-left: 5px solid #be123c !important;
+}
+.peopleSurface .peopleNotice[data-tone='unavailable'] {
+  color: #78350f !important;
+  background: #fffbeb !important;
+  border: 1px solid #fcd34d !important;
+  border-left: 5px solid #b45309 !important;
+}
+.peopleSurface .peopleNoticeTitle {
+  color: inherit !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+}
+.peopleSurface .peopleNotice p {
+  color: inherit !important;
+  opacity: 1 !important;
+}
+.peopleSurface .peopleSearch {
+  background: #fff !important;
+  border: 1px solid #94a3b8 !important;
+  color: #334155 !important;
+  min-width: min(260px, 100%);
+  min-height: 44px;
+}
+.peopleSurface .peopleSearch svg { color: #334155 !important; flex-shrink: 0; }
+.peopleSurface .peopleSearchInput {
+  background: #fff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #1e40af !important;
+  opacity: 1 !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 100%;
+  padding: 0 !important;
+  min-height: 26px;
+}
+.peopleSurface .peopleSearchInput::placeholder {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  opacity: 1 !important;
+}
+.peopleSurface .peopleSearch:focus-within {
+  outline: 2px solid #1d4ed8 !important;
+  outline-offset: 2px;
+}
+
+
+/* Prototype-grounded People application ownership. The canonical WILSY OS
+   identity/logo lives in the globally mounted shell; People supplies contextual
+   work navigation, actual source records and the employer lifecycle. */
+.peopleSurface {
+  min-height: calc(100dvh - 166px);
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  background: #0a1931 !important;
+  color: #f4f0e6 !important;
+  color-scheme: dark;
+  font-family: Inter, "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+}
+.peopleAppHeader {
+  background: #0a1931;
+  border-bottom: 1px solid #334e78;
+  padding: clamp(15px,2vw,26px) clamp(16px,2.2vw,34px) 10px;
+  color: #f4f0e6;
+}
+.peopleSurface .peopleHeading {
+  color: #f4f0e6 !important;
+  letter-spacing: -.025em;
+}
+.peopleSurface .eyebrow {
+  color: #dfb95f !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.peopleAppHeader p:not(.eyebrow) { color: #b5c5dd; }
+.peopleAppHeader button:not(.peopleNavActive):not(.peopleNavButton) {
+  color: #f4f0e6 !important;
+  background: #173659 !important;
+  border: 1px solid #496482 !important;
+  border-radius: 8px;
+}
+.peopleAppHeader button:focus-visible,
+.peopleSurface button:focus-visible {
+  outline: 3px solid #eac36f !important;
+  outline-offset: 3px;
+}
+.peopleNav {
+  display: flex;
+  gap: 3px;
+  margin-top: 16px;
+  padding: 0 0 7px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #547292 transparent;
+}
+.peopleNavButton,
+.peopleNavActive {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  background: transparent;
+  color: #c5d2e6;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  min-height: 39px;
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.peopleNavButton:hover { color: white; background: #193355; }
+.peopleNavActive {
+  color: #10213e;
+  background: #d2ae67;
+  border-color: #f3d58d;
+  box-shadow: inset 0 0 0 1px #122944;
+}
+.peopleMain {
+  background: #0a1931;
+  flex: 1;
+  padding: 16px clamp(16px,2.2vw,34px) 32px;
+  min-width: 0;
+}
+.overview { display: grid; gap: 24px; max-width: 1600px; margin: 0 auto; }
+.overviewIntro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+  gap: 20px;
+  align-items: stretch;
+  padding: 12px 0 6px;
+}
+.overviewIntro h2 {
+  color: #f4f0e6 !important;
+  font-family: Georgia, serif;
+  font-weight: 650;
+  letter-spacing: -.035em;
+  line-height: 1.16;
+  font-size: clamp(27px, 3vw, 43px);
+  margin: 8px 0;
+}
+.overviewIntro h2 em { color: #d2ae67; }
+.overviewIntro p:not(.eyebrow) {
+  color: #b7c5dc;
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 740px;
+  margin-top: 5px;
+}
+.chainIntegrity {
+  padding: 18px;
+  background: #102742;
+  border: 1px solid #334e78;
+  border-radius: 11px;
+  align-self: stretch;
+}
+.tenantContext{color:#eac36f!important;font-weight:700;letter-spacing:.025em}
+.overviewAuthority{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:14px 18px;border:1px solid #e4969f;border-left:5px solid #db5967;border-radius:9px;background:#391c30;color:#ffe6e8}
+.overviewAuthority strong{color:#ffe5e8!important;font-size:13px}
+.overviewAuthority p{color:#f5c3ca!important;font-size:12px;line-height:1.6;flex:1 1 500px;margin:0}
+.overviewAuthority button{background:transparent;color:#ffe8b0;border:1px solid #dbb86c;border-radius:7px;padding:9px 12px;font-weight:700;font-size:12px}
+.overviewAuthority button:focus-visible{outline:3px solid #eac36f}
+.chainIntegrity strong { color: #eac36f !important; font-size: 13px; }
+.chainIntegrity p { margin-top: 11px !important; font-size: 12px !important; }
+.overviewSection { min-width: 0; }
+.overviewSectionHead { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.overviewSectionHead h3 { color:#f4f0e6 !important; font:650 23px/1.2 Georgia,serif; margin-top:4px; }
+.overviewSectionHead>span { color:#a6bbd4; font-size:11px; }
+.peopleKpiGrid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.sourceUnverified{padding:16px 18px;border:1px dashed #547292;border-radius:9px;background:#102742;color:#c6d3e6;font-size:12px;line-height:1.7}
+.peopleKpi {
+  display:grid; align-content:space-between; gap:7px; min-width:0; min-height:125px;
+  text-align:left; padding:15px 16px; background:#102742; color:#f4f0e6;
+  border:1px solid #334e78; border-radius:10px;
+}
+.peopleKpi:hover { border-color:#d2ae67; background:#14304f; }
+.peopleKpi>span { color:#b9c9df; font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:.04em; }
+.peopleKpi>strong { color:#f4f0e6 !important; font-size:clamp(18px,2.4vw,27px); font-weight:750; overflow-wrap:anywhere; }
+.peopleKpi>small { color:#a6bbd4; font-size:11px; }
+.peopleQueue {display:grid;gap:10px}
+.peopleQueueRow {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;padding:16px 18px;background:#102742;border:1px solid #334e78;border-radius:10px}
+.peopleQueueRow strong { color:#f4f0e6 !important; font-size:14px; }
+.peopleQueueRow p { color:#a8bad3; font-size:11px; margin-top:6px; }
+.peopleQueueActions {display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.peopleQueueActions button {display:inline-flex;align-items:center;gap:7px;border:1px solid #d2ae67;background:#d2ae67;color:#10213e;font-weight:750;font-size:12px;padding:9px 13px;border-radius:8px}
+.queueEmpty {background:#102742;border:1px solid #334e78;color:#b8c8df;padding:18px;border-radius:10px;font-size:13px;line-height:1.6}
+/* Non-overview operations stay source-first; the old nested bright card no
+   longer introduces an unrelated visual shell inside a dark People app. */
+.peopleMain>section { background:#102742 !important; border:1px solid #334e78 !important; border-radius:11px; color:#f4f0e6; }
+.peopleMain>section>div:first-child {border-bottom:1px solid #334e78 !important}
+.peopleMain>section h2 {color:#f4f0e6 !important}
+.peopleMain>section p {color:#b7c5dc}
+.peopleMain>section thead {background:#173659 !important;color:#e8edf7 !important}
+.peopleMain>section tbody tr {border-color:#334e78}
+.peopleMain>section tbody tr:hover {background:#163354 !important}
+.peopleMain>section tbody td {color:#f4f0e6}
+.peopleMain>section input {color:#10213e !important;background:#fff !important}
+.peopleMain>section button {color:#10213e;background:#d2ae67;border:1px solid #d2ae67;border-radius:8px}
+.peopleMain>section button:disabled {opacity:.5}
+.peopleSurface .peopleSearch {background:#fff !important;color:#334155 !important}
+.peopleSurface .peopleSearchInput {background:#fff !important;color:#0f172a !important}
+.peopleSurface .peopleNotice {color:#881337}
+.peopleSurface .peopleNoticeTitle {color:inherit !important}
+@media(max-width:1000px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.overviewIntro{grid-template-columns:1fr}}
+@media(max-width:600px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.peopleKpi{padding:12px;min-height:105px}.peopleAppHeader{padding:14px 15px 8px}.peopleMain{padding:12px 14px 24px}.peopleQueueRow{align-items:flex-start;padding:14px}.overviewSectionHead h3{font-size:20px}}
+
+
+/* WILSY enterprise work surface: global shell navy, operational content light.
+   One shared visual language for Founder, People, Projects and future tenants.
+   Gold denotes selected navigation or primary action, not fabricated status. */
+.peopleSurface{background:#f5f7fb!important;color:#162b4b!important;color-scheme:light}
+.peopleAppHeader{background:#0d213e!important;color:#f8fafc!important;padding:12px clamp(16px,2.2vw,34px) 0}
+.peopleAppHeader .peopleHeading{color:#fff!important;font-size:18px!important;letter-spacing:-.015em}
+.peopleAppHeader p:not(.eyebrow){color:#d1dbee!important;font-size:12px}
+.peopleAppHeader .eyebrow{color:#e7c576!important;font-size:10px}
+.peopleAppHeader button:not(.peopleNavActive):not(.peopleNavButton){background:#193759!important;color:#f8fafc!important;border-color:#496482!important}
+.peopleNav{margin-top:9px}
+.peopleMain{background:#f5f7fb!important;color:#172d4c;padding:22px clamp(16px,2.2vw,34px) 30px}
+.overview{gap:21px;max-width:1600px}
+.overviewIntro{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:0 0 6px;border-bottom:1px solid #e2e8f0}
+.overviewIntro h2{font-family:Inter,ui-sans-serif,system-ui,sans-serif!important;font-size:clamp(23px,2vw,31px)!important;color:#102744!important;line-height:1.15;margin:5px 0!important;letter-spacing:-.035em}
+.overviewIntro h2 em{color:#a57721!important;font-style:normal}
+.overviewIntro p:not(.eyebrow){color:#536581!important;margin-top:4px;font-size:12px;line-height:1.5}
+.overviewIntro .eyebrow,.overviewSection .eyebrow{color:#8b641d!important}
+.overviewIntro .tenantContext{font-size:11px!important;color:#405b7b!important;font-weight:700!important}
+.overviewActions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.overviewActions button{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 11px;border:1px solid #b9c9de;border-radius:8px;background:white;color:#173c74;font-size:12px;font-weight:750}
+.overviewActions button:hover{background:#e9f1fc;border-color:#2d66ac}
+.overviewSectionHead h3{font:750 19px/1.25 Inter,ui-sans-serif,system-ui,sans-serif!important;color:#102744!important}
+.overviewSectionHead>span{color:#526783}
+.peopleKpiGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.peopleKpi{background:#fff;color:#102744;border:1px solid #d8e1ee;box-shadow:0 1px 2px rgb(15 23 42 / .03);min-height:104px;padding:14px}
+.peopleKpi:hover{background:#f1f6fd;border-color:#4e80b9}
+.peopleKpi>span{color:#536781}
+.peopleKpi>strong{color:#123b6d!important;font-size:clamp(18px,2vw,24px)}
+.peopleKpi>small{color:#677991}
+.peopleQueueRow{background:#fff;border-color:#d8e1ee;padding:12px 15px}
+.peopleQueueRow strong{color:#102744!important}
+.peopleQueueRow p{color:#64748b}
+.peopleQueueActions button{background:#19488c;border-color:#19488c;color:#fff}
+.peopleQueueActions button:hover{background:#123969}
+.queueEmpty,.sourceUnverified{background:#fff;border:1px dashed #b9c9de;color:#4a5f7b;border-radius:9px;padding:16px 18px}
+.overviewAuthority{background:#fff1f2;border-color:#f4aab4;border-left-color:#c42e4a;color:#881337}
+.overviewAuthority strong{color:#881337!important}
+.overviewAuthority p{color:#881337!important}
+.overviewAuthority button{background:#fff;color:#173c74;border-color:#a6b9d3}
+.overviewAuthority button:hover{background:#edf4ff}
+.peopleMain>section{background:#fff!important;border-color:#d8e1ee!important;color:#172d4c}
+.peopleMain>section>div:first-child{border-bottom-color:#e2e8f0!important}
+.peopleMain>section h2{color:#102744!important}
+.peopleMain>section p{color:#536781!important}
+.peopleMain>section thead{background:#eef3f9!important;color:#334b6b!important}
+.peopleMain>section tbody tr{border-color:#e2e8f0}
+.peopleMain>section tbody tr:hover{background:#f1f6fd!important}
+.peopleMain>section tbody td{color:#172d4c}
+.peopleMain>section button{color:#173c74;background:white;border-color:#b9c9de}
+.peopleMain>section button:hover{background:#edf4ff}
+.peopleMain>section input{color:#102744!important;background:#fff!important}
+@media(max-width:1000px){.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.peopleMain{padding:16px 14px 24px}.overviewIntro{align-items:flex-start}.overviewActions{width:100%}.overviewActions button{flex:1 1 auto}.peopleKpiGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.overviewRecovery{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;background:#fff;border:1px solid #d4deec;border-left:4px solid #b38630;padding:18px 20px;border-radius:10px;box-shadow:0 1px 2px rgb(15 23 42 / .04)}
+.overviewRecovery h3{color:#142e4e!important;font-size:16px;font-weight:800;flex:1 1 100%}
+.overviewRecovery p{color:#49627f;font-size:12px;line-height:1.7;flex:1 1 470px;max-width:900px}
+.overviewRecovery button{display:inline-flex;align-items:center;gap:8px;background:#19488c;color:#fff;border:1px solid #19488c;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:750}
+.overviewRecovery button:hover{background:#123969}
+.overviewRecovery button:focus-visible{outline:3px solid #c79b3c;outline-offset:3px}
+
+/* Contextual navigation belongs in the People title row, not in another shell strip. */
+.peopleHeaderIdentity{display:flex;align-items:center;gap:12px;min-width:0}
+.peopleReturnButton{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 34px;width:34px;height:34px;border-radius:9px!important;background:#193759!important;color:#f5d18b!important;border:1px solid #526787!important;padding:0!important}
+.peopleReturnButton:hover{background:#294e76!important;border-color:#e2bf77!important}
+.peopleReturnButton:focus-visible{outline:3px solid #e7c576;outline-offset:3px}
+@media(max-width:640px){.peopleHeaderIdentity{gap:9px}.peopleReturnButton{flex-basis:32px;width:32px;height:32px}}
+
+
+
+
+/* Compact People application chrome: global OS shell already carries the brand. */
+.peopleAppHeader { padding: 7px clamp(12px, 1.5vw, 24px) 0; }
+.peopleToolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 38px; }
+.peopleHeaderIdentity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.peopleTitleGroup { display: flex; align-items: baseline; gap: 10px; min-width: 0; white-space: nowrap; }
+.peopleSurface .peopleTitleGroup .peopleHeading { font-size: 18px; line-height: 1.25; font-weight: 750; margin: 0; }
+.peopleLifecycleLabel { font-size: 12px; font-weight: 500; color: #a9bad1; }
+.peopleToolbarActions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
+.peopleAppHeader .peopleRefreshButton { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; }
+.peopleAppHeader .peopleReturnButton { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; }
+.peopleNav { margin-top: 2px; padding-bottom: 2px; }
+.peopleNavButton, .peopleNavActive { min-height: 34px; padding: 6px 10px; }
+@media (max-width: 620px) {
+  .peopleLifecycleLabel { display: none; }
+  .peopleToolbar { min-height: 38px; }
+  .peopleSurface .peopleTitleGroup .peopleHeading { font-size: 17px; }
+}
+
+/* v2.5.4 — Keep every People tab, including the selected tab, within one rail. */
+.peopleAppHeader .peopleNav {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin: 4px 0 6px;
+  padding: 4px;
+  border: 1px solid #526787;
+  border-radius: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scroll-padding-inline: 5px;
+}
+.peopleAppHeader .peopleNavButton,
+.peopleAppHeader .peopleNavActive {
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 34px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 7px;
+  box-shadow: none;
+  line-height: 20px;
+}
+.peopleAppHeader .peopleNavActive {
+  background: #d2ae67;
+  border: 1px solid #f3d58d;
+  color: #10213e;
+  font-weight: 750;
+}
+.peopleAppHeader .peopleNavActive:hover { background: #e3bc74; }
+.peopleAppHeader .peopleNavActive:focus-visible {
+  outline: 2px solid #fff3d2 !important;
+  outline-offset: -3px;
+}
+
+/* v2.5.5 — Content-first Overview: no secondary banner above source-owned work. */
+.peopleSurface .overviewIntro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 0 0 8px;
+  margin: 0;
+  min-height: 42px;
+}
+.peopleSurface .overviewLead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  min-width: 0;
+}
+.peopleSurface .overviewIntro h2 {
+  font-size: 18px !important;
+  line-height: 1.3;
+  margin: 0 !important;
+  white-space: nowrap;
+}
+.peopleSurface .overviewIntro .tenantContext {
+  margin: 0 !important;
+  line-height: 1.4;
+  font-size: 11px !important;
+  overflow-wrap: anywhere;
+}
+.peopleSurface .overviewActions {
+  gap: 6px;
+  min-width: 0;
+}
+.peopleSurface .overviewActions button {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: 11px;
+  line-height: 20px;
+}
+.peopleSurface .overview { gap: 12px; }
+@media (max-width: 720px) {
+  .peopleSurface .overviewIntro { align-items: flex-start; }
+  .peopleSurface .overviewLead { flex-basis: 100%; }
+  .peopleSurface .overviewActions { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .peopleSurface .overviewActions button { flex: 0 0 auto; }
+}
+
+/* v2.5.6 — Restore the lifecycle explanation without recreating an overview banner. */
+.peopleSurface .overviewIntro .overviewTagline {
+  color: #687b94 !important;
+  font-size: 10px !important;
+  font-weight: 400;
+  line-height: 1.35;
+  margin: 0 !important;
+  max-width: 600px;
+}
+@media (max-width: 760px) {
+  .peopleSurface .overviewIntro .overviewTagline { flex-basis: 100%; }
+}
+
+/* v2.5.7 — People operational workspace: compact lead, source truth, no forced navy tail. */
+.peopleSurface {
+  min-height: 0;
+  height: auto;
+  background: #f5f7fb !important;
+}
+.peopleSurface .peopleMain {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding-bottom: 12px;
+}
+.peopleSurface .overviewIntro {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+}
+.peopleSurface .overviewLead {
+  display: flex;
+  flex: 1 1 580px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.peopleSurface .overviewLeadLine {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+}
+.peopleSurface .overviewIntro .overviewTagline {
+  margin: 0 !important;
+  line-height: 1.4;
+  max-width: none;
+}
+.peopleSurface .overviewActions { flex: 0 1 auto; }
+.peopleSurface .overviewActions button {
+  border-color: transparent;
+  background: transparent;
+  min-height: 30px;
+  padding: 4px 6px;
+  font-weight: 650;
+}
+.peopleSurface .overviewActions button:hover,
+.peopleSurface .overviewActions button:focus-visible {
+  background: #e9f1fc;
+  border-color: #b9c9de;
+}
+.peopleSurface .overviewRecovery {
+  display: flex;
+  align-items: stretch;
+  gap: 10px 18px;
+  padding: 12px 15px;
+}
+.peopleSurface .overviewRecoverySummary { flex: 1 1 340px; min-width: 0; }
+.peopleSurface .overviewRecoverySummary h3 { font-size: 14px; line-height: 1.35; }
+.peopleSurface .overviewRecoverySummary p { font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
+.peopleSurface .overviewSourceChecks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 6px;
+  flex: 1 1 380px;
+  min-width: 0;
+}
+.peopleSurface .overviewSourceCheck {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 7px;
+  text-align: left;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid #d4deec;
+  border-radius: 7px;
+  background: #f8fafd;
+  color: #173c74;
+  font-size: 11px;
+}
+.peopleSurface .overviewSourceCheck strong { font-size: 11px; font-weight: 700; }
+.peopleSurface .overviewSourceCheck span { color: #526783; font-size: 10px; grid-column: 1; }
+.peopleSurface .overviewSourceCheck small { color: #526783; grid-column: 1; overflow-wrap: anywhere; font-size: 9px; }
+.peopleSurface .overviewSourceCheck svg { grid-column: 2; grid-row: 1 / span 3; }
+.peopleSurface .overviewSourceCheck:hover { background: #e9f1fc; border-color: #9cb6d6; }
+@media (max-width: 760px) {
+  .peopleSurface .overviewLead { flex-basis: 100%; }
+  .peopleSurface .overviewSourceChecks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+
+/* v2.5.8 — Legible source-admission controls and continuous light work canvas.
+   The OS shell keeps navy branding; the People work canvas owns the remaining viewport. */
+.peopleSurface {
+  min-height: max(0px, calc(100dvh - 154px));
+  height: auto;
+  background: #f5f7fb !important;
+}
+.peopleSurface .peopleMain {
+  flex: 1 1 auto;
+  background: #f5f7fb !important;
+  min-height: 0;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck {
+  display: grid;
+  background: #fff !important;
+  border: 1px solid #b9c9de !important;
+  color: #173457 !important;
+  box-shadow: none;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 500;
+  border-radius: 7px;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck strong {
+  color: #102744 !important;
+  font-size: 12px;
+  font-weight: 750;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck span {
+  color: #334e68 !important;
+  font-size: 11px;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck small {
+  color: #526783 !important;
+  font-size: 10px;
+  letter-spacing: 0;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck svg {
+  color: #234a77 !important;
+  opacity: 1;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck:hover {
+  background: #eaf2fc !important;
+  border-color: #557eac !important;
+}
+.peopleSurface .overviewRecovery .overviewSourceCheck:focus-visible {
+  outline: 2px solid #1c508a !important;
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .peopleSurface { min-height: max(0px, calc(100dvh - 140px)); }
+}
+
+
+/* v2.5.9 — Operational source data is never gold-on-white.
+   Gold remains a navigation/brand accent only. These buttons are direct EOS
+   source-navigation controls, not static KPI cards. Keep each verified zero
+   legible, and do not imply missing or denied sources are zero. */
+.peopleSurface .overviewSection .eyebrow {
+  color: #354f6e !important;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .065em;
+}
+.peopleSurface .overviewSectionHead {
+  gap: 9px 18px;
+  align-items: end;
+}
+.peopleSurface .overviewSectionHead h3 {
+  color: #142b49 !important;
+  font-size: 18px !important;
+  line-height: 1.28;
+}
+.peopleSurface .overviewSectionHead > span {
+  color: #455c77 !important;
+  font-size: 12px;
+}
+.peopleSurface .peopleKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 12px;
+}
+.peopleSurface .peopleKpiGrid > .peopleKpi {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(60px, auto);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 14px;
+  min-height: 72px;
+  padding: 10px 14px;
+  background: #fff !important;
+  color: #142b49 !important;
+  border: 1px solid #cbd7e6 !important;
+  border-radius: 9px;
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+.peopleSurface .peopleKpiGrid > .peopleKpi:hover {
+  background: #eaf2fb !important;
+  border-color: #527ca9 !important;
+}
+.peopleSurface .peopleKpiGrid > .peopleKpi:hover > span,
+.peopleSurface .peopleKpiGrid > .peopleKpi:focus-visible > span {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.peopleSurface .peopleKpiGrid > .peopleKpi:focus-visible {
+  outline: 3px solid #23568f !important;
+  outline-offset: 2px;
+}
+.peopleSurface .peopleKpi > span {
+  grid-column: 1;
+  grid-row: 1;
+  color: #233d5e !important;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.peopleSurface .peopleKpi > strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  color: #102d50 !important;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+.peopleSurface .peopleKpi > small {
+  grid-column: 1;
+  grid-row: 2;
+  display: block;
+  color: #405876 !important;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 1 !important;
+}
+.peopleSurface .queueEmpty {
+  padding: 12px 15px;
+  background: #fff !important;
+  color: #354f6e !important;
+  border: 1px solid #cbd7e6 !important;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.peopleSurface .peopleQueueRow {
+  padding: 10px 13px;
+  background: #fff;
+}
+.peopleSurface .peopleQueueRow p {
+  color: #405876;
+  line-height: 1.5;
+}
+@media (max-width: 820px) {
+  .peopleSurface .peopleKpiGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 540px) {
+  .peopleSurface .overviewSectionHead {
+    align-items: flex-start;
+  }
+  .peopleSurface .peopleKpiGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .peopleSurface .peopleKpiGrid > .peopleKpi {
+    min-height: 66px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 2px;
+    padding: 10px 12px;
+  }
+  .peopleSurface .peopleKpi > strong {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-size: 23px;
+  }
+  .peopleSurface .peopleKpi > small {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+/* v2.5.11 — Source-readiness labels must not inherit legacy HR gold.
+   Only the four lifecycle source navigation buttons use this treatment.
+   The selected People tab retains its independently governed brand accent. */
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] {
+  color: #173457 !important;
+  background-color: #fff !important;
+  border-color: #bfcee0 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] strong,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] > span,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] > span > strong {
+  color: #142b49 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #142b49 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] small,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] > span:last-child,
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"] svg {
+  color: #395470 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #395470 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"]:hover {
+  background-color: #eaf2fb !important;
+  border-color: #4d78a8 !important;
+}
+.peopleSurface .overviewSection button[aria-label^="Open "][aria-label*=" source:"]:focus-visible {
+  outline: 3px solid #24558c !important;
+  outline-offset: 2px;
+}
+
+
+/* Workforce directory: an operational read surface, not the inherited HR
+   gold-on-white prototype. This scope cannot grant HR or employee authority. */
+.peopleSurface .workforceSurface {
+  min-width: 0;
+  border: 1px solid #cbd7e6;
+  border-radius: 13px;
+  background: #fff;
+  color: #172c49;
+  overflow: hidden;
+}
+.peopleSurface .workforceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 20px 22px;
+  background: #fff;
+  border-bottom: 1px solid #dae4ef;
+  flex-wrap: wrap;
+}
+.peopleSurface .workforceHeading {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.peopleSurface .workforceHeading h2 {
+  color: #102744 !important;
+  font: 750 clamp(19px, 2vw, 24px)/1.2 Inter, ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: -.025em;
+  margin: 0;
+}
+.peopleSurface .workforceHeading p,
+.peopleSurface .workforceSummary {
+  color: #4b607a !important;
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
+}
+.peopleSurface .workforceCount {
+  color: #173c70;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.peopleSurface .workforceToolbar {
+  display: flex;
+  flex: 1 1 470px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.peopleSurface .workforceSearch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 240px;
+  min-width: 160px;
+  max-width: 360px;
+  padding: 0 12px;
+  min-height: 40px;
+  color: #46617e;
+  background: #fff;
+  border: 1px solid #9eb2ca;
+  border-radius: 8px;
+}
+.peopleSurface .workforceSearch > svg {
+  color: #173c70 !important;
+  stroke: #173c70 !important;
+  opacity: 1 !important;
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+}
+.peopleSurface .workforceSearch input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  background: transparent !important;
+  border: none;
+  outline: none;
+  color: #142b49 !important;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.peopleSurface .workforceSearch input::placeholder {
+  color: #526880 !important;
+  opacity: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.peopleSurface .workforceSearch:focus-within {
+  outline: 2px solid #1d508a;
+  outline-offset: 2px;
+}
+.peopleSurface .workforceToolbar button,
+.peopleSurface .workforceEmpty button,
+.peopleSurface .workforceDetails button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 37px;
+  padding: 7px 11px;
+  border: 1px solid #adbed3;
+  border-radius: 8px;
+  background: #fff;
+  color: #173c70 !important;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.peopleSurface .workforceToolbar button:hover,
+.peopleSurface .workforceEmpty button:hover,
+.peopleSurface .workforceDetails button:hover {
+  background: #eaf2fb;
+  border-color: #4474aa;
+}
+.peopleSurface .workforceToolbar button:disabled {
+  color: #60748e !important;
+  background: #f4f6fa;
+  opacity: .65;
+  cursor: not-allowed;
+}
+.peopleSurface .workforceSurface button:focus-visible {
+  outline: 3px solid #24558c !important;
+  outline-offset: 2px;
+}
+.peopleSurface .workforceTableRegion { overflow-x: auto; }
+.peopleSurface .workforceTable {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.peopleSurface .workforceTable th {
+  background: #f4f7fb;
+  color: #3a536f !important;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 11px 18px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.peopleSurface .workforceTable td {
+  padding: 13px 18px;
+  border-top: 1px solid #e3eaf2;
+  color: #243c59 !important;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.peopleSurface .workforceTable tbody tr:hover { background: #f3f7fc; }
+.peopleSurface .workforcePerson {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #173c70 !important;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.peopleSurface .workforcePerson:hover { text-decoration: underline; text-underline-offset: 3px; }
+.peopleSurface .workforcePerson small { font-size: 11px; font-weight: 500; color: #536981 !important; }
+.peopleSurface .workforceEmpty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  background: #fff;
+}
+.peopleSurface .workforceEmpty strong {
+  display: block;
+  color: #142b49 !important;
+  font-size: 16px;
+  font-weight: 750;
+}
+.peopleSurface .workforceEmpty p {
+  color: #4b607a !important;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 6px 0 0;
+  max-width: 570px;
+}
+.peopleSurface .workforceDetails {
+  border-top: 1px solid #dae4ef;
+  background: #f7f9fc;
+  padding: 18px 22px;
+}
+.peopleSurface .workforceDetails h3 {
+  color: #142b49 !important;
+  font-size: 17px;
+  font-weight: 750;
+  margin: 0;
+}
+.peopleSurface .workforceDetails dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.peopleSurface .workforceDetails dt { color: #546a83; font-size: 11px; margin-bottom: 3px; }
+.peopleSurface .workforceDetails dd { color: #183551; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .peopleSurface .workforceHeader { padding: 16px; }
+  .peopleSurface .workforceToolbar { justify-content: flex-start; flex-basis: 100%; }
+  .peopleSurface .workforceSearch { max-width: none; }
+  .peopleSurface .workforceDetails { padding: 16px; }
+}
+
+
+/* Workforce Organization is a light business-operation surface. Legacy HR
+   gold/white heading rules must never override semantic source content. */
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] h2,
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] h3,
+.peopleSurface #observed-departments-heading,
+.peopleSurface #position-planning-heading {
+  color: #142b49 !important;
+  -webkit-text-fill-color: #142b49 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] strong,
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] [aria-label="Current observed organization"] span:first-child {
+  color: #142b49 !important;
+  -webkit-text-fill-color: #142b49 !important;
+  opacity: 1 !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] p,
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] span {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] button {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  width: max-content;
+  max-width: 100%;
+  min-height: 40px;
+  white-space: nowrap;
+  text-transform: none !important;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] button svg {
+  flex: 0 0 14px;
+}
+.peopleSurface section[aria-labelledby="workforce-organization-heading"] {
+  padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+}
+@media (max-width: 540px) {
+  .peopleSurface section[aria-labelledby="workforce-organization-heading"] button {
+    width: auto;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* ARTIFACT: client/src/components/hr/HrDashboard.module.css
+ * VERSION: v2.6.2-ORGANIZATION-PANEL-READABILITY
+ * AUTHORITY BOUNDARY: Presentation only; source authorization remains exclusively Python EOS-owned.
+ * TENANT POSTURE: No employee or tenant state in CSS; exact tenant boundary unchanged.
+ * FAIL-CLOSED POSTURE: Source unavailability, denial and verified results remain distinct.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */

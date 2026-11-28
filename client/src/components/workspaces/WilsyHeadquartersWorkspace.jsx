@@ -5,15 +5,84 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ
+ * VERSION: v4.22.6-UNIFIED-SYSTEM-FOOTER
+ * CHANGELOG: v4.22.6-UNIFIED-SYSTEM-FOOTER mounts the same shared EOS footer component used by global protected routes without duplicate chrome or additional authority.
+ * CHANGELOG: v4.22.5-PEOPLE-FOOTER-VIEWPORT-GRID reserves the shared EOS footer as a non-scroll grid row within the viewport-height Headquarters shell, so the full-height People application cannot clip it. Only the inner workspace scrolls.
+ * CHANGELOG: v4.22.4-HR-PROJECTS-NONDESTRUCTIVE-RETURN binds a denied HR Projects action to the existing People route without emitting a capacity-switch event, signing out or changing IAM.
+ * CHANGELOG: v4.22.3-ROLE-AWARE-PROJECTS-RECOVERY only labels Owner capacity as Platform owner and routes denied HR Projects access to the existing governed Owner capacity switch.
+ * CHANGELOG: v4.22.2-PERSISTENT-VIEWPORT-FOOTER reserves the shared EOS footer at the viewport boundary without relying on nested People scroll height; internal canvas remains independently scrollable.
+ * CHANGELOG: v4.22.1-DELETE-RETIRED-BREADCRUMB-MOBILE-RULE removes the last mobile-only breadcrumb style and obsolete extra-height assumption from the owned People canvas.
+ * CHANGELOG: v4.22.0-REMOVE-DUPLICATE-PEOPLE-BREADCRUMB-STRIP removes the redundant full-width Headquarters/People breadcrumb strip and delegates its existing return navigation to the People application header, recovering vertical workspace without duplicating tenant identity.
+ * CHANGELOG: v4.21.2-EXACT-LEGAL-NAME-ALIAS supports exact authenticated legal_name projection in the employer header and persistent footer without independent tenant lookup.
+ * CHANGELOG: v4.21.1-SESSION-OWNED-EMPLOYER-IDENTITY reads legal employer identity from the exact authenticated global principal tenant projection, preserving independent existing Headquarters mounts without requiring a second tenant provider.
+ * CHANGELOG: v4.21.0-VERIFIED-EMPLOYER-HEADER-FOOTER binds dynamic People header and persistent Headquarters footer to the exact authenticated tenant legal identity and reference, never a static Founder name or client-selected tenant.
+ * CHANGELOG: v4.20.3-FOOTER-SEMANTIC-LANDMARK declares the persistent Headquarters footer as a named contentinfo landmark so it remains discoverable inside the app's main scroll shell.
+ * CHANGELOG: v4.20.2-FOOTER-IN-BOUNDED-HQ-SHELL reserves a visible shared footer within Headquarters' fixed-height EOS chrome and gives the owned People canvas the bounded scroll rail.
+ * CHANGELOG: v4.20.1-PEOPLE-VIEWPORT-CSS-PRECEDENCE moves People-owned layout rules after the base and responsive Headquarters CSS so desktop/mobile shells cannot reinstate the old two-column frame.
+ * CHANGELOG: v4.20.0-PEOPLE-OWNED-APPLICATION-CANVAS gives People exclusive application canvas below the canonical global logo and tenant header, adds scoped return navigation and a true Headquarters-wide footer without altering IAM.
+ * CHANGELOG: v4.19.2-HQ-HOME-ROUTE-RESET restores Headquarters Home and releases stale Projects/task focus when the canonical logo navigates to /headquarters. No EOS/IAM change.
+ * CHANGELOG: v4.19.1-HQ-EXACT-TASK-NAVIGATION prevents a verified Headquarters task from switching to My assigned projects, clearing inherited assigned-view routing while retaining canonical project/task identifiers.
+ * CHANGELOG: v4.19.0-STRATEGY-CONTEXT-IN-PROJECTS Delegates the Strategy-origin return into the canonical Projects context rather than leaving a detached Headquarters link; no changes to EOS authority.
  * AUTHORITY: WILSY EOS client projection; Python EOS remains the business authority
  * EPITOME: Presents a responsive founder Headquarters with verified work,
  *          tenant-scoped workforce truth, and operational destinations.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/WilsyHeadquartersWorkspace.jsx
  * COLLABORATION / OWNERSHIP: AuthContext supplies exact session scope; Python EOS owns My Work, workforce, requisitions and commands.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v4.18.1-STRATEGY-RETURN-URL-PRIORITY mounts the Strategy return from exact URL provenance independently of asynchronous workspace section loading; no authority changes.
+ * CHANGELOG: v4.18.0-STRATEGY-RETURN-ROUTE retains exact Strategy origin for handoffs and returns directly to the existing governed M04 workspace without a new project workflow or IAM grant.
+ * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS preserves independently authorized assigned-task navigation from the Dock.
+ * CHANGELOG: v4.17.0-ASSIGNED-WORK-URL-FOCUS binds Strategy/Mission
+ *          and exact validated Projects task navigation to browser URL
+ *          hints. Refresh and back/forward rehydrate presentation only;
+ *          EOS still rechecks session, tenant, project and task authority.
+ * CHANGELOG: v4.15.0-DEFER-REPLAYED-SUMMARY-READ schedules
+ *          the Headquarters overview summary GET after the effect setup
+ *          turn. Development-mode discarded mounts therefore send no
+ *          request, without altering exact tenant scope, envelope validation,
+ *          retries, timeouts, privileges, or verified currentness.
+ * CHANGELOG: v4.14.2-EXACT-ROW-DIRECT-HANDOFF sends the selected
+ *          validated EOS row directly to its governed source workspace,
+ *          rather than re-looking up a possibly stale parent snapshot.
+ * CHANGELOG: v4.14.1-PROJECT-WORK-KEY-FOCUS preserves the source
+ *          work_item_id when opening exact project tasks through Headquarters
+ *          without granting authority or inventing task records.
+ * CHANGELOG: v4.14.0-SOURCE-OWNED-TASK-ENTRY routes Headquarters
+ *          task and calendar selections to the existing governed My Work
+ *          source editor or exact-project task lifecycle instead of the
+ *          summary-only completion shortcut. No duplicate commands or grants.
+ * CHANGELOG: v4.13.0-HEADQUARTERS-FOCUSED-WORK-SURFACES routes
+ *          right-rail calendar to a dedicated Headquarters work surface,
+ *          and expands selected My Work records to the full operating canvas
+ *          instead of squeezing them into the dashboard column. Return actions
+ *          restore the preserved queue and overview without changing EOS.
+ * CHANGELOG: v4.12.2-VERIFIED-EMPTY-SIZE-GUARD preserves a
+ *          genuinely compact verified-empty queue without forcing
+ *          the populated-list maximum height on empty source states.
+ * CHANGELOG: v4.12.1-LEGIBLE-WORKFORCE-ROW-SEMANTICS aligns
+ *          Headquarters work queue typography, spacing, selected
+ *          focus, work details and form controls with the canonical
+ *          dense accessible workforce style without changing EOS.
+ * CHANGELOG: v4.12.0-FOCUSED-HQ-WORK-RECORD moves the selected
+ *          Headquarters task into the same full-focus operating
+ *          pattern as Daily Attention, replacing the cramped
+ *          in-list detail pane with one clear Back to work action.
+ *          Source reads and individual completion commands unchanged.
+ * CHANGELOG: v4.11.0-STRATEGY-EXACT-TASK-NAVIGATION
+ *            forwards selected Strategy task to the canonical project view
+ *            as a verified navigation hint; EOS retains all IAM checks.
+ * CHANGELOG: v4.10.1-UNVERIFIED-READINESS-COMPATIBILITY
+ *            keeps old EOS dependency projections explicitly unverified
+ *            without inventing ready work or predecessor counts.
+ * CHANGELOG: v4.10.0-SOURCE-DEPENDENCY-READINESS-PREVIEW surfaces
+ *            Projects source-verified predecessor counts in Headquarters
+ *            My Work preview and selected detail; no command changes.
+ * CHANGELOG: v4.9.1-STRATEGY-PROJECTS-RECOVERY-HANDOFF routes a
+ *            failed Strategy project-list read into the existing Projects
+ *            workspace with its own current EOS IAM checks; no project
+ *            is invented or selected from a failed read.
  * CHANGELOG: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ removes unauthorized speculative Overview HR workforce requests; directory reads occur only when People is opened and retain exact-session authorization/tenant validation and fail-closed UI. Existing My Work and Projects summary feeds are unchanged.
- * CHANGELOG: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
+ * CHANGELOG: v4.10.1-UNVERIFIED-READINESS-COMPATIBILITY adds bounded 3s/10s visible-session recovery and manual retry for the independently authorized EOS Projects summary; classifies timeouts, server errors and malformed responses without inventing counts or mutating source truth.
  * CHANGELOG: v4.7.0-PROJECT-BLOCKERS-DATE-ONLY-DISPLAY adds a
  *            verified Blocked attention filter and renders project date-only
  *            deadlines without manufacturing a timezone or overdue instant.
@@ -121,7 +190,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial, settlement, or release authority.
  */
 import React, { lazy, Suspense, useContext, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
 import {
@@ -138,6 +207,7 @@ import {
 import MyWorkWorkspace from './MyWorkWorkspace.jsx';
 import ProjectsWorkspace from './ProjectsWorkspace.jsx';
 import WilsyWorkDeadlineCalendar from '../chrome/WilsyWorkDeadlineCalendar.jsx';
+import WilsySystemFooter from '../chrome/WilsySystemFooter.jsx';
 import { unifiedMyWorkSourceLabel } from '../../services/unifiedMyWorkProjection.js';
 import { readAttentionSourceActions, completeAttentionSourceWork } from '../../services/attentionFeedClient.js';
 import { isWilsyPlatformTenant, WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
@@ -197,6 +267,7 @@ const navigationGroups = [
 ];
 
 const HEADQUARTERS_STYLES = `
+
 .wilsyHqShell{--hq-ink:#101e42;--hq-blue:#075bff;--hq-border:#d8e1f1;color:var(--hq-ink);background:#f5f7fc;font-family:Inter,Arial,sans-serif;font-size:13px;min-height:calc(100dvh - 72px)}
 .wilsyHqShell *{box-sizing:border-box}.wilsyHqShell button{cursor:pointer}.wilsyHqShell button:disabled{cursor:not-allowed;opacity:.5}.wilsyHqShell button:focus-visible,.wilsyHqShell input:focus-visible,.wilsyHqShell textarea:focus-visible{outline:3px solid #5a8bff;outline-offset:2px}
 .hq-layout{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:calc(100dvh - 72px)}.hq-sidebar{background:linear-gradient(160deg,#112b50,#07172f);color:#dce7fc;display:flex;flex-direction:column;overflow:auto;position:relative;border-right:1px solid #263d60;padding:16px 0 12px}.hq-sidebar-title{padding:0 18px 14px;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#91aad3}.hq-nav{display:grid;gap:2px}.hq-nav-button{display:flex;align-items:center;gap:11px;width:100%;border:0;border-left:4px solid transparent;text-align:left;background:transparent;color:inherit;min-height:39px;padding:9px 14px;font-size:12px;font-weight:500;white-space:normal}.hq-nav-button:hover{background:#ffffff0d}.hq-nav-button[aria-current=page]{background:linear-gradient(90deg,#a27a37c9,#b1914b50);border-left-color:#ffd47b;color:white;font-weight:650}.hq-nav-button svg{width:18px;flex-shrink:0}.hq-nav-button .hq-nav-badge{margin-left:auto;border-radius:12px;background:#0061ff;color:white;padding:1px 6px;font-size:10px}.hq-nav-divider{border-top:1px solid #ffffff20;margin:10px 15px}.hq-sidebar-footer{margin-top:auto;padding:14px 16px 0;font-size:10px;line-height:1.7;color:#93adcf}.hq-sidebar-footer strong{color:white}.hq-mobile-menu{display:none}.hq-content{min-width:0;overflow:visible;padding:12px}.hq-subworkspace{background:#080f1d;color:#e2e8f0;border-radius:10px;min-height:0;padding:16px}.hq-overview{display:grid;grid-template-columns:minmax(310px,1.28fr) minmax(245px,1fr) minmax(226px,.76fr);gap:12px;align-items:start}.hq-panel{background:white;border:1px solid var(--hq-border);border-radius:10px;box-shadow:0 2px 7px #16335d08;padding:13px;min-width:0}.hq-panel h2{font-size:14px;font-weight:750;letter-spacing:-.025em;margin:0;line-height:1.25}.hq-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.hq-panel-heading h2{display:flex;align-items:center;gap:6px}.hq-panel-heading button,.hq-text-button{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--hq-blue);font-weight:650;border:0;background:transparent;padding:0;white-space:nowrap}.hq-muted{font-size:10px;color:#6b7894;line-height:1.5;margin:7px 0 0}.hq-hero{grid-column:1/3;position:relative;overflow:hidden;min-height:184px;border-radius:11px;background:#143b70;display:flex;align-items:center;padding:23px;color:white}.hq-hero-art{position:absolute;inset:0;background-image:linear-gradient(90deg,#082750ed 0%,#0b2b58b8 42%,#08275012 83%),url('/brand/wilsy-headquarters-campus-v1.png');background-position:62% 52%;background-size:cover}.hq-hero-copy{position:relative;z-index:1}.hq-hero h1{font-size:clamp(28px,2.85vw,43px);font-weight:750;letter-spacing:-.035em;margin:0;line-height:1.12}.hq-hero h2{color:#ffcf65;font-size:clamp(13px,1.4vw,21px);font-weight:700;margin:5px 0 10px;letter-spacing:-.02em}.hq-hero p{font-size:13px;margin:0 0 12px}.hq-hero button,.hq-strategy button{display:inline-flex;align-items:center;gap:7px;border:1px solid #e4b852;background:#ffc95b;color:#10213e;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:650}.hq-hero .hq-mission-button{position:absolute;right:20px;bottom:22px;z-index:2;background:#102744e8;color:#ffcf65;border:1px solid #e4b852;min-height:32px}.hq-illustration-label{position:absolute;right:10px;bottom:8px;background:#071c3fa8;border-radius:3px;padding:2px 4px;color:#e6edff;font-size:8px}.hq-glance{grid-column:3;grid-row:1;min-height:184px;padding:13px}.hq-glance>h2{font-size:16px;margin-bottom:11px}.hq-glance-row{display:flex;align-items:center;gap:8px;min-height:33px;font-size:11px}.hq-glance-row svg{color:#0b285b}.hq-glance-row strong{margin-left:auto;font-size:13px}.hq-source-note{font-size:9px;color:#6b7894;margin-top:4px}.hq-source-note p{margin-top:5px}.hq-source-note summary{cursor:pointer}.hq-kpis{grid-column:1/3;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.hq-kpi{display:flex;align-items:center;gap:10px;background:linear-gradient(130deg,white,#fafbff);border:1px solid var(--hq-border);border-radius:9px;padding:12px 10px;text-align:left;min-width:0;min-height:80px;transition:box-shadow .15s,border-color .15s,transform .15s}.hq-kpi:hover{border-color:#93b4ff;box-shadow:0 4px 14px #075bff0c;transform:translateY(-1px)}.hq-kpi>span:last-child{display:grid;gap:1px;min-width:0}.hq-kpi small{font-size:10px;color:var(--hq-ink);font-weight:600}.hq-kpi strong{font-size:22px;line-height:1.15;letter-spacing:-.035em}.hq-kpi strong.hq-kpi-label{font-size:13px;line-height:1.7}.hq-kpi em{font-size:9px;color:var(--hq-blue);font-style:normal;display:flex;align-items:center;gap:2px}.hq-round{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:white}.hq-blue{background:linear-gradient(135deg,#19a4ff,#0055ec)}.hq-purple{background:linear-gradient(135deg,#b86fff,#7622d9)}.hq-green{background:linear-gradient(135deg,#23c985,#009645)}.hq-orange{background:linear-gradient(135deg,#ffc866,#fc8d24)}.hq-teal{background:linear-gradient(135deg,#52d8d5,#009b9f)}
@@ -252,6 +323,29 @@ body:has(.wilsyHqShell)::after{display:none}
 .wilsyHqShell .hq-work-list--empty{max-height:none;min-height:0;overflow:visible}
 .wilsyHqShell .hq-work-status{padding:12px}
 .wilsyHqShell .hq-calendar-expanded{border-top:1px solid #e8edf7;margin-top:8px;padding-top:8px;overflow-x:auto}
+/* Work focus replaces overview content rather than expanding a side card. */
+.wilsyHqShell .hq-overview.hq-record-active>.hq-hero,
+.wilsyHqShell .hq-overview.hq-record-active>.hq-glance,
+.wilsyHqShell .hq-overview.hq-record-active>.hq-kpis,
+.wilsyHqShell .hq-overview.hq-record-active .hq-organisation-column,
+.wilsyHqShell .hq-overview.hq-record-active .hq-reporting-column,
+.wilsyHqShell .hq-overview.hq-record-active .hq-performance{display:none}
+.wilsyHqShell .hq-overview.hq-record-active .hq-work-column{grid-column:1/-1}
+.wilsyHqShell .hq-overview.hq-record-active .hq-work{width:100%;max-width:none;min-height:min(70dvh,740px)}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record{border-top:0;padding:clamp(16px,2vw,32px);max-width:none}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record h3{font-size:clamp(18px,1.7vw,25px);line-height:1.3}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record dl{font-size:13px;grid-template-columns:minmax(100px,160px) minmax(0,1fr);gap:12px;max-width:900px}
+.wilsyHqShell .hq-overview.hq-record-active .hq-record p{font-size:13px;line-height:1.65;max-width:900px}
+.wilsyHqShell .hq-overview.hq-record-active .hq-command{max-width:900px}
+.wilsyHqShell .hq-overview.hq-record-active .hq-command textarea{min-height:100px;font-size:13px}
+.wilsyHqShell .hq-focused-calendar{min-width:0;background:#0b1930;color:#e2e8f0;border:1px solid #274469;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px #101c3420}
+.wilsyHqShell .hq-focused-calendar-header{background:linear-gradient(110deg,#0d2549,#153a69);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px clamp(14px,2vw,24px)}
+.wilsyHqShell .hq-focused-calendar-header h2{font-size:16px;font-weight:700;color:#fff}
+.wilsyHqShell .hq-focused-calendar-header button{background:#ffffff12;border:1px solid #ffffff45;color:#fff;border-radius:9px;padding:9px 14px;font-weight:650;font-size:12px}
+.wilsyHqShell .hq-focused-calendar-content{padding:clamp(12px,2vw,24px);max-height:calc(100dvh - 200px);min-height:320px;overflow:auto;overscroll-behavior:contain}
+.wilsyHqShell .hq-focused-calendar-content>div{max-width:1100px;margin:auto}
+@media(max-width:767px){.wilsyHqShell .hq-focused-calendar-header{align-items:flex-start}.wilsyHqShell .hq-focused-calendar-content{max-height:calc(100dvh - 220px);min-height:280px}}
+
 .wilsyHqShell .hq-unavailable-title{font-size:11px;font-weight:650;color:#465776;margin:0}
 .wilsyHqShell .hq-performance>.hq-panel-heading>svg{color:#71809a;flex-shrink:0}
 .wilsyHqShell .hq-department-pending{display:grid;place-items:center;gap:4px;min-height:62px;border:1px dashed #d7dfec;border-radius:8px;padding:5px;text-align:center;opacity:.72}
@@ -303,6 +397,59 @@ body:has(.wilsyHqShell)::after{display:none}
   .wilsyHqShell .hq-navigation-collapse,.wilsyHqShell .hq-navigation-open{display:none}
   .wilsyHqShell .hq-layout--navigation-collapsed>.hq-sidebar{display:flex}
 }
+
+/* Canonical workforce task presentation: legible, neutral, navigable. */
+.wilsyHqShell .hq-work .hq-work-tabs{padding:8px;gap:6px}
+.wilsyHqShell .hq-work .hq-work-tabs button{font-size:11px;min-height:30px;padding:5px 10px;border-radius:7px}
+.wilsyHqShell .hq-work .hq-work-search{padding:9px 12px}
+.wilsyHqShell .hq-work .hq-work-search input{font-size:13px;height:30px;color:#182a48}
+.wilsyHqShell .hq-work .hq-work-list{padding:0;max-height:min(44dvh,460px)}
+.wilsyHqShell .hq-work .hq-work-list--empty{max-height:none;min-height:0}
+.wilsyHqShell .hq-work .hq-work-row{min-height:57px;padding:10px 12px;border-bottom:1px solid #e0e6ef;border-left:3px solid transparent;gap:10px}
+.wilsyHqShell .hq-work .hq-work-row:hover,.wilsyHqShell .hq-work .hq-work-row[aria-pressed=true]{background:#f1f5fc;border-left-color:#175eae}
+.wilsyHqShell .hq-work .hq-work-row-main strong{font-size:13px;line-height:1.4;color:#12223d}
+.wilsyHqShell .hq-work .hq-work-row-main small{font-size:11px;line-height:1.5;color:#50627c}
+.wilsyHqShell .hq-work .hq-priority{font-size:10px;border-radius:6px;padding:3px 7px}
+.wilsyHqShell .hq-work .hq-record{padding:18px;background:#fff;border-top:1px solid #d8e1ef;max-height:min(60dvh,600px);overflow:auto;overscroll-behavior:contain}
+.wilsyHqShell .hq-work .hq-record h3{font-size:16px;line-height:1.45;color:#132746;font-weight:750}
+.wilsyHqShell .hq-work .hq-record p{font-size:13px;line-height:1.65;color:#435572}
+.wilsyHqShell .hq-work .hq-record dl{font-size:12px;grid-template-columns:minmax(84px,auto) minmax(0,1fr);gap:9px 14px}
+.wilsyHqShell .hq-work .hq-record dt{color:#526681}
+.wilsyHqShell .hq-work .hq-record dd{color:#172e4d}
+.wilsyHqShell .hq-work .hq-command label{font-size:12px;gap:8px}
+.wilsyHqShell .hq-work .hq-command textarea{font-size:13px;min-height:90px;padding:10px}
+.wilsyHqShell .hq-work .hq-command button[type=submit]{font-size:12px;min-height:36px;padding:8px 12px}
+
+/* Enterprise application ownership: People claims the full workspace below
+   the global identity/search bar, without a nested framed Headquarters card. */
+.wilsyHqShell .hq-layout--people-owned{display:block;min-height:0}
+.wilsyHqShell .hq-layout--people-owned>.hq-sidebar{display:none}
+.wilsyHqShell .hq-content--people-owned{padding:0!important;min-width:0;overflow:visible}
+.wilsyHqShell .hq-content--people-owned .hq-navigation-open{display:none}
+.wilsyHqShell .hq-people-owned{padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:#0a1931!important;min-height:calc(100dvh - 130px);color:#f4f0e6}
+.hq-people-app{min-width:0;background:#0a1931}
+.hq-footer-tenant{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.hq-footer-tenant strong{color:#f1f5f9!important;font-weight:750;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+.hq-footer-tenant small{color:#e4c580;font-size:11px}
+
+.hq-people-loading{padding:28px;color:#f4f0e6;background:#0e2444}
+.hq-global-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;align-items:center;padding:17px clamp(16px,2vw,32px);background:#0e2444;color:#c4d4e8;border-top:1px solid #334e78;font-size:11px;line-height:1.5}
+.hq-global-footer strong{font-weight:800;color:#f0ce7b;letter-spacing:.05em}
+/* The People application previously consumed the full shell height before
+   the shared footer was laid out, leaving it clipped below the viewport.
+   Reserve the footer as an explicit grid row. Only the operating canvas
+   scrolls; neither an HR document nor a modal can displace the footer. */
+.wilsyHqShell{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;overflow:hidden}
+.wilsyHqShell>.hq-layout{height:100%!important;min-height:0;max-height:none!important;overflow:hidden}
+.wilsyHqShell>.hq-global-footer{position:relative;z-index:2;min-height:45px;max-height:none;visibility:visible;align-self:stretch;flex-shrink:0}
+.wilsyHqShell .hq-people-owned{min-height:0!important;height:auto!important}
+.wilsyHqShell>.hq-layout>.hq-content{min-height:0!important}
+.wilsyHqShell .hq-layout--people-owned{min-height:0!important;overflow:hidden!important}
+.wilsyHqShell .hq-content--people-owned{height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
+
+@media(max-width:767px){.hq-global-footer{padding:14px}.wilsyHqShell .hq-people-owned{min-height:0}}
+
+
 `;
 
 
@@ -330,12 +477,24 @@ function SourceBoundary({ title, description }) {
  */
 export default function WilsyHeadquartersWorkspace({ tenantId = null, productNavigation = null }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const auth = useContext(AuthContext) || {};
   const authUser = auth.user || {};
+
   const operatingCapacity = authUser.businessRole || (authUser.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION' ? authUser.role : null);
-  const [operatingDocumentClass, setOperatingDocumentClass] = useState(null);
-  const [projectDeliveryFocus, setProjectDeliveryFocus] = useState(null);
-  const [attentionProjectFocus, setAttentionProjectFocus] = useState(null);
+  const initialNavigation = new URLSearchParams(location.search);
+  const initialDocument = ['STRATEGY', 'MISSION'].includes(initialNavigation.get('document'))
+    ? initialNavigation.get('document') : null;
+  const initialProject = /^prj-[0-9a-f]{48}$/.test(initialNavigation.get('project') || '')
+    ? initialNavigation.get('project') : null;
+  const initialTask = initialProject && /^ptk-[0-9a-f]{48}$/.test(initialNavigation.get('task') || '')
+    ? initialNavigation.get('task') : null;
+  const [operatingDocumentClass, setOperatingDocumentClass] = useState(initialDocument);
+  const [projectDeliveryFocus, setProjectDeliveryFocus] = useState(
+    initialNavigation.get('section') === 'projects' ? initialProject : null);
+  const [projectTaskFocus, setProjectTaskFocus] = useState(
+    initialNavigation.get('section') === 'projects' ? initialTask : null);
+  const [attentionProjectFocus, setAttentionProjectFocus] = useState(initialNavigation.get('view') === 'assigned' ? initialProject : null);
   useEffect(() => {
     const focusAuthorizedSearch = (event) => {
       if (event.defaultPrevented) return;
@@ -352,29 +511,65 @@ export default function WilsyHeadquartersWorkspace({ tenantId = null, productNav
   }, []);
 
   const workTenantId = tenantId || authUser.tenantId;
+  // Show only tenant identity from the current, authenticated selection.
+  // Tenant metadata is presentation data, never an IAM or source admission.
+  const authorizedTenant = auth.tenant || null;
+  const verifiedEmployer = authorizedTenant
+    && [authorizedTenant.tenantId, authorizedTenant.tenant_id, authorizedTenant.id]
+      .some((candidate) => typeof candidate === 'string' && candidate === workTenantId)
+    ? authorizedTenant : null;
+  const employerName = [verifiedEmployer?.legalName, verifiedEmployer?.legal_name, verifiedEmployer?.name]
+    .find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() || null;
+  const employerReference = verifiedEmployer ? workTenantId : null;
+
   const workScope = currentUnifiedMyWorkScope(auth, workTenantId);
-  const platformOwnerWorkspace = Boolean(workScope && isWilsyPlatformTenant(workTenantId));
+  const platformOwnerWorkspace = Boolean(workScope && isWilsyPlatformTenant(workTenantId) && operatingCapacity === 'tenant_owner');
   // A deep-link selects a pre-existing workspace view, not IAM or module
   // admission authority. The Operations form and API enforce their own grants.
   const sectionFromUrl = new URLSearchParams(location.search).get('section');
   const [section, setSection] = useState(() =>
     linkedSections.has(sectionFromUrl) ? sectionFromUrl : 'overview');
-  const [showMyWork, setShowMyWork] = useState(false);
+  const [showMyWork, setShowMyWork] = useState(initialNavigation.get('section') === 'my-work');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 const [desktopNavigationOpen, setDesktopNavigationOpen] = useState(true);
 const [expandedNavigation, setExpandedNavigation] = useState({});
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const [workView, setWorkView] = useState('ALL');
-  const [myWorkFocusItem, setMyWorkFocusItem] = useState(null);
+  const [myWorkFocusItem, setMyWorkFocusItem] = useState(initialNavigation.get('section') === 'my-work' ? initialNavigation.get('work') : null);
   useEffect(() => {
-    const requested = new URLSearchParams(location.search).get('section');
-    if (linkedSections.has(requested)) {
+    const params = new URLSearchParams(location.search);
+    const requested = params.get('section');
+    const documentKind = ['STRATEGY', 'MISSION'].includes(params.get('document'))
+      ? params.get('document') : null;
+    setOperatingDocumentClass(documentKind);
+    if (requested === 'projects') {
+      const projectId = /^prj-[0-9a-f]{48}$/.test(params.get('project') || '')
+        ? params.get('project') : null;
+      const taskId = projectId && /^ptk-[0-9a-f]{48}$/.test(params.get('task') || '')
+        ? params.get('task') : null;
+      setProjectDeliveryFocus(projectId);
+      setProjectTaskFocus(taskId);
+      setAttentionProjectFocus(params.get('view') === 'assigned' ? projectId : null);
+    }
+    if (requested === 'my-work') {
+      setSection('overview'); setShowMyWork(true);
+      const sourceKey = params.get('work');
+      setMyWorkFocusItem(typeof sourceKey === 'string' && sourceKey.length <= 240 ? sourceKey : null);
+    } else if (linkedSections.has(requested)) {
       setSection(requested);
       setShowMyWork(false);
     } else if (!requested) {
-      setSection((current) =>
-        current === 'hr-workspace' || current === 'operations' ? 'overview' : current);
+      // The canonical /headquarters route is Home, never the previously
+      // mounted task or Projects section. React Router retains this component
+      // across same-session URL changes; explicitly release its UI-only focus.
+      setSection('overview');
+      setShowMyWork(false);
+      setMyWorkFocusItem(null);
+      setProjectDeliveryFocus(null);
+      setProjectTaskFocus(null);
+      setAttentionProjectFocus(null);
+      setCalendarOpen(false);
     }
   }, [location.search]);
   const [workforce, setWorkforce] = useState(null);
@@ -654,11 +849,16 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     let current = true;
     setProjectsSummaryState('LOADING');
     setProjectsSummaryError('');
-    api.get('/projects/summary', {
-      forceNetworkRetry: true,
-      signal: controller.signal,
-      headers: { 'X-Tenant-ID': workTenantId },
-    })
+    // In React's development StrictMode, first effect setup is immediately
+    // cleaned up and replayed. Defer the GET to a microtask so the discarded
+    // setup never consumes EOS authorization and MongoDB resources.
+    queueMicrotask(() => {
+      if (!current) return;
+      void api.get('/projects/summary', {
+        forceNetworkRetry: true,
+        signal: controller.signal,
+        headers: { 'X-Tenant-ID': workTenantId },
+      })
       .then((response) => {
         const payload = response?.data;
         const counts = payload?.counts;
@@ -700,6 +900,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
         setProjectsSummaryError(code);
         setProjectsSummaryState(status === 401 || status === 403 ? 'DENIED' : 'UNAVAILABLE');
       });
+    });
     return () => { current = false; controller.abort(); };
   }, [auth.sessionGeneration, authUser.id, projectsSummaryRefresh, section, showMyWork, workScope, workTenantId]);
   useEffect(() => {
@@ -752,18 +953,66 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
   const pendingApprovalCount = currentRequisitions
     ? currentRequisitions.items.filter((item) => item.status === 'SUBMITTED').length
     : null;
-  const datedWork = (currentSnapshot?.items || []).filter((item) => item.due_at)
-    .sort((left, right) => Date.parse(left.due_at) - Date.parse(right.due_at));
+  // Projects delivers a date-only deadline rather than a due_at instant.
+  // Include it in the preview without assigning an invented time of day.
+  const workDeadline = (item) => item.source === 'PROJECTS' && item.due_date
+    ? item.due_date : item.due_at;
+  const datedWork = (currentSnapshot?.items || []).filter((item) => Boolean(workDeadline(item)))
+    .sort((left, right) => Date.parse(workDeadline(left)) - Date.parse(workDeadline(right)));
   const openMyWork = (item = null) => {
     const sourceKey = typeof item?.source_key === 'string' && item.source_key.trim()
       ? item.source_key
       : null;
+    setCalendarOpen(false);
     setMyWorkFocusItem(sourceKey);
     setShowMyWork(true);
   };
-  const navigateSection = (nextSection) => {
+  const openGovernedWork = (item) => {
+    if (!item || typeof item.source_key !== 'string') return;
+    if (item.source === 'PROJECTS'
+      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')
+      && /^ptk-[0-9a-f]{48}$/.test(item.work_item_id || '')
+      && item.source_key === 'PROJECTS:' + item.work_item_id) {
+      // A task locator MUST NOT set the assigned-projects view flag.
+      // That flag selects an entirely different workspace and hides task details.
+      setAttentionProjectFocus(null);
+      setProjectDeliveryFocus(item.project_id);
+      setProjectTaskFocus(item.work_item_id);
+      navigateSection('projects', { projectId: item.project_id, taskId: item.work_item_id });
+      return;
+    }
+    openMyWork(item);
+  };
+  const updateWorkspaceUrl = (nextSection, documentKind = null, projectId = null, taskId = null, strategyReturn = false, resumeM04 = false) => {
+    const params = new URLSearchParams(location.search);
+    for (const key of ['section', 'document', 'project', 'task', 'returnTo', 'resumeM04']) params.delete(key);
+    // Assigned-projects is a separate portfolio view, never inherited by a task deep link.
+    if (nextSection === 'projects' && taskId) params.delete('view');
+    if (linkedSections.has(nextSection)) params.set('section', nextSection);
+    if (['STRATEGY', 'MISSION'].includes(documentKind)) params.set('document', documentKind);
+    if (nextSection === 'projects' && strategyReturn) params.set('returnTo', 'STRATEGY');
+    if (documentKind === 'STRATEGY' && resumeM04) params.set('resumeM04', '1');
+    if (nextSection === 'projects' && /^prj-[0-9a-f]{48}$/.test(projectId || '')) {
+      params.set('project', projectId);
+      if (/^ptk-[0-9a-f]{48}$/.test(taskId || '')) params.set('task', taskId);
+    }
+    navigate({ pathname: location.pathname, search: params.toString() ? '?' + params.toString() : '' },
+      { replace: true });
+  };
+  const openOperatingDocument = (documentKind) => {
+    setOperatingDocumentClass(documentKind);
+    updateWorkspaceUrl(section, documentKind);
+  };
+  const closeOperatingDocument = () => {
+    setOperatingDocumentClass(null);
+    updateWorkspaceUrl(section);
+  };
+  const navigateSection = (nextSection, focus = null) => {
+    updateWorkspaceUrl(nextSection, null, focus?.projectId, focus?.taskId, focus?.fromStrategy === true);
     setSection(nextSection);
     setShowMyWork(false);
+    setCalendarOpen(false);
+    setMyWorkFocusItem(null);
   };
   const toggleNavigationGroup = (groupId) => {
     setExpandedNavigation((current) => ({
@@ -772,10 +1021,11 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
     }));
   };
 
+  const peopleOwnsCanvas = section === 'hr-workspace' && !showMyWork;
   return (
     <main className="wilsyHqShell" data-wilsy-headquarters="operating-workspace" data-company-purpose={platformOwnerWorkspace ? 'PLATFORM_OWNER' : undefined}>
       <style>{HEADQUARTERS_STYLES}</style>
-      <div className={`hq-layout${desktopNavigationOpen ? '' : ' hq-layout--navigation-collapsed'}`}>
+      <div className={`hq-layout${desktopNavigationOpen ? '' : ' hq-layout--navigation-collapsed'}${peopleOwnsCanvas ? ' hq-layout--people-owned' : ''}`}>
         <aside className="hq-sidebar">
           <button type="button" className="hq-mobile-menu" aria-expanded={mobileMenuOpen} aria-controls="hq-navigation" onClick={() => setMobileMenuOpen((value) => !value)}><span>WILSY Headquarters</span><Menu size={18}/></button>
           <div className="hq-sidebar-title"><span>{platformOwnerWorkspace ? 'Platform owner workspace' : 'Company workspace'}</span><button type="button" className="hq-navigation-collapse" aria-label="Collapse Headquarters navigation" aria-expanded="true" onClick={() => setDesktopNavigationOpen(false)}><ChevronLeft size={15}/></button></div>
@@ -819,11 +1069,41 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           <div className="hq-sidebar-footer"><strong>WILSY OS</strong><div>{kernelMetricValue(kennelHealth)} · EOS kernel API</div><div>{kennelHealth?.version || 'Version unavailable'}</div></div>
         </aside>
 
-        <div className="hq-content">
+        <div className={peopleOwnsCanvas ? "hq-content hq-content--people-owned" : "hq-content"}>
           {!desktopNavigationOpen && <button type="button" className="hq-navigation-open" aria-label="Open Headquarters navigation" aria-expanded="false" onClick={() => setDesktopNavigationOpen(true)}><Menu size={15}/> Show navigation</button>}
-          <div className={section === 'overview' && !showMyWork ? '' : 'hq-subworkspace'}>
+
+          <div className={peopleOwnsCanvas ? "hq-subworkspace hq-people-owned" : section === 'overview' && !showMyWork ? '' : 'hq-subworkspace'}>
           {showMyWork ? (
             <MyWorkWorkspace focusWorkItem={myWorkFocusItem} />
+          ) : section === 'overview' && calendarOpen ? (
+            <section className="hq-focused-calendar" aria-label="Headquarters work calendar" data-hq-focus="CALENDAR">
+              <header className="hq-focused-calendar-header">
+                <div>
+                  <h2>Work calendar</h2>
+                  <p className="mt-1 text-xs text-slate-300">Your verified EOS work deadlines, across authorised sources.</p>
+                </div>
+                <button type="button" onClick={() => setCalendarOpen(false)}
+                  aria-label="Back to Headquarters overview">← Back to Headquarters</button>
+              </header>
+              <div className="hq-focused-calendar-content">
+                <div>
+                  {currentSnapshot ? (
+                    <WilsyWorkDeadlineCalendar items={currentSnapshot.items}
+                      onOpenWork={openGovernedWork}/>
+                  ) : (
+                    <div role="status" className="p-5 text-sm">
+                      <p>Work calendar is awaiting a verified current-session EOS projection.</p>
+                      <button type="button" onClick={() => {
+                        myWorkRetryRef.current = { scope: workScope, attempts: 0 };
+                        invalidateUnifiedMyWork(workScope);
+                      }} className="mt-3 rounded-lg border border-white/25 px-3 py-2">
+                        Refresh authorised work
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           ) : section === 'overview' ? (
             <>
               <div className={currentSnapshot?.items.some((item) => item.source_key === myWorkFocusItem) ? 'hq-overview hq-record-active' : 'hq-overview'}>
@@ -834,7 +1114,7 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                     <h2>One Platform. One Team. Infinite Possibilities.</h2>
                     <p>{platformOwnerWorkspace ? 'Develop. Operate. Maintain — WILSY OS.' : 'Coordinate. Execute. Deliver — together.'}</p>
                   </div>
-                  <button className="hq-mission-button" type="button" onClick={() => setOperatingDocumentClass('MISSION')}>Our Mission <ArrowUpRight size={14}/></button>
+                  <button className="hq-mission-button" type="button" onClick={() => openOperatingDocument('MISSION')}>Our Mission <ArrowUpRight size={14}/></button>
                   <small className="hq-illustration-label">Illustrative campus</small>
                 </section>
                 <section className="hq-panel hq-glance" aria-labelledby="hq-glance-title">
@@ -856,16 +1136,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   loading={myWorkLoading} error={myWorkError} snapshot={currentSnapshot}
                   scopeKey={workScope} principalId={authUser.id} tenantId={workTenantId}
                   view={workView} onViewChange={setWorkView}
-                  selectedKey={myWorkFocusItem} onSelect={setMyWorkFocusItem}
-                  onOpen={(item) => {
-                    if (item?.source === 'PROJECTS'
-                      && /^prj-[0-9a-f]{48}$/.test(item.project_id || '')) {
-                      setAttentionProjectFocus(item.project_id);
-                      navigateSection('projects');
-                    } else {
-                      openMyWork(item);
-                    }
+                  selectedKey={myWorkFocusItem} onSelect={(sourceKey) => {
+                    if (!sourceKey) { setMyWorkFocusItem(null); return; }
+                    const item = currentSnapshot?.items.find((row) => row.source_key === sourceKey);
+                    if (item) openGovernedWork(item);
                   }}
+                  onOpen={openGovernedWork}
                   onRefresh={() => {
                     myWorkRetryRef.current = { scope: workScope, attempts: 0 };
                     invalidateUnifiedMyWork(workScope);
@@ -906,15 +1182,15 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
                   <section className="hq-strategy" aria-label="Company strategy">
                     <span className="hq-strategy-icon"><img src={WILSY_PLATFORM_LOGO_SRC} alt="" aria-hidden="true"/></span>
                     <div><h2>Together, we build a smarter, stronger WILSY.</h2><p>One team. Current priorities. Verified actions.</p></div>
-                    <button type="button" onClick={() => setOperatingDocumentClass('STRATEGY')}>Our Strategy <ArrowUpRight size={14}/></button>
+                    <button type="button" onClick={() => openOperatingDocument('STRATEGY')}>Our Strategy <ArrowUpRight size={14}/></button>
                   </section>
                   </div>
                   <div className="hq-operating-column hq-reporting-column" data-hq-column="reporting">
                 <div className="hq-main-reporting" aria-label="Work calendar and reports">
                   <section className="hq-panel hq-calendar-panel" aria-labelledby="hq-calendar-title">
-                    <div className="hq-panel-heading"><h2 id="hq-calendar-title"><CalendarDays size={17}/> Work calendar</h2><button type="button" onClick={() => setCalendarOpen((value) => !value)} aria-expanded={calendarOpen}>{calendarOpen ? 'Close' : 'View calendar'} <ArrowUpRight size={12}/></button></div>
-                    <div className="hq-agenda">{currentSnapshot ? datedWork.length ? datedWork.slice(0,3).map((item) => <button type="button" key={item.source_key} onClick={() => setMyWorkFocusItem(item.source_key)}><span className="hq-agenda-icon"><CalendarDays size={18}/></span><span><small>{formatHeadquartersDeadline(item.due_at)}</small><strong>{item.title}</strong></span></button>) : <p className="hq-muted">No dated work in the included sources.</p> : <p className="hq-muted">Calendar awaits a verified work projection.</p>}</div>
-                    {calendarOpen && <div className="hq-calendar-expanded" aria-label="Expanded work calendar"><WilsyWorkDeadlineCalendar items={currentSnapshot?.items || []} onOpenWork={(item) => { setMyWorkFocusItem(item.source_key); setCalendarOpen(false); }}/></div>}
+                    <div className="hq-panel-heading"><h2 id="hq-calendar-title"><CalendarDays size={17}/> Work calendar</h2><button type="button" onClick={() => setCalendarOpen(true)} aria-label="Open Headquarters work calendar">View calendar <ArrowUpRight size={12}/></button></div>
+                    <div className="hq-agenda">{currentSnapshot ? datedWork.length ? datedWork.slice(0,3).map((item) => <button type="button" key={item.source_key} onClick={() => openGovernedWork(item)}><span className="hq-agenda-icon"><CalendarDays size={18}/></span><span><small>{item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}</small><strong>{item.title}</strong></span></button>) : <p className="hq-muted">No dated work in the included sources.</p> : <p className="hq-muted">Calendar awaits a verified work projection.</p>}</div>
+                    
                   </section>
                   <section className="hq-panel hq-reports" aria-labelledby="hq-reports-title">
                     <div className="hq-panel-heading"><h2 id="hq-reports-title">Reports & analytics</h2></div>
@@ -999,9 +1275,12 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
               </section>
             </>
           ) : section === 'hr-workspace' ? (
-            <Suspense fallback={<section role="status" className="rounded-2xl border border-white/10 bg-[#101a2a] p-6 text-sm text-amber-200">Loading the canonical HR workspace…</section>}>
-              <HRDashboard user={authUser}/>
-            </Suspense>
+            <section className="hq-people-app" aria-label="People operating application" data-workspace-ownership="PEOPLE">
+
+              <Suspense fallback={<section role="status" className="hq-people-loading">Verifying the People operating workspace…</section>}>
+                <HRDashboard user={authUser} onReturnToHeadquarters={() => navigateSection('overview')}/>
+              </Suspense>
+            </section>
           ) : section === 'hiring' ? (
             <HeadcountRequisitionWorkspace
               loading={requisitionsLoading || requisitionsScope !== workScope}
@@ -1019,7 +1298,26 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
               onRefresh={() => setRequisitionsRefresh((value) => value + 1)}
             />
           ) : section === 'projects' ? (
-            <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} focusProjectId={projectDeliveryFocus} focusAssignedProjectId={attentionProjectFocus}/>
+            <>
+              <ProjectsWorkspace key={workScope || 'no-authenticated-scope'} tenantId={workTenantId} principalId={authUser.id} sessionScope={workScope || ''} selectedCapacity={operatingCapacity} onReturnToPeople={() => navigate('/headquarters?section=hr-workspace')} focusProjectId={projectDeliveryFocus} focusTaskId={projectTaskFocus} focusAssignedProjectId={attentionProjectFocus}
+                strategyOrigin={new URLSearchParams(location.search).get('returnTo') === 'STRATEGY'}
+                onReturnToAttention={location.state?.attentionReturn
+                  && typeof location.state.attentionReturn.pathname === 'string'
+                  && location.state.attentionReturn.pathname.startsWith('/')
+                  && !location.state.attentionReturn.pathname.startsWith('//')
+                  && typeof location.state.attentionReturn.search === 'string'
+                    ? () => navigate({
+                        pathname: location.state.attentionReturn.pathname,
+                        search: location.state.attentionReturn.search,
+                      }, { state: { reopenDailyAttention: true } })
+                    : null}
+                onReturnToStrategy={() => {
+                  setSection('overview'); setShowMyWork(false);
+                  setProjectTaskFocus(null); setProjectDeliveryFocus(null);
+                  setOperatingDocumentClass('STRATEGY');
+                  updateWorkspaceUrl('overview', 'STRATEGY', null, null, false, true);
+                }}/>
+            </>
           ) : section === 'onboarding' ? (
             <>
               <PageHeading eyebrow="People lifecycle" title="Employee onboarding" subtitle="Employment record, then separately governed identity and access admission."/>
@@ -1052,12 +1350,20 @@ const [expandedNavigation, setExpandedNavigation] = useState({});
           </div>
         </div>
       </div>
-      {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={() => setOperatingDocumentClass(null)} onOpenWork={() => { setOperatingDocumentClass(null); openMyWork(); }}
-        onOpenProject={(projectId) => {
+      <WilsySystemFooter
+        ariaLabel="Headquarters operating footer"
+        surface={peopleOwnsCanvas ? 'People · Hire to Exit' : 'Headquarters · Enterprise operations'}
+        employerName={employerName}
+        employerReference={employerReference}
+      />
+      {operatingDocumentClass && <CompanyOperatingDocumentViewer key={operatingDocumentClass + ':' + workScope} classification={operatingDocumentClass} onClose={closeOperatingDocument} onOpenWork={() => { closeOperatingDocument(); openMyWork(); }}
+        onOpenProjects={() => { setProjectDeliveryFocus(null); setProjectTaskFocus(null); setOperatingDocumentClass(null); navigateSection('projects', { fromStrategy: operatingDocumentClass === 'STRATEGY' }); }}
+        onOpenProject={(projectId, focus = null) => {
           if (!/^prj-[0-9a-f]{48}$/.test(projectId)) return;
+          setProjectTaskFocus(/^ptk-[0-9a-f]{48}$/.test(focus?.taskId || '') ? focus.taskId : null);
           setProjectDeliveryFocus(projectId);
           setOperatingDocumentClass(null);
-          navigateSection('projects');
+          navigateSection('projects', { projectId, taskId: focus?.taskId, fromStrategy: true });
         }}/>}
     </main>
   );
@@ -1206,8 +1512,8 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
   };
   return (
     <section className={selected ? 'hq-panel hq-work hq-work--selected' : 'hq-panel hq-work'} aria-labelledby="my-work-snapshot-heading" data-hq-work="true">
-      <header className="hq-work-heading"><h2 id="my-work-snapshot-heading">My Work — What needs your attention</h2><button type="button" onClick={onOpen}>View all <ArrowUpRight size={12}/></button></header>
-      <div className="hq-work-tabs" role="group" aria-label="Filter Headquarters work by source">
+      <header className="hq-work-heading"><h2 id="my-work-snapshot-heading">{selected ? 'Work details' : 'My Work — What needs your attention'}</h2><button type="button" onClick={onOpen}>View all <ArrowUpRight size={12}/></button></header>
+      {!selected && <div className="hq-work-tabs" role="group" aria-label="Filter Headquarters work by source">
         <button type="button" aria-pressed={source === 'ALL' && view === 'ALL'} onClick={() => { setSource('ALL'); onViewChange('ALL'); }}>All{snapshot ? ` (${snapshot.summary.active_count})` : ''}</button>
         {(snapshot?.sources_included || []).map((id) => <button key={id} type="button" aria-pressed={source === id} onClick={() => { setSource(id); onViewChange('ALL'); }}>{unifiedMyWorkSourceLabel(id)} ({snapshot.summary.source_counts[id]})</button>)}
         <button type="button" aria-pressed={view === 'OVERDUE'} onClick={() => { setSource('ALL'); onViewChange(view === 'OVERDUE' ? 'ALL' : 'OVERDUE'); }}>Overdue {snapshot ? '(' + overdueCount + ')' : ''}</button>
@@ -1223,8 +1529,8 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
           Saved drafts {draftEvidence.state === 'VERIFIED' && draftEvidence.scope === scopeKey
             ? '(' + draftEvidence.count + ')' : draftEvidence.state === 'VERIFYING' ? '(verifying)' : '(unavailable)'}
         </button>}
-      </div>
-      <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>
+      </div>}
+      {!selected && <label className="hq-work-search"><Search size={14}/><input id="hq-work-search" aria-label="Search headquarters work" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your authorized work…"/></label>}
       {snapshot && (loading || error) && (
         <div className="hq-work-status" role={error ? 'alert' : 'status'} data-work-state="LAST_VERIFIED">
           <strong>Last verified source snapshot · revalidation {loading ? 'in progress' : 'unavailable'}</strong>
@@ -1234,15 +1540,15 @@ function MyWorkSnapshot({ loading, error, snapshot, onOpen, onRefresh, scopeKey,
       )}
       {loading && !snapshot ? <div className="hq-work-status" role="status">Loading the authorized My Work projection…</div>
         : !snapshot ? <div className="hq-work-status" role="alert"><strong>{error === 'MY_WORK_ACCESS_DENIED' ? 'My Work authorization required' : 'My Work snapshot unavailable'}</strong><p>Current work could not be verified. Retry the source read.</p><button type="button" onClick={onRefresh}>Retry source read</button></div>
-          : <div className={visibleItems.length ? 'hq-work-list' : 'hq-work-list hq-work-list--empty'} aria-label="Authorized Headquarters work queue">
+          : !selected ? <div className={visibleItems.length ? 'hq-work-list' : 'hq-work-list hq-work-list--empty'} aria-label="Authorized Headquarters work queue">
             {visibleItems.length === 0 ? <div className="hq-work-status hq-verified-empty" data-work-state={items.length ? 'FILTERED_EMPTY' : 'VERIFIED_EMPTY'}><span className="hq-empty-icon"><CheckCircle2 size={21}/></span><div><strong>{items.length ? 'No matching work' : 'Current source read verified'}</strong><p>{!items.length ? snapshot.sources_included.length ? 'No active work was returned by the authorized sources at the recorded time.' : 'No work source was included in this session.' : 'No work matches these filters.'}</p>{snapshot.sources_included.includes('OPERATIONS') && <button type="button" onClick={onManage}>Create or manage Operations work</button>}<span className="hq-empty-time">Verified {formatHeadquartersDeadline(snapshot.as_of)}</span></div></div>
-              : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onSelect(item.source_key); setCommand({ state: 'IDLE', message: '' }); }}>
+              : visibleItems.map((item) => <button type="button" key={item.source_key} className="hq-work-row" aria-label={'Open authorized record: ' + item.title} aria-pressed={selectedKey === item.source_key} onClick={() => { onOpen(item); setCommand({ state: 'IDLE', message: '' }); }}>
                 <span className={'hq-round ' + ({ LEGAL: 'hq-purple', OPERATIONS: 'hq-green', INTELLIGENCE: 'hq-blue', CRM: 'hq-orange' }[item.source] || 'hq-blue')}>{item.source === 'LEGAL' ? <FileText size={17}/> : item.source === 'CRM' ? <Users size={17}/> : <CheckCircle2 size={17}/>}</span>
-                <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}</small></span>
+                <span className="hq-work-row-main"><strong>{item.title}</strong><small>{unifiedMyWorkSourceLabel(item.source)} · {item.source === 'PROJECTS' && item.due_date ? 'Due ' + item.due_date + ' (calendar date)' : formatHeadquartersDeadline(item.due_at)}{item.is_overdue ? ' · Overdue' : ''}{item.source === 'PROJECTS' ? item.dependency_readiness === 'WAITING' ? ' · Waiting on ' + item.dependency_remaining + ' predecessor(s)' : item.dependency_readiness === 'READY' ? item.dependency_total ? ' · Predecessors complete' : ' · No predecessor gate' : ' · Readiness unverified' : ''}</small></span>
                 <span className="hq-priority" data-priority={item.priority}>{item.priority === 'NORMAL' ? 'Normal' : item.priority === 'HIGH' ? 'High' : item.priority === 'LOW' ? 'Low' : 'Critical'}</span><ChevronRight size={13}/>
               </button>)}
-          </div>}
-      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><h3>{selected.title}</h3><button type="button" aria-label="Close work record" onClick={() => onSelect(null)}><X size={16}/></button></div>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{selected.source === 'PROJECTS' && selected.due_date ? 'Due ' + selected.due_date + ' (calendar date)' : formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd><dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
+          </div> : null}
+      {selected && !loading && !error && <section className="hq-record" aria-label="Selected work record"><div className="hq-record-heading"><button type="button" aria-label="Close work record" onClick={() => onSelect(null)} className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100">← Back to work</button></div><h3 className="mt-3">{selected.title}</h3>{selected.description && <p>{selected.description}</p>}<dl><dt>Source</dt><dd>{unifiedMyWorkSourceLabel(selected.source)}</dd><dt>Status</dt><dd>{selected.status}</dd><dt>Priority</dt><dd>{selected.priority}</dd><dt>Deadline</dt><dd>{selected.source === 'PROJECTS' && selected.due_date ? 'Due ' + selected.due_date + ' (calendar date)' : formatHeadquartersDeadline(selected.due_at)}</dd><dt>Owner</dt><dd>Not included in this source projection</dd>{selected.source === 'PROJECTS' && <><dt>Predecessors</dt><dd>{selected.dependency_readiness === 'WAITING' ? selected.dependency_remaining + ' of ' + selected.dependency_total + ' unfinished' : selected.dependency_readiness === 'READY' ? selected.dependency_total ? 'All ' + selected.dependency_total + ' complete' : 'None recorded' : 'Readiness unverified — restart current EOS and refresh'}</dd></>}<dt>Viewed by</dt><dd>{ownerLabel}</dd></dl>
         {actions[selected.source]?.includes('COMPLETE') ? <form className="hq-command" onSubmit={performCompletion}><label>Completion note<textarea aria-label={'Completion note for ' + selected.title} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} required disabled={command.state === 'PENDING'}/></label><button type="submit" disabled={!note.trim() || command.state === 'PENDING'}>{command.state === 'PENDING' ? 'Verifying completion…' : 'Complete work'}</button><p>EOS verifies your authority and records the result.</p></form>
           : <button type="button" className="hq-text-button" onClick={() => onOpen(selected)}>Open source-governed workspace <ArrowUpRight size={12}/></button>}
       </section>}
@@ -1530,10 +1836,12 @@ function HeadcountRequisitionWorkspace({
 
 /*
  * ARTIFACT: WILSY OS Headquarters authenticated executive workspace
- * VERSION: v4.9.0-LAZY-EXACT-TENANT-WORKFORCE-READ
+ * VERSION: v4.22.6-UNIFIED-SYSTEM-FOOTER
  * AUTHORITY BOUNDARY: Client presentation and existing source-command adapters only; Python EOS owns business truth, authorization and persistence.
  * TENANT POSTURE: Authenticated tenant and principal scope are preserved.
  * FAIL-CLOSED POSTURE: Invalid or unavailable source data is disclosed, never zeroed.
  * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively; no financial command is exposed.
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
+
+

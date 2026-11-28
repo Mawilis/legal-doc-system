@@ -5,14 +5,38 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT
+ * VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/daily-attention-calendar.browser.spec.js
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
- * CERTIFICATION / UPDATE DATE: 2026-11-17.
+ * CERTIFICATION / UPDATE DATE: 2026-11-26.
+ * CHANGELOG: v3.14.0-NONFOUNDER-SCOPE-CERT adds a real browser
+ *          Partner session and owner-only CRM denial with independently
+ *          verified per-principal work isolation in the existing tenant.
+ * CHANGELOG: v3.13.6-SOURCE-RETURN-AND-CRM-ADMISSION-CERT checks the
+ *          return-to-Daily-Attention origin and independently authorized
+ *          CRM source-actions tab in the canonical task modal.
+ * CHANGELOG: v3.13.5-CANONICAL-CALENDAR-HANDOFF-CERT verifies the current
+ *          source-owned calendar Open authorized task action and the
+ *          canonical My Work task modal before EOS completion.
+ * CHANGELOG: v3.13.4-INPLACE-CRM-REVISION-CERT verifies audited
+ *          source title changes in the approved in-place record region
+ *          and returns to work without the retired modal.
+ * CHANGELOG: v3.13.3-INPLACE-SOURCE-COMPLETION-CERT follows the
+ *          approved focused My Work record region, retaining the actual
+ *          EOS completion, Mongo readback and source/aggregate parity proof.
+ * CHANGELOG: v3.13.2-BLUEPRINT-AGENDA-SEMANTICS-CERT locates the
+ *          shared Projects-style calendar row by its accessible listitem
+ *          role, not the retired article role, retaining actual source work.
+ * CHANGELOG: v3.13.1-FOCUSED-DETAIL-AND-CALENDAR-CERT verifies the
+ *          full-width task replacement on desktop and mobile plus focused
+ *          calendar refresh without restoring the legacy split rail.
+ * CHANGELOG: v3.13.0-REPLACEMENT-BRIEFING-CERT verifies that priority
+ *          briefing replaces the inbox and Back to work restores the
+ *          verified source list on desktop and mobile.
  * CHANGELOG: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT remeasures the
  *          mobile inbox/footer geometry during asynchronous source refresh
  *          using bounded polling; the same no-overlap invariant remains.
@@ -394,6 +418,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect(showBriefing).toBeVisible();
       await showBriefing.click();
       await expect(triage.getByRole('region', {name: "Today's attention briefing"})).toBeVisible();
+      await expect(triage.getByRole('region', {name: 'Attention inbox'})).toHaveCount(0);
+      await triage.getByRole('button', {name: /Back to work/}).click();
+      await expect(triage.getByRole('region', {name: "Today's attention briefing"})).toHaveCount(0);
       await expect(triage.getByRole('region', {name: 'Attention inbox'})).toBeVisible();
       const row = triage.getByRole('button', {name: 'Inspect ' + title});
       await expect(row).toBeVisible();
@@ -439,17 +466,12 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const rail = triage.getByRole('complementary', {name: 'Attention detail rail'});
       await expect(rail).toBeVisible();
       const railBounds = await rail.boundingBox();
-      expect(railBounds.width).toBeGreaterThan(300);
-      if (viewport.width >= 768) {
-        const panelBounds = await triage.boundingBox();
-        expect(panelBounds).not.toBeNull();
-        // Production desktop uses a 38/62 work/detail split, not the old 420px drawer.
-        expect(railBounds.width / panelBounds.width).toBeGreaterThanOrEqual(0.59);
-        expect(railBounds.width / panelBounds.width).toBeLessThanOrEqual(0.65);
-      } else {
-        // Mobile switches to the full-workspace detail; it must fit the viewport.
-        expect(railBounds.width).toBeLessThanOrEqual(viewport.width);
-      }
+      expect(railBounds).not.toBeNull();
+      const workspaceBounds = await triage.boundingBox();
+      expect(workspaceBounds).not.toBeNull();
+      // Focused task detail replaces the list across desktop and mobile.
+      expect(railBounds.width / workspaceBounds.width).toBeGreaterThanOrEqual(0.95);
+      await expect(triage.locator('[data-attention-work-list="true"]')).toBeHidden();
       expect(railBounds.x).toBeGreaterThanOrEqual(0);
       expect(railBounds.x + railBounds.width).toBeLessThanOrEqual(viewport.width);
       await expect(triage.getByRole('button', {name: 'Open full record'})).toBeVisible();
@@ -469,12 +491,8 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await expect.poll(() => heldAttentionReads.length).toBeGreaterThan(0);
       await expect(triage.getByTestId('attention-refresh-state'))
         .toHaveAttribute('data-attention-refresh-state', 'UPDATING');
-      if (viewport.width >= 768) {
-        await expect(row).toBeVisible();
-      } else {
-        // When detail is open, mobile intentionally hides the underlying work list.
-        await expect(row).toBeHidden();
-      }
+      // Every viewport uses the focused detail, with its queue hidden until Back.
+      await expect(row).toBeHidden();
       await expect(rail).toBeVisible();
       expect(await panel.getAttribute('style')).toBe(panelStyleBeforeRefresh);
       expect(await workListScroll.evaluate(node => node.scrollTop)).toBe(scrollBeforeRefresh);
@@ -495,7 +513,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
       const dates = panel.getByRole('group', {name: 'Choose work deadline date'});
       await expect(dates).toBeVisible();
-      const agendaItem = panel.getByRole('article').filter({hasText: title});
+      const agendaItem = panel.getByRole('listitem').filter({hasText: title});
       await expect(agendaItem).toBeVisible();
       const selected = dates.locator('button[aria-pressed="true"]');
       await selected.focus();
@@ -623,11 +641,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 
       await bell.click();
       await triage.getByRole('combobox', {name: 'Work view'}).selectOption('CALENDAR');
-      await agendaItem.getByRole('button', {name: 'Review and complete in My Work'}).click();
+      await agendaItem.getByRole('button', {name: 'Open authorized task'}).click();
       await expect(panel).toHaveCount(0);
-      const workItem = page.getByRole('dialog', {name: title, exact: true});
+      const workItem = page.getByRole('dialog', {name: 'Work details: ' + title, exact: true});
       await expect(workItem).toBeVisible();
-      await expect(workItem.getByRole('button', {name: 'Close work details'})).toBeFocused();
+      await expect(workItem.getByRole('button', {name: 'Back to Daily attention'})).toBeFocused();
       await workItem.getByRole('textbox', {name: 'Completion note'})
         .fill('Source-owned calendar completion evidence');
       const completedResponse = page.waitForResponse(response => (
@@ -842,8 +860,9 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const revisionRow = page.getByRole('button', {name: new RegExp(revisionOriginal)});
       await expect(revisionRow).toBeVisible();
       await revisionRow.click();
-      const revisionDialog = page.getByRole('dialog', {name: revisionOriginal});
+      const revisionDialog = page.getByRole('dialog', {name: 'Work details: ' + revisionOriginal});
       await expect(revisionDialog).toBeVisible();
+      await revisionDialog.getByRole('button', {name: 'Authorized CRM source actions & history'}).click();
       const sourceEdit = revisionDialog.getByRole('button', {name: 'Edit CRM task'});
       await expect(sourceEdit).toBeVisible();
       await sourceEdit.click();
@@ -867,11 +886,11 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       const patchReceipt = patchPayload;
       expect(patchReceipt.work_item_id).toBe(revisionWork.work_item_id);
       expect(patchReceipt.title).toBe(revisionChanged);
-      const renamedDialog = page.getByRole('dialog', {name: revisionChanged});
+      const renamedDialog = page.getByRole('dialog', {name: 'Work details: ' + revisionChanged});
       await expect(renamedDialog.getByText(
         'CRM edit confirmed by source, audit history and fresh My Work.',
       )).toBeVisible();
-      await renamedDialog.getByRole('button', {name: 'Close work details'}).click();
+      await renamedDialog.getByRole('button', {name: 'Back to work'}).click();
       await expect(page.getByRole('button', {name: revisionChanged})).toBeVisible();
       const persistedRevision = await context.request.get(
         crmPath + '/' + revisionWork.work_item_id, {headers},
@@ -985,10 +1004,100 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
       await context.close();
     }
   });
+
+  test(`non-Founder Partner cannot inherit Owner CRM work or completion at ${viewport.width}px`, async ({browser}) => {
+    const owner = state.actors.tenant_owner;
+    const partner = state.actors.partner;
+    const ownerHeaders = {
+      Authorization: `Bearer ${owner.access_token}`,
+      'X-Tenant-ID': state.tenant_id,
+    };
+    const partnerHeaders = {
+      Authorization: `Bearer ${partner.access_token}`,
+      'X-Tenant-ID': state.tenant_id,
+    };
+    const context = await browser.newContext({viewport});
+    const title = 'Owner-only scope browser ' + randomUUID();
+    const crmPath = '/api/crm/owner-workspace/work-items';
+    try {
+      const ownerCreation = await context.request.post(crmPath, {
+        headers: {...ownerHeaders, 'Idempotency-Key': randomUUID()},
+        data: {title, description: 'Principal isolation acceptance',
+          kind: 'TASK', priority: 'NORMAL', due_at: null},
+      });
+      expect(ownerCreation.status()).toBe(201);
+      const created = await ownerCreation.json();
+      expect(created.tenant_id).toBe(state.tenant_id);
+      expect(created.work_item_id).toMatch(/^owk_/);
+
+      const ownerProjectionResponse = await context.request.get('/api/my-work', {
+        headers: ownerHeaders,
+      });
+      expect(ownerProjectionResponse.status()).toBe(200);
+      const ownerProjection = await ownerProjectionResponse.json();
+      expect(ownerProjection.principal_id).toBe(owner.principal_id);
+      expect(ownerProjection.items.some(item =>
+        item.source_key === 'CRM:' + created.work_item_id && item.title === title
+      )).toBe(true);
+
+      const partnerProjectionResponse = await context.request.get('/api/my-work', {
+        headers: partnerHeaders,
+      });
+      expect(partnerProjectionResponse.status()).toBe(200);
+      const partnerProjection = await partnerProjectionResponse.json();
+      expect(partnerProjection.tenant_id).toBe(state.tenant_id);
+      expect(partnerProjection.principal_id).toBe(partner.principal_id);
+      expect(partnerProjection.sources_included).not.toContain('CRM');
+      expect(partnerProjection.items.some(item =>
+        item.source_key === 'CRM:' + created.work_item_id || item.title === title
+      )).toBe(false);
+
+      const partnerOwnerRead = await context.request.get('/api/crm/owner-workspace', {
+        headers: partnerHeaders,
+      });
+      expect(partnerOwnerRead.status()).toBe(403);
+      expect(await partnerOwnerRead.text()).not.toContain(title);
+      const partnerCompletion = await context.request.post(
+        crmPath + '/' + created.work_item_id + '/complete', {
+          headers: partnerHeaders,
+          data: {completion_note: 'Must not be authorized'},
+        },
+      );
+      expect(partnerCompletion.status()).toBe(403);
+
+      const foreignRead = await context.request.get('/api/my-work', {
+        headers: {...partnerHeaders, 'X-Tenant-ID': state.foreign_tenant_id},
+      });
+      expect(foreignRead.status()).toBe(403);
+      expect(await foreignRead.text()).not.toContain(title);
+
+      const page = await context.newPage();
+      await page.addInitScript(({token}) => {
+        localStorage.setItem('wilsy_auth_token', token);
+        localStorage.setItem('token', token);
+      }, {token: partner.access_token});
+      const workspaceBootstrap = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/auth/workspace-bootstrap'
+        && response.request().method() === 'GET');
+      await page.goto('/headquarters');
+      expect((await workspaceBootstrap).status()).toBe(200);
+      const account = page.getByRole('button', {name: 'Open account menu'});
+      await expect(account).toBeVisible();
+      await account.click();
+      const menu = page.getByRole('menu', {name: 'Account menu'});
+      await expect(menu.getByText('Synthetic Partner', {exact: true})).toBeVisible();
+      await expect(menu.getByText('Synthetic Owner', {exact: true})).toHaveCount(0);
+      await expect(page.getByText(title, {exact: true})).toHaveCount(0);
+      console.log('[NONFOUNDER-STEP]', viewport.width, 'partner-isolated');
+    } finally {
+      await context.close();
+    }
+  });
+
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.12.4-MOBILE-LAYOUT-SETTLEMENT-CERT
+// VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.

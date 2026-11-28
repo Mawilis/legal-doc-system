@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Governed Project Participants Workspace
- * VERSION: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION
+ * VERSION: v1.10.0-DUPLICATE-PARTICIPANT-ADMISSION-GUARD
  * AUTHORITY: Python EOS Projects IAM, principal and membership truth only.
  * EPITOME: Select eligible exact-tenant members; grant and revoke explicit
  *          project VIEWER/CONTRIBUTOR participation with audited source readback.
@@ -8,6 +8,12 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace mounts exact-project owner UI;
  *          api.js supplies existing authenticated session transport.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.10.0-DUPLICATE-PARTICIPANT-ADMISSION-GUARD
+ *          removes currently active project participants from admission
+ *          choices, explains existing membership, and blocks duplicate
+ *          submissions even when an earlier dropdown value persists.
+ *          For paginated partial rosters no absence is inferred:
+ *          the server remains authoritative and 409 prompts refresh.
  * CHANGELOG: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION exports the already-governed exact-tenant participant validator for the task attachment People preflight. No new authority, command or synthetic identity.
  * CHANGELOG: v1.8.0-ISOLATED-PROJECT-PEOPLE-SOURCE-READS validates and presents independently authorised project participants even when the eligible tenant member-directory read is blocked. Separately reports each source HTTP/timeout/backoff class; grants and revokes are disabled unless both source contracts are current. Avoids routing owner attachment users into a hidden generic failure.
  * CHANGELOG: v1.7.0-PRESELECT-VERIFIED-TENANT-MEMBER supports selecting an eligible tenant member in the task Assignee control, then reviewing and explicitly granting project contributor admission in a viewport dialog. Parent gets the newly admitted principal only after confirmed EOS readback; no implied IAM.
@@ -109,6 +115,12 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
   const root = '/projects/' + encodeURIComponent(projectId);
   const headers = tenantHeaders || {};
   const coordinates = { tenantId, principalId, projectId };
+  const activeIdsOnPage = new Set(participantVerified
+    ? items.map(item => item.principal_id) : []);
+  const availableChoices = participantVerified && choicesVerified
+    ? choices.filter(person => !activeIdsOnPage.has(person.principal_id)) : [];
+  const selectedAlreadyActive = Boolean(selectedPrincipal
+    && activeIdsOnPage.has(selectedPrincipal));
 
   const load = useCallback(async (personOffset = 0, membersOffset = 0) => {
     const current = ++generation.current;
@@ -229,7 +241,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
       if (currentScope.current !== active) return;
       const code = cause?.response?.status;
       setError(code === 403 ? 'EOS denied this participant command.'
-        : code === 409 ? 'Participant state changed or this principal is not eligible. Refresh and reconcile.'
+        : code === 409 ? 'EOS rejected duplicate, stale or ineligible project participation (HTTP 409). Refresh the verified roster before another attempt.'
           : 'EOS could not verify participant command persistence. Refresh before retrying.');
     } finally {
       if (currentScope.current === active) setBusy(false);
@@ -238,7 +250,8 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 
   const grant = event => {
     event.preventDefault();
-    if (!selectedPrincipal || !choices.some(person => person.principal_id === selectedPrincipal)) return;
+    if (!selectedPrincipal || !participantVerified || !choicesVerified
+      || selectedAlreadyActive || !availableChoices.some(person => person.principal_id === selectedPrincipal)) return;
     const body = { principal_id: selectedPrincipal, role: selectedRole };
     void execute(JSON.stringify(['grant', body]), key =>
       api.post(root + '/participants', body, {
@@ -305,11 +318,19 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
             onChange={event => setSelectedPrincipal(event.target.value)}
             className="mt-2 min-h-12 w-full min-w-0 rounded-lg border border-slate-400 bg-white px-3 py-2.5 text-base font-medium text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
             <option value="">Select a verified member by name</option>
-            {choices.map(person =>
+            {availableChoices.map(person =>
               <option key={person.principal_id} value={person.principal_id}>{optionName(person) || 'Verified member — name unavailable'}</option>)}
           </select>
 
         </label>
+        {selectedAlreadyActive && <p role="status" className="sm:col-span-2 text-sm font-semibold text-slate-800">
+          This member already participates in this project. No duplicate grant will be submitted.
+        </p>}
+        {availableChoices.length === 0 && choices.length > 0 && <p role="status"
+          className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+          All currently verified eligible members on this page already participate in the project.
+          To change a role, use a separately authorized governance workflow; do not add a duplicate.
+        </p>}
         {choices.length === 0 && !hasMoreChoices && <p role="status" className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
           EOS has not verified any eligible tenant member for project participation. A current tenant membership and matching business IAM role must be established through their independent governed workflows before this project can grant contributor access. No automatic Founder or owner privilege is inferred.
         </p>}
@@ -325,7 +346,8 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
           <div className="text-sm text-slate-700">
             Participation never grants IAM. The member must separately hold the matching role to access project work.
           </div>
-          <button type="submit" disabled={busy || !selectedPrincipal}
+          <button type="submit" disabled={busy || !selectedPrincipal
+            || selectedAlreadyActive || !availableChoices.some(person => person.principal_id === selectedPrincipal)}
             className="wp-button wp-button-primary"><UserPlus size={14}/> Add participant</button>
         </div>
         {(hasMoreChoices || optionOffset > 0) && <nav aria-label="Eligible member pages"
@@ -343,7 +365,7 @@ export default function ProjectParticipantsPanel({ projectId, tenantId, principa
 }
 
 // ARTIFACT: ProjectParticipantsPanel.jsx
-// VERSION: v1.9.0-SHARED-VALIDATED-PEOPLE-ADMISSION
+// VERSION: v1.10.0-DUPLICATE-PARTICIPANT-ADMISSION-GUARD
 // AUTHORITY BOUNDARY: non-possessory project grant/revoke only; EOS enforces IAM
 // TENANT POSTURE: exact source tenant, principal and project
 // FAIL-CLOSED POSTURE: foreign, malformed, stale, denied or uncertain states reject

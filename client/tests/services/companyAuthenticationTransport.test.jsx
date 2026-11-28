@@ -1,12 +1,13 @@
 /**
  * TITLE: WILSY Authenticated Company Transport and Refresh Contract
- * VERSION: v1.0.0
+ * VERSION: v1.1.0-CURRENT-BEARER-RECIPIENT-CERT
  * AUTHORITY: Client transport regression evidence only.
  * EPITOME: Exercise real Axios interceptors and AuthProvider with a bounded
  * adapter; prove credentials, rotation ownership and fail-closed scope handling.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/services/companyAuthenticationTransport.test.jsx
  * COLLABORATION / OWNERSHIP: AuthProvider, shared api.js and company source client.
- * CERTIFICATION / UPDATE DATE: 2026-11-14
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.1.0-CURRENT-BEARER-RECIPIENT-CERT supplies the current provider bearer before testing foreign-recipient evidence, independently preserving the missing-credential denial certificate.
  * CHANGELOG: v1.0.0 adds actual-interceptor request and provider-refresh regressions.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY: Synthetic opaque credentials only; no live network or data.
@@ -105,6 +106,8 @@ describe('actual shared Axios pipeline', () => {
     expect(calls[0].headers.get('Authorization')).toBe('Bearer test-access');
   });
   it('rejects authenticated evidence for a different recipient', async () => {
+    localStorage.setItem('wilsy_auth_token', 'test-access');
+    setActiveTenantTransportId(scope.tenantId);
     route = async config => ok(config, { ...evidence(), principal_id: 'another-principal' });
     await expect(readFounderSessionEvidence(scope, { token: 'test-access' })).rejects.toThrow('FOUNDER_SESSION_EVIDENCE_INVALID');
   });
@@ -199,7 +202,7 @@ describe('provider-owned EOS rotation', () => {
   });
 });
 // ARTIFACT: companyAuthenticationTransport.test.jsx
-// VERSION: v1.0.0
+// VERSION: v1.1.0-CURRENT-BEARER-RECIPIENT-CERT
 // AUTHORITY BOUNDARY: Synthetic adapter regression only; no live acceptance claim.
 // TENANT POSTURE: Exact synthetic scope; cross-principal refresh rejected.
 // FAIL-CLOSED POSTURE: Failed/superseded refresh cannot preserve authentication.

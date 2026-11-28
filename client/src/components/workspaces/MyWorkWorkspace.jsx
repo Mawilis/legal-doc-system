@@ -5,14 +5,62 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * TITLE: WILSY OS Authorised My Work Execution Queue
- * VERSION: v1.27.0-COMPACT-EXECUTION-CONTROLS
+ * VERSION: v1.39.0-ATTENTION-ORIGIN-RETURN
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the current authenticated unified work projection as a
  *          compact, keyboard-operable queue with source-owned detail actions.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/MyWorkWorkspace.jsx
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns visibility and
  *                            source services own completion and audit.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.39.0-ATTENTION-ORIGIN-RETURN closes source tasks back to the actual originating Daily Attention route rather than dropping the principal into a different My Work list; draft/command safeguards remain.
+ * CHANGELOG: v1.38.0-ATTENTION-REVERIFIED-SOURCE-KEY routes source-key-only Projects attention handoffs through an independently EOS-verified My Work record before entering the canonical Projects task, never inferring a project ID from a paginated attention result.
+ * CHANGELOG: v1.37.0-ROLE-AWARE-CANONICAL-SOURCE-ROUTING opens verified Projects tasks in their source-owned Projects panel. Fixes modal title contrast and duplicate due-date prefix; source commands and IAM remain unchanged.
+ * CHANGELOG: v1.36.0-UNIFIED-SOURCE-NEUTRAL-DETAILS applies the shared Projects readiness component to all admitted My Work sources, retiring the remaining duplicate legacy metadata/provenance panel; source-specific completion commands remain governed in EOS.
+ * CHANGELOG: v1.35.0-SHARED-READINESS-NO-LEGACY-CRM uses the exact Projects execution-readiness component for CRM and strips duplicated legacy CRM summary fields from its primary view; CRM editor/commands stay behind independent capability checks.
+ * CHANGELOG: v1.34.0-CANONICAL-TASK-MODAL uses the shared Projects task header and modal interaction for My Work, with source-specific CRM controls hidden until independently authorized. Data/commands remain in the original EOS registry; no source migration or new AI entitlement.
+ * CHANGELOG: v1.33.0-SOURCE-NEUTRAL-TASK-DETAILS makes CRM work open as a task-first, light, tabbed execution surface. The independently authorized CRM editor, status actions and history remain available under explicit Source actions & history. No CRM record is masqueraded as a Projects task, and EOS ownership and readback are unchanged.
+ * CHANGELOG: v1.32.1-RESTORE-QUEUE-READ-COMPATIBILITY restores the
+ *          prior direct EOS queue GET because existing source-owned queue
+ *          suites do not provision complete current AuthContext credentials.
+ *          The server still verifies every request and the queue still validates
+ *          exact source tenant/principal. Shared coordinator remains strict and
+ *          unchanged for its authenticated consumers. No timeout or IAM change.
+ * CHANGELOG: v1.32.0-SHARED-CURRENT-SESSION-MY-WORK-READ routes
+ *          authenticated queue and readback GETs through the existing
+ *          exact-session My Work coordinator, preventing a second independent
+ *          fetch from competing with Daily Attention and Headquarters. Caller
+ *          cancellation remains local, denied/foreign projections fail closed,
+ *          and confirmed commands still invalidate the shared snapshot.
+ * CHANGELOG: v1.31.0-PROJECTS-STYLE-INPLACE-TASK-FOCUS removes the
+ *          movable dark task modal, showing a Projects-style light focused
+ *          record in the work area; source CRM editor, command readback,
+ *          audit history and completion evidence remain authoritative.
+ * CHANGELOG: v1.30.1-BLUEPRINT-PRIORITY-CONTRAST replaces former dark-
+ *          surface pale priority text with WCAG-conscious readable
+ *          values on the new light workforce blueprint rows.
+ * CHANGELOG: v1.30.0-SHARED-WORK-BLUEPRINT-QUEUE replaces legacy queue rows with
+ *          the shared accessible workforce blueprint. Authorized EOS
+ *          actions, ordering, detail focus and projections remain intact.
+ * CHANGELOG: v1.29.3-PROJECT-CALENDAR-DEADLINE renders Projects
+ *            source date-only deadlines without inventing a UTC instant
+ *            or changing EOS overdue calculations.
+ * CHANGELOG: v1.29.2-UNVERIFIED-READINESS-STATE shows
+ *            unknown dependency readiness explicitly for older source
+ *            projections, never guessing zero predecessors or READY.
+ * CHANGELOG: v1.29.1-DEPENDENCY-READINESS-FILTER adds a
+ *            source-verified Projects waiting/ready filter without changing
+ *            other module visibility or task status semantics.
+ * CHANGELOG: v1.29.0-VERIFIED-PROJECT-READINESS exposes
+ *            source-verified predecessor readiness in queue and task detail,
+ *            not fabricated project status or new completion authority.
+ * CHANGELOG: v1.28.1-STABLE-SOURCE-AUDIENCE-PROJECTION
+ *            centralizes work-purpose interpretation as a pure module helper
+ *            to keep memoized source-verified counts/filter logic stable.
+ * CHANGELOG: v1.28.0-SOURCE-ATTESTED-WORK-AUDIENCE-FILTER adds
+ *            a real Operating / Platform Build / Unclassified queue selector.
+ *            Unsupported or absent audience is visible as Unclassified;
+ *            no inferred title category, hidden work or added IAM authority.
  * CHANGELOG: v1.27.0-COMPACT-EXECUTION-CONTROLS consolidates
  *            duplicated summary rows, source and lifecycle filtering,
  *            saved drafts, search and sort into one responsive toolbar.
@@ -130,7 +178,10 @@
  *                     independently authorizes its existing completion command.
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
+import UnifiedTaskReadiness from './UnifiedTaskReadiness.jsx';
+import UnifiedTaskHeader from './UnifiedTaskHeader.jsx';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from './WorkTaskBlueprint.jsx';
 import {
   AlertTriangle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw,
   ShieldCheck, X,
@@ -140,7 +191,7 @@ import api from '../../services/api.js';
 import AuthContext from '../../contexts/authContext.jsx';
 import { completeLegalWorkItem } from '../../services/legalOperationsService.js';
 import { readAttentionSourceActions } from '../../services/attentionFeedClient.js';
-import { assertUnifiedMyWorkProjection } from '../../services/unifiedMyWorkProjection.js';
+import { assertUnifiedMyWorkProjection, resolveUnifiedWorkDestination } from '../../services/unifiedMyWorkProjection.js';
 import {
   currentUnifiedMyWorkScope,
   invalidateUnifiedMyWork,
@@ -155,10 +206,10 @@ const SOURCE_LABELS = Object.freeze({
 });
 const PRIORITY_ORDER = Object.freeze({ CRITICAL: 0, HIGH: 1, NORMAL: 2, LOW: 3 });
 const PRIORITY_STYLE = Object.freeze({
-  CRITICAL: 'border-rose-400/50 bg-rose-500/15 text-rose-200',
-  HIGH: 'border-orange-400/50 bg-orange-500/15 text-orange-200',
-  NORMAL: 'border-sky-400/40 bg-sky-500/10 text-sky-200',
-  LOW: 'border-slate-400/40 bg-slate-500/10 text-slate-300',
+  CRITICAL: 'border-rose-200 bg-rose-50 text-rose-800',
+  HIGH: 'border-orange-200 bg-orange-50 text-orange-900',
+  NORMAL: 'border-sky-200 bg-sky-50 text-sky-900',
+  LOW: 'border-slate-300 bg-slate-50 text-slate-800',
 });
 
 const completionPath = (item) => {
@@ -176,6 +227,12 @@ const safeErrorCode = (error) => {
   return typeof candidate === 'string' && /^[A-Z][A-Z0-9_]{1,95}$/.test(candidate)
     ? candidate : 'MY_WORK_REQUEST_FAILED';
 };
+
+const formatWorkDue = (item) => (
+  item.source === 'PROJECTS' && item.due_date
+    ? 'Due ' + item.due_date + ' (calendar date)'
+    : formatDue(item.due_at)
+);
 
 const formatDue = (value) => {
   if (!value) return 'No deadline';
@@ -212,6 +269,10 @@ const isDueToday = (item, now = new Date()) => {
     && due.getMonth() === now.getMonth()
     && due.getDate() === now.getDate();
 };
+
+const sourceVerifiedAudience = (item) => item?.audience === 'OPERATING'
+  || item?.audience === 'PLATFORM_BUILD'
+  ? item.audience : 'UNCLASSIFIED';
 
 const compareItems = (left, right, sortMode) => {
   if (left.is_overdue !== right.is_overdue) return left.is_overdue ? -1 : 1;
@@ -264,82 +325,12 @@ export default function MyWorkWorkspace(props = {}) {
   const requestControllerRef = useRef(null);
   const rowRefs = useRef(new Map());
   const [selectedKey, setSelectedKey] = useState(null);
+  const [taskDetailTab, setTaskDetailTab] = useState('DETAILS');
+  const [crmTaskCapability, setCrmTaskCapability] = useState({ key: null, edit: false, complete: false });
   const closeButtonRef = useRef(null);
-  const [workbench, setWorkbench] = useState(null);
-  const workbenchGestureRef = useRef(null);
-  const startWorkbenchGesture = (event, mode) => {
-    if ((event.button != null && event.button !== 0) || window.innerWidth < 768) return;
-    if (mode === 'MOVE' && event.target.closest('button, input, select, textarea, a')) return;
-    event.preventDefault();
-    workbenchGestureRef.current = {
-      mode, pointerX: event.clientX, pointerY: event.clientY,
-      geometry: workbench,
-    };
-  };
-  useEffect(() => {
-    if (!selectedKey) { workbenchGestureRef.current = null; return undefined; }
-    const geometry = () => {
-      const width = Math.min(Math.max(window.innerWidth * 0.68, 640), 1280, window.innerWidth - 48);
-      const height = Math.min(window.innerHeight - 48, 920);
-      return {
-        x: Math.max(24, Math.round((window.innerWidth - width) / 2)),
-        y: Math.max(24, Math.round((window.innerHeight - height) / 2)),
-        width, height,
-      };
-    };
-    setWorkbench(geometry());
-    const move = (event) => {
-      const gesture = workbenchGestureRef.current;
-      if (!gesture?.geometry || window.innerWidth < 768) return;
-      const before = gesture.geometry;
-      const dx = event.clientX - gesture.pointerX;
-      const dy = event.clientY - gesture.pointerY;
-      if (gesture.mode === 'MOVE') {
-        setWorkbench({
-          ...before,
-          x: Math.max(0, Math.min(window.innerWidth - before.width, before.x + dx)),
-          y: Math.max(0, Math.min(window.innerHeight - 52, before.y + dy)),
-        });
-      } else {
-        const minWidth = Math.min(560, window.innerWidth - 32);
-        const width = Math.max(minWidth, Math.min(window.innerWidth - before.x - 12, before.width + dx));
-        setWorkbench({ ...before, width });
-      }
-    };
-    const finish = () => { workbenchGestureRef.current = null; };
-    const clamp = () => {
-      workbenchGestureRef.current = null;
-      setWorkbench((before) => {
-        if (!before) return geometry();
-        const width = Math.min(before.width, window.innerWidth - 24);
-        const height = Math.min(before.height, window.innerHeight - 24);
-        return {
-          x: Math.max(0, Math.min(before.x, window.innerWidth - width)),
-          y: Math.max(0, Math.min(before.y, window.innerHeight - 52)),
-          width, height,
-        };
-      });
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('mousemove', move);
-    window.addEventListener('pointerup', finish);
-    window.addEventListener('mouseup', finish);
-    window.addEventListener('pointercancel', finish);
-    window.addEventListener('resize', clamp);
-    return () => {
-      workbenchGestureRef.current = null;
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('pointerup', finish);
-      window.removeEventListener('mouseup', finish);
-      window.removeEventListener('pointercancel', finish);
-      window.removeEventListener('resize', clamp);
-    };
-  }, [selectedKey]);
-
-
   const queueHeadingRef = useRef(null);
   const previousSelectedRef = useRef(null);
+  const lastRouteFocusRef = useRef(null);
   const pendingRef = useRef(new Set());
   const routeFocus = typeof location.state?.focusWorkItem === 'string'
     ? location.state.focusWorkItem : null;
@@ -357,6 +348,8 @@ export default function MyWorkWorkspace(props = {}) {
   const [errorStatus, setErrorStatus] = useState(null);
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [audienceFilter, setAudienceFilter] = useState('ALL');
+  const [dependencyFilter, setDependencyFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState('due');
   const [notes, setNotes] = useState({});
@@ -440,6 +433,8 @@ export default function MyWorkWorkspace(props = {}) {
     setCloseGuard(false);
     setSourceFilter('ALL');
     setStatusFilter('ALL');
+    setAudienceFilter('ALL');
+    setDependencyFilter('ALL');
     setSearch('');
     pendingRef.current.clear();
   }, [scopeKey]);
@@ -524,8 +519,60 @@ export default function MyWorkWorkspace(props = {}) {
   };
 
   const items = useMemo(() => projection?.items || [], [projection]);
+  const audienceCounts = useMemo(() => ({
+    OPERATING: items.filter((item) => sourceVerifiedAudience(item) === 'OPERATING').length,
+    PLATFORM_BUILD: items.filter((item) => sourceVerifiedAudience(item) === 'PLATFORM_BUILD').length,
+    UNCLASSIFIED: items.filter((item) => sourceVerifiedAudience(item) === 'UNCLASSIFIED').length,
+  }), [items]);
   const selectedItem = items.find((item) => item.source_key === selectedKey) || null;
+  const openSourceOwnedWork = useCallback((item) => {
+    if (!item || !items.some(row => row.source_key === item.source_key)) return;
+    let destination;
+    try { destination = resolveUnifiedWorkDestination(item); }
+    catch { setActionError('MY_WORK_NAVIGATION_SOURCE_INVALID'); return; }
+    if (destination.kind === 'PROJECTS_TASK') {
+      const params = new URLSearchParams(location.search);
+      ['section', 'work', 'project', 'task', 'document', 'returnTo', 'resumeM04'].forEach(key => params.delete(key));
+      params.set('section', 'projects');
+      params.set('project', destination.locator.project_id);
+      params.set('task', destination.locator.task_id);
+      navigate({ pathname: '/headquarters', search: '?' + params.toString() });
+      return;
+    }
+    setActionError('');
+    setCrmEditNotice(null);
+    setCloseGuard(false);
+    setTaskDetailTab('DETAILS');
+    setSelectedKey(item.source_key);
+  }, [items, location.pathname, location.search, navigate]);
   const admittedSources = projection?.sources_included || [];
+  // Work source admission is NOT permission to edit or complete that source.
+  // Only a fresh, exact-principal capability result can expose CRM controls.
+  useEffect(() => {
+    const item = selectedItem;
+    if (item?.source !== 'CRM' || !authUser?.tenantId || !authUser?.id) {
+      setCrmTaskCapability({ key: null, edit: false, complete: false });
+      return undefined;
+    }
+    const key = scopeKey + ':' + item.source_key;
+    let active = true;
+    setCrmTaskCapability({ key: null, edit: false, complete: false });
+    readAttentionSourceActions({ tenantId: authUser.tenantId, principalId: authUser.id }, ['CRM'])
+      .then(result => {
+        if (!active || scopeRef.current !== scopeKey) return;
+        const actions = result?.unavailableSources?.includes('CRM')
+          ? [] : result?.sourceActions?.CRM || [];
+        setCrmTaskCapability({ key,
+          edit: Array.isArray(actions) && actions.includes('UPDATE'),
+          complete: Array.isArray(actions) && actions.includes('COMPLETE') });
+      }).catch(() => {
+        if (active) setCrmTaskCapability({ key: null, edit: false, complete: false });
+      });
+    return () => { active = false; };
+  }, [selectedItem?.source_key, selectedItem?.source, scopeKey, authUser?.tenantId, authUser?.id]);
+  const crmActionsAdmitted = selectedItem?.source === 'CRM'
+    && crmTaskCapability.key === scopeKey + ':' + selectedItem.source_key
+    && crmDetailState === 'VERIFIED';
   const openCount = items.filter((item) => item.status === 'OPEN').length;
   const progressCount = items.filter((item) => item.status === 'IN_PROGRESS').length;
   const dueTodayCount = useMemo(() => {
@@ -536,6 +583,9 @@ export default function MyWorkWorkspace(props = {}) {
   const filteredItems = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
     return items
+      .filter((item) => audienceFilter === 'ALL' || sourceVerifiedAudience(item) === audienceFilter)
+      .filter((item) => dependencyFilter === 'ALL'
+        || (item.source === 'PROJECTS' && item.dependency_readiness === dependencyFilter))
       .filter((item) => sourceFilter === 'ALL' || item.source === sourceFilter)
       .filter((item) => statusFilter === 'ALL' || (statusFilter === 'OVERDUE' ? item.is_overdue : item.status === statusFilter))
       .filter((item) => !query || [item.title, item.description, item.source,
@@ -543,7 +593,7 @@ export default function MyWorkWorkspace(props = {}) {
         typeof value === 'string' && value.toLocaleLowerCase().includes(query)
       )))
       .sort((left, right) => compareItems(left, right, sortMode));
-  }, [items, search, sortMode, sourceFilter, statusFilter]);
+  }, [items, search, sortMode, sourceFilter, statusFilter, audienceFilter, dependencyFilter]);
 
   useEffect(() => {
     // Exact current-session CRM source read; never a client authorization grant.
@@ -592,10 +642,21 @@ export default function MyWorkWorkspace(props = {}) {
 
   useEffect(() => {
     if (!focusKey || !items.some((item) => item.source_key === focusKey)) return;
+    const focused = items.find(item => item.source_key === focusKey);
+    if (focused?.source === 'PROJECTS') {
+      // Attention pagination can supply only a source key. The independently
+      // verified My Work record restores the exact project/task locator.
+      openSourceOwnedWork(focused);
+      return;
+    }
     rowRefs.current.get(focusKey)?.focus();
     rowRefs.current.get(focusKey)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    if (lastRouteFocusRef.current !== focusKey) {
+      setTaskDetailTab('DETAILS');
+      lastRouteFocusRef.current = focusKey;
+    }
     setSelectedKey(focusKey);
-  }, [items, focusKey]);
+  }, [items, focusKey, openSourceOwnedWork]);
 
   useEffect(() => {
     if (selectedKey) {
@@ -625,15 +686,13 @@ export default function MyWorkWorkspace(props = {}) {
   useEffect(() => {
     if (!selectedKey) return undefined;
     const onKeyDown = (event) => {
-      const modeless = window.innerWidth >= 768;
       const dialog = document.getElementById('my-work-detail-dialog');
-      if (modeless && !dialog?.contains(document.activeElement)) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         requestClose();
         return;
       }
-      if (event.key !== 'Tab' || modeless) return;
+      if (event.key !== 'Tab') return;
       const focusable = dialog?.querySelectorAll(
         'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
       );
@@ -667,6 +726,13 @@ export default function MyWorkWorkspace(props = {}) {
     setActionError('');
     setCrmEditNotice(null);
     setSelectedKey(null);
+    const origin = location.state?.attentionReturn;
+    if (origin && typeof origin.pathname === 'string'
+      && origin.pathname.startsWith('/') && !origin.pathname.startsWith('//')
+      && typeof origin.search === 'string') {
+      navigate({ pathname: origin.pathname, search: origin.search },
+        { state: { reopenDailyAttention: true } });
+    }
   }
 
   const discardDraftAndClose = () => {
@@ -677,6 +743,13 @@ export default function MyWorkWorkspace(props = {}) {
     setCrmEditNotice(null);
     setCloseGuard(false);
     setSelectedKey(null);
+    const origin = location.state?.attentionReturn;
+    if (origin && typeof origin.pathname === 'string'
+      && origin.pathname.startsWith('/') && !origin.pathname.startsWith('//')
+      && typeof origin.search === 'string') {
+      navigate({ pathname: origin.pathname, search: origin.search },
+        { state: { reopenDailyAttention: true } });
+    }
   };
 
   const complete = async (item) => {
@@ -769,11 +842,9 @@ export default function MyWorkWorkspace(props = {}) {
   }
 
   return (
-    <div className="min-h-screen bg-[#080b10] text-slate-100">
-      <main
-        aria-hidden={selectedItem && (typeof window === 'undefined' || window.innerWidth < 768) ? 'true' : undefined}
-        className="min-h-screen px-3 py-4 sm:px-6 sm:py-6 lg:px-10"
-      >
+    <div className="wilsy-project-work-surface min-h-[60dvh] bg-[#f5f7fc] text-[#182f51]">
+      <style>{PROJECTS_STYLE_MY_WORK}</style>
+      <main hidden={Boolean(selectedItem)} className="px-3 py-4 sm:px-6 sm:py-6 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div className="min-w-0">
@@ -850,6 +921,27 @@ export default function MyWorkWorkspace(props = {}) {
               <input id="my-work-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search title, description or source…"
                 className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-[#0b1421] px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-300/70" />
+              <label className="flex items-center gap-2 text-xs text-slate-300">
+                <span>Work purpose</span>
+                <select value={audienceFilter} aria-label="Filter by verified work purpose"
+                  onChange={(event) => setAudienceFilter(event.target.value)}
+                  className="min-h-9 rounded-lg border border-white/20 bg-[#0b1421] px-3 text-sm text-slate-100 focus:border-slate-200">
+                  <option value="ALL">All ({items.length})</option>
+                  <option value="OPERATING">Operating ({audienceCounts.OPERATING})</option>
+                  <option value="PLATFORM_BUILD">Platform Build ({audienceCounts.PLATFORM_BUILD})</option>
+                  <option value="UNCLASSIFIED">Needs classification ({audienceCounts.UNCLASSIFIED})</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-xs text-slate-300">
+                <span>Project readiness</span>
+                <select aria-label="Filter by verified project predecessor readiness"
+                  value={dependencyFilter} onChange={(event) => setDependencyFilter(event.target.value)}
+                  className="min-h-9 rounded-lg border border-white/20 bg-[#0b1421] px-3 text-sm text-white">
+                  <option value="ALL">All work</option>
+                  <option value="WAITING">Waiting on predecessors</option>
+                  <option value="READY">Predecessors ready</option>
+                </select>
+              </label>
               <label className="flex items-center gap-2 text-xs text-slate-400">
                 <span className="sr-only sm:not-sr-only">Sort</span>
                 <select value={sortMode} onChange={(event) => setSortMode(event.target.value)}
@@ -878,47 +970,53 @@ export default function MyWorkWorkspace(props = {}) {
             </div>}
           </section>
 
-          <section aria-label="Authorized work queue" className="overflow-hidden rounded-xl border border-white/10 bg-[#0c1420]">
-            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] gap-3 border-b border-white/10 bg-white/[0.025] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-slate-500 sm:grid">
+          <section aria-label="Authorized work queue" className={workTaskBlueprint.list}>
+            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 sm:grid">
               <span>Work</span><span>Priority</span><span>Deadline</span><span>Status</span>
             </div>
             {filteredItems.length ? (
-              <div role="list" aria-label="Authorized work items" className="divide-y divide-white/[0.07]">
+              <div role="list" aria-label="Authorized work items" className="divide-y divide-slate-200">
                 {filteredItems.map((item) => {
                   const selected = selectedKey === item.source_key;
                   return (
-                    <article key={item.source_key} role="listitem"
-                      className={`border-l-2 ${selected ? 'border-l-amber-300 bg-amber-300/[0.07] ring-2 ring-inset ring-amber-300/60' : 'border-l-transparent'}`}>
+                    <WorkTaskBlueprintRow key={item.source_key} selected={selected} className="!px-0 !py-0">
                       <button type="button" aria-pressed={selected}
                         aria-label={`${item.title}, ${SOURCE_LABELS[item.source]}, ${item.priority}, ${statusLabel(item)}${item.is_overdue ? ', overdue' : ''}`}
                         ref={(element) => {
                           if (element) rowRefs.current.set(item.source_key, element);
                           else rowRefs.current.delete(item.source_key);
                         }}
-                        onClick={() => { setActionError(''); setCrmEditNotice(null); setCloseGuard(false); setSelectedKey(item.source_key); }}
-                        className="grid min-h-[4.25rem] w-full grid-cols-1 items-center gap-2 px-3 py-2 text-left outline-none hover:bg-white/[0.035] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-300 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] sm:gap-3 sm:px-4">
+                        onClick={() => openSourceOwnedWork(item)}
+                        className="grid min-h-14 w-full grid-cols-1 items-center gap-2 px-3 py-2 text-left outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem] sm:gap-3 sm:px-4">
                         <span className="min-w-0">
                           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                            <span className="truncate text-sm font-medium text-white">{item.title}</span>
+                            <span className="truncate text-sm font-semibold text-slate-950">{item.title}</span>
                             {item.is_overdue && <span className="rounded border border-rose-400/30 bg-rose-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-200">Overdue</span>}
                           </span>
-                          <span className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                            <span className="rounded border border-amber-300/20 bg-amber-300/[0.06] px-1.5 py-0.5 text-amber-100">{SOURCE_LABELS[item.source] || item.source}</span>
+                          <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                            <span className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-slate-700">{SOURCE_LABELS[item.source] || item.source}</span>
                             <span>{kindLabel(item)}</span>
+                            {item.source === 'PROJECTS' && <span className={item.dependency_readiness === 'WAITING' ? 'font-semibold text-amber-800' : item.dependency_readiness === 'READY' ? 'text-emerald-800' : 'text-slate-600'}>
+                              {item.dependency_readiness === 'WAITING'
+                                ? 'Waiting on ' + item.dependency_remaining + ' predecessor' + (item.dependency_remaining === 1 ? '' : 's')
+                                : item.dependency_readiness === 'READY'
+                                  ? item.dependency_total > 0 ? 'Predecessors complete' : 'No predecessor gate'
+                                  : 'Dependency readiness unverified'}
+                            </span>}
                           </span>
                         </span>
                         <span className="flex items-center gap-2 text-xs sm:block">
                           <span className="text-slate-500 sm:hidden">Priority</span>
                           <span className={`inline-flex rounded border px-2 py-1 text-[10px] font-semibold uppercase ${PRIORITY_STYLE[item.priority] || PRIORITY_STYLE.NORMAL}`}>{item.priority}</span>
                         </span>
-                        <span className="flex items-center gap-1.5 text-xs text-slate-300">
-                          <Clock3 size={13} className="shrink-0 text-slate-500" /> {formatDue(item.due_at)}
+                        <span className="flex items-center gap-1.5 text-xs text-slate-700">
+                          <Clock3 size={13} className="shrink-0 text-slate-500" /> {formatWorkDue(item)}
                         </span>
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-700">
                           <Circle size={9} className={item.is_overdue ? 'fill-rose-300 text-rose-300' : 'text-slate-500'} /> {statusLabel(item)}
                         </span>
                       </button>
-                    </article>
+                    </WorkTaskBlueprintRow>
                   );
                 })}
               </div>
@@ -936,8 +1034,8 @@ export default function MyWorkWorkspace(props = {}) {
               </div>
             ) : (
               <div className="px-4 py-8 text-center text-sm text-slate-400" role="status">
-                No work matches the current source filter and search.
-                <button type="button" className="ml-2 text-amber-200 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); setStatusFilter('ALL'); }}>Clear filters</button>
+                No work matches the current authorized work filters.
+                <button type="button" className="ml-2 text-slate-100 underline" onClick={() => { setSearch(''); setSourceFilter('ALL'); setStatusFilter('ALL'); setAudienceFilter('ALL'); setDependencyFilter('ALL'); }}>Clear filters</button>
               </div>
             )}
           </section>
@@ -949,55 +1047,51 @@ export default function MyWorkWorkspace(props = {}) {
       </main>
 
       {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/55 md:pointer-events-none md:bg-transparent" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) requestClose();
-        }}>
-          <aside id="my-work-detail-dialog" role="dialog" aria-modal={typeof window === "undefined" || window.innerWidth < 768}
-            aria-labelledby="my-work-detail-title" aria-describedby="my-work-detail-description"
-            style={workbench && typeof window !== 'undefined' && window.innerWidth >= 768 ? {
-              left: workbench.x, top: workbench.y,
-              width: workbench.width, height: workbench.height,
-            } : undefined}
-            className="pointer-events-auto absolute inset-0 flex w-full flex-col overflow-y-auto rounded-none border border-white/10 bg-[#101b2b] shadow-2xl outline-none md:inset-auto md:min-h-80 md:rounded-xl md:ring-1 md:ring-amber-300/20">
-            <div role="separator" aria-orientation="vertical" aria-label="Resize work details"
-              tabIndex={0} title="Drag to resize the workbench"
-              onPointerDown={(event) => startWorkbenchGesture(event, 'RESIZE')}
-              onMouseDown={(event) => startWorkbenchGesture(event, 'RESIZE')}
-              onKeyDown={(event) => {
-                if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-                event.preventDefault();
-                setWorkbench((before) => before && ({
-                  ...before,
-                  width: Math.max(Math.min(560, window.innerWidth - 32),
-                    Math.min(window.innerWidth - before.x - 12,
-                      before.width + (event.key === 'ArrowRight' ? 48 : -48))),
-                }));
-              }}
-              className="absolute right-0 top-14 z-20 hidden h-[calc(100%-3.5rem)] w-2 cursor-ew-resize touch-none bg-transparent hover:bg-amber-300/20 focus-visible:bg-amber-300/30 md:block" />
-            <header onPointerDown={(event) => startWorkbenchGesture(event, 'MOVE')}
-              onMouseDown={(event) => startWorkbenchGesture(event, 'MOVE')}
-              className="flex cursor-move touch-none items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-6">
-              <span className="sr-only">Drag this header to move the workbench. Resize using the right edge or its keyboard arrow controls.</span>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-amber-200">{SOURCE_LABELS[selectedItem.source] || selectedItem.source} work</p>
-                <h2 id="my-work-detail-title" className="mt-1 break-words text-xl font-semibold text-white">{selectedItem.title}</h2>
-              </div>
-              <button ref={closeButtonRef} type="button" onClick={requestClose} aria-label="Close work details"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-300 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-                <X size={18} />
-              </button>
-            </header>
-
-            <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded border border-amber-300/25 bg-amber-300/[0.07] px-2 py-1 text-xs text-amber-100">{SOURCE_LABELS[selectedItem.source] || selectedItem.source}</span>
-                <span className={`rounded border px-2 py-1 text-xs font-semibold ${PRIORITY_STYLE[selectedItem.priority] || PRIORITY_STYLE.NORMAL}`}>{selectedItem.priority}</span>
-                <span className="inline-flex items-center gap-1.5 rounded border border-white/10 px-2 py-1 text-xs text-slate-300"><Circle size={9} /> {statusLabel(selectedItem)}</span>
-              </div>
-              <dl className="flex flex-wrap gap-x-8 gap-y-3 border-y border-white/10 py-3 text-sm [&>dd]:font-medium">
-                <dt className="text-slate-400">Deadline</dt><dd className="text-slate-100">{formatDue(selectedItem.due_at)}</dd>
-                <dt className="text-slate-400">Work type</dt><dd className="text-slate-100">{kindLabel(selectedItem)}</dd>
-              </dl>
+        <section className="wilsy-source-task-focus fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/55 p-3 sm:p-6"
+          aria-label="Selected authorised work" onMouseDown={event => {
+            if (event.target === event.currentTarget) requestClose();
+          }}>
+          <aside id="my-work-detail-dialog" role="dialog" aria-modal="true"
+            aria-label={'Work details: ' + selectedItem.title}
+            aria-describedby="my-work-detail-description"
+            className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
+            <UnifiedTaskHeader kind="Task" source={SOURCE_LABELS[selectedItem.source] || selectedItem.source}
+              title={selectedItem.title} status={statusLabel(selectedItem)}
+              due={formatWorkDue(selectedItem)}
+              owner={null} onClose={requestClose} closeRef={closeButtonRef}
+              closeLabel={location.state?.attentionReturn ? 'Back to Daily attention' : 'Back to work'}
+              primaryControl={taskDetailTab === 'SOURCE'
+                ? <button type="button" onClick={() => setTaskDetailTab('DETAILS')}
+                    className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-blue-800">
+                    Task details
+                  </button> : null}
+              actions={selectedItem.source === 'CRM' && crmActionsAdmitted && crmTaskCapability.edit
+                ? <button type="button" onClick={() => setTaskDetailTab('SOURCE')}
+                    className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-blue-800"
+                    aria-label="Authorized CRM source actions & history">Source actions &amp; history</button>
+                : null}
+            />
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-6">
+              <UnifiedTaskReadiness
+                description="Current EOS work facts. Source-owned evidence, commands and approvals require independent authorization."
+                facts={[
+                  { label: 'Accountable contributor',
+                    value: selectedItem.source === 'CRM'
+                      ? crmDetailState === 'VERIFIED' ? 'Owner principal recorded; display name unavailable' : null
+                      : selectedItem.owner_principal_id ? 'Owner recorded; display name unavailable' : null },
+                  { label: 'Delivery deadline', value: formatWorkDue(selectedItem) },
+                  { label: 'Source lifecycle', value: statusLabel(selectedItem) },
+                  { label: 'Predecessor gate',
+                    value: selectedItem.source === 'PROJECTS'
+                      ? selectedItem.dependency_readiness === 'WAITING'
+                        ? 'Waiting on ' + selectedItem.dependency_remaining + ' predecessor(s)'
+                        : selectedItem.dependency_readiness === 'READY'
+                          ? selectedItem.dependency_total ? 'Recorded predecessors complete' : 'No predecessor gate'
+                          : 'Not verified by this source snapshot'
+                      : 'Not supplied by this source' },
+                ]}
+                footnote="This view does not invent evidence, AI, approvals or completion authority. Only source-owned commands independently authorized by EOS may change the task."
+              />
               <section className="space-y-1 rounded-lg border border-white/10 bg-white/[0.025] p-4">
                 <h3 className="text-sm font-semibold text-white">Description</h3>
                 <p id="my-work-detail-description" className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">
@@ -1006,7 +1100,18 @@ export default function MyWorkWorkspace(props = {}) {
                 </p>
               </section>
 
-              {selectedItem.source === 'CRM' && (
+              {selectedItem.source === 'CRM' && taskDetailTab === 'DETAILS' && (
+                <p role={crmDetailState === 'UNAVAILABLE' ? 'alert' : 'status'}
+                  className={crmDetailState === 'UNAVAILABLE' ? 'text-xs text-rose-800' : 'text-xs text-slate-600'}>
+                  {crmDetailState === 'VERIFIED'
+                    ? 'Current task source independently verified by EOS. No CRM editing or completion authority is inferred from task visibility.'
+                    : crmDetailState === 'UNAVAILABLE'
+                      ? 'CRM source detail could not be verified (' + crmDetailError + '). No CRM actions are available.'
+                      : 'Verifying CRM source record independently with EOS…'}
+                </p>
+              )}
+              {selectedItem.source === 'CRM' && taskDetailTab === 'SOURCE'
+                && crmActionsAdmitted && crmTaskCapability.edit && (
                 <section aria-label="Verified CRM source record"
                   className="min-w-0 space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
                   <h3 className="text-sm font-semibold text-white">CRM source record</h3>
@@ -1129,7 +1234,8 @@ export default function MyWorkWorkspace(props = {}) {
                       className="min-h-10 min-w-0 rounded-lg border border-white/15 bg-black/20 px-3 font-mono text-xs text-white outline-none focus:border-amber-300" />
                   </label>
                 </section>
-              ) : completionPath(selectedItem) ? (
+              ) : completionPath(selectedItem)
+                && (selectedItem.source !== 'CRM' || (crmActionsAdmitted && crmTaskCapability.complete)) ? (
                 <label className="grid min-w-0 gap-1 border-t border-white/10 pt-4 text-xs text-slate-300">
                   Completion note <span className="text-slate-500">(required by this source)</span>
                   <textarea value={notes[selectedItem.source_key] || ''}
@@ -1153,7 +1259,9 @@ export default function MyWorkWorkspace(props = {}) {
               )}
             </div>
 
-            {completionPath(selectedItem) || selectedItem.source === 'LEGAL' ? (
+            {(selectedItem.source === 'LEGAL'
+              || (completionPath(selectedItem)
+                && (selectedItem.source !== 'CRM' || (crmActionsAdmitted && crmTaskCapability.complete)))) ? (
               <footer className="border-t border-white/10 p-4 sm:p-6">
                 <button type="button" onClick={() => complete(selectedItem)}
                   disabled={completing === selectedItem.source_key || closeGuard
@@ -1169,12 +1277,40 @@ export default function MyWorkWorkspace(props = {}) {
               </footer>
             ) : null}
           </aside>
-        </div>
+        </section>
       )}
     </div>
   );
 }
 
+
+/* Projects-standard light task surface. EOS data and actions remain source-owned. */
+const PROJECTS_STYLE_MY_WORK = `
+.wilsy-project-work-surface{font-family:Inter,Arial,sans-serif;color:#172e52;background:#f5f7fc}
+.wilsy-project-work-surface [hidden]{display:none!important}
+.wilsy-project-work-surface main>div{max-width:1200px}
+.wilsy-project-work-surface main>div>header{background:#102d51;color:#fff;border-radius:14px 14px 0 0;padding:16px 22px}
+.wilsy-project-work-surface main>div>section{background:#fff;border:1px solid #d5dfef;padding:14px 20px}
+.wilsy-project-work-surface main>div>section :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300){color:#172e52!important}
+.wilsy-project-work-surface main>div>section :is(.text-slate-400,.text-slate-500){color:#526787!important}
+.wilsy-project-work-surface main>div>section :is(input,select){background:#fff!important;color:#172e52!important;border-color:#c3d2e8!important}
+.wilsy-project-work-surface main>div>section button[aria-pressed=true]{background:#1747ce!important;color:#fff!important;border-color:#1747ce!important}
+.wilsy-project-work-surface main>div>section button[aria-pressed=false]{background:#f4f7fe!important;color:#18365f!important;border-color:#cedaeb!important}
+.wilsy-project-work-surface main>div>footer{background:#f8faff;border:1px solid #d5dfef;padding:10px 20px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside{color:#172e52}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside header h2{color:#0f2749!important;visibility:visible!important;opacity:1!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside [aria-label="Source-verified task execution readiness"] h3{color:#12315b!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300,.text-amber-100,.text-amber-200){color:#172e52!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside :is(.text-slate-400,.text-slate-500){color:#526787!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside section:not([aria-label="Source-verified task execution readiness"]){background:#f8faff!important;border:1px solid #d5dfef!important;border-radius:12px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside :is(input,textarea,select){background:#fff!important;color:#172e52!important;border-color:#bfd0e7!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside button{border-radius:9px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside .bg-amber-300{background:#1747ce!important;color:#fff!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside .text-rose-200{color:#b42318!important}
+.wilsy-project-work-surface .wilsy-source-task-focus>aside .text-emerald-200{color:#12734c!important}
+@media(max-width:767px){.wilsy-project-work-surface .wilsy-source-task-focus{padding:9px}}
+`;
 
 /**
  * @description Execute a source-owned, audited CRM task revision from a
@@ -1642,7 +1778,7 @@ function FilterButton({ active, onClick, children }) {
 
 /*
  * ARTIFACT: MyWorkWorkspace.jsx
- * VERSION: v1.27.0-COMPACT-EXECUTION-CONTROLS
+ * VERSION: v1.39.0-ATTENTION-ORIGIN-RETURN
  * AUTHORITY BOUNDARY: Read-only validated projection plus source-owned commands.
  * TENANT POSTURE: Current exact authenticated tenant and principal only.
  * FAIL-CLOSED POSTURE: Invalid/denied projections clear queue; failed refreshes are marked stale.

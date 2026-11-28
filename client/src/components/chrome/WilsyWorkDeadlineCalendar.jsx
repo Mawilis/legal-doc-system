@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authorised Work Deadline Calendar
- * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS
+ * VERSION: v1.6.0-CANONICAL-WORK-DEADLINE-HANDOFF
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Project source-owned work deadlines with civil-date preservation,
  *          local instant display, accessible day/week/month navigation and
@@ -8,7 +8,22 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/chrome/WilsyWorkDeadlineCalendar.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre validates EOS /my-work;
  *                            MyWorkWorkspace delegates commands to EOS sources.
- * CERTIFICATION / UPDATE DATE: 2026-11-10
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.6.0-CANONICAL-WORK-DEADLINE-HANDOFF uses EOS Projects civil due_date throughout calendar counts and agendas, and opens the source-owned task without falsely promising completion in My Work.
+ * CHANGELOG: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR adopts the
+ *          established Projects light task surface for all authorised
+ *          calendar entry points while preserving civil-date navigation,
+ *          source filtering and EOS-owned task handoffs.
+ * CHANGELOG: v1.5.0-PROJECTS-STYLE-WORK-CALENDAR names PROJECTS and HR
+ *          in the authorized calendar agenda without changing source
+ *          identity, dates, permissions or command routing.
+ * CHANGELOG: v1.3.1-VERIFIED-WORK-CALENDAR-ACTION-LABEL keeps the
+ *          established source-action accessible name after introducing
+ *          the common task row, preserving calendar handoff contracts.
+ * CHANGELOG: v1.3.0-SHARED-WORK-BLUEPRINT-AGENDA consumes
+ *          the reusable task blueprint, with readable neutral row
+ *          typography and accessible action while preserving date-only
+ *          source semantics and the existing My Work command handoff.
  * CHANGELOG: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS adds one-day and Monday-first
  *            seven-day views with matching agenda dates and period navigation;
  *            the month view remains the default and existing source handoff
@@ -27,10 +42,28 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively executes funds.
  */
 import React, { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from '../workspaces/WorkTaskBlueprint.jsx';
 import { ArrowRight, ChevronLeft, ChevronRight, Clock3 } from 'lucide-react';
+
+const PROJECTS_CALENDAR_STYLE = `
+[data-wilsy-calendar-standard=PROJECTS]{color:#172e52;background:#fff}
+[data-wilsy-calendar-standard=PROJECTS] :is(.text-white,.text-slate-100,.text-slate-200,.text-slate-300,.text-amber-100,.text-amber-200){color:#172e52!important}
+[data-wilsy-calendar-standard=PROJECTS] :is(.text-slate-400,.text-slate-500,.text-slate-600){color:#516783!important}
+[data-wilsy-calendar-standard=PROJECTS] .bg-\\[\\#0a1628\\]{background:#eef4ff!important}
+[data-wilsy-calendar-standard=PROJECTS] button{border-color:#d2deee!important;background:#f8faff;color:#172e52!important}
+[data-wilsy-calendar-standard=PROJECTS] button:hover{background:#edf5ff!important}
+[data-wilsy-calendar-standard=PROJECTS] button[aria-pressed=true]{background:#dce9ff!important;border-color:#2563eb!important;color:#173f8e!important}
+[data-wilsy-calendar-standard=PROJECTS] button:focus-visible{outline:3px solid #2563eb!important;outline-offset:2px}
+[data-wilsy-calendar-standard=PROJECTS] .bg-amber-300{background:#1648cc!important;color:#fff!important}
+[data-wilsy-calendar-standard=PROJECTS] .text-amber-300{color:#1648cc!important}
+[data-wilsy-calendar-standard=PROJECTS] .border-white\\/10,[data-wilsy-calendar-standard=PROJECTS] .border-white\\/15{border-color:#d5dfef!important}
+[data-wilsy-calendar-standard=PROJECTS] .text-rose-200{color:#b42318!important}
+[data-wilsy-calendar-standard=PROJECTS] .text-rose-800{color:#b42318!important}
+`;
 
 const SOURCES = Object.freeze({
   LEGAL: 'Legal', OPERATIONS: 'Operations', INTELLIGENCE: 'Intelligence', CRM: 'CRM',
+  PROJECTS: 'Projects', HR: 'HR & Hiring',
 });
 const VIEWS = Object.freeze([
   ['DAY', 'Day'], ['WEEK', 'Week'], ['MONTH', 'Month'],
@@ -116,6 +149,10 @@ const shiftedMonth = (date, delta) => {
   const last = civilDate(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   return civilDate(first.getFullYear(), first.getMonth(), Math.min(date.getDate(), last));
 };
+// Projects deadlines are civil dates. Other sources provide timestamp instants.
+// Do not infer one from the other or invent times.
+const sourceDeadline = (item) => item.source === 'PROJECTS' && item.due_date
+  ? item.due_date : item.due_at;
 const deadlineTime = (value) => {
   if (!value) return 'No due time';
   if (typeof value === 'string' && CIVIL_DATE.test(value)) return 'Date only · no due time';
@@ -172,15 +209,15 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
   const counts = useMemo(() => {
     const byDay = new Map();
     for (const item of items) {
-      const day = localWorkDay(item.due_at);
+      const day = localWorkDay(sourceDeadline(item));
       if (day) byDay.set(day, (byDay.get(day) || 0) + 1);
     }
     return byDay;
   }, [items]);
-  const undated = items.filter((item) => item.due_at === null || item.due_at === undefined);
+  const undated = items.filter((item) => sourceDeadline(item) === null || sourceDeadline(item) === undefined);
   const overdue = items.filter((item) => item.is_overdue === true);
   const agenda = selected === null ? undated : selected === 'OVERDUE' ? overdue
-    : items.filter((item) => localWorkDay(item.due_at) === selected);
+    : items.filter((item) => localWorkDay(sourceDeadline(item)) === selected);
 
   useLayoutEffect(() => {
     if (pendingFocus.current) {
@@ -228,7 +265,8 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
   const periodLabel = view.toLowerCase();
 
   return (
-    <div aria-label="EOS work deadline calendar" className="space-y-3">
+    <div aria-label="EOS work deadline calendar" data-wilsy-calendar-standard="PROJECTS" className="space-y-3 rounded-xl border border-[#d5dfef] bg-white p-3 text-[#172e52] sm:p-5">
+      <style>{PROJECTS_CALENDAR_STYLE}</style>
       <p className="text-xs leading-5 text-slate-400">
         Select a day to review and act on your authorised work deadlines.
       </p>
@@ -323,21 +361,21 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
           )}
         </div>
       ) : agenda.map((item) => (
-        <article key={item.source_key} className="rounded-xl border border-white/10 bg-white/[0.035] p-3">
-          <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-wide">
-            <span className="font-semibold text-amber-200">{SOURCES[item.source]}</span>
-            <span className={item.is_overdue ? 'text-rose-300' : 'text-slate-400'}>
+        <WorkTaskBlueprintRow key={item.source_key}>
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-slate-700">{SOURCES[item.source]}</span>
+            <span className={item.is_overdue ? 'font-semibold text-rose-800' : 'text-slate-600'}>
               {item.is_overdue ? 'Overdue' : item.priority + ' priority'}
             </span>
           </div>
-          <h5 className="mt-2 text-sm font-semibold text-white">{item.title}</h5>
-          {item.description && <p className="mt-1 break-words text-xs text-slate-400">{item.description}</p>}
-          <div className="mt-2 flex items-center gap-1 text-xs text-slate-400"><Clock3 size={12}/> {deadlineTime(item.due_at)}</div>
+          <h5 className="mt-1 text-sm font-semibold leading-5 text-slate-950">{item.title}</h5>
+          {item.description && <p className="mt-1 break-words text-xs text-slate-600">{item.description}</p>}
+          <div className="mt-1 flex items-center gap-1 text-xs text-slate-600"><Clock3 size={12}/> {deadlineTime(sourceDeadline(item))}</div>
           <button type="button" onClick={() => onOpenWork(item)}
-            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#081326] hover:bg-amber-200">
-            Review and complete in My Work <ArrowRight size={14}/>
+            className={'mt-2 ' + workTaskBlueprint.primary}>
+            Open authorized task <ArrowRight size={14}/>
           </button>
-        </article>
+        </WorkTaskBlueprintRow>
       ))}
     </div>
   );
@@ -345,7 +383,7 @@ export default function WilsyWorkDeadlineCalendar({ items, onOpenWork, onOpenWor
 
 /*
  * ARTIFACT: WilsyWorkDeadlineCalendar.jsx
- * VERSION: v1.2.0-CIVIL-DATE-DAY-WEEK-VIEWS
+ * VERSION: v1.6.0-CANONICAL-WORK-DEADLINE-HANDOFF
  * AUTHORITY BOUNDARY: Read-only dates; source services authorize commands.
  * TENANT POSTURE: Only exact-session validated EOS projection items are consumed.
  * FAIL-CLOSED POSTURE: Invalid dates reject; no invented events or shifts.

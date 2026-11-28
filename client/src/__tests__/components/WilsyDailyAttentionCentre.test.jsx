@@ -5,13 +5,17 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Centre Client Contract Tests
- * VERSION: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT
+ * VERSION: v1.12.0-CONCURRENT-SOURCE-ADMISSION-CERT
  * AUTHORITY: WILSY OS Core Governance
  * EPITOME: Exercises tenant-bound source rendering, EOS-reported coverage,
  *          interactive work triage, source-owned navigation and honest empty states.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyDailyAttentionCentre.test.jsx
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre.jsx and EOS /api/my-work schema.
- * CERTIFICATION / UPDATE DATE: 2026-11-16
+ * CERTIFICATION / UPDATE DATE: 2026-11-26
+ * CHANGELOG: v1.12.0-CONCURRENT-SOURCE-ADMISSION-CERT verifies that an independent EOS Attention read begins while My Work is unresolved, with no results exposed before source validation.
+ * CHANGELOG: v1.11.0-EDGE-RESIZE-FOCUSED-CERT verifies
+ *          the accessible edge resize controls and transient dimension
+ *          changes independently from the float/dock move command.
  * CHANGELOG: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT proves explicit rejection preservation and accepted-but-unverified readback recovery without issuing a second command.
  *            v1.9.0-COMPLETION-READBACK-GATE-CERT proves source receipt, fresh exact-scope reads, projection removal and stale-readback preservation.
  *            v1.8.0-SINGLE-SOURCE-ROW-PRESENTATION-CERT proves an active work
@@ -172,6 +176,37 @@ const renderCentre = (props = {}) => {
 beforeEach(() => {
   vi.clearAllMocks();
   api.get.mockResolvedValue({ data: projection() });
+});
+
+describe('bounded concurrent EOS attention admission', () => {
+  it('starts the independent attention GET before My Work completes, without showing unverified task rows', async () => {
+    const source = projection();
+    let resolveProjection;
+    const heldProjection = new Promise(resolve => { resolveProjection = resolve; });
+    api.get.mockImplementation((path) => {
+      if (path === '/my-work') return heldProjection;
+      if (path === '/attention/feed') return Promise.resolve({ data: attentionFeedFor(source) });
+      if (path.startsWith('/attention/actions')) return Promise.resolve({ data: {
+        sourceActions: {}, unavailableSources: [],
+      } });
+      throw new Error('Unexpected EOS path: ' + path);
+    });
+    const session = {
+      ...authenticatedFounderTestSession, sessionGeneration: 991,
+    };
+    render(<AuthContext.Provider value={session}>
+      <WilsyDailyAttentionCentre tenantId={TENANT} open
+        activeCount={2} onToggle={vi.fn()} onClose={vi.fn()}
+        onOpenWork={vi.fn()}/>
+    </AuthContext.Provider>);
+    await waitFor(() => {
+      expect(api.get.mock.calls.some(([path]) => path === '/my-work')).toBe(true);
+      expect(api.get.mock.calls.some(([path]) => path === '/attention/feed')).toBe(true);
+    });
+    expect(screen.queryByText('Review governed contract')).toBeNull();
+    resolveProjection({ data: source });
+    expect(await screen.findByText('Review governed contract')).toBeTruthy();
+  });
 });
 
 describe('WILSY daily attention centre', () => {
@@ -515,7 +550,7 @@ describe('WILSY daily attention centre', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Review governed contract', exact: true }));
     const dialog = screen.getByRole('dialog', { name: 'Daily attention centre' });
     expect(within(dialog).getByText(/Verify source evidence/)).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Open in My Work' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Open authorized task' }));
     expect(onOpenWork).toHaveBeenCalledTimes(1);
     expect(api.get).toHaveBeenCalledTimes(1);
   });
@@ -558,6 +593,23 @@ describe('WILSY daily attention centre', () => {
     expect(Number.parseFloat(panel.style.left)).toBeGreaterThanOrEqual(before);
     fireEvent.click(screen.getByRole('button', { name: 'Dock daily attention panel' }));
     expect(panel.getAttribute('data-floating')).toBe('false');
+  });
+
+  it('resizes daily attention through accessible edge controls', async () => {
+    renderCentre();
+    await screen.findByText('Review governed contract');
+    const panel = screen.getByRole('dialog', { name: 'Daily attention centre' });
+    fireEvent.keyDown(screen.getByRole('separator', {
+      name: 'Resize daily attention right edge',
+    }), { key: 'ArrowRight' });
+    expect(Number.parseFloat(panel.style.width)).toBeGreaterThan(0);
+    fireEvent.keyDown(screen.getByRole('separator', {
+      name: 'Resize daily attention bottom edge',
+    }), { key: 'ArrowDown' });
+    expect(Number.parseFloat(panel.style.height)).toBeGreaterThan(0);
+    expect(screen.getByRole('separator', {
+      name: 'Resize daily attention top edge',
+    })).toBeTruthy();
   });
 
   it('turns the footer calendar into an actionable EOS deadline view', async () => {
@@ -614,7 +666,7 @@ describe('WILSY daily attention centre', () => {
     const { onOpenWork } = renderCentre();
     await screen.findByText('Review governed contract');
     fireEvent.click(screen.getByRole('button', {
-      name: 'Act on Review governed contract in My Work',
+      name: 'Open task Review governed contract',
     }));
     expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
       source_key: 'LEGAL:LEGAL-1',
@@ -661,7 +713,7 @@ describe('WILSY daily attention centre', () => {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.test.jsx
- * VERSION: v1.10.0-ACCEPTED-RECEIPT-RECONCILIATION-CERT
+ * VERSION: v1.12.0-CONCURRENT-SOURCE-ADMISSION-CERT
  * AUTHORITY BOUNDARY: Deterministic component test only.
  * TENANT POSTURE: Synthetic exact-tenant and foreign-tenant cases.
  * FAIL-CLOSED POSTURE: No simulated approvals or silent fallback.

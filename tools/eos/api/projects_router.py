@@ -3,7 +3,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 Authenticated tenant Projects lifecycle HTTP authority.
 
 TITLE: WILSY OS Projects HTTP Router
-VERSION: v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION
+VERSION: v1.51.0-COMPLETED-SOURCE-PAGING
 AUTHORITY: Python EOS canonical tenant IAM, entitlement and Projects registry.
 EPITOME: Exposes one tenant-scoped Projects lifecycle through the existing
          validated domain and caller-transaction-owned registry. Role/entitlement activation is limited to the explicitly authorized Founder
@@ -12,7 +12,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/pr
 COLLABORATION / OWNERSHIP: Projects domain and registry own business lifecycle;
                            tenant authorization and entitlement registries own
                            independent admission; server.py mounts this router.
-CERTIFICATION / UPDATE DATE: 2026-11-20.
+CERTIFICATION / UPDATE DATE: 2026-11-24.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: No client-provided actor or tenant authority; IDs,
                             idempotency and revision are bounded; no-store
@@ -29,7 +29,51 @@ TRANSACTION BOUNDARY: Router owns each Mongo transaction and passes its exact
                       response follows commit. The registry never opens one.
 FINANCIAL AUTHORITY BOUNDARY: Projects cannot authorize spend, approval,
                               payment, execution or settlement; Kennel EOS only.
+CHANGELOG: v1.51.0-COMPLETED-SOURCE-PAGING adds independently IAM-gated, exact-project completed-task paging with bounded search, assignee filtering, newest/oldest completion sort and immutable source-event completion metadata; no task mutation or access expansion.
+CHANGELOG: v1.50.0-BOUNDED-AUDITED-COMMENT-CORRECTIONS\n  Original-author task comment corrections are append-only and admitted only
+  within 30 minutes of the original source timestamp; EOS checks author,
+  comment fingerprint, reason and time in the write transaction.
+CHANGELOG: v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS exposes exact-command
+  immutable receipt reconciliation without resubmitting a mutation.
 CHANGELOG:
+   v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS wraps authorized
+  GET transaction execution in the existing opt-in Mongo driver scope,
+  exposing command/pool/pre-command waits to the same safe trace as IAM.
+  No new Mongo call, changed transaction interface, timeout or retry.
+  v1.48.0-TRACE-CORRELATED-PROJECT-READS joins the existing EOS
+  authentication and tenant authorization opt-in timing stages to Projects
+  slow GET and summary phases by an allowlisted opaque trace reference;
+  no user/tenant/session IDs, token material, query data, new DB I/O,
+  altered privilege or timeout semantics are recorded.
+  v1.47.1-PRESERVED-READ-RETRY-INTERFACE retains the original
+  zero-keyword Projects list transaction call and exact bounded retry
+  contract, while a request-local ContextVar carries timing state into
+  the unmodified transaction/entitlement path. No global mutable scope,
+  IAM change or repeated source query is introduced.
+  v1.47.0-BOUNDED-PROJECT-GET-LATENCY-PHASES profiles slow/failing
+   read-only Projects list/task/task activity/evidence transactions;
+   times Mongo session, entitlement and source phases with safe labels.
+   No IAM, session, retry, query, mutation or timeout changes.
+  v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY exposes only a
+  read-authorized exact-project/task bounded audit timeline with verified
+  decisions and rationale; never returns actor principal IDs, replay keys,
+  database records or cryptographic internals in the browser.
+  v1.45.0-AUDITED-PURPOSE-UNCLASSIFIED-COMMAND admits
+  reasoned purpose clearing as UNCLASSIFIED with current project:update,
+  stable CAS and audit; no unverified source category is projected.
+  v1.44.1-PURPOSE-CAS-HTTP-REVISION-READBACK includes the exact
+  independent source-purpose revision in authorized GET and POST readback
+  so clients use source CAS instead of guessing current metadata revision.
+  v1.44.0-AUDITED-PROJECT-WORK-PURPOSE-COMMAND adds exact-source project work-purpose GET and audited
+  project:update POST, strict revision/idempotency and same-transaction
+  current source+event readback. No Founder or participant privilege inheritance.
+  v1.46.0-EXACT-SOURCE-WORK-PURPOSE-HISTORY restores the historical
+  v1.42.0 Founder contributor and participant profile changelog attribution
+  without expanding the read-only Projects transaction recovery scope.
+  v1.43.0-BOUNDED-PROJECT-LIST-SOURCE-RETRY reopens one fresh majority/snapshot
+  transaction only if a read-only list's source cursor failed with the exact
+  PROJECT_LIST_UNAVAILABLE code. It never retries IAM, entitlement, other
+  source or transport errors and never retries write commands.
   v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION adds an explicit POST admission for an already-active Founder project contributor with a separately verified current ENTERPRISE_ADMIN grant authority. Delegates the narrow WILSY-only contributor IAM role through existing digest-only invitation/acceptance and durable readback, never by direct role write, automatic project participation or root fallback.
     v1.41.1-TYPED-PARTICIPANT-NAME-LOOKUP validates participant
   principal identifiers as nonempty strings before bounded display-name
@@ -185,6 +229,7 @@ CHANGELOG:
 """
 from __future__ import annotations
 
+from contextvars import ContextVar
 from datetime import date, datetime, timezone
 import hashlib
 import logging
@@ -205,7 +250,9 @@ from tools.eos.api.tenant_authorization_http import (
     RequireTenantAuthorization,
     TenantAuthorizationContext,
 )
-from tools.eos.auth.authentication import get_current_identity
+from tools.eos.auth.authentication import (
+    get_current_identity, current_request_timing_correlation,
+)
 from tools.eos.auth.identity import SovereignIdentity
 from tools.eos.auth.principal_status import PrincipalStatus
 from tools.eos.auth.tenant_membership import TenantMembershipStatus
@@ -300,6 +347,11 @@ from tools.eos.saas.projects.project_comment_registry import (
 from tools.eos.saas.projects.project_template_catalogue import (
     get_blueprint, list_blueprints, SCHEMA as PROJECT_TEMPLATE_SCHEMA,
 )
+from tools.eos.saas.projects.project_work_purpose_registry import (
+    COLLECTION as PROJECT_WORK_PURPOSE_COLLECTION,
+    EVENT_COLLECTION as PROJECT_WORK_PURPOSE_EVENT_COLLECTION,
+    ProjectWorkPurposeRegistry, WorkPurposeError, WorkPurposeConflict,
+)
 from tools.eos.saas.projects.project_task_registry import (
     COLLECTION as PROJECT_TASK_COLLECTION,
     EVENT_COLLECTION as PROJECT_TASK_EVENT_COLLECTION,
@@ -328,8 +380,21 @@ from tools.eos.saas.projects.project_registry import (
 )
 
 
-VERSION: Final[str] = "v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION"
+VERSION: Final[str] = "v1.49.0-READ-ONLY-TASK-COMMAND-RECEIPTS"
 logger = logging.getLogger("WilsyOS.API.Projects")
+
+def _safe_projects_read_trace() -> str:
+    """Expose only an EOS-issued or strictly validated request trace label."""
+    value = current_request_timing_correlation()
+    return value if isinstance(value, str) and re.fullmatch(
+        r"TRC-(?:[A-Z0-9]{8}-[A-Z0-9]{6}|SERVER-[A-F0-9]{12})", value,
+    ) else "TRACE_UNAVAILABLE"
+
+# Projects list keeps its established _transaction(context, callback) call
+# contract; profiling metadata lives only within the current request context.
+_project_list_read_timings: ContextVar[dict[str, float] | None] = ContextVar(
+    "wilsy_projects_list_read_timings", default=None,
+)
 _READ = RequireTenantAuthorization("project:read", "project_list")
 _DETAIL = RequireTenantAuthorization("project:read", "project_detail")
 _CREATE = RequireTenantAuthorization("project:create", "project_create")
@@ -512,6 +577,12 @@ class ProjectTaskCommentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     body: str = Field(min_length=1, max_length=5000)
     mentions: tuple[str, ...] = Field(default=(), max_length=10)
+    # Corrections are fresh, audited append-only comments. Never allow a
+    # user-controlled timestamp, original author or mutable comment update.
+    correction_of: str | None = Field(default=None, pattern=r"^pcm-[0-9a-f]{48}$")
+    correction_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{128}$")
+    correction_reason: str | None = Field(default=None, min_length=10, max_length=500)
+
 
     @field_validator("mentions", mode="before")
     @classmethod
@@ -537,6 +608,16 @@ class ProjectTaskReviseRequest(BaseModel):
     def parse_wire_date(cls, value: object) -> object:
         """Retain strict revision admission for canonical calendar strings."""
         return _project_wire_iso_date(value)
+
+
+class ProjectTaskWorkPurposeRequest(BaseModel):
+    """Source-owner categorization command; no inferred approval or gate."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    audience: Literal["OPERATING", "PLATFORM_BUILD", "UNCLASSIFIED"]
+    reason: str = Field(min_length=10, max_length=1000)
+    expected_task_revision: int = Field(ge=1)
+    expected_purpose_revision: int = Field(ge=0)
 
 
 class ProjectTaskTransitionRequest(BaseModel):
@@ -704,6 +785,8 @@ def _transaction(
     project and entitlement reads in each attempt receive the exact callback
     session. Index DDL belongs to the application startup readiness gate.
     """
+    if phase_timings is None:
+        phase_timings = _project_list_read_timings.get()
     _require_project_role_tenant(context)
     client, database = kernel_db.get_client(), kernel_db.get_database()
     if client is None or database is None:
@@ -786,6 +869,10 @@ def _transaction(
         raise HTTPException(status_code=409, detail=error.code) from error
     except ProjectCommentError as error:
         logger.error("PROJECT_COMMENT_TRANSACTION_FAILURE code=%s", error.code)
+        raise HTTPException(status_code=503, detail=error.code) from error
+    except WorkPurposeConflict as error:
+        raise HTTPException(status_code=409, detail=error.code) from error
+    except WorkPurposeError as error:
         raise HTTPException(status_code=503, detail=error.code) from error
     except ProjectTaskNotFound as error:
         raise HTTPException(status_code=404, detail=error.code) from error
@@ -1109,6 +1196,70 @@ def admit_founder_project_contributor_iam(
     }
 
 
+def _profiled_projects_get(
+    context: TenantAuthorizationContext,
+    operation: str,
+    callback: Callable[[ProjectRegistry, Any], dict[str, object]],
+) -> dict[str, object]:
+    """Profile an authorized GET without additional queries or identity logging.
+
+    Timing begins after FastAPI authorization dependencies. Thus handler_ms
+    does not measure authentication or prehandler permission evaluation.
+    """
+    if operation not in {
+        "PROJECT_LIST", "TASK_LIST", "TASK_COMMENTS",
+        "TASK_EVENTS", "TASK_APPROVALS", "TASK_ATTACHMENTS",
+    }:
+        raise RuntimeError("PROJECT_READ_PROFILE_OPERATION_INVALID")
+    started = perf_counter()
+    timings: dict[str, float] = {}
+    outcome = "OK"
+
+    def measured(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        source_started = perf_counter()
+        try:
+            return callback(registry, session)
+        finally:
+            timings["source_ms"] = round(
+                timings.get("source_ms", 0.0)
+                + (perf_counter() - source_started) * 1000, 2,
+            )
+
+    try:
+        # Instrument the existing exact-snapshot transaction, not its query
+        # data. When diagnostics are disabled, this scope is a no-op.
+        with kernel_db.mongo_timing_scope(
+            stage="PROJECTS_READ", correlation=_safe_projects_read_trace(),
+        ):
+            if operation == "PROJECT_LIST":
+                token = _project_list_read_timings.set(timings)
+                try:
+                    # Preserve the no-keyword call and exact bounded retry.
+                    return _transaction(context, measured)
+                finally:
+                    _project_list_read_timings.reset(token)
+            return _transaction(context, measured, phase_timings=timings)
+    except Exception:
+        outcome = "FAILED"
+        raise
+    finally:
+        handler_ms = round((perf_counter() - started) * 1000, 2)
+        if outcome == "FAILED" or handler_ms >= 1000:
+            logger.warning(
+                "PROJECTS_GET_LATENCY trace_id=%s operation=%s outcome=%s handler_ms=%.2f "
+                "session_open_ms=%s transaction_ms=%s entitlement_ms=%s "
+                "source_ms=%s pointer_ms=%s history_ms=%s attempts=%s",
+                _safe_projects_read_trace(), operation, "SLOW" if outcome == "OK" else outcome, handler_ms,
+                timings.get("session_open_ms", "NOT_REACHED"),
+                timings.get("transaction_ms", "NOT_REACHED"),
+                timings.get("entitlement_ms", "NOT_REACHED"),
+                timings.get("source_ms", "NOT_REACHED"),
+                timings.get("entitlement_pointer_ms", "NOT_REACHED"),
+                timings.get("entitlement_history_ms", "NOT_REACHED"),
+                int(timings.get("attempts", 0)),
+            )
+
+
 @router.get("")
 def list_projects(
     response: Response,
@@ -1143,7 +1294,19 @@ def list_projects(
             "next_offset": offset + len(items) if has_more else None,
         }
 
-    return _transaction(context, load)
+    # A registry-wrapped Mongo cursor failure is no longer visible to
+    # PyMongo's with_transaction transient retry classifier. Re-admit the
+    # exact already-authorized GET in one wholly new snapshot transaction,
+    # including fresh current entitlement verification; never retry writes,
+    # denials, missing indexes, source corruption or unrelated 503s.
+    for attempt in range(2):
+        try:
+            return _profiled_projects_get(context, "PROJECT_LIST", load)
+        except HTTPException as error:
+            if (attempt != 0 or error.status_code != 503
+                    or error.detail != "PROJECT_LIST_UNAVAILABLE"):
+                raise
+    raise HTTPException(status_code=503, detail="PROJECT_LIST_UNAVAILABLE")
 
 
 @router.get("/summary")
@@ -1179,11 +1342,11 @@ def project_summary(
     except Exception:
         elapsed_ms = round((perf_counter() - started) * 1000, 2)
         logger.warning(
-            "PROJECTS_SUMMARY_READ outcome=FAILED total_ms=%.2f count_ms=%s "
+            "PROJECTS_SUMMARY_READ trace_id=%s outcome=FAILED total_ms=%.2f count_ms=%s "
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
             "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
             "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
-            elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+            _safe_projects_read_trace(), elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
             phase_timings.get("entitlement_ms", "NOT_REACHED"),
             phase_timings.get("transaction_ms", "NOT_REACHED"),
             phase_timings.get("session_open_ms", "NOT_REACHED"),
@@ -1198,11 +1361,11 @@ def project_summary(
     elapsed_ms = round((perf_counter() - started) * 1000, 2)
     if elapsed_ms >= 1000:
         logger.warning(
-            "PROJECTS_SUMMARY_READ outcome=SLOW total_ms=%.2f count_ms=%s "
+            "PROJECTS_SUMMARY_READ trace_id=%s outcome=SLOW total_ms=%.2f count_ms=%s "
             "entitlement_ms=%s transaction_ms=%s session_open_ms=%s "
             "pointer_ms=%s history_ms=%s cursor_first_ms=%s "
             "cursor_remaining_ms=%s hydrate_ms=%s attempts=%s",
-            elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
+            _safe_projects_read_trace(), elapsed_ms, count_elapsed_ms if count_elapsed_ms is not None else "NOT_REACHED",
             phase_timings.get("entitlement_ms", "NOT_REACHED"),
             phase_timings.get("transaction_ms", "NOT_REACHED"),
             phase_timings.get("session_open_ms", "NOT_REACHED"),
@@ -2055,13 +2218,51 @@ def _create_project_comment(
             principal_id=principal, session=session,
         )
     actor = context.identity.identity_id
+    body = payload.body
+    correction_values = (payload.correction_of, payload.correction_fingerprint, payload.correction_reason)
+    if any(value is not None for value in correction_values):
+        if not all(value is not None for value in correction_values):
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_CORRECTION_FIELDS_REQUIRED")
+        # Server-owned 30-minute admission window, enforced in the same
+        # transaction as the new comment write. Aged/foreign records fail closed.
+        now = datetime.now(timezone.utc)
+        cursor = 0
+        original = None
+        for _ in range(10):
+            page, more = store.list_page(
+                tenant_id=context.tenant_id, project_id=project_id,
+                task_id=task_id, limit=100, offset=cursor, session=session,
+            )
+            original = next((item for item in page if item.comment_id == payload.correction_of), None)
+            if original is not None or not more:
+                break
+            cursor += len(page)
+            if not page:
+                break
+        if original is None or original.author_principal_id != actor:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_ORIGINAL_UNAVAILABLE")
+        if original.fingerprint != payload.correction_fingerprint:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED")
+        age = now - original.created_at
+        if age.total_seconds() < 0 or age.total_seconds() > 30 * 60:
+            raise HTTPException(status_code=409, detail="PROJECT_COMMENT_CORRECTION_WINDOW_EXPIRED")
+        if body.strip() == original.body.strip():
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_CORRECTION_UNCHANGED")
+        body = (
+            "**Correction to earlier project activity**\\n"
+            + "Original comment: " + original.comment_id + "\\n"
+            + "**Reason:** " + str(payload.correction_reason) + "\\n"
+            + "**Corrected update:**\\n" + body
+        )
+        if len(body) > 5000:
+            raise HTTPException(status_code=422, detail="PROJECT_COMMENT_BODY_INVALID")
     comment = ProjectComment(
         tenant_id=context.tenant_id, project_id=project_id,
         task_id=task_id,
         comment_id=comment_id_for_command(
             context.tenant_id, project_id, task_id, actor, idempotency_key,
         ),
-        author_principal_id=actor, body=payload.body,
+        author_principal_id=actor, body=body,
         mentions=tuple(payload.mentions), created_at=datetime.now(timezone.utc),
     )
     stored = store.create_or_replay(
@@ -2337,7 +2538,7 @@ def list_owner_project_task_attachments(
 ) -> dict[str, object]:
     """Expose redacted exact-task metadata only to authorized project owner."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _attachment_page(
+    return _profiled_projects_get(context, "TASK_ATTACHMENTS", lambda registry, session: _attachment_page(
         context, project_id, task_id, registry, session, limit, offset,
     ))
 
@@ -2781,7 +2982,7 @@ def list_project_task_approvals(
 ) -> dict[str, object]:
     """List task decisions only through separately admitted owner read IAM."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _approval_page(
+    return _profiled_projects_get(context, "TASK_APPROVALS", lambda registry, session: _approval_page(
         context, project_id, task_id, registry, session, limit, offset,
     ))
 
@@ -2994,7 +3195,7 @@ def list_owner_task_events(
 ) -> dict[str, object]:
     """Read immutable exact-task events through owner Projects detail IAM."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _task_activity_page(
+    return _profiled_projects_get(context, "TASK_EVENTS", lambda registry, session: _task_activity_page(
         context, registry, project_id, task_id, session, limit, offset,
     ))
 
@@ -3029,7 +3230,7 @@ def list_owner_task_comments(
 ) -> dict[str, object]:
     """Read task comments through current tenant owner IAM and entitlement."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _list_project_comments(
+    return _profiled_projects_get(context, "TASK_COMMENTS", lambda registry, session: _list_project_comments(
         context, registry, project_id, task_id, session, limit, offset,
     ))
 
@@ -3127,6 +3328,123 @@ def read_project_task_action_capabilities(
     return _transaction(context, read)
 
 
+def _work_purpose_store() -> ProjectWorkPurposeRegistry:
+    """Compose the source-owned purpose registry without introducing new IAM."""
+    database = kernel_db.get_database()
+    if database is None:
+        raise WorkPurposeError("PROJECT_WORK_PURPOSE_SOURCE_UNAVAILABLE")
+    return ProjectWorkPurposeRegistry(
+        database[PROJECT_WORK_PURPOSE_COLLECTION],
+        database[PROJECT_WORK_PURPOSE_EVENT_COLLECTION],
+    )
+
+
+@router.get("/{project_id}/tasks/{task_id}/work-purpose")
+def read_project_task_work_purpose(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Read source-audited task purpose after exact project-detail authority."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        task = _project_task_store(registry, context.tenant_id, project_id, session).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        purpose = _work_purpose_store().current_for_task(task=task, session=session)
+        return {
+            "schema": "WILSY-PROJECT-WORK-PURPOSE/V1",
+            "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "task_revision": task.revision,
+            "purpose_revision": purpose["purpose_revision"] if purpose else 0,
+            "audience": purpose["audience"] if purpose else "UNCLASSIFIED",
+            "evidence_ref": purpose["evidence_ref"] if purpose else None,
+            "source_revision": purpose["source_revision"] if purpose else None,
+            "critical_gate": False,
+        }
+
+    return _transaction(context, read)
+
+
+@router.get("/{project_id}/tasks/{task_id}/work-purpose/events")
+def read_project_work_purpose_history(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    limit: int = Query(default=25, ge=1, le=50),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Expose source-verified history through current project read authority."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        task = _project_task_store(registry, context.tenant_id, project_id, session).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        events, more = _work_purpose_store().history_for_task(
+            task=task, session=session, limit=limit,
+        )
+        return {
+            "schema": "WILSY-PROJECT-WORK-PURPOSE-HISTORY/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "items": events, "limit": limit, "has_more": more,
+        }
+
+    return _transaction(context, read)
+
+
+@router.post("/{project_id}/tasks/{task_id}/work-purpose")
+def classify_project_task_work_purpose(
+    payload: ProjectTaskWorkPurposeRequest,
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Audited exact-source purpose command, separately gated by project:update."""
+    response.headers["Cache-Control"] = "no-store"
+    key = _note_idempotency_key(idempotency_key)
+    timestamp = datetime.now(timezone.utc)
+
+    def commit(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        task = _project_task_store(registry, context.tenant_id, project_id, session).get(
+            tenant_id=context.tenant_id, project_id=project_id,
+            task_id=task_id, session=session,
+        )
+        purpose_registry = _work_purpose_store()
+        purpose_registry.classify(
+            task=task, actor_principal_id=context.identity.identity_id,
+            audience=payload.audience, reason=payload.reason,
+            expected_task_revision=payload.expected_task_revision,
+            expected_purpose_revision=payload.expected_purpose_revision,
+            idempotency_key=key, session=session, now=timestamp,
+        )
+        verified = purpose_registry.current_for_task(task=task, session=session)
+        if verified is None or verified["audience"] != payload.audience:
+            raise WorkPurposeError("PROJECT_WORK_PURPOSE_READBACK_UNVERIFIED")
+        return {
+            "schema": "WILSY-PROJECT-WORK-PURPOSE/V1",
+            "tenant_id": context.tenant_id, "principal_id": context.identity.identity_id,
+            "project_id": project_id, "task_id": task_id,
+            "task_revision": task.revision,
+            "purpose_revision": verified["purpose_revision"],
+            "audience": verified["audience"],
+            "evidence_ref": verified["evidence_ref"],
+            "source_revision": verified["source_revision"],
+            "critical_gate": False,
+        }
+
+    return _transaction(context, commit, write=True)
+
+
 @router.get("/{project_id}/tasks")
 def list_project_tasks(
     response: Response,
@@ -3137,9 +3455,45 @@ def list_project_tasks(
 ) -> dict[str, object]:
     """Return exact-project task page through tenant-owner Projects IAM."""
     response.headers["Cache-Control"] = "no-store"
-    return _transaction(context, lambda registry, session: _list_project_tasks(
+    return _profiled_projects_get(context, "TASK_LIST", lambda registry, session: _list_project_tasks(
         context, project_id, registry, session, limit, offset,
     ))
+
+
+@router.get("/{project_id}/tasks/completed")
+def list_completed_project_tasks(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    search: str = Query(default="", max_length=120),
+    assignee_principal_id: str | None = Query(default=None, min_length=1, max_length=180),
+    order: Literal["NEWEST", "OLDEST"] = Query(default="NEWEST"),
+    context: TenantAuthorizationContext = Depends(_DETAIL),
+) -> dict[str, object]:
+    """Independently authorize exact-project completed history before querying."""
+    response.headers["Cache-Control"] = "no-store"
+
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        store = _project_task_store(registry, context.tenant_id, project_id, session)
+        rows, more = store.list_completed_page(
+            tenant_id=context.tenant_id, project_id=project_id, session=session,
+            limit=limit, offset=offset, search=search,
+            assignee_principal_id=assignee_principal_id, completion_order=order,
+        )
+        return {
+            "schema": "WILSY-PROJECT-TASK-LIST/V1",
+            "tenant_id": context.tenant_id,
+            "principal_id": context.identity.identity_id,
+            "project_id": project_id,
+            "view": "COMPLETED", "search": search, "order": order,
+            "assignee_principal_id": assignee_principal_id,
+            "items": list(rows),
+            "limit": limit, "offset": offset, "has_more": more,
+            "next_offset": offset + len(rows) if more else None,
+        }
+
+    return _profiled_projects_get(context, "TASK_LIST", read)
 
 
 @router.get("/{project_id}/my-project/tasks")
@@ -3258,6 +3612,71 @@ def revise_project_task(
         return _task_result(context, project_id, committed)
 
     return _transaction(context, revise, write=True)
+
+
+def _read_task_transition_receipt(
+    context: TenantAuthorizationContext, project_id: str, task_id: str,
+    expected_revision: int, target_status: str, key: str, *, participant: bool,
+) -> dict[str, object]:
+    """Current IAM plus source receipt, never an inference from equal task state."""
+    def read(registry: ProjectRegistry, session: Any) -> dict[str, object]:
+        if participant:
+            _require_current_project_participation(context, registry, project_id, session, contribute=True)
+        store = _project_task_store(registry, context.tenant_id, project_id, session)
+        current = store.get(tenant_id=context.tenant_id, project_id=project_id,
+                            task_id=task_id, session=session)
+        if participant and current.assignee_principal_id != context.identity.identity_id:
+            raise HTTPException(status_code=403, detail="PROJECT_TASK_ASSIGNEE_SCOPE_REQUIRED")
+        receipt = store.read_transition_receipt(
+            tenant_id=context.tenant_id, project_id=project_id, task_id=task_id,
+            actor_principal_id=context.identity.identity_id, status=target_status,
+            expected_revision=expected_revision, idempotency_key=key, session=session,
+        )
+        if receipt is None:
+            raise HTTPException(status_code=404, detail="PROJECT_TASK_COMMAND_NOT_YET_VERIFIED")
+        return _task_result(context, project_id, receipt)
+    return _transaction(context, read)
+
+
+@router.get("/{project_id}/tasks/{task_id}/transition-receipt")
+def read_owner_task_transition_receipt(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    expected_revision: int = Query(ge=1),
+    target_status: Literal["IN_PROGRESS", "DONE"] = Query(),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_UPDATE),
+) -> dict[str, object]:
+    """Owner-authorized exact-tenant read-only reconciliation; no new command.
+
+    Current IAM and product entitlement remain mandatory. Durable command
+    evidence binds actor, revision, key and target; absence remains unverified.
+    Caller-owned majority snapshot; no financial or execution authority added.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    return _read_task_transition_receipt(context, project_id, task_id, expected_revision,
+                                         target_status, _note_idempotency_key(idempotency_key), participant=False)
+
+
+@router.get("/{project_id}/my-project/tasks/{task_id}/transition-receipt")
+def read_participant_task_transition_receipt(
+    response: Response,
+    project_id: str = Path(pattern=r"^prj-[0-9a-f]{48}$"),
+    task_id: str = Path(pattern=r"^ptk-[0-9a-f]{48}$"),
+    expected_revision: int = Query(ge=1),
+    target_status: Literal["IN_PROGRESS", "DONE"] = Query(),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    context: TenantAuthorizationContext = Depends(_PARTICIPANT_CONTRIBUTE),
+) -> dict[str, object]:
+    """Reconcile only a current contributor's personally assigned exact task.
+
+    Rechecks IAM, active project participation and current assignment before
+    reading immutable receipt evidence; no retry, write or financial authority.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    return _read_task_transition_receipt(context, project_id, task_id, expected_revision,
+                                         target_status, _note_idempotency_key(idempotency_key), participant=True)
 
 
 @router.post("/{project_id}/tasks/{task_id}/transition")
@@ -4044,9 +4463,10 @@ __all__ = [
 ]
 
 # ARTIFACT: projects_router.py
-# VERSION: v1.42.0-FOUNDER-EXPLICIT-CONTRIBUTOR-IAM-ADMISSION
+# VERSION: v1.51.0-COMPLETED-SOURCE-PAGING
 # AUTHORITY BOUNDARY: existing canonical tenant IAM and active product entitlement plus source-owned project persistence
 # TENANT POSTURE: request tenant must equal authenticated session tenant; persistence and entitlement queries are exact-tenant scoped
 # FAIL-CLOSED POSTURE: unverified owner/department, missing entitlement, malformed source, stale revision, replay conflict or transaction failure rejects without IAM expansion
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+

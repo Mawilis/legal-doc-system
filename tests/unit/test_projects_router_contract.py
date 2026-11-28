@@ -1,14 +1,63 @@
 """Certification for the authenticated Python EOS Projects HTTP boundary.
 
 TITLE: WILSY OS Projects Router Contract Certificate
-VERSION: v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT
+VERSION: v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT
 AUTHORITY: Test-only certification of existing EOS Projects route composition.
 EPITOME: Pins the HTTP contract, exact IAM operation pairs, session-owned tenant
          binding, internal-role tenant fence, strict payloads and server mount.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_projects_router_contract.py
 COLLABORATION / OWNERSHIP: Consumes projects_router.py and server.py; no runtime authority.
-CERTIFICATION / UPDATE DATE: 2026-11-17.
+CERTIFICATION / UPDATE DATE: 2026-11-24.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
+                            connection, tenant records or mutation.
+TENANT BOUNDARY: Test identities use non-production values and assert exact
+                 authenticated-tenant scope; no persistence is opened.
+AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
+                    claim a live role assignment, entitlement or database write.
+FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
+CHANGELOG: v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT adds the two source-owned read-only receipt routes to the closed inventory.
 CHANGELOG:
+  v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT asserts
+  that the authorized Projects GET transaction is wrapped exactly once
+  in an opt-in driver timing scope, with the same sanitized trace label,
+  while the original list transaction interface and no-write promise remain.
+  v1.42.0-TRACE-CORRELATED-PROJECT-READ-CERT confirms safe opaque
+  correlation with existing pre-handler authorization timing; unknown
+  or untrusted trace values cannot enter Projects source logs.
+  v1.41.1-PROJECT-LIST-RETRY-INTERFACE-CERT retains all five
+  existing no-keyword whole-read retry assertions unchanged, and
+  independently verifies profiled list request-local timing isolation.
+  v1.41.0-READ-PHASE-INSTRUMENTATION-CERT verifies bounded,
+  no-identity logs for slow/failing read-only Projects GET handlers;
+  wraps one original snapshot transaction and never swallows 403.
+  v1.40.1-HEADER-INSPECTION-COMPLIANCE moves the existing sovereign authority
+  and privacy fields into the inspected file header; test behavior unchanged.
+  v1.40.0-EXACT-PURPOSE-ROUTE-AUTHORITY-MATRIX
+  extends the existing exhaustively enumerated Projects path and IAM-pair
+  certificate with the three new source-owned work-purpose actions; no
+  wildcard route or unaccounted permission pair is admitted.
+  v1.39.0-AUDITED-PURPOSE-HISTORY-HTTP-CERT locks
+  immutable purpose history GET to exact project/detail IAM, bounded 25-event
+  readback and omission of actor IDs and idempotency tokens from response.
+  v1.38.0-STRICT-WORK-PURPOSE-INPUT-CERT denies
+  unrecognized classifications, fabricated critical gates, spoofed actor
+  fields and impossible task revisions at strict Pydantic admission.
+  v1.37.3-PROJECT-PURPOSE-INDEX-READINESS-CERT verifies
+  bounded purpose source/audit unique indexes are included in the canonical
+  Projects startup gate before authenticated source endpoints are admitted.
+  v1.37.2-CANONICAL-REQUIRE-IAM-FIELD-CERT uses the
+  canonical RequireTenantAuthorization.permission_id/operation contract
+  for source classification route assertions.
+  v1.37.1-EXACT-PURPOSE-DEPENDENCY-CERT asserts direct existing
+  RequireTenantAuthorization permission pairs rather than introspecting
+  class implementation details.
+  v1.37.0-PROJECT-WORK-PURPOSE-HTTP-IAM-CERT certifies distinct
+  project detail GET and project:update POST for exact task purpose, strict
+  revision readback and stable idempotency under no-network synthetic data.
+  v1.36.0-READ-ONLY-PROJECT-LIST-RETRY-CERT proves exactly one new
+  source-authenticated read transaction after PROJECT_LIST_UNAVAILABLE and
+  proves 403, other 503 and persistent cursor errors never become success.
   v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT certifies positive explicitly initiated same-principal, exact-WILSY, current project Contributor admission through digest-only invitation and ACTIVE role assignment readback without direct role writes.
   v1.34.0-FOUNDER-CONTRIBUTOR-ADMISSION-NEGATIVE-CERT enforces canonical company, same actor, tenant-owner capacity, current Enterprise Admin invite authority and separate Projects Platform Owner decision before any role/membership/DB IO.
   v1.33.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-HTTP-CERT pins the new exact-project Founder contributor IAM admission POST to two independent existing IAM admission pairs and no unscoped role-grant path; user initiation and project participation remain separate prerequisites.
@@ -90,18 +139,11 @@ CHANGELOG:
   the exact permission/operation route matrix; certified route behavior is
   unchanged.
 CHANGELOG: v1.30.0-ATOMIC-TEMPLATE-CI-CERT verifies only matching-tenant verified auth user names are projected, and name collisions fail closed without unauthorized cross-tenant personal disclosure.
-COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
-SECURITY / PRIVACY POSTURE: Pure in-process checks; no credentials, Mongo
-                            connection, tenant records or mutation.
-TENANT BOUNDARY: Test identities use non-production values and assert exact
-                 authenticated-tenant scope; no persistence is opened.
-AUTHORITY BOUNDARY: Certificate asserts transport composition only; it does not
-                    claim a live role assignment, entitlement or database write.
-FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 """
 from __future__ import annotations
 
 import inspect
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -124,7 +166,7 @@ from tools.eos.auth.tenant_authorization import (
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
 
-VERSION = "v1.30.0-ATOMIC-TEMPLATE-CI-CERT"
+VERSION = "v1.41.0-READ-PHASE-INSTRUMENTATION-CERT"
 
 
 def test_customer_projects_owner_role_is_explicit_and_platform_role_remains_fenced() -> None:
@@ -464,6 +506,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals/{approval_id}/decision", ("POST",)),
         ("/projects/{project_id}/tasks/{task_id}/events", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", ("GET",)),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose/events", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/events", ("GET",)),
         ("/projects/{project_id}/tasks/{task_id}/comments", ("GET",)),
         ("/projects/{project_id}/tasks/{task_id}/comments", ("POST",)),
@@ -471,9 +516,12 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project/tasks/{task_id}/comments", ("POST",)),
         ("/projects/{project_id}/task-action-capabilities", ("GET",)),
         ("/projects/{project_id}/tasks", ("GET",)),
+        ("/projects/{project_id}/tasks/completed", ("GET",)),
         ("/projects/{project_id}/tasks", ("POST",)),
         ("/projects/{project_id}/tasks/{task_id}", ("PATCH",)),
         ("/projects/{project_id}/tasks/{task_id}/transition", ("POST",)),
+        ("/projects/{project_id}/tasks/{task_id}/transition-receipt", ("GET",)),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition-receipt", ("GET",)),
         ("/projects/{project_id}/my-project/tasks", ("GET",)),
         ("/projects/{project_id}/my-project/tasks/{task_id}/transition", ("POST",)),
         ("/projects/{project_id}/my-project/participants", ("GET",)),
@@ -517,6 +565,9 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/approvals/{approval_id}/decision", "POST"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/tasks/{task_id}/events", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks/{task_id}/work-purpose/events", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/events", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/tasks/{task_id}/comments", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/tasks/{task_id}/comments", "POST"): ("project:update", "project_update"),
@@ -524,9 +575,12 @@ def test_projects_router_exposes_only_the_accepted_lifecycle_contract() -> None:
         ("/projects/{project_id}/my-project/tasks/{task_id}/comments", "POST"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/task-action-capabilities", "GET"): ("project:update", "project_update"),
         ("/projects/{project_id}/tasks", "GET"): ("project:read", "project_detail"),
+        ("/projects/{project_id}/tasks/completed", "GET"): ("project:read", "project_detail"),
         ("/projects/{project_id}/tasks", "POST"): ("project:update", "project_update"),
         ("/projects/{project_id}/tasks/{task_id}", "PATCH"): ("project:update", "project_update"),
         ("/projects/{project_id}/tasks/{task_id}/transition", "POST"): ("project:update", "project_update"),
+        ("/projects/{project_id}/tasks/{task_id}/transition-receipt", "GET"): ("project:update", "project_update"),
+        ("/projects/{project_id}/my-project/tasks/{task_id}/transition-receipt", "GET"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/my-project/tasks", "GET"): ("project:participant:read", "project_participant_detail"),
         ("/projects/{project_id}/my-project/tasks/{task_id}/transition", "POST"): ("project:participant:contribute", "project_participant_contribute"),
         ("/projects/{project_id}/my-project/participants", "GET"): ("project:participant:read", "project_participant_detail"),
@@ -839,6 +893,9 @@ def test_server_mounts_projects_once_and_bootstraps_declared_unique_indexes() ->
     assert source.count('app.include_router(projects_router, prefix="/api")') == 1
     assert "from .projects_router import router as projects_router" in source
     assert "ProjectRegistry.ensure_indexes(" in source
+    assert "ProjectWorkPurposeRegistry.ensure_indexes(" in source
+    assert "PROJECT_WORK_PURPOSE_COLLECTION" in source
+    assert "PROJECT_WORK_PURPOSE_EVENT_COLLECTION" in source
     assert "PROJECT_COLLECTION" in source
     assert "PROJECT_EVENT_COLLECTION" in source
     assert "app.state.projects_indexes_ready = True" in source
@@ -1182,6 +1239,226 @@ def test_canonical_projects_wire_values_keep_strict_validation() -> None:
         })
 
 
+@pytest.mark.parametrize("outcomes,expected_attempts,expected_error", [
+    (("PROJECT_LIST_UNAVAILABLE", None), 2, None),
+    (("PROJECT_LIST_UNAVAILABLE", "PROJECT_LIST_UNAVAILABLE"), 2, "PROJECT_LIST_UNAVAILABLE"),
+    (("PROJECT_DATABASE_UNAVAILABLE", None), 1, "PROJECT_DATABASE_UNAVAILABLE"),
+    (("PROJECT_INDEXES_NOT_READY", None), 1, "PROJECT_INDEXES_NOT_READY"),
+    (("PROJECTS_ENTITLEMENT_REQUIRED", None), 1, "PROJECTS_ENTITLEMENT_REQUIRED"),
+])
+def test_project_list_retries_only_exact_transient_source_read(
+    monkeypatch, outcomes, expected_attempts, expected_error,
+) -> None:
+    """One bounded whole-read retry; never retry IAM, index or unrelated faults."""
+    calls = []
+    context = SimpleNamespace(
+        tenant_id="synthetic-tenant",
+        identity=SimpleNamespace(identity_id="synthetic-reader"),
+    )
+
+    class Registry:
+        def list_page_for_tenant(self, **kwargs):
+            assert kwargs["tenant_id"] == context.tenant_id
+            assert kwargs["session"] == "fresh-transaction"
+            return (), False
+
+    def transaction(actual, callback, **kwargs):
+        assert actual is context
+        assert kwargs == {}
+        calls.append(True)
+        outcome = outcomes[len(calls) - 1]
+        if outcome:
+            raise HTTPException(
+                status_code=403 if outcome == "PROJECTS_ENTITLEMENT_REQUIRED" else 503,
+                detail=outcome,
+            )
+        return callback(Registry(), "fresh-transaction")
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    args = dict(
+        response=Response(), limit=100, offset=0, project_status=None,
+        include_archived=False, owned_by_me=False, context=context,
+    )
+    if expected_error:
+        with pytest.raises(HTTPException) as denied:
+            projects_router.list_projects(**args)
+        assert denied.value.detail == expected_error
+    else:
+        response = projects_router.list_projects(**args)
+        assert response["items"] == []
+        assert response["tenant_id"] == context.tenant_id
+    assert len(calls) == expected_attempts
+
+
+def test_project_work_purpose_history_uses_read_only_source_authority(monkeypatch):
+    """No audit replay data or internal principal identifiers leave the route."""
+    project_id = "prj-" + "a" * 48
+    task_id = "ptk-" + "b" * 48
+    actor = SimpleNamespace(
+        tenant_id="synthetic-tenant",
+        identity=SimpleNamespace(identity_id="synthetic-reader"),
+    )
+    task = SimpleNamespace(task_id=task_id, revision=3)
+
+    class Tasks:
+        def get(self, **kwargs):
+            assert kwargs["tenant_id"] == actor.tenant_id
+            assert kwargs["project_id"] == project_id
+            assert kwargs["task_id"] == task_id
+            return task
+
+    class Source:
+        def history_for_task(self, *, task: object, session: object, limit: int):
+            assert task is task_ref
+            assert session == "read-transaction"
+            assert limit == 25
+            return [{
+                "revision": 1,
+                "audience": "PLATFORM_BUILD",
+                "reason": "Verified independent source engineering classification.",
+                "recorded_at": "2026-11-23T00:00:00+00:00",
+                "task_revision": 3,
+            }], False
+
+    task_ref = task
+    calls = []
+
+    def transaction(context, operation, **kwargs):
+        assert context is actor and kwargs == {}
+        calls.append(True)
+        return operation(object(), "read-transaction")
+
+    monkeypatch.setattr(projects_router, "_project_task_store", lambda *_args: Tasks())
+    monkeypatch.setattr(projects_router, "_work_purpose_store", lambda: Source())
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    result = projects_router.read_project_work_purpose_history(
+        response=Response(), project_id=project_id,
+        task_id=task_id, limit=25, context=actor,
+    )
+    assert result["schema"] == "WILSY-PROJECT-WORK-PURPOSE-HISTORY/V1"
+    assert result["principal_id"] == actor.identity.identity_id
+    assert len(result["items"]) == 1
+    assert result["items"][0]["audience"] == "PLATFORM_BUILD"
+    assert not any(secret in result["items"][0]
+                   for secret in ("actor_principal_id", "idempotency_key",
+                                  "request_fingerprint", "result_fingerprint"))
+    assert calls == [True]
+    routes = [route for route in projects_router.router.routes
+              if isinstance(route, APIRoute)]
+    history = next(route for route in routes
+                   if route.path == "/projects/{project_id}/tasks/{task_id}/work-purpose/events"
+                   and "GET" in route.methods)
+    assert any(dependency.call is projects_router._DETAIL
+               for dependency in history.dependant.dependencies)
+
+
+def test_project_work_purpose_input_never_accepts_inferred_authority():
+    """Only bounded category, rationale and source revisions enter EOS."""
+    model = projects_router.ProjectTaskWorkPurposeRequest
+    valid = {
+        "audience": "PLATFORM_BUILD",
+        "reason": "Human classification of real project engineering activity.",
+        "expected_task_revision": 3,
+        "expected_purpose_revision": 0,
+    }
+    assert model.model_validate(valid).audience == "PLATFORM_BUILD"
+    assert model.model_validate({**valid, "audience": "UNCLASSIFIED"}).audience == "UNCLASSIFIED"
+    for invalid in [
+        {**valid, "audience": "FOUNDER"},
+        {**valid, "audience": "OPERATIONS"},
+        {**valid, "expected_task_revision": 0},
+        {**valid, "expected_purpose_revision": -1},
+        {**valid, "actor_principal_id": "client-selected-founder"},
+        {**valid, "critical_gate": True},
+        {**valid, "reason": "short"},
+    ]:
+        with pytest.raises(ValidationError):
+            model.model_validate(invalid)
+
+
+def test_source_work_purpose_commands_require_existing_exact_project_authority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GET/POST retain distinct existing IAM dependencies; no new grant."""
+    project = "prj-" + "a" * 48
+    task_id = "ptk-" + "b" * 48
+    context = SimpleNamespace(
+        tenant_id="synthetic-tenant",
+        identity=SimpleNamespace(identity_id="synthetic-project-owner"),
+    )
+    task = SimpleNamespace(task_id=task_id, tenant_id=context.tenant_id,
+                           project_id=project, revision=4)
+    purpose = {
+        "audience": "PLATFORM_BUILD", "purpose_revision": 1,
+        "evidence_ref": "project-work-purpose:synthetic",
+        "source_revision": 4,
+    }
+    writes = []
+
+    class Tasks:
+        def get(self, **kwargs):
+            assert kwargs["tenant_id"] == context.tenant_id
+            assert kwargs["project_id"] == project
+            assert kwargs["task_id"] == task_id
+            return task
+
+    class Purposes:
+        def current_for_task(self, **kwargs):
+            assert kwargs["task"] is task
+            return purpose if writes else None
+
+        def classify(self, **kwargs):
+            assert kwargs["task"] is task
+            assert kwargs["actor_principal_id"] == context.identity.identity_id
+            assert kwargs["expected_task_revision"] == 4
+            assert kwargs["expected_purpose_revision"] == 0
+            assert kwargs["idempotency_key"] == "synthetic-command-key"
+            writes.append(kwargs)
+
+    calls = []
+    def transaction(actor, callback, **kwargs):
+        assert actor is context
+        calls.append(kwargs)
+        return callback(object(), "synthetic-current-session")
+
+    monkeypatch.setattr(projects_router, "_project_task_store", lambda *_args: Tasks())
+    monkeypatch.setattr(projects_router, "_work_purpose_store", lambda: Purposes())
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+
+    read_before = projects_router.read_project_task_work_purpose(
+        response=Response(), project_id=project, task_id=task_id,
+        context=context,
+    )
+    assert read_before["audience"] == "UNCLASSIFIED"
+    assert read_before["purpose_revision"] == 0
+    assert writes == []
+    payload = projects_router.ProjectTaskWorkPurposeRequest(
+        audience="PLATFORM_BUILD", reason="Source-authorized platform engineering work.",
+        expected_task_revision=4, expected_purpose_revision=0,
+    )
+    receipt = projects_router.classify_project_task_work_purpose(
+        payload=payload, response=Response(), project_id=project,
+        task_id=task_id, idempotency_key="synthetic-command-key", context=context,
+    )
+    assert receipt["audience"] == "PLATFORM_BUILD"
+    assert receipt["purpose_revision"] == 1
+    assert receipt["evidence_ref"].startswith("project-work-purpose:")
+    assert len(writes) == 1
+    assert calls == [{}, {"write": True}]
+    routes = [route for route in projects_router.router.routes
+              if isinstance(route, APIRoute)]
+    reads = [route for route in routes if
+             route.path == "/projects/{project_id}/tasks/{task_id}/work-purpose"
+             and "GET" in route.methods]
+    commands = [route for route in routes if
+                route.path == "/projects/{project_id}/tasks/{task_id}/work-purpose"
+                and "POST" in route.methods]
+    assert len(reads) == len(commands) == 1
+    assert reads[0].dependant.dependencies != commands[0].dependant.dependencies
+    assert projects_router._DETAIL.permission_id == "project:read"
+    assert projects_router._UPDATE.permission_id == "project:update"
+
+
 def test_owner_page_uses_current_authenticated_principal_not_participant_grant(monkeypatch) -> None:
     """Owner responsibility is a project-read filter, never an IAM promotion."""
     identity = SimpleNamespace(identity_id="verified-owner")
@@ -1304,11 +1581,144 @@ def test_projects_summary_phase_metrics_preserve_source_counts_and_denial(monkey
 
 
 
+def test_profiled_projects_get_preserves_snapshot_scope_and_emits_safe_slow_timings(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A measured GET uses one original session and never emits tenant/actor."""
+    context = SimpleNamespace(tenant_id="tenant-private-marker",
+                              identity=SimpleNamespace(identity_id="principal-private-marker"))
+    calls = []
+
+    def transaction(authorized, callback, *, phase_timings):
+        assert authorized is context
+        calls.append(authorized)
+        phase_timings.update({
+            "session_open_ms": 5.0, "transaction_ms": 1200.0,
+            "entitlement_ms": 190.0, "attempts": 1.0,
+        })
+        return callback("same-registry", "same-session")
+
+    def source(registry, session):
+        assert registry == "same-registry" and session == "same-session"
+        # No real Mongo access; the deterministic clock represents source latency.
+        return {"schema": "WILSY-PROJECT-LIST/V1"}
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    clock = iter([0.0, 0.0, 1.1, 1.2])
+    monkeypatch.setattr(projects_router, "perf_counter", lambda: next(clock))
+    with caplog.at_level("WARNING"):
+        result = projects_router._profiled_projects_get(
+            context, "TASK_LIST", source,
+        )
+    assert result["schema"] == "WILSY-PROJECT-LIST/V1"
+    assert calls == [context]
+    record = caplog.text
+    assert "PROJECTS_GET_LATENCY trace_id=TRACE_UNAVAILABLE operation=TASK_LIST outcome=SLOW" in record
+    assert "session_open_ms=5.0" in record
+    assert "entitlement_ms=190.0" in record
+    assert "tenant-private-marker" not in record
+    assert "principal-private-marker" not in record
+
+
+def test_profiled_project_list_preserves_original_transaction_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One original zero-keyword snapshot call; request timing context is reset."""
+    context = SimpleNamespace(tenant_id="synthetic-tenant",
+                              identity=SimpleNamespace(identity_id="synthetic-reader"))
+    calls = []
+
+    def transaction(actual, callback, **kwargs):
+        assert actual is context
+        assert kwargs == {}
+        timings = projects_router._project_list_read_timings.get()
+        assert isinstance(timings, dict)
+        calls.append(True)
+        return callback("exact-tenant-registry", "fresh-session")
+
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    result = projects_router._profiled_projects_get(
+        context, "PROJECT_LIST",
+        lambda registry, session: {"registry": registry, "session": session},
+    )
+    assert result == {
+        "registry": "exact-tenant-registry", "session": "fresh-session",
+    }
+    assert calls == [True]
+    assert projects_router._project_list_read_timings.get() is None
+
+
+def test_project_latency_trace_rejects_untrusted_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Never put caller-provided arbitrary strings or principals in timing logs."""
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "secret-token-value")
+    assert projects_router._safe_projects_read_trace() == "TRACE_UNAVAILABLE"
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "TRC-ABCDEFGH-ABC123")
+    assert projects_router._safe_projects_read_trace() == "TRC-ABCDEFGH-ABC123"
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "TRC-SERVER-ABCDEF123456")
+    assert projects_router._safe_projects_read_trace() == "TRC-SERVER-ABCDEF123456"
+
+
+def test_project_read_mongo_scope_uses_only_validated_trace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No actual Mongo command is executed by driver timing instrumentation."""
+    observed = []
+    context = SimpleNamespace(tenant_id="synthetic-tenant",
+                              identity=SimpleNamespace(identity_id="synthetic-reader"))
+
+    @contextmanager
+    def scoped(*, stage, correlation):
+        observed.append((stage, correlation))
+        yield
+
+    def transaction(actual, callback, **kwargs):
+        assert actual is context
+        assert kwargs == {}
+        return callback("registry", "session")
+
+    monkeypatch.setattr(projects_router.kernel_db, "mongo_timing_scope", scoped)
+    monkeypatch.setattr(projects_router, "_transaction", transaction)
+    monkeypatch.setattr(projects_router, "current_request_timing_correlation",
+                        lambda: "TRC-ABCDEFGH-ABC123")
+    assert projects_router._profiled_projects_get(
+        context, "PROJECT_LIST", lambda registry, session: {"ok": True},
+    ) == {"ok": True}
+    assert observed == [("PROJECTS_READ", "TRC-ABCDEFGH-ABC123")]
+    assert projects_router._project_list_read_timings.get() is None
+
+
+def test_profiled_projects_get_preserves_entitlement_denial(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
+    """No timing instrumentation may transform an exact source denial."""
+    expected = HTTPException(status_code=403, detail="PROJECTS_ENTITLEMENT_REQUIRED")
+
+    def deny(_context, _callback, *, phase_timings):
+        assert isinstance(phase_timings, dict)
+        raise expected
+
+    monkeypatch.setattr(projects_router, "_transaction", deny)
+    with caplog.at_level("WARNING"):
+        with pytest.raises(HTTPException) as caught:
+            projects_router._profiled_projects_get(
+                object(), "TASK_COMMENTS", lambda *_args: {},
+            )
+    assert caught.value is expected
+    assert "operation=TASK_COMMENTS outcome=FAILED" in caplog.text
+
+
+
+
 
 # ARTIFACT: test_projects_router_contract.py
-# VERSION: v1.35.0-FOUNDER-CONTRIBUTOR-IAM-READBACK-CERT
+# VERSION: v1.39.0-TASK-COMMAND-RECEIPT-ROUTES-CERT
 # AUTHORITY BOUNDARY: in-process route contract assertions only; no live role, entitlement, or persistence claim
 # TENANT POSTURE: selected session tenant equality is tested with synthetic identities; no tenant records are touched
 # FAIL-CLOSED POSTURE: mismatched tenant and foreign internal-role scope must deny
 # FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+

@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Role Definition Policy Unit Contract.
-VERSION: v1.15.0-PROJECT-PARTICIPANT-ROLE-ISOLATION-CERT
+VERSION: v1.16.1-ORGANIZATION-READ-ROLE-CERT
 AUTHORITY: Deterministic unit verification of canonical Python role-definition policy only.
 EPITOME: Proves the exact closed role vocabulary, tenant/subscription/plan and
 WILSY AI usage-capacity and billing-intelligence evidence read permission grants, deterministic expansion,
@@ -13,12 +13,14 @@ reverse lookup, and fail-closed non-bypass behavior.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_roles.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17.
-CHANGELOG: v1.15.0-PROJECT-PARTICIPANT-ROLE-ISOLATION-CERT proves separately assigned viewer and
+CHANGELOG: v1.16.1-ORGANIZATION-READ-ROLE-CERT checks the exact, non-inherited organization read role grant for HR Director and Manager, including WILSY employer variants.
+CHANGELOG: v1.16.1-ORGANIZATION-READ-ROLE-CERT pins exactly eligible HR Manager maker and HR Director maker/checker roles for tenant and WILSY employer organization commands, without treating static grants as live possession or bypassing independent checker.
+CHANGELOG: v1.16.1-ORGANIZATION-READ-ROLE-CERT proves separately assigned viewer and
 contributor roles do not inherit tenant-wide Projects ownership and vice versa.
-CHANGELOG: v1.15.0-PROJECT-PARTICIPANT-ROLE-ISOLATION-CERT certifies two explicit Projects owner
+CHANGELOG: v1.16.1-ORGANIZATION-READ-ROLE-CERT certifies two explicit Projects owner
 roles and absence of inherited project permission across unrelated roles.
 CHANGELOG:
-2026-11-17 v1.15.0-PROJECT-PARTICIPANT-ROLE-ISOLATION-CERT verifies that CRM
+2026-11-17 v1.16.1-ORGANIZATION-READ-ROLE-CERT verifies that CRM
 UPDATE belongs solely to static owner and enterprise-administrator grants;
 Auditor remains read-only, and no active assignment is created.
 2026-11-16 v1.12.0-PROJECTS-OWNER-ROLE-CERT pins the current v1.56 role source, certifies the unassigned dedicated Projects role, deny-by-absence for every existing role, and aligns the company-document read matrix with the current source.
@@ -188,7 +190,7 @@ def test_project_participant_roles_never_inherit_owner_privileges() -> None:
 
 
 def test_runtime_version_source_is_canonical() -> None:
-    assert POLICY_VERSION == "v1.59.0-PROJECT-PARTICIPANT-EXPLICIT-ROLES"
+    assert POLICY_VERSION == "v1.60.1-ORGANIZATION-READ-ROLE-ELIGIBILITY"
 
 def test_platform_employer_role_grants_are_exact_and_nonpossessory() -> None:
     """Verify exact HR, owner-signing, and dedicated admission-role grants."""
@@ -196,6 +198,9 @@ def test_platform_employer_role_grants_are_exact_and_nonpossessory() -> None:
         "platform_employer:employee_directory:read": {"HR_MANAGER", "HR_DIRECTOR"},
         "platform_employer:headcount_requisition:read": {"HR_MANAGER", "HR_DIRECTOR"},
         "platform_employer:headcount_requisition:create": {"HR_MANAGER"},
+        "platform_employer:organization:read": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:organization:create": {"HR_MANAGER", "HR_DIRECTOR"},
+        "platform_employer:organization:decide": {"HR_DIRECTOR"},
         "platform_employer:headcount_requisition:decide": {"HR_DIRECTOR"},
         "platform_employer:hiring_candidate:read": {"HR_MANAGER", "HR_DIRECTOR"},
         "platform_employer:hiring_candidate:create": {"HR_MANAGER"},
@@ -210,12 +215,16 @@ def test_platform_employer_role_grants_are_exact_and_nonpossessory() -> None:
         "platform_employer:hiring_offer:sign": {"TENANT_OWNER"},
         "platform_employer:employee_admission:create": {"PLATFORM_EMPLOYEE_ADMISSION_OFFICER"},
     }
-    assert len(expected_roles) == 16
+    assert len(expected_roles) == 19
     for permission, expected in expected_roles.items():
         assert set(get_roles_granting_permission(permission)) == expected
         for role, grants in ROLE_PERMISSIONS_MAP.items():
             assert grants.count(permission) == (1 if role in expected else 0)
 
+    assert set(get_roles_granting_permission("hr:organization:read")) == {"HR_MANAGER", "HR_DIRECTOR"}
+    assert set(get_roles_granting_permission("hr:organization:create")) == {"HR_MANAGER", "HR_DIRECTOR"}
+    assert set(get_roles_granting_permission("hr:organization:decide")) == {"HR_DIRECTOR"}
+    assert "TENANT_OWNER" not in get_roles_granting_permission("hr:organization:decide")
     assert get_roles_granting_permission("platform_employer:hiring_offer:accept") == ()
 
 
@@ -981,7 +990,7 @@ def test_legal_evidence_write_is_granted_only_to_partner() -> None:
 
 
 # ARTIFACT: test_roles.py
-# VERSION: v1.15.0-PROJECT-PARTICIPANT-ROLE-ISOLATION-CERT
+# VERSION: v1.16.1-ORGANIZATION-READ-ROLE-CERT
 # AUTHORITY BOUNDARY: deterministic verification of static role definitions only; no assignment or current authorization is created
 # TENANT POSTURE: platform-employer use is restricted by the separate exact WILSY tenant authorization gate; customer HR authority remains separate
 # FAIL-CLOSED POSTURE: offer acceptance stays ungranted; admission has one unassigned role and no operation binding; unknown permissions deny

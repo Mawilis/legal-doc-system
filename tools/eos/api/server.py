@@ -7,7 +7,7 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS sovereign Python API server composition root.
 
 TITLE: WILSY OS EOS Kernel API Server Factory
-VERSION: v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION
+VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Mount sovereign Python API authorities, including the authenticated
          practitioner-binding command transport, and hold that transport
@@ -17,9 +17,26 @@ EPITOME: Mount sovereign Python API authorities, including the authenticated
          authority.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/server.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy OS Core Engineering
-CERTIFICATION / UPDATE DATE: 2026-11-20
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
+  unmounts the overlapping /api/employees legacy HTTP router. The existing
+  /api/hr/workforce route remains the sole governed employee directory read.
+  No employees, IAM grants, documents, or financial authorities are changed.
+CHANGELOG: v1.58.0-ATTENTION-MANIFEST-HTTP-LATENCY-CERT extends
+  explicit opt-in, identifier-free request timing to exactly the two remaining
+  slow GET boundaries: module manifest and CRM attention command availability.
+  No route or query arguments, credential material, source payloads, IAM,
+  authentication, caching or timeout semantics are changed.
+CHANGELOG: v1.57.0-EXACT-ROUTE-END-TO-END-TIMING adds bounded,
+  opt-in request boundary duration logging for four exact GET routes. This
+  includes FastAPI dependency/authentication time that handler-only telemetry
+  omits. Diagnostic labels and outcomes are fixed; no query strings, tokens,
+  principal or tenant identifiers, IAM behavior, caching or timeout changes.
+CHANGELOG: v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP provisions source-owned work-purpose
+  snapshot/replay/audit uniqueness only at startup before Projects readiness;
+  no task category, grant, evidence or project record is created.
 CHANGELOG: v1.54.0-CREDENTIAL-COLLISION-LOOKUP-INDEX provisions a nonunique exact tenantId+user_id credential lookup index at connected startup before HTTP admission. The ObjectId-shaped identity collision query retains its legacy _id branch, bounded collision verification and exact tenant scope; no request-time DDL or user data write.
-CHANGELOG: v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION resolves the server-owned model binding only at the C1C startup composition boundary. The C1B router retains the resolver for independent request admission; missing or disabled providers remain unavailable without manufacturing execution authority. No IAM, tenant, billing, payment, or settlement semantics change.
+CHANGELOG: v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP resolves the server-owned model binding only at the C1C startup composition boundary. The C1B router retains the resolver for independent request admission; missing or disabled providers remain unavailable without manufacturing execution authority. No IAM, tenant, billing, payment, or settlement semantics change.
 CHANGELOG: v1.53.0-TRUSTED-PROJECT-SCAN-INDEX-BOOTSTRAP creates
 standalone exact-task scanner clearance and replay indexes at EOS startup.
 Scan authority and provider status remain external and fail closed.
@@ -130,7 +147,6 @@ from .authority_bridge_router import router as authority_bridge_router
 from .billing_router import evaluate_all_tenant_dunning_lifecycles, qr_router, router as billing_router
 from .forensic_merkle_router import router as forensic_merkle_router
 from .artifact_pdf_router import router as artifact_pdf_router
-from .employee_router import router as employee_router
 from .errors import register_error_handlers
 from .institutional_pki_router import router as institutional_pki_router
 from .institutional_signer_router import router as institutional_signer_router
@@ -225,6 +241,11 @@ from tools.eos.saas.projects.project_comment_registry import (
     COLLECTION as PROJECT_COMMENT_COLLECTION,
     EVENT_COLLECTION as PROJECT_COMMENT_EVENT_COLLECTION,
     ProjectCommentRegistry,
+)
+from tools.eos.saas.projects.project_work_purpose_registry import (
+    COLLECTION as PROJECT_WORK_PURPOSE_COLLECTION,
+    EVENT_COLLECTION as PROJECT_WORK_PURPOSE_EVENT_COLLECTION,
+    ProjectWorkPurposeRegistry,
 )
 from tools.eos.saas.projects.project_task_registry import (
     COLLECTION as PROJECT_TASK_COLLECTION,
@@ -369,7 +390,7 @@ from tools.eos.legal_operations.service.legal_storefront_public_intent_rate_limi
     LegalStorefrontPublicIntentRateLimit,
 )
 
-VERSION = "v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION"
+VERSION = "v1.56.0-PROJECT-SOURCE-WORK-PURPOSE-INDEX-BOOTSTRAP"
 logger = logging.getLogger("WilsyOS.API.Server")
 
 
@@ -575,7 +596,36 @@ class WilsyAPIServer:
             start_time = time.perf_counter()
             if not hasattr(request.state, "execution_id"):
                 request.state.execution_id = f"EXEC-{uuid.uuid4().hex[:8].upper()}"
-            response = await call_next(request)
+            # This timer includes authentication, authorization dependencies
+            # and endpoint execution. Never log raw URL, query or credentials.
+            # The existing X-Process-Time-Ms response header enables a direct
+            # comparison with Chrome's overall request time.
+            diagnostic_routes = {
+                "/api/auth/workspace-bootstrap": "WORKSPACE_BOOTSTRAP",
+                "/api/auth/module-manifest": "MODULE_MANIFEST",
+                "/api/attention/actions/crm": "ATTENTION_CRM_ACTIONS",
+                "/api/my-work": "MY_WORK",
+                "/api/projects": "PROJECTS_LIST",
+                "/api/projects/summary": "PROJECTS_SUMMARY",
+            }
+            diagnostic_route = (
+                diagnostic_routes.get(request.url.path)
+                if request.method == "GET"
+                and os.getenv("WILSY_MY_WORK_TIMING", "").strip() == "1"
+                else None
+            )
+            outcome = "ERROR"
+            try:
+                response = await call_next(request)
+                outcome = str(response.status_code)
+            finally:
+                if diagnostic_route is not None:
+                    logger.info(
+                        "WILSY_HTTP_END_TO_END route=%s outcome=%s duration_ms=%.3f",
+                        diagnostic_route,
+                        outcome,
+                        (time.perf_counter() - start_time) * 1000,
+                    )
             process_time = (time.perf_counter() - start_time) * 1000
             response.headers["X-Process-Time-Ms"] = f"{process_time:.3f}"
             response.headers["X-Wilsy-OS-Kernel"] = "FG169-Active"
@@ -698,6 +748,10 @@ class WilsyAPIServer:
                 ProjectTaskRegistry.ensure_indexes(
                     database[PROJECT_TASK_COLLECTION],
                     database[PROJECT_TASK_EVENT_COLLECTION],
+                )
+                ProjectWorkPurposeRegistry.ensure_indexes(
+                    database[PROJECT_WORK_PURPOSE_COLLECTION],
+                    database[PROJECT_WORK_PURPOSE_EVENT_COLLECTION],
                 )
                 ProjectCommentRegistry.ensure_indexes(
                     database[PROJECT_COMMENT_COLLECTION],
@@ -1280,7 +1334,6 @@ class WilsyAPIServer:
         app.include_router(qr_router)
         app.include_router(qr_router, prefix="/api")
 
-        app.include_router(employee_router)
         app.include_router(authority_bridge_router)
 
         # Provider evidence ingress is mounted once at its canonical route.
@@ -1293,7 +1346,7 @@ class WilsyAPIServer:
 
         logger.info(
             "WilsyAPIServer [%s v%s] initialized with sovereign routers "
-            "(kernel, auth, role revocation, billing, employees, internal authority, PayShap evidence, legal acceptance, Legal Evidence upload, Legal Storefront public intent, tenant branding, legal matter deadlines).",
+            "(kernel, auth, role revocation, billing, governed workforce directory, internal authority, PayShap evidence, legal acceptance, Legal Evidence upload, Legal Storefront public intent, tenant branding, legal matter deadlines).",
             self.title,
             self.version,
         )
@@ -1307,7 +1360,7 @@ class WilsyAPIServer:
 app = WilsyAPIServer().get_app()
 
 # ARTIFACT: server.py
-# VERSION: v1.55.0-RESOLVED-LEGAL-AI-PROVIDER-COMPOSITION
+# VERSION: v1.59.0-M03-HR01-LEGACY-EMPLOYEE-ROUTE-RETIREMENT
 # AUTHORITY BOUNDARY: HTTP application composition only; domain authorities remain separate.
 # TENANT POSTURE: Mounted routers retain their canonical tenant isolation and admission rules.
 # FAIL-CLOSED POSTURE: Unmounted or failed router composition is never represented as operational authority.

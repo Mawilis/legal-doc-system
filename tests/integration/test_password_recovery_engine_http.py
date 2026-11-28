@@ -1,7 +1,7 @@
 """ASGI certificate for the WILSY OS password-recovery engine.
 
 TITLE: WILSY OS Password Recovery Engine HTTP ASGI Certificate
-VERSION: v1.0.2-R10E49-PASSWORD-RECOVERY-ENGINE-HTTP-MESSAGE-TYPE-CLOSURE
+VERSION: v1.0.4-RECOVERY-STATUS-STAGE-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies the mounted recovery-request and recovery-contact verification
          HTTP boundaries through the canonical FastAPI app without Mongo, SMTP,
@@ -10,7 +10,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: Exercises tools.eos.api.server.app and the R10E auth
                            router with service doubles at orchestration seams.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.2-R10E49-PASSWORD-RECOVERY-ENGINE-HTTP-MESSAGE-TYPE-CLOSURE introduces mounted
+CHANGELOG: v1.0.4-RECOVERY-STATUS-STAGE-CERT introduces mounted
            ASGI evidence for generic 202 recovery initiation, strict transport
            schemas, uniform anti-enumeration failure behavior, authenticated
            no-body recovery-email verification issuance, capability-only
@@ -56,6 +56,7 @@ from tools.eos.saas.auth.password_recovery_request_service import (
 
 REQUEST_PATH = "/api/auth/request-password-reset"
 VERIFY_REQUEST_PATH = "/api/auth/recovery-contact/request-verification"
+VERIFY_STATUS_PATH = "/api/auth/recovery-contact/status"
 VERIFY_COMPLETE_PATH = "/api/auth/recovery-contact/verify"
 TENANT = "WILSY-TENANT-R10E34"
 EMAIL = "verified.user@example.com"
@@ -208,6 +209,9 @@ def service_doubles(monkeypatch, identity):
         lambda: verification_request,
     )
     monkeypatch.setattr(
+        auth_router, "_recovery_contact_status_read", lambda identity: "VERIFIED",
+    )
+    monkeypatch.setattr(
         auth_router,
         "_recovery_contact_verification_completion_service",
         lambda: verification_complete,
@@ -279,6 +283,59 @@ def test_recovery_request_rejects_extra_authority_fields(service_doubles, field)
     assert recovery.calls == []
 
 
+def test_authenticated_status_read_is_independent_of_email_transport(service_doubles) -> None:
+    result = _request("GET", VERIFY_STATUS_PATH)
+    assert result.raised is None
+    assert result.status_code == 200
+    assert json.loads(result.text) == {"status": "VERIFIED"}
+    _assert_secret_free(result)
+
+
+def test_status_failure_reports_only_bounded_source_stage(
+    service_doubles, monkeypatch,
+) -> None:
+    def unavailable(identity):
+        raise RecoveryContactVerificationRequestError(
+            "RECOVERY_CONTACT_LOOKUP_FAILED"
+        )
+    monkeypatch.setattr(auth_router, "_recovery_contact_status_read", unavailable)
+    result = _request("GET", VERIFY_STATUS_PATH)
+    assert result.raised is None
+    assert result.status_code == 503
+    assert result.headers["x-wilsy-recovery-status-stage"] == "CONTACT_SOURCE"
+    assert "RECOVERY_CONTACT_LOOKUP_FAILED" not in result.text
+    _assert_secret_free(result)
+
+
+def test_unverified_current_email_is_explicit_without_smtp(
+    service_doubles, monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        auth_router, "_recovery_contact_status_read",
+        lambda identity: "VERIFICATION_REQUIRED",
+    )
+    result = _request("GET", VERIFY_STATUS_PATH)
+    assert result.raised is None
+    assert result.status_code == 200
+    assert json.loads(result.text) == {"status": "VERIFICATION_REQUIRED"}
+    _assert_secret_free(result)
+
+
+def test_recovery_status_read_unavailable_never_becomes_unverified(
+    service_doubles, monkeypatch,
+) -> None:
+    def unavailable(identity):
+        raise RuntimeError("RECOVERY_CONTACT_READ_FAILED")
+
+    monkeypatch.setattr(auth_router, "_recovery_contact_status_read", unavailable)
+    result = _request("GET", VERIFY_STATUS_PATH)
+    assert result.raised is None
+    assert result.status_code == 503
+    assert "temporarily unavailable" in result.text.lower()
+    assert "RECOVERY_CONTACT_READ_FAILED" not in result.text
+    _assert_secret_free(result)
+
+
 def test_authenticated_verification_request_accepts_no_body_and_uses_identity(
     service_doubles,
     identity,
@@ -314,6 +371,25 @@ def test_authenticated_verification_rate_and_internal_failures_are_bounded(servi
     internal = _request("POST", VERIFY_REQUEST_PATH)
     assert internal.status_code == 503
     assert "temporarily unavailable" in internal.text.lower()
+
+
+def test_verification_dependency_construction_failure_is_bounded_503(
+    service_doubles, monkeypatch,
+) -> None:
+    """Absent SMTP or trusted origin must fail closed, never leak secrets or 500."""
+    def unavailable_factory():
+        raise RuntimeError("RECOVERY_EMAIL_CONFIGURATION_MISSING")
+
+    monkeypatch.setattr(
+        auth_router, "_recovery_contact_verification_request_service",
+        unavailable_factory,
+    )
+    result = _request("POST", VERIFY_REQUEST_PATH)
+    assert result.raised is None
+    assert result.status_code == 503
+    assert "temporarily unavailable" in result.text.lower()
+    assert "CONFIGURATION_MISSING" not in result.text
+    _assert_secret_free(result)
 
 
 def test_verification_completion_success_is_bodyless_204(service_doubles) -> None:
@@ -404,6 +480,9 @@ def test_openapi_exposes_exact_recovery_authority_shapes() -> None:
     assert set(request_model["properties"]) == {"tenant_id", "email"}
     assert request_model.get("additionalProperties") is False
 
+    status_operation = schema["paths"][VERIFY_STATUS_PATH]["get"]
+    assert "requestBody" not in status_operation
+
     verify_request_operation = schema["paths"][VERIFY_REQUEST_PATH]["post"]
     assert "requestBody" not in verify_request_operation
 
@@ -415,6 +494,7 @@ def test_openapi_exposes_exact_recovery_authority_shapes() -> None:
 
 
 def test_routes_are_post_only() -> None:
+    assert _request("POST", VERIFY_STATUS_PATH).status_code == 405
     for path in (REQUEST_PATH, VERIFY_REQUEST_PATH, VERIFY_COMPLETE_PATH):
         result = _request("GET", path)
         assert result.status_code == 405
@@ -424,7 +504,7 @@ def test_routes_are_post_only() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_engine_http.py
-# VERSION: v1.0.2-R10E49-PASSWORD-RECOVERY-ENGINE-HTTP-MESSAGE-TYPE-CLOSURE
+# VERSION: v1.0.4-RECOVERY-STATUS-STAGE-CERT
 # AUTHORITY BOUNDARY: mounted ASGI transport evidence only
 # TENANT POSTURE: public tenant values are selectors; authenticated route uses identity
 # FAIL-CLOSED POSTURE: malformed/rate/invalid/internal states never become success

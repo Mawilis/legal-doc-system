@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Projects Responsive Operating Table Browser Certificate
- * VERSION: v2.6.0-EOS-ACTION-AUTHORITY-BROWSER-CERT
+ * VERSION: v2.9.0-STRICTMODE-SINGLE-NETWORK-MOUNT-CERT
  * AUTHORITY: Rendered browser geometry only; Python EOS owns all data and commands.
  * EPITOME: Certify actual desktop/mobile Projects table, EOS-shaped chart,
  *          selected project detail and embedded notes without prototype cards.
@@ -8,6 +8,22 @@
  * COLLABORATION / OWNERSHIP: Existing Playwright/Vite harness and ProjectsWorkspace;
  *          synthetic transport replies never establish authentication or IAM.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v2.9.0-STRICTMODE-SINGLE-NETWORK-MOUNT-CERT
+ *          exercises the real workspace in React development StrictMode,
+ *          verifying discarded effect setups do not send duplicate
+ *          Projects list/summary GETs under one synthetic tenant scope.
+ * CHANGELOG: v2.8.0-VERIFIED-TENANT-VISUAL-FIXTURE anchors the
+ *          exact synthetic project tenant within the isolated layout
+ *          harness before rendering. New fail-closed shared transport
+ *          interlock remains enforced in production and ordinary tests;
+ *          this fixture is never an authenticated browser certification.
+ * CHANGELOG: v2.7.1-PARTICIPANT-OVERFLOW-FORENSIC-CERT
+ *          identifies actual DOM elements beyond the right viewport edge
+ *          in desktop/mobile Chromium to repair the source of overflow.
+ * CHANGELOG: v2.7.0-EVIDENCE-DROPZONE-BROWSER-CERT
+ *          verifies the new source-verified quarantine row text,
+ *          keyboard-accessible Browse affordance instead of the old
+ *          native input/Submit pair, and no unsafe download link.
  * CHANGELOG: v2.6.0-EOS-ACTION-AUTHORITY-BROWSER-CERT supplies
  *          exact-scope synthetic task capabilities to desktop/mobile task
  *          journeys without a real entitlement or IAM claim.
@@ -135,6 +151,14 @@ const assignedNotification = {
 for (const width of [1440, 390]) {
   test('Projects real rendered table and detail at ' + width + 'px', async ({ page }) => {
     await page.setViewportSize({ width, height: 950 });
+    const initialProjectGets = [];
+    page.on('request', request => {
+      const path = new URL(request.url()).pathname;
+      if (request.method() === 'GET'
+        && (path === '/api/projects' || path === '/api/projects/summary')) {
+        initialProjectGets.push(path);
+      }
+    });
     await page.route('**/api/**', async route => {
       const request = route.request();
       const url = new URL(request.url());
@@ -350,18 +374,26 @@ for (const width of [1440, 390]) {
       if (!reactMatch) throw new Error('PROJECTS_BROWSER_REACT_DEPENDENCY_UNRESOLVED');
       const reactUrl = reactMatch[1];
       const domUrl = reactUrl.replace('/react.js?', '/react-dom.js?');
-      const [ReactModule, ReactDomModule, WorkspaceModule] = await Promise.all([
+      const [ReactModule, ReactDomModule, WorkspaceModule, ApiModule] = await Promise.all([
         import(reactUrl), import(domUrl), import(componentUrl),
+        import('/src/services/api.js'),
       ]);
+      // Visual-only mock: no real login/bootstrap is executed by this harness.
+      // Explicitly simulate the already-verified synthetic tenant selector
+      // that the real AuthProvider supplies after authenticated EOS bootstrap.
+      ApiModule.setActiveTenantTransportId(tenantId);
       const React = ReactModule.default;
       const root = ReactDomModule.default.createRoot(document.getElementById('project-visual-cert-root'));
-      root.render(React.createElement(WorkspaceModule.default, {
-        tenantId, principalId, sessionScope: 'visual-cert-session',
-      }));
+      root.render(React.createElement(React.StrictMode, null,
+        React.createElement(WorkspaceModule.default, {
+          tenantId, principalId, sessionScope: 'visual-cert-session',
+        })));
       window.__projectVisualCertRoot = root;
     }, { tenantId: TENANT, principalId: PRINCIPAL });
 
     await expect(page.locator('.wp-list-panel')).toBeVisible();
+    await expect.poll(() => initialProjectGets.filter(path => path === '/api/projects').length).toBe(1);
+    await expect.poll(() => initialProjectGets.filter(path => path === '/api/projects/summary').length).toBe(1);
     // Portfolio status is available on demand; it must not consume the
     // user's default working surface before the project table.
     const portfolioToggle = page.locator('details[aria-label="Portfolio breakdown"] > summary');
@@ -527,8 +559,8 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('region', { name: 'Task attachments' })).toBeVisible();
     await expect(page.getByText('verified-quarantine-sample.pdf')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Task attachments' })
-      .getByText(/Quarantined · malware scan clearance unavailable · application\/pdf/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Submit to EOS quarantine' })).toBeDisabled();
+      .getByText(/Quarantined · clearance pending/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Browse files' })).toBeEnabled();
     await expect(page.getByRole('region', { name: 'Task attachments' })
       .getByRole('link')).toHaveCount(0);
 
@@ -541,18 +573,32 @@ for (const width of [1440, 390]) {
       .fill('Review requires documentary confirmation.');
     await expect(page.getByRole('button', { name: 'Approve review' })).toBeEnabled();
 
-    const assignedGeometry = await page.evaluate(() => ({
-      viewport: document.documentElement.clientWidth,
-      doc: document.documentElement.scrollWidth,
-    }));
-    expect(assignedGeometry.doc, 'participant workspace page overflow')
+    const assignedGeometry = await page.evaluate(() => {
+      const viewport = document.documentElement.clientWidth;
+      const overflowing = [...document.querySelectorAll('body *')]
+        .map(node => {
+          const rect = node.getBoundingClientRect();
+          return {
+            node: node.tagName.toLowerCase(),
+            className: typeof node.className === 'string'
+              ? node.className.slice(0, 110) : '',
+            right: Math.round(rect.right),
+            width: Math.round(rect.width),
+          };
+        })
+        .filter(node => node.right > viewport + 2 && node.width > 0)
+        .sort((a, b) => b.right - a.right).slice(0, 12);
+      return { viewport, doc: document.documentElement.scrollWidth, overflowing };
+    });
+    expect(assignedGeometry.doc,
+      'participant workspace page overflow: ' + JSON.stringify(assignedGeometry.overflowing))
       .toBeLessThanOrEqual(assignedGeometry.viewport + 1);
 
   });
 }
 
 // ARTIFACT: projects-layout.browser.spec.js
-// VERSION: v2.6.0-EOS-ACTION-AUTHORITY-BROWSER-CERT
+// VERSION: v2.9.0-STRICTMODE-SINGLE-NETWORK-MOUNT-CERT
 // AUTHORITY BOUNDARY: rendered presentation only; not authenticated source proof
 // TENANT POSTURE: exact synthetic tenant replies only
 // FAIL-CLOSED POSTURE: geometry, chart, selection or note mount regressions deny

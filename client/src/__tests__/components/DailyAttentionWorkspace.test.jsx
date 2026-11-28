@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Daily Attention Inbox Window Certificate
- * VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
+ * VERSION: v3.16.0-FOCUSED-ATTENTION-VIEW-CERT
  * AUTHORITY: Disposable client component test evidence only.
  * EPITOME: Prove the Daily Attention inbox exposes source priority/status and
  *          bounds mounted rows while retaining access to a 500-item snapshot.
@@ -14,6 +14,9 @@
  *          attentionFeedClient validates exact EOS source identity; source
  *          services continue to own every business transition.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.16.0-FOCUSED-ATTENTION-VIEW-CERT verifies full-focus
+ *          task inspection replaces the queue and restores exactly
+ *          the same verified list on Back to work.
  * CHANGELOG: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT proves the
  *          explicit CRM Save Draft intent goes through the real source
  *          callback with its own stable idempotency key, not an active
@@ -295,7 +298,7 @@ describe('Daily Attention bounded inbox', () => {
     expect(screen.getAllByText('Not supplied by source').length).toBeGreaterThan(0);
   });
 
-  it('opens majority-width source detail and restores the full work list', () => {
+  it('replaces the queue with focused source detail and restores it through Back to work', () => {
     render(
       <DailyAttentionWorkspace feed={fixtureFeed(3)} calendarItems={[]}
         filter="ALL" setFilter={vi.fn()}
@@ -309,12 +312,13 @@ describe('Daily Attention bounded inbox', () => {
     expect(layout).toHaveAttribute('data-attention-detail-layout', 'list');
     expect(list.className).toContain('flex flex-1');
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
-    expect(layout).toHaveAttribute('data-attention-detail-layout', 'split');
-    expect(layout.className).toContain('md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)]');
-    expect(list.className).toContain('hidden md:flex');
+    expect(layout).toHaveAttribute('data-attention-detail-layout', 'detail');
+    expect(layout.className).toContain('flex');
+    expect(list.className).toContain('hidden');
     const detail = screen.getByRole('complementary', { name: 'Attention detail rail' });
-    expect(detail.className).toContain('w-full');
+    expect(detail.className).toContain('flex-1');
     expect(detail.className).toContain('overflow-y-auto');
+    expect(screen.getByRole('button', { name: 'Close attention detail' })).toHaveTextContent('Back to work');
     fireEvent.click(screen.getByRole('button', { name: 'Close attention detail' }));
     expect(layout).toHaveAttribute('data-attention-detail-layout', 'list');
     expect(list.className).toContain('flex flex-1');
@@ -350,6 +354,74 @@ describe('Daily Attention bounded inbox', () => {
     expect(inert).not.toHaveBeenCalled();
   });
 
+  it('displays an independently EOS-verified Projects civil deadline without inventing a time', () => {
+    const feed = fixtureFeed(1);
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    feed.items[0] = {
+      ...feed.items[0], id: 'PROJECTS:' + taskId,
+      sourceModule: 'PROJECTS', sourceRecordId: taskId,
+      dueAt: null, title: 'Certify production readiness',
+    };
+    const calendarItems = [{
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId, project_id: 'prj-' + 'a'.repeat(48),
+      due_at: null, due_date: '2026-11-27',
+    }];
+    render(<DailyAttentionWorkspace feed={feed} calendarItems={calendarItems}
+      filter="ALL" setFilter={vi.fn()} source="ALL" setSource={vi.fn()}
+      query="" setQuery={vi.fn()} onRefresh={vi.fn()} onOpenWork={vi.fn()}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    expect(screen.getByTitle('Due 2026-11-27 (calendar date)')).toBeTruthy();
+    expect(screen.queryByText('No deadline recorded')).toBeNull();
+  });
+
+  it('opens the owning task from Daily Attention without reusing the legacy detail rail', () => {
+    const onOpenWork = vi.fn();
+    render(<DailyAttentionWorkspace feed={fixtureFeed(1)} calendarItems={[]}
+      filter="ALL" setFilter={vi.fn()} source="ALL" setSource={vi.fn()}
+      query="" setQuery={vi.fn()} onRefresh={vi.fn()} onOpenWork={onOpenWork}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Open task Attention item 0' }));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source_key: 'OPERATIONS:attention-0', source: 'OPERATIONS', work_item_id: 'attention-0',
+    }));
+    expect(screen.queryByRole('complementary', { name: 'Attention detail rail' })).toBeNull();
+  });
+
+  it('opens Projects directly using only the independently verified same-source project locator', () => {
+    const taskId = 'ptk-' + 'b'.repeat(48);
+    const projectId = 'prj-' + 'a'.repeat(48);
+    const feed = fixtureFeed(1);
+    feed.items[0] = {
+      ...feed.items[0], id: 'PROJECTS:' + taskId,
+      sourceModule: 'PROJECTS', sourceRecordId: taskId,
+      title: 'MW-T11', dueAt: null,
+    };
+    const verified = {
+      source: 'PROJECTS', source_key: 'PROJECTS:' + taskId,
+      work_item_id: taskId, project_id: projectId, due_date: '2026-11-27',
+    };
+    const onOpenWork = vi.fn();
+    const { rerender } = render(<DailyAttentionWorkspace feed={feed}
+      calendarItems={[verified]} filter="ALL" setFilter={vi.fn()}
+      source="ALL" setSource={vi.fn()} query="" setQuery={vi.fn()}
+      onRefresh={vi.fn()} onOpenWork={onOpenWork}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Open task MW-T11' }));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.objectContaining({
+      source_key: 'PROJECTS:' + taskId, project_id: projectId,
+      due_date: '2026-11-27',
+    }));
+    onOpenWork.mockClear();
+    rerender(<DailyAttentionWorkspace feed={feed}
+      calendarItems={[{ ...verified, source_key: 'PROJECTS:foreign', project_id: 'prj-' + 'c'.repeat(48) }]}
+      filter="ALL" setFilter={vi.fn()} source="ALL" setSource={vi.fn()}
+      query="" setQuery={vi.fn()} onRefresh={vi.fn()} onOpenWork={onOpenWork}
+      onLoadMore={vi.fn()} loadingMore={false} pageError=""/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Open task MW-T11' }));
+    expect(onOpenWork).toHaveBeenCalledWith(expect.not.objectContaining({ project_id: expect.anything() }));
+  });
+
   it('gates completion on verified source action and opens the evidence form from the row', async () => {
     const onComplete = vi.fn();
     const feed = fixtureFeed(1);
@@ -361,7 +433,7 @@ describe('Daily Attention bounded inbox', () => {
     };
     const { rerender } = render(<DailyAttentionWorkspace {...base} authorisedActions={{}} />);
     expect(screen.queryByRole('button', { name: 'Complete Attention item 0' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open details for Attention item 0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Attention item 0' }));
     expect(screen.getByRole('complementary', { name: 'Attention detail rail' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Confirm completion' })).toBeNull();
 
@@ -565,7 +637,7 @@ describe('Daily Attention bounded inbox', () => {
 });
 
 // ARTIFACT: client/src/__tests__/components/DailyAttentionWorkspace.test.jsx
-// VERSION: v2.9.0-DIRECT-CRM-DRAFT-CREATE-CERT
+// VERSION: v3.16.0-FOCUSED-ATTENTION-VIEW-CERT
 // AUTHORITY BOUNDARY: Synthetic client proof for verified source-action gating and evidence handoff; no commands or persistence.
 // TENANT POSTURE: Synthetic single-tenant source snapshot; no cross-tenant data.
 // FAIL-CLOSED POSTURE: Unauthorized completion remains hidden; success feedback requires parent receipt and fresh-readback confirmation.

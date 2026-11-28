@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Sovereign Application Root
- * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
+ * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Composes authenticated routing, exact tenant projection, legal
  *          admission release, and protected workspace presentation without
@@ -10,7 +10,7 @@
  *                            TenantProvider owns bounded tenant projection;
  *                            Python EOS owns authentication, workspace and
  *                            legal-acceptance truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
  * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
  * SECURITY / PRIVACY POSTURE: Client routing consumes only bounded server
  *                             projections. Authentication tokens, tenant
@@ -24,6 +24,26 @@
  *                     legal-acceptance decisions.
  * FINANCIAL AUTHORITY BOUNDARY: None. Kennel EOS remains exclusive financial
  *                               execution and settlement authority.
+ * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER prevents duplicate footer at the Owner's default Headquarters landing routes, where the nested workspace owns the footer.
+ * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER sends the global logo to the EOS-selected capacity home (Owner Headquarters, HR Director/Manager People), and uses one canonical footer on other protected routes without duplicating the Headquarters footer.
+ * CHANGELOG: v20.4.13-NO-SILENT-PROJECTS-CAPACITY-SWITCH removes the implicit HR Projects-denial event that opened a logout-and-Owner-login prompt; account capacity change remains explicit, EOS governed and MFA bound.
+ * CHANGELOG: v20.4.12-PROJECTS-OWNER-SWITCH-RECOVERY opens the existing confirmation when HR-denied Projects explicitly requests Owner capacity; reauthentication and EOS authorisation remain mandatory.
+ * CHANGELOG: v20.4.11-PLAIN-LANGUAGE-ACCOUNT-EMAIL uses human-readable Account email/Sign-in email labels; verification remains separately EOS-owned, never inferred from workspace identity.
+ * CHANGELOG: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER labels EOS credential-backed account email separately from sign-in fallback; recovery-contact verification remains an independent source.
+ * CHANGELOG: v20.4.9-ROLE-TITLE-AND-RECOVERY-VERIFICATION formats EOS role tokens as readable title-case labels, and reuses the existing authenticated recovery-contact email verification component in focused account security. No email-control status is forged.
+ * CHANGELOG: v20.4.8-COMPACT-PROFILE-PANEL-AND-DEVICE-PREFERENCES replaces the scrolling accordion with focused account subviews, distinguishes sign-in email from EOS-verified identity, and provides a durable device-only menu density preference without inventing server writes.
+ * CHANGELOG: v20.4.7-ACCOUNT-CONTEXT-DEPTH adds bounded EOS-projected identity, session and access information in the existing profile menu; no manufactured MFA, permissions or profile-write authority.
+ * CHANGELOG: v20.4.6-GOVERNED-HR-CAPACITY-CHANGE offers a separate Change HR capacity action for a user currently selected as HR Director/Manager; reauthentication remains mandatory before EOS may admit another role.
+ * CHANGELOG: v20.4.5-SOURCE-OWNED-MY-WORK-IN-PROFILE keeps source-admitted My Work navigation in the account menu when the duplicate Founder floating shortcut is retired; it does not extend access or expose inaccessible work.
+ * CHANGELOG: v20.4.4-PROFILE-WORKSPACE-SWITCHER moves canonical Founder workspace navigation into the existing account dropdown, with same-capacity navigation and explicit confirmation plus reauthentication for cross-capacity transitions; no role union or IAM escalation.
+ * CHANGELOG: v20.4.3-PRESERVE-PREAUTH-FORM-OWNERSHIP keeps public sign-in and MFA pages mounted during in-flight primary-auth and MFA challenges; initial auth restoration and authenticated workspace gating retain their full-screen bootstrap guard. Prevents losing an EOS HR capacity-selection result when the global loading flag changes.
+ * CHANGELOG: v20.4.2-CONTEXTUAL-PEOPLE-MODULE-SHORTCUTS exposes actionable People-only workforce/hiring/offer/headcount module shortcuts in global search overlay without implying cross-domain search authority.
+ * CHANGELOG: v20.4.1-HONEST-PEOPLE-SEARCH-SCOPE labels global People search as authorized workforce lookup or module navigation, without implying certified cross-domain record indexing.
+ * CHANGELOG: v20.4.0-CONTEXT-AWARE-PEOPLE-SEARCH makes the global navigation search context-aware inside the People application, routing queries to the existing HR-owned search intent without adding global HR data access.
+ * CHANGELOG: v20.3.1-CANONICAL-TENANT-PROJECTION-SHAPES supports the authorized canonical tenant ID and legal-name projection aliases while retaining exact selected-session tenant equality in global header.
+ * CHANGELOG: v20.3.0-AUTHENTICATED-TENANT-CHROME displays the exact independently hydrated authenticated tenant legal name and tenant reference in global chrome without accepting client-chosen scope.
+ * CHANGELOG: v20.15.0-ATTENTION-SOURCE-OWNED-TASK-OPEN routes Daily Attention and calendar selections through the canonical EOS work destination contract. Projects opens its exact project/task view, other admitted sources retain source-owned My Work, forged source identities fail closed; no task command or privilege change.
+ * CHANGELOG: v20.14.0-PERSISTENT-HEADQUARTERS-NAVIGATION excludes ephemeral location.key from the stable, identity-bound Headquarters controller key so same-session in-app work navigation no longer forces its subtree to remount. Existing route hooks update the destination; auth/tenant/legal admission gates and EOS work reads remain authoritative.
  * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays EOS-issued Founder title independently from tenant_owner capacity; it never changes workspace authorization.
  * CHANGELOG: v20.10.2-GLOBAL-SEARCH-FOCUS-RETURN returns keyboard focus to the element that opened global search after Escape, dismissal, or navigation. Search routing, auth, and authority are unchanged.
  * CHANGELOG: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER displays email only from AuthProvider.workspaceEmail, which is populated solely by the current EOS workspace bootstrap; existing auth.user.email compatibility remains outside personal identity chrome.
@@ -113,6 +133,7 @@
 import React, { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AUTH_STATES, AuthProvider, useAuth } from './contexts/authContext.jsx';
+import RecoveryContactSecurityControl from './components/account/RecoveryContactSecurityControl.jsx';
 import { isWilsyPlatformTenant, WILSY_PLATFORM_LOGO_SRC } from './components/os/wilsyDashboardChromeConfig.js';
 import { TenantProvider, useTenants } from './contexts/tenantContext';  // ✅ NEW IMPORT
 import ErrorBoundary from './components/ErrorBoundary.jsx';
@@ -131,6 +152,7 @@ import SovereignMfaPortal from './components/auth/SovereignMfaPortal.jsx';
 import Sovereign_TenantManager from './components/sovereign/Sovereign_TenantManager.jsx';
 import LedgerExplorer from './components/billing/LedgerExplorer.jsx';
 import MyWorkWorkspace from './components/workspaces/MyWorkWorkspace.jsx';
+import { resolveUnifiedWorkRoute } from './services/unifiedMyWorkProjection.js';
 import api from './services/api';
 import {
   currentUnifiedMyWorkScope,
@@ -139,6 +161,7 @@ import {
 } from './services/unifiedMyWorkSync.js';
 import WilsyOSIntelligenceDockRuntime from './components/intelligence/WilsyOSIntelligenceDockRuntime.jsx';
 import WilsyDailyAttentionCentre from './components/chrome/WilsyDailyAttentionCentre.jsx';
+import WilsySystemFooter from './components/chrome/WilsySystemFooter.jsx';
 
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
@@ -213,8 +236,11 @@ const accountInitials = (name) => name
 const capacityLabel = (value) => {
   const capacity = exactChromeText(value);
   if (!capacity || !/^[A-Za-z0-9_-]+$/.test(capacity)) return '';
-  const words = capacity.replace(/^tenant_/i, '').replace(/[_-]+/g, ' ').toLocaleLowerCase();
-  return words ? words[0].toLocaleUpperCase() + words.slice(1) : '';
+  return capacity.replace(/^tenant_/i, '').split(/[_-]+/).filter(Boolean)
+    .map((word) => {
+      const lower = word.toLocaleLowerCase();
+      return lower === 'hr' ? 'HR' : lower.charAt(0).toLocaleUpperCase() + lower.slice(1);
+    }).join(' ');
 };
 
 export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceReleased = true }) => {
@@ -228,6 +254,20 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const [searchValue, setSearchValue] = useState('');
   const [searchNotice, setSearchNotice] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [accountDetail, setAccountDetail] = useState(null);
+  const [profileDensity, setProfileDensity] = useState(() => {
+    try { return window.localStorage.getItem('wilsy:chrome:profile-density') === 'compact' ? 'compact' : 'comfortable'; }
+    catch { return 'comfortable'; }
+  });
+  const updateProfileDensity = (value) => {
+    if (!['compact', 'comfortable'].includes(value)) return;
+    try { window.localStorage.setItem('wilsy:chrome:profile-density', value); }
+    catch { return; }
+    setProfileDensity(value);
+  };
+  const [requestedWorkspaceSwitch, setRequestedWorkspaceSwitch] = useState(null);
+  const [workspaceSwitchError, setWorkspaceSwitchError] = useState('');
+  const [workspaceSwitchBusy, setWorkspaceSwitchBusy] = useState(false);
   const accountTriggerRef = useRef(null);
   const accountMenuRef = useRef(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -253,16 +293,37 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? [exactChromeText(sessionUser.firstName), exactChromeText(sessionUser.lastName)].filter(Boolean).join(' ')
     : '';
   const accountEmail = safeAccountEmail(sessionUser?.workspaceEmail);
+  // The authenticated compatibility field may originate from the credential
+  // candidate: useful for the operator, but not independently EOS-verified.
+  const signInEmail = safeAccountEmail(sessionUser?.email);
+  const verifiedTenantId = activeTenant?.tenantId
+    || activeTenant?.tenant_id || activeTenant?.id || null;
   const tenantIdentity = sessionUser?.tenantId
-    && String(activeTenant?.tenantId || '') === String(sessionUser.tenantId)
+    && typeof verifiedTenantId === 'string'
+    && verifiedTenantId === sessionUser.tenantId
     ? activeTenant
     : null;
   const organisationName = exactChromeText(tenantIdentity?.legalName)
+    || exactChromeText(tenantIdentity?.legal_name)
     || exactChromeText(tenantIdentity?.name);
+  const currentTenantReference = tenantIdentity && sessionUser?.tenantId
+    ? exactChromeText(sessionUser.tenantId) : '';
+  const showTenantContext = Boolean(organisationName && currentTenantReference);
+
   const currentCapacity = sessionUser?.workspaceContractVersion === 'v1.0.0-WILSY-EOS-WORKSPACE-RESOLUTION'
     ? exactChromeText(sessionUser.businessRole || sessionUser.role)
     : '';
   const selectedCapacityLabel = capacityLabel(currentCapacity);
+  const canSwitchFounderWorkspaces = sessionUser?.tenantId === 'WILSYTENANT-4CD2FZ4O'
+    && ['tenant_owner', 'tenant_hr_manager', 'tenant_hr_director'].includes(currentCapacity);
+  const isHrCapacity = currentCapacity === 'tenant_hr_manager'
+    || currentCapacity === 'tenant_hr_director';
+  const isOwnerCapacity = currentCapacity === 'tenant_owner';
+  // The brand action returns to the HOME of the server-selected capacity.
+  // No client-side role mutation, logout, or cross-capacity navigation.
+  const currentHomeRoute = isHrCapacity
+    ? '/headquarters?section=hr-workspace'
+    : currentCapacity === 'tenant_owner' ? '/headquarters' : '/';
   const institutionalTitle = sessionUser?.institutionalDesignation === 'Founder'
     && sessionUser?.tenantId === 'WILSYTENANT-4CD2FZ4O'
     && currentCapacity === 'tenant_owner'
@@ -273,18 +334,69 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
   const accountScope = sessionUser
     ? `${sessionUser.id}:${sessionUser.tenantId || 'SYSTEM'}:${currentCapacity}:${auth.sessionGeneration ?? ''}`
     : '';
+  // A new capacity must be independently issued by EOS. Do not reuse the
+  // current HR token as Owner or silently terminate a live operator session.
+  const requestFounderWorkspaceSwitch = (destination) => {
+    if (!canSwitchFounderWorkspaces) return;
+    if (destination === 'people' && isHrCapacity) {
+      setUserMenuOpen(false);
+      navigate('/headquarters?section=hr-workspace');
+      return;
+    }
+    if (destination === 'headquarters' && isOwnerCapacity) {
+      setUserMenuOpen(false);
+      navigate('/headquarters');
+      return;
+    }
+    if (!['headquarters', 'people', 'change-hr'].includes(destination)) return;
+    setWorkspaceSwitchError('');
+    setRequestedWorkspaceSwitch(destination);
+  };
+  const confirmFounderWorkspaceSwitch = async () => {
+    const destination = requestedWorkspaceSwitch;
+    if (!canSwitchFounderWorkspaces || !['headquarters', 'people', 'change-hr'].includes(destination)
+        || workspaceSwitchBusy) return;
+    setWorkspaceSwitchBusy(true);
+    setWorkspaceSwitchError('');
+    try {
+      await onLogout();
+      // An explicit login route is only a presentation destination, never IAM.
+      window.location.assign(destination === 'headquarters' ? '/login' : '/login?capacity=hr');
+    } catch (_error) {
+      setWorkspaceSwitchError('Current-session sign-out could not be confirmed. Switch cancelled.');
+      setWorkspaceSwitchBusy(false);
+    }
+  };
+
   const isSecureChannel = typeof window !== 'undefined'
     && window.location.protocol === 'https:';
 
   // The exact AuthProvider session generation, selected capacity and both role
   // revisions partition this optional badge. It is active-work evidence, never
   // an unread-notification count or browser permission authority.
+  // The global command bar follows the mounted business application.
+  // A People query is handed to its existing independently authorized source.
+  const isPeopleWorkspace = location.pathname === '/headquarters'
+    && new URLSearchParams(location.search).get('section') === 'hr-workspace';
+  const searchContextLabel = isPeopleWorkspace
+    ? 'Search workforce or open a People module…'
+    : 'Search authorized work or navigate…';
   const currentWorkScope = currentUnifiedMyWorkScope(auth, sessionUser?.tenantId);
+  useEffect(() => {
+    if (location.state?.reopenDailyAttention !== true || !currentWorkScope) return;
+    setNotificationsOpen(true);
+    navigate({ pathname: location.pathname, search: location.search },
+      { replace: true, state: null });
+  }, [location.pathname, location.search, location.state, currentWorkScope, navigate]);
   const isPlatformOwnerWorkspace = Boolean(currentWorkScope && isWilsyPlatformTenant(sessionUser?.tenantId));
 
   useEffect(() => {
     setUserMenuOpen(false);
+    setAccountDetail(null);
     setNotificationsOpen(false);
+    setRequestedWorkspaceSwitch(null);
+    setWorkspaceSwitchError('');
+    setWorkspaceSwitchBusy(false);
   }, [accountScope]);
 
   useEffect(() => {
@@ -397,7 +509,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     event.preventDefault();
     const query = searchValue.trim().toLowerCase();
     if (query === 'headquarters' || query === 'home') {
-      navigate('/headquarters');
+      navigate(query === 'home' ? currentHomeRoute : '/headquarters');
       setSearchOpen(false);
       setSearchValue('');
       setSearchNotice('');
@@ -406,16 +518,35 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       setSearchOpen(false);
       setSearchValue('');
       setSearchNotice('');
+    } else if (isPeopleWorkspace && query.length >= 2) {
+      window.dispatchEvent(new CustomEvent('wilsy:people-context-search', {
+        detail: { query: searchValue.trim() },
+      }));
+      setSearchOpen(false);
+      setSearchValue('');
+      setSearchNotice('');
     } else {
-      setSearchNotice('No matching workspace shortcut. Choose Headquarters or My Work.');
+      setSearchNotice(isPeopleWorkspace
+        ? 'Enter at least two characters to search authorized People records.'
+        : 'No matching workspace shortcut. Choose Headquarters or My Work.');
     }
   };
 
+  const openPeopleModule = (moduleName) => {
+    if (!isPeopleWorkspace) return;
+    window.dispatchEvent(new CustomEvent('wilsy:people-context-search', {
+      detail: { query: moduleName },
+    }));
+    setSearchOpen(false);
+    setSearchValue('');
+    setSearchNotice('');
+  };
+
   return (
-    <div className="min-h-screen bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
+    <div className="flex min-h-screen flex-col bg-[#080f1d] text-slate-100" data-wilsy-platform-owner={isPlatformOwnerWorkspace ? 'true' : undefined}>
       {isPlatformOwnerWorkspace && <style>{'body:has([data-wilsy-platform-owner="true"])::after{display:none!important}'}</style>}
       <header className="sticky top-0 z-40 flex h-[72px] w-full min-w-0 items-center gap-2 border-b border-white/10 bg-gradient-to-r from-[#0b1830] via-[#112444] to-[#0b1830] px-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:gap-4 sm:px-4 xl:px-5">
-        <button type="button" aria-label="WILSY home" onClick={() => navigate('/headquarters')} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[228px] xl:w-[228px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
+        <button type="button" aria-label="WILSY home" onClick={() => navigate(currentHomeRoute)} className="flex min-w-0 shrink-0 items-center gap-2 text-left md:w-[228px] xl:w-[228px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830]">
           <img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo" className="h-14 w-14 shrink-0 object-contain md:h-16 md:w-16" />
           <span className="hidden min-w-0 leading-tight min-[360px]:block">
             <span className="block text-[23px] font-bold tracking-[0.045em] md:text-[30px] text-white">WILSY</span>
@@ -425,12 +556,16 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
 
         <button type="button" onClick={openGlobalSearch} aria-label="Open workspace navigation" className="mx-auto hidden h-10 min-w-0 max-w-[690px] flex-1 items-center gap-3 rounded-full border border-white/15 bg-white px-4 text-left text-sm text-[#435575] transition hover:border-[#d7ad43] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1830] md:flex">
           <Search size={16} className="text-[#435575]"/>
-          <span className="flex-1">Search authorized work or navigate…</span>
+          <span className="flex-1">{searchContextLabel}</span>
           <kbd className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] text-slate-500">⌘ K / Ctrl K</kbd>
         </button>
         <button type="button" onClick={openGlobalSearch} aria-label="Open workspace navigation" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 text-slate-300 md:hidden"><Search size={17}/></button>
 
         <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-3">
+          {showTenantContext && <div className="hidden max-w-[205px] min-w-0 flex-col text-right leading-tight lg:flex" aria-label="Current authenticated tenant" data-testid="global-tenant-context">
+            <span className="truncate text-xs font-semibold text-white" title={organisationName}>{organisationName}</span>
+            <span className="truncate text-[10px] font-medium text-amber-200" title={currentTenantReference}>{currentTenantReference}</span>
+          </div>}
           {hasAuthenticatedSession && !authLoading && (
             <div role="status" aria-label={isSecureChannel ? 'Secure and authenticated' : 'Authenticated; secure transport not confirmed'} className={`flex items-center gap-2 rounded-full border px-2 py-2 text-[11px] font-medium sm:px-3 ${isSecureChannel ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200' : 'border-emerald-400/25 bg-emerald-500/20 text-emerald-100'}`}>
               <ShieldCheck size={15}/>
@@ -446,8 +581,21 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
             onToggle={() => { setNotificationsOpen((value) => !value); setUserMenuOpen(false); }}
             onClose={() => setNotificationsOpen(false)}
             onOpenWork={(item) => {
+              if (!item) {
+                setNotificationsOpen(false);
+                navigate('/my-work');
+                return;
+              }
+              // All Daily Attention and calendar selections use the same
+              // source-owned destination contract as My Work and Headquarters.
+              // A projection row never grants command authority at the target.
+              let destination;
+              try { destination = resolveUnifiedWorkRoute(item); }
+              catch { return; } // Invalid or foreign source locator fails closed.
               setNotificationsOpen(false);
-              navigate('/my-work', { state: item?.source_key ? { focusWorkItem: item.source_key } : null });
+              navigate({ pathname: destination.pathname, search: destination.search },
+                { state: { ...(destination.state || {}),
+                  attentionReturn: { pathname: location.pathname, search: location.search } } });
             }}
             onOpenWorkforce={() => {
               setNotificationsOpen(false);
@@ -470,7 +618,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
             </button>
             {userMenuOpen && (
               <div role="menu" aria-label="Account menu" onKeyDown={(event) => {
-                const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitem"]'));
+                const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitem"], [role="menuitemradio"]'));
                 const index = items.indexOf(document.activeElement);
                 if (event.key === 'Escape') {
                   event.preventDefault();
@@ -483,14 +631,136 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                     : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
                   items[next]?.focus();
                 }
-              }} className="absolute right-0 top-12 z-50 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-white/10 bg-[#101d32] p-3 shadow-2xl">
-                <div className="border-b border-white/10 px-2 pb-3">
-                  <p className="font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
-                  {accountEmail && <p className="mt-1 break-all text-xs text-slate-400">{accountEmail}</p>}
+              }} className="absolute right-0 top-12 z-50 max-h-[min(82dvh,620px)] w-[min(23rem,calc(100vw-1rem))] overflow-y-auto overscroll-contain rounded-2xl border border-slate-500/35 bg-[#101d32] p-3 text-slate-100 shadow-2xl">
+                <div className="flex items-center gap-3 border-b border-white/15 px-2 pb-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/40 bg-[#263b5a] text-base font-bold text-amber-100" aria-hidden="true">{initials || <UserRound size={19}/>}</span>
+                  <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
+                  {(accountEmail || signInEmail) && <div className="mt-1 min-w-0"><p className="break-all text-xs text-slate-100">{accountEmail || signInEmail}</p><p className="mt-0.5 text-[10px] text-slate-300">{accountEmail ? 'Account email' : 'Sign-in email'}</p></div>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
-                  {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-300">Selected capacity: {selectedCapacityLabel}</p>}
+                  {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-200">Operating as: {selectedCapacityLabel}</p>}
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-200"><ShieldCheck size={13}/> Authenticated · EOS session</p>
+                  </div>
                 </div>
+                {!accountDetail && canSwitchFounderWorkspaces && (
+                  <div className="mt-2 border-b border-white/10 px-1 pb-3" aria-label="Founder workspace switcher">
+                    <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Workspaces</p>
+                    {currentWorkScope && (
+                      <button type="button" role="menuitem"
+                        onClick={() => { setUserMenuOpen(false); navigate('/my-work'); }}
+                        disabled={workspaceSwitchBusy}
+                        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                        <span>My Work <span className="block text-xs text-slate-300">Current authorized tasks</span></span>
+                        <span className="text-xs text-slate-300">Open</span>
+                      </button>
+                    )}
+                    <button type="button" role="menuitem"
+                      onClick={() => requestFounderWorkspaceSwitch('headquarters')} disabled={workspaceSwitchBusy}
+                      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                      <span>Headquarters <span className="block text-xs text-slate-300">Owner operating capacity</span></span>
+                      <span className="text-xs text-slate-300">{isOwnerCapacity ? 'Current' : 'Sign in'}</span>
+                    </button>
+                    <button type="button" role="menuitem"
+                      onClick={() => requestFounderWorkspaceSwitch('people')} disabled={workspaceSwitchBusy}
+                      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                      <span>People · Hire to Exit <span className="block text-xs text-slate-300">HR operating capacity</span></span>
+                      <span className="text-xs text-slate-300">{isHrCapacity ? 'Current' : 'Sign in'}</span>
+                    </button>
+                    {isHrCapacity && (
+                      <button type="button" role="menuitem" disabled={workspaceSwitchBusy}
+                        onClick={() => requestFounderWorkspaceSwitch('change-hr')}
+                        className="min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                        Change HR capacity
+                        <span className="block text-xs text-slate-300">Select HR Director or HR Manager through EOS and MFA</span>
+                      </button>
+                    )}
+                    {requestedWorkspaceSwitch && (
+                      <div className="mt-2 rounded-lg border border-white/20 bg-slate-800 p-3">
+                        <p className="text-sm font-medium text-white">Switch operating capacity?</p>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-200">
+                          This signs out the current session. You must sign in again and complete MFA
+                          for {requestedWorkspaceSwitch === 'headquarters' ? 'Owner' : 'HR'} authority.
+                          Assigned roles and permissions stay separate.
+                        </p>
+                        {workspaceSwitchError && <p role="alert" className="mt-2 text-xs text-red-200">{workspaceSwitchError}</p>}
+                        <div className="mt-3 flex gap-2">
+                          <button type="button" role="menuitem" disabled={workspaceSwitchBusy}
+                            onClick={() => { setRequestedWorkspaceSwitch(null); setWorkspaceSwitchError(''); }}
+                            className="min-h-10 rounded-md border border-white/30 px-3 text-xs text-white hover:bg-white/10">Cancel</button>
+                          <button type="button" role="menuitem" disabled={workspaceSwitchBusy}
+                            onClick={() => { void confirmFounderWorkspaceSwitch(); }}
+                            className="min-h-10 rounded-md bg-white px-3 text-xs font-semibold text-slate-900 hover:bg-slate-100">
+                            {workspaceSwitchBusy ? 'Signing out…' : 'Continue to secure sign-in'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {accountDetail ? (
+                  <section className="mt-2 px-1 pb-2" aria-label="Account detail">
+                    <button type="button" role="menuitem" onClick={() => setAccountDetail(null)}
+                      className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                      <span aria-hidden="true">←</span> Back to account
+                    </button>
+                    <div aria-live="polite" className="rounded-xl border border-slate-500/40 bg-[#172b45] p-3 text-xs leading-5 text-slate-100">
+                      {accountDetail === 'identity' && <>
+                        <p className="mb-2 text-sm font-semibold text-white">Verified profile</p>
+                        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
+                          <dt className="text-slate-300">Name</dt><dd className="break-words">{displayName || 'Not provided by EOS'}</dd>
+                          <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || signInEmail || 'Not supplied'}{!accountEmail && signInEmail && <span className="block text-amber-200">Sign-in email, not independently verified by EOS</span>}</dd>
+                          <dt className="text-slate-300">Employer</dt><dd>{organisationName || 'Not verified'}</dd>
+                          <dt className="text-slate-300">Tenant</dt><dd className="break-all">{currentTenantReference || 'Not verified'}</dd>
+                        </dl>
+                      </>}
+                      {accountDetail === 'security' && <>
+                        <p className="text-sm font-semibold text-white">Security &amp; sessions</p>
+                        <p className="mt-2 text-emerald-200">Current EOS workspace session authenticated.</p>
+                        <p className="mt-2">Sign out revokes the current session through the existing provider flow. Other device sessions and MFA methods require independent EOS evidence.</p>
+                        <div className="mt-3">
+                          <RecoveryContactSecurityControl key={accountScope} compact email={accountEmail || signInEmail} />
+                        </div>
+                        <p className="mt-2 text-slate-300">Recovery email verification proves mailbox control for password recovery; it does not certify your general account email or grant another role.</p>
+                      </>}
+                      {accountDetail === 'access' && <>
+                        <p className="text-sm font-semibold text-white">My access</p>
+                        <p className="mt-2 font-semibold">{selectedCapacityLabel || 'No current operating capacity verified'}</p>
+                        <p className="mt-2">EOS admits each workspace and command independently. HR and Owner privileges cannot be pooled or inherited from this menu.</p>
+                      </>}
+                      {accountDetail === 'preferences' && <>
+                        <p className="text-sm font-semibold text-white">Personal settings</p>
+                        <p className="mt-2 font-semibold">Profile menu density</p>
+                        <div role="group" aria-label="Profile menu density" className="mt-2 flex gap-2">
+                          {['comfortable', 'compact'].map((value) => (
+                            <button key={value} type="button" role="menuitemradio" aria-checked={profileDensity === value}
+                              onClick={() => updateProfileDensity(value)}
+                              className={`min-h-10 flex-1 rounded-lg border px-3 text-xs font-semibold capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${profileDensity === value ? 'border-amber-300 bg-amber-300/15 text-amber-100' : 'border-slate-500 text-white hover:bg-white/10'}`}>
+                              {value}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="mt-3 text-slate-300">This preference is stored on this device only. Editing your authoritative name, contact information or organisation-wide preferences requires an EOS profile-write service.</p>
+                      </>}
+                    </div>
+                  </section>
+                ) : (
+                  <div className="mt-2 border-b border-white/15 px-1 pb-2" aria-label="Account and security">
+                    <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-300">Account &amp; security</p>
+                    {[
+                      ['identity', 'My profile'],
+                      ['security', 'Security & sessions'],
+                      ['access', 'My access'],
+                      ['preferences', 'Personal settings'],
+                    ].map(([id, label]) => (
+                      <button key={id} type="button" role="menuitem"
+                        onClick={() => setAccountDetail(id)}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 text-left text-sm font-medium text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${profileDensity === 'compact' ? 'min-h-9' : 'min-h-11'}`}>
+                        <span>{label}</span><span className="text-lg text-slate-400" aria-hidden="true">›</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); void onLogout(); }} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-3 text-left text-sm text-red-200 hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ad43]"><LogOut size={15}/> Sign out</button>
               </div>
             )}
@@ -498,15 +768,22 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
         </div>
       </header>
 
-      <div>{children}</div>
+      <div className="min-h-0 flex-1">{children}</div>
+      {location.pathname !== '/headquarters' && !(isOwnerCapacity && ['/', '/dashboard'].includes(location.pathname)) && (
+        <WilsySystemFooter
+          surface={isHrCapacity ? 'People · Hire to Exit' : isOwnerCapacity ? 'Headquarters · Enterprise operations' : 'WILSY OS · Authorized workspace'}
+          employerName={showTenantContext ? organisationName : ''}
+          employerReference={showTenantContext ? currentTenantReference : ''}
+        />
+      )}
 
       {searchOpen && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="wilsy-global-search-title" className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#101d32] shadow-2xl">
-            <h2 id="wilsy-global-search-title" className="sr-only">Workspace navigation</h2>
+            <h2 id="wilsy-global-search-title" className="sr-only">{isPeopleWorkspace ? 'People search' : 'Workspace navigation'}</h2>
             <form onSubmit={submitSearch} className="flex items-center gap-3 border-b border-white/10 px-5 py-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#d7ad43]">
               <Search size={19} className="text-amber-300"/>
-              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} aria-label="Workspace destination" placeholder="Headquarters or My Work" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
+              <input id="wilsy-global-search-input" value={searchValue} onChange={(event) => setSearchValue(event.target.value)} aria-label={isPeopleWorkspace ? "Search authorized People" : "Workspace destination"} placeholder={isPeopleWorkspace ? "Employee name, role, or People workflow" : "Headquarters or My Work"} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 focus-visible:outline-none"/>
               <kbd className="rounded border border-white/10 px-2 py-1 text-[10px] text-slate-400">ESC</kbd>
               <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}><X size={17}/></button>
             </form>
@@ -516,7 +793,15 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                 <button type="button" onClick={() => { navigate('/headquarters'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><Home size={17} className="text-amber-300"/> Headquarters</button>
                 <button type="button" onClick={() => { navigate('/my-work'); setSearchOpen(false); setSearchValue(''); setSearchNotice(''); }} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><CheckCircle2 size={17} className="text-amber-300"/> My Work</button>
               </div>
-              <p role={searchNotice ? 'status' : undefined} className="mt-4 text-xs leading-5 text-slate-400">{searchNotice || 'Only Headquarters and My Work shortcuts are available here. Permission-filtered record search is not connected.'}</p>
+              {isPeopleWorkspace && <div className="mt-3 flex flex-wrap gap-2" aria-label="People module shortcuts">
+                {['Workforce', 'Hiring', 'Offers', 'Headcount'].map(moduleName => (
+                  <button type="button" key={moduleName} onClick={() => openPeopleModule(moduleName)}
+                    className="rounded-lg border border-amber-300/30 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
+                    {moduleName}
+                  </button>
+                ))}
+              </div>}
+              <p role={searchNotice ? 'status' : undefined} className="mt-4 text-xs leading-5 text-slate-400">{searchNotice || (isPeopleWorkspace ? 'Queries use the existing authorized workforce directory. No HR records are searched without EOS admission.' : 'Only Headquarters and My Work shortcuts are available here. Permission-filtered record search is not connected.')}</p>
             </div>
           </section>
         </div>
@@ -652,8 +937,21 @@ const SovereignRouter = () => {
     }
   }, [targetPath, location.pathname, navigate]);
 
-  // Loading Screen
-  if (authLoading || (isAuthenticated && (!user || !bootstrapReady || tenantLoading))) {
+  // Initial persisted-session restoration owns the full-screen bootstrap.
+  // During an explicit public login or MFA challenge the mounted form owns
+  // its pending choice/error state; removing it here discards the returned
+  // EOS membership options and leaves the user at a blank retry.
+  const publicAuthenticationInFlight = (
+    ['/login', '/mfa', '/mfa-setup'].includes(location.pathname)
+    && [
+      AUTH_STATES.PRIMARY_AUTHENTICATING,
+      AUTH_STATES.MFA_REQUIRED,
+      AUTH_STATES.MFA_VERIFYING,
+      AUTH_STATES.FAILED,
+    ].includes(authStage)
+  );
+  if ((authLoading && !publicAuthenticationInFlight)
+    || (isAuthenticated && (!user || !bootstrapReady || tenantLoading))) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-black">
         <Loader2 className="w-16 h-16 text-[#D4AF37] animate-spin mb-4" />
@@ -693,7 +991,7 @@ const SovereignRouter = () => {
       <Route path="/covenant" element={<Navigate to="/" replace />} />
       <Route path="/headquarters" element={
         isAuthenticated && user && !systemServicesSession
-          ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole, location.key].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
+          ? <ErrorBoundary><SovereignDashboardController key={[user.id, user.tenantId, user.role, user.workspaceId, user.businessRole].map((part) => String(part || '')).join(':')} user={user} onLogout={logout} initialWorkspace="headquarters" /></ErrorBoundary>
           : <Navigate to="/" replace />
       } />
       <Route path="/my-work" element={
@@ -1058,7 +1356,7 @@ export default App;
 
 /**
  * ARTIFACT: client/src/App.jsx
- * VERSION: v20.13.0-VERIFIED-FOUNDER-IDENTITY-HEADER
+ * VERSION: v20.4.14-CAPACITY-HOME-AND-SHARED-FOOTER
  * AUTHORITY BOUNDARY: client route and protected-runtime composition only; Python EOS remains authentication, tenant and legal-acceptance authority
  * TENANT POSTURE: discovered tenant may choose login routing but cannot establish authenticated or protected scope
  * FAIL-CLOSED POSTURE: auth revalidation waits; unresolved legal status remains sealed; only server-confirmed legal COMPLETE mounts protected runtime

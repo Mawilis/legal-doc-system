@@ -1,9 +1,21 @@
-"""Caller-transaction durable registry for WILSY headcount requisitions.
-
-The registry persists HR planning evidence only. Callers own the Mongo session
-and transaction; this module grants no hiring, employee, identity, membership,
-capacity, IAM, payroll, or financial authority.
+"""TITLE: WILSY OS transactional headcount requisition registry.
+VERSION: v1.1.0-M03-BOUNDED-HEADCOUNT-PAGINATION
+AUTHORITY: WILSY OS Core Governance; Python Kennel EOS.
+EPITOME: Persists source-owned headcount requisitions and immutable lifecycle
+         events with caller-owned transactions and exact-tenant paged views.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/hr/headcount_requisition_registry.py
+COLLABORATION / OWNERSHIP: Canonical HR headcount router and its domain state machine.
+CERTIFICATION / UPDATE DATE: 2026-11-27.
+CHANGELOG: v1.1.0-M03-BOUNDED-HEADCOUNT-PAGINATION adds bounded source-owned Overview list and
+           snapshot-consistent total with precise tenant and session scope.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: No broader employee PII or payroll data projected.
+TENANT BOUNDARY: All registry queries constrain exact caller-authorized tenant.
+AUTHORITY BOUNDARY: No registry operation creates HR access; HTTP gate remains
+                    RequireTenantAuthorization and caller owns transaction.
+FINANCIAL AUTHORITY BOUNDARY: No payment or payroll execution; Kennel EOS exclusively.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -181,6 +193,32 @@ class HeadcountRequisitionRegistry:
         except PyMongoError as error:
             raise HeadcountRequisitionRegistryError("HEADCOUNT_PERSISTENCE_UNAVAILABLE") from error
 
+    def list_overview_page(
+        self, *, tenant_id: str, session: Any,
+        limit: int = 25, offset: int = 0,
+    ) -> tuple[tuple[HeadcountRequisition, ...], int]:
+        """Bounded exact-tenant source read with transactional total.
+
+        The existing historical list_for_tenant contract remains unchanged.
+        Pages sort by stable tenant-scoped requisition identity, preventing
+        broad scans from becoming a false complete Overview.
+        """
+        tenant = _exact(tenant_id, "HEADCOUNT_TENANT_INVALID")
+        tx = _session(session)
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_LIMIT_INVALID")
+        if type(offset) is not int or not 0 <= offset <= 100000:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_OFFSET_INVALID")
+        coordinate = {"tenant_id": tenant}
+        try:
+            total = self._collection.count_documents(coordinate, session=tx)
+            rows = list(self._collection.find(coordinate, session=tx).sort(
+                [("requisition_id", ASCENDING)]
+            ).skip(offset).limit(limit))
+            return tuple(_hydrate(row) for row in rows), total
+        except PyMongoError as error:
+            raise HeadcountRequisitionRegistryError("HEADCOUNT_PERSISTENCE_UNAVAILABLE") from error
+
     def replay_transition(
         self, *, tenant_id: str, idempotency_key: str,
         request_fingerprint: str, session: Any,
@@ -271,3 +309,12 @@ __all__ = [
     "HeadcountRequisitionRegistryError", "HeadcountRequisitionRegistryConflict",
     "HeadcountRequisitionNotFound",
 ]
+
+
+# ARTIFACT: tools/eos/saas/hr/headcount_requisition_registry.py
+# VERSION: v1.1.0-M03-BOUNDED-HEADCOUNT-PAGINATION
+# AUTHORITY BOUNDARY: Caller-owned transaction, no IAM or employee admission authority.
+# TENANT POSTURE: All current, historical and overview records bound to exact tenant.
+# FAIL-CLOSED POSTURE: Invalid session, paging, source or persistence fails closed.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

@@ -6,7 +6,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * WILSY OS — INSTITUTIONAL HTTP CLIENT
  * TITLE: Wilsy OS Diplomatic Bridge and Institutional HTTP Client
- * VERSION: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY
+ * VERSION: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Provides the governed browser HTTP transport seam while preserving
  *          server-owned authentication, recovery, tenant, credential, and
@@ -15,7 +15,23 @@
  * COLLABORATION / OWNERSHIP: React client callers supply presentation inputs;
  *                            Python EOS owns auth/recovery business truth and
  *                            server contracts; external HTTP is transport only.
- * CERTIFICATION / UPDATE DATE: 2026-11-20
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK preserves strict encrypted-history PUT payloads and adds Dock/history to the existing tenant transport interlock.
+ * CHANGELOG: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK extends the
+ *            tenant-scope route boundary to query-string and fragment
+ *            delimiters so /projects?limit=1 is guarded like /projects.
+ *            Keeps the existing fail-closed regression assertion unchanged.
+ * CHANGELOG: v74.19.0-VERIFIED-TENANT-TRANSPORT-INTERLOCK prevents
+ *            Projects, My Work, attention and CRM tenant-bound operations
+ *            from leaving the browser before the EOS bootstrap tenant is
+ *            anchored; rejects reserved display aliases as selectors and
+ *            binds every authenticated read to current verified scope.
+ *            No browser IAM, tenant substitution or automatic cross-tenant retry.
+ * CHANGELOG: v74.18.0-FOUNDER-STRATEGY-STRICT-COMMAND-BODIES
+ *            preserves exact JSON for the authenticated Founder Strategy
+ *            draft, submit, ratify and project-link POST commands. Forensic
+ *            timestamp, nonce and request seals remain in transport headers;
+ *            injecting timestamp into strict Pydantic bodies caused HTTP 422.
  * CHANGELOG: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY clears the global application/json Content-Type for native FormData uploads so Axios cannot transform the binary multipart form into JSON. The browser supplies its own boundary; existing bearer, exact tenant, forensic headers and command idempotency survive unchanged.
  * CHANGELOG: v74.16.0-STRICT-WILSY-AI-REASONING-REQUEST-BODY excludes the strict Python EOS WILSY AI reasoning command body from transport timestamp injection while retaining forensic timestamp, nonce, trace and request-seal headers; the Pydantic prompt-only contract and exact-tenant admission remain unchanged.
  * CHANGELOG: v74.15.0-ALL-STRICT-PROJECTS-MUTATION-BODIES preserves exact canonical JSON for all Python EOS Projects mutation routes (assignment, departments, task/note/comment/participant/approval commands) rather than injecting a forbidden body timestamp. Existing forensic timestamp and SHA3 request-seal headers remain unchanged.
@@ -98,6 +114,11 @@ const api = axios.create({
   },
   timeout: 15000,
 });
+
+// Only business routes whose canonical Python EOS contract requires selected
+// tenant scope are interlocked. Authentication/bootstrap, tenant discovery,
+// SYSTEM bootstrap and public recovery remain unblocked.
+const TENANT_SCOPED_SOURCE_ROUTE = /^\/(?:projects|my-work|attention|crm|wilsy-ai\/(?:history|dock))(?:[/?#]|$)/i;
 
 const SOURCE_BACKOFF_MS = Number(import.meta.env?.VITE_SOURCE_BACKOFF_MS || 45000);
 const sourceBackoffUntil = new Map();
@@ -463,6 +484,19 @@ api.interceptors.request.use(
       throw missing;
     }
 
+    // Tenant-scoped business reads must never run with an absent or stale
+    // selector while AuthProvider restores an EOS-issued session. The guard
+    // prevents false HTTP 403 "connection lost" reports on navigation.
+    // It cannot grant access; Python EOS independently authorizes every read.
+    if (TENANT_SCOPED_SOURCE_ROUTE.test(config.url || '')
+        && (!activeTenantTransportId || !isCanonicalTenantTransportId(activeTenantTransportId))) {
+      const missingScope = new Error('VERIFIED_TENANT_CONTEXT_REQUIRED');
+      missingScope.code = 'VERIFIED_TENANT_CONTEXT_REQUIRED';
+      missingScope.config = config;
+      missingScope.isClientAuthGuard = true;
+      throw missingScope;
+    }
+
     // Attach tenant scope only after EOS workspace-bootstrap revalidation.
     if (activeTenantTransportId) {
       config.headers['X-Tenant-ID'] = activeTenantTransportId;
@@ -505,11 +539,12 @@ api.interceptors.request.use(
       // x-forensic-timestamp header and request seal; it is not legal body truth.
       const preservesCanonicalRequestBody = (
         /^\/legal-acceptance\/accept$/i.test(config.url)
-        || /^\/company-operating-documents\/(?:reader-grants|(?:MISSION|STRATEGY)\/(?:drafts|submit|publish))$/i.test(config.url)
+        || /^\/company-operating-documents\/(?:reader-grants|(?:MISSION|STRATEGY)\/(?:drafts|submit|publish)|STRATEGY\/(?:founder-drafts|founder-submit|founder-ratify|founder-project-links|project-links))$/i.test(config.url)
         || /^\/system-services\/security-incident-assignments\/[^/]+\/(?:accept|decline)$/i.test(config.url)
         || /^\/crm\/owner-workspace\/work-items(?:\/[^/]+(?:\/(?:complete|status|cancel))?)?$/i.test(config.url)
         // C1B reasoning accepts only prompt; forensic time remains in headers.
         || /^\/wilsy-ai\/reasoning$/i.test(config.url)
+        || /^\/wilsy-ai\/history\/session-[a-f0-9-]{36}$/i.test(config.url)
         || /^\/tenant-modules\/(?:operations|intelligence)\/workspace\/work-items(?:\/[^/]+\/complete)?$/i.test(config.url)
         // Python EOS Projects uses strict Pydantic command payloads. Keep
         // create/update/archive body exact; forensic time remains in headers.
@@ -700,6 +735,9 @@ const requestPasswordRecovery = ({ tenantId, email }) => api.post(
  * @institutional Transport only; requires the existing authenticated bearer and
  *     cannot create verified-contact authority by itself.
  */
+/** SMTP-independent current-principal recovery-contact evidence readback. */
+const getRecoveryContactStatus = () => api.get('/auth/recovery-contact/status');
+
 const requestRecoveryContactVerification = () => api.post(
   '/auth/recovery-contact/request-verification',
   {},
@@ -839,6 +877,7 @@ export default api;
 export {
   requestPasswordRecovery,
   requestRecoveryContactVerification,
+  getRecoveryContactStatus,
   completeRecoveryContactVerification,
   resetPassword,
   getStatements,
@@ -851,10 +890,12 @@ export {
 
 /**
  * ARTIFACT: client/src/services/api.js
- * VERSION: v74.17.0-NATIVE-MULTIPART-CONTENT-TYPE-BOUNDARY
+ * VERSION: v74.21.0-RECOVERY-CONTACT-STATUS-READBACK
  * AUTHORITY BOUNDARY: browser HTTP transport and transport evidence only
  * TENANT POSTURE: client tenant values remain selectors/projections; server truth is sovereign
  * FAIL-CLOSED POSTURE: strict public recovery/reset bodies are never mutated by forensic metadata
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * END OF WILSY OS SOVEREIGN ARTIFACT
  */
+
+

@@ -2,7 +2,7 @@
 /**
  * WILSY OS — ACCOUNT COMMAND CENTER
  * TITLE: WILSY OS Account Command Center
- * VERSION: v3.2.0-L10-P2C6-BRANDING-COMMAND-CENTER
+ * VERSION: v3.2.1-EOS-ACCOUNT-EMAIL-SOURCE-PARITY
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents authenticated account, tenant, security, operating-skin,
  *          compliance, and forensic command projections without creating
@@ -12,7 +12,8 @@
  *                            projections; Python EOS owns recovery/contact
  *                            verification truth; backend forensic services own
  *                            evidence; Kennel EOS alone owns financial execution.
- * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v3.2.1-EOS-ACCOUNT-EMAIL-SOURCE-PARITY uses current EOS workspaceEmail when available and removes invented Founder and tenant-support email fallbacks from account identity/forensic presentation; missing account email is explicitly absent, never inferred as verified.
  * CHANGELOG: v3.2.0-L10-P2C6-BRANDING-COMMAND-CENTER mounts the authenticated
  *            tenant-branding management panel in the shared Account Command
  *            Center and preserves server-derived authority capabilities.
@@ -927,7 +928,9 @@ function buildWilsyAccountIdentity({ user = {}, activeTenant = {}, tenantBrandin
 
   return {
     displayName,
-    email: user.email || user.primaryEmail || activeTenant?.supportEmail || 'wilsonkhanyezi@gmail.com',
+    email: (Object.prototype.hasOwnProperty.call(user, 'workspaceEmail')
+      ? user.workspaceEmail || ''
+      : user.email || user.primaryEmail || ''),
     userId,
     accountReference: userId === 'IDENTITY_SOURCE_PENDING'
       ? 'Identity source pending'
@@ -4475,10 +4478,15 @@ export function WilsyAccountCommandCenter({
   );
 
   const recoveryDisplayEmail = useMemo(() => {
+    // Workspace email is sourced from current EOS credential evidence. A
+    // login-email compatibility fallback is not proof of durable account email.
+    if (Object.prototype.hasOwnProperty.call(user || {}, 'workspaceEmail')) {
+      return typeof user.workspaceEmail === 'string' ? user.workspaceEmail.trim() : '';
+    }
     const directEmail = typeof user?.email === 'string' ? user.email.trim() : '';
     if (directEmail) return directEmail;
     return typeof user?.primaryEmail === 'string' ? user.primaryEmail.trim() : '';
-  }, [user?.email, user?.primaryEmail]);
+  }, [user?.workspaceEmail, user?.email, user?.primaryEmail]);
 
   const mergedSkins = useMemo(
     () => {
@@ -5187,7 +5195,7 @@ export function WilsyAccountCommandCenter({
       traceId,
           proofRoomRoute: '/wilsy-lab/forensic-merkle',
       generatedBy: identity.displayName || 'Wilsy OS Operator',
-      userEmail: identity.email || 'wilsonkhanyezi@gmail.com',
+      userEmail: identity.email || '',
       issuingEntity: 'Wilsy OS',
       counterparty: identity.tenantLabel || tenantId,
       jurisdiction: 'Republic of South Africa',
@@ -6355,7 +6363,7 @@ if (typeof window !== 'undefined') {
 /**
  * WILSY OS SOVEREIGN ARTIFACT SEAL
  * ARTIFACT: client/src/components/account/WilsyAccountCommandCenter.jsx
- * VERSION: v3.2.0-L10-P2C6-BRANDING-COMMAND-CENTER
+ * VERSION: v3.2.1-EOS-ACCOUNT-EMAIL-SOURCE-PARITY
  * AUTHORITY BOUNDARY: authenticated account/security presentation and bounded
  *                     recovery-verification transport invocation only
  * TENANT POSTURE: browser tenant/email display cannot establish recovery contact;

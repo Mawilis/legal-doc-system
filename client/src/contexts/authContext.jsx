@@ -5,16 +5,21 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authoritative Browser Authentication Context
- * VERSION: v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION
+ * VERSION: v58.7.0-GOVERNED-OWNER-CAPACITY-SELECTION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Represents server-issued authentication and MFA challenge state
  *          without fabricating tenant, role, permission, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/contexts/authContext.jsx
  * COLLABORATION / OWNERSHIP: Python EOS auth_router owns credential/MFA truth;
  *                            this context owns browser projection and navigation state.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: 2026-11-27 v58.7.0-GOVERNED-OWNER-CAPACITY-SELECTION admits only EOS-listed Owner capacity in the explicit Owner sign-in group, reusing selected-membership MFA, exact workspace readback, refresh and revocation. HR choices remain independently filtered; no IAM grant is created.
+ * CHANGELOG: 2026-11-27 v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING binds Global Principal MFA session promotion to both exact EOS-selected business role and tenant ID before any bearer persistence.
+ * CHANGELOG: 2026-11-27 v58.6.2-GLOBAL-TENANT-REFRESH-CONTINUITY retains a non-authoritative global tenant logout-origin marker after same-identity/capacity bootstrap refresh and credential rotation; fresh authority is still EOS verified.
+ * CHANGELOG: 2026-11-27 v58.6.1-GLOBAL-TENANT-SESSION-REVOCATION routes explicitly selected Global Principal tenant logout to the existing exact-session EOS global revocation endpoint, without altering authority or legacy signout.
+ * CHANGELOG: 2026-11-27 v58.6.0-GOVERNED-GLOBAL-TENANT-CAPACITY-SELECTION implements opt-in global tenant membership and business capacity selection through EOS challenge/MFA, with no client-created grants, tenant fallbacks, or session promotion before workspace readback.
  * CHANGELOG: 2026-11-20 v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION accepts only an EOS-source-verified exact Founder institutional title, never an IAM grant or login payload.
- * CHANGELOG: 2026-11-15 v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
+ * CHANGELOG: 2026-11-15 v58.6.3-EXACT-GLOBAL-TENANT-MFA-BINDING adds a strictly EOS-sourced workspaceEmail field for identity UI while preserving the existing email compatibility field for authenticated workspace callers.
  * CHANGELOG: 2026-11-14 v58.2.0-CURRENT-EOS-SESSION-REFRESH adds one in-flight
  *            provider-owned EOS refresh and same-workspace revalidation;
  *            superseded refreshes cannot publish or clear another session.
@@ -154,6 +159,7 @@ const LEGACY_BRANDING_KEYS = Object.freeze([
 
 /**
  * @description Closed browser states; only EOS revalidation may establish a session.
+ * @collaboration Login and MFA UI observe these labels through AuthProvider.
  * @institutional State labels grant no identity, membership or permission.
  */
 export const AUTH_STATES = Object.freeze({
@@ -734,6 +740,9 @@ export const AuthProvider = ({ children }) => {
   const [qrCodeData, setQrCodeData] = useState(null);
   const [mfaTempToken, setMfaTempToken] = useState(null);
   const [globalMfaChallenge, setGlobalMfaChallenge] = useState(null);
+  // One-time, memory-only EOS challenge. These are candidates, not IAM grants.
+  const [globalTenantSelector, setGlobalTenantSelector] = useState(null);
+  const [globalSelectedCapacity, setGlobalSelectedCapacity] = useState(null);
   const [loading, setLoading] = useState(
     () => Boolean(readPersistedAccessTokenCandidate()),
   );
@@ -1002,6 +1011,14 @@ export const AuthProvider = ({ children }) => {
     if (authoritative.user.id !== candidatePrincipalId) {
       throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
     }
+    if (session.expectedBusinessRole
+        && authoritative.user.role !== session.expectedBusinessRole) {
+      throw new Error('AUTHENTICATED_BUSINESS_CAPACITY_MISMATCH');
+    }
+    if (session.expectedTenantId
+        && authoritative.user.tenantId !== session.expectedTenantId) {
+      throw new Error('AUTHENTICATED_TENANT_CAPACITY_MISMATCH');
+    }
 
     const discoveredTenantId = String(tenant?.tenantId || '').trim();
     if (
@@ -1011,6 +1028,11 @@ export const AuthProvider = ({ children }) => {
       throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
     }
 
+    // A transport origin flag selects the proper EOS revocation route only.
+    // It never carries authorization role, permission or tenant authority.
+    const promotedUser = session.globalTenantSession === true
+      ? { ...authoritative.user, globalTenantSession: true }
+      : authoritative.user;
     // Only the READY server-owned projection may establish browser authority.
     anchorCanonicalBearer(candidateToken);
     setActiveTenantTransportId(authoritative.user.tenantId);
@@ -1019,7 +1041,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', candidateToken);
     localStorage.setItem(
       'wilsy_sovereign_user',
-      JSON.stringify(authoritative.user),
+      JSON.stringify(promotedUser),
     );
     localStorage.setItem(
       'wilsy_active_tenant',
@@ -1033,14 +1055,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     setToken(candidateToken);
-    setUser(authoritative.user);
+    setUser(promotedUser);
     setTenant(authoritative.tenant);
     setAuthStage(AUTH_STATES.AUTHENTICATED);
     emitAuthState(AUTH_STATES.AUTHENTICATED);
 
     return {
       token: candidateToken,
-      user: authoritative.user,
+      user: promotedUser,
       tenant: authoritative.tenant,
     };
   }, [ensureCurrent, readWorkspace, tenant]);
@@ -1058,14 +1080,19 @@ export const AuthProvider = ({ children }) => {
     if (authoritative.user.id !== user?.id || (currentTenantId && currentTenantId !== authoritative.user.tenantId)) {
       throw new Error('AUTHENTICATED_WORKSPACE_AUTHORITY_MISMATCH');
     }
+    if (authoritative.user.role !== user?.role) {
+      throw new Error('AUTHENTICATED_WORKSPACE_CAPACITY_CHANGED');
+    }
+    const currentUser = user?.globalTenantSession === true
+      ? { ...authoritative.user, globalTenantSession: true } : authoritative.user;
     setSessionGeneration((generation) => generation + 1);
-    setUser(authoritative.user);
+    setUser(currentUser);
     setTenant(authoritative.tenant);
     setActiveTenantTransportId(authoritative.user.tenantId);
-    localStorage.setItem('wilsy_sovereign_user', JSON.stringify(authoritative.user));
+    localStorage.setItem('wilsy_sovereign_user', JSON.stringify(currentUser));
     localStorage.setItem('wilsy_active_tenant', JSON.stringify(authoritative.tenant));
     return authoritative;
-  }, [ensureCurrent, readWorkspace, tenant, token, user?.id, user?.email]);
+  }, [ensureCurrent, readWorkspace, tenant, token, user?.id, user?.email, user?.role, user?.globalTenantSession]);
 
   /**
    * @description Rotate only the exact current session through EOS, then re-read
@@ -1122,18 +1149,20 @@ export const AuthProvider = ({ children }) => {
             || localStorage.getItem('wilsy_auth_token') !== snapshot.token) {
           throw new Error('SESSION_REFRESH_SCOPE_MISMATCH');
         }
+        const rotatedUser = snapshot.user.globalTenantSession === true
+          ? { ...projection.user, globalTenantSession: true } : projection.user;
         anchorCanonicalBearer(data.access_token);
         localStorage.setItem('wilsy_auth_token', data.access_token);
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('wilsy_refresh_token', data.refresh_token);
-        localStorage.setItem('wilsy_sovereign_user', JSON.stringify(projection.user));
+        localStorage.setItem('wilsy_sovereign_user', JSON.stringify(rotatedUser));
         if (!system) {
           localStorage.setItem('wilsy_active_tenant', JSON.stringify(projection.tenant));
           setTenant(projection.tenant);
         }
         setActiveTenantTransportId(system ? null : projection.user.tenantId);
         setToken(data.access_token);
-        setUser(projection.user);
+        setUser(rotatedUser);
         setSessionGeneration((generation) => generation + 1);
         return data.access_token;
       } catch (failure) {
@@ -1263,6 +1292,144 @@ export const AuthProvider = ({ children }) => {
     }
   }, [ensureCurrent, invalidateSession, persistSession, tenant]);
 
+  /**
+   * Begin tenant-neutral sign-in for one explicitly requested capacity group.
+   * EOS alone enumerates the currently active membership/capacity choices.
+   * No challenge, credential or permission is persisted to browser storage.
+   * @description Filter one EOS membership challenge to the requested group.
+   * @collaboration SovereignLogin and the existing selected-capacity MFA flow.
+   * @institutional Group names request presentation choices, never grants;
+   * membership, MFA, session issuance and refresh remain Python EOS owned.
+   * @param {string} email Primary credential input, never logged.
+   * @param {string} password Primary credential input, never persisted here.
+   * @param {string} requiredTenantId Exact server-discovered tenant scope.
+   * @param {'hr'|'owner'} capacityGroup Independently filtered capacity family.
+   * @returns {Promise<Object>} EOS-listed choices and a pending selection state.
+   * @throws {Error} On absent, malformed, foreign or superseded source evidence.
+   */
+  const beginGlobalCapacityLogin = useCallback(async (email, password, requiredTenantId, capacityGroup = 'hr') => {
+    const expectedTenant = String(requiredTenantId || '').trim();
+    if (!expectedTenant) throw new Error('CAPACITY_SELECTION_TENANT_REQUIRED');
+    if (!['hr', 'owner'].includes(capacityGroup)) throw new Error('CAPACITY_SELECTION_GROUP_INVALID');
+    // This group filters server-advertised choices only. EOS must independently
+    // consume its challenge, verify current membership/capacity and require MFA.
+    const expectedWorkspaces = capacityGroup === 'owner'
+      ? { tenant_owner: expectedTenant === 'WILSYTENANT-4CD2FZ4O' ? 'WILSY_HEADQUARTERS' : 'EXECUTIVE_COMMAND_CENTRE' }
+      : { tenant_hr_manager: 'PEOPLE_OPERATIONS', tenant_hr_director: 'PEOPLE_OPERATIONS' };
+    const epoch = invalidateSession();
+    setLoading(true);
+    setError(null);
+    setGlobalMfaChallenge(null);
+    setGlobalSelectedCapacity(null);
+    setGlobalTenantSelector(null);
+    setAuthStage(AUTH_STATES.PRIMARY_AUTHENTICATING);
+    try {
+      const response = await api.post('/auth/global/login', { email, password }, {
+        skipAuth: true, skipAuthRedirect: true,
+      });
+      ensureCurrent(epoch);
+      const data = response?.data || {};
+      if (data.status !== 'MEMBERSHIP_SELECTION_REQUIRED'
+          || typeof data.selection_challenge !== 'string'
+          || data.selection_challenge.length < 10
+          || !Array.isArray(data.memberships)) {
+        throw new Error('GLOBAL_MEMBERSHIP_SELECTION_INVALID');
+      }
+      const options = [];
+      let memberships = data.memberships;
+      let nextCursor = data.next_cursor;
+      let pages = 0;
+      // Preserve server pagination; do not invent or union business roles.
+      while (true) {
+        for (const membership of memberships) {
+          if (membership?.tenant_id !== expectedTenant || !Array.isArray(membership.capacities)) continue;
+          for (const capacity of membership.capacities) {
+            if (Object.hasOwn(expectedWorkspaces, capacity?.business_role)
+                && capacity.workspace_id === expectedWorkspaces[capacity.business_role]
+                && Number.isSafeInteger(capacity.capacity_revision)
+                && capacity.capacity_revision >= 0
+                && !options.some(option => option.role === capacity.business_role)) {
+              options.push({ tenantId: expectedTenant, role: capacity.business_role });
+            }
+          }
+        }
+        if (options.length || !nextCursor) break;
+        pages += 1;
+        if (pages > 10 || typeof nextCursor !== 'string') {
+          throw new Error('GLOBAL_MEMBERSHIP_PAGE_NOT_VERIFIED');
+        }
+        const page = await api.post('/auth/global/membership-options', {
+          selection_challenge: data.selection_challenge,
+          after_tenant_id: nextCursor,
+        }, { skipAuth: true, skipAuthRedirect: true });
+        ensureCurrent(epoch);
+        if (page.data?.status !== 'MEMBERSHIP_SELECTION_REQUIRED'
+            || !Array.isArray(page.data.memberships)) {
+          throw new Error('GLOBAL_MEMBERSHIP_PAGE_INVALID');
+        }
+        memberships = page.data.memberships;
+        nextCursor = page.data.next_cursor;
+      }
+      if (!options.length) throw new Error(capacityGroup === 'owner'
+        ? 'NO_ACTIVE_OWNER_CAPACITY_IN_EOS' : 'NO_ACTIVE_HR_CAPACITY_IN_EOS');
+      setGlobalTenantSelector({
+        challenge: data.selection_challenge,
+        options,
+        expectedTenant,
+      });
+      setPendingEmail(email);
+      return { status: 'CAPACITY_SELECTION_REQUIRED', options };
+    } catch (failure) {
+      if (epoch === authEpochRef.current) {
+        setGlobalTenantSelector(null);
+        setAuthStage(AUTH_STATES.FAILED);
+        setError(failure?.response?.data?.detail || failure.message);
+      }
+      throw failure;
+    } finally {
+      if (epoch === authEpochRef.current) setLoading(false);
+    }
+  }, [ensureCurrent, invalidateSession]);
+
+  /** Consume an exact EOS-listed capacity; only MFA can issue the new session. */
+  const selectGlobalCapacity = useCallback(async (role) => {
+    const selection = globalTenantSelector;
+    if (!selection?.options?.some(option =>
+      option.tenantId === selection.expectedTenant && option.role === role
+    )) throw new Error('GLOBAL_CAPACITY_NOT_VERIFIED');
+    const epoch = authEpochRef.current;
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/global/select-membership', {
+        selection_challenge: selection.challenge,
+        tenant_id: selection.expectedTenant,
+        business_role: role,
+      }, { skipAuth: true, skipAuthRedirect: true });
+      ensureCurrent(epoch);
+      const data = response?.data || {};
+      if (data.status !== AUTH_STATES.MFA_REQUIRED
+          || data.tenant_id !== selection.expectedTenant
+          || data.business_role !== role
+          || typeof data.mfa_challenge !== 'string'
+          || data.mfa_challenge.length < 10
+          || data.mfa_challenge.startsWith('sysmfa_')) {
+        throw new Error('GLOBAL_CAPACITY_CHALLENGE_INVALID');
+      }
+      setGlobalSelectedCapacity({ tenantId: selection.expectedTenant, role });
+      setGlobalMfaChallenge(data.mfa_challenge);
+      setGlobalTenantSelector(null);
+      setAuthStage(AUTH_STATES.MFA_REQUIRED);
+      return { status: AUTH_STATES.MFA_REQUIRED };
+    } catch (failure) {
+      if (epoch === authEpochRef.current) {
+        setError(failure?.response?.data?.detail || failure.message);
+      }
+      throw failure;
+    } finally {
+      if (epoch === authEpochRef.current) setLoading(false);
+    }
+  }, [ensureCurrent, globalTenantSelector]);
+
   const verifyOTP = useCallback(async (email, code, _biometricAssertion = null, _traceId = null, mfaSetup = false, discoveredTenantId = tenant?.tenantId) => {
     const targetEmail = email || pendingEmail;
     const targetCode = String(code || '').trim();
@@ -1272,6 +1439,36 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     setAuthStage(AUTH_STATES.MFA_VERIFYING);
     try {
+      if (globalMfaChallenge && globalSelectedCapacity) {
+        const response = await api.post('/auth/global/verify-mfa', {
+          mfa_challenge: globalMfaChallenge, code: targetCode,
+        }, { skipAuth: true, skipAuthRedirect: true });
+        ensureCurrent(epoch);
+        const data = response?.data || {};
+        if (data.status !== 'AUTHENTICATED'
+            || data.tenant_id !== globalSelectedCapacity.tenantId
+            || data.business_role !== globalSelectedCapacity.role
+            || typeof data.principal_id !== 'string' || !data.principal_id
+            || typeof data.access_token !== 'string' || !data.access_token
+            || typeof data.refresh_token !== 'string' || !data.refresh_token) {
+          throw new Error('GLOBAL_TENANT_SESSION_INVALID');
+        }
+        const promoted = await persistSession({
+          token: data.access_token,
+          user: { id: data.principal_id, email: targetEmail },
+          refreshToken: data.refresh_token,
+          expectedBusinessRole: globalSelectedCapacity.role,
+          expectedTenantId: globalSelectedCapacity.tenantId,
+          globalTenantSession: true,
+        }, targetEmail, epoch);
+        setGlobalMfaChallenge(null);
+        setGlobalSelectedCapacity(null);
+        setGlobalTenantSelector(null);
+        setPendingEmail('');
+        setQrCodeData(null);
+        setMfaTempToken(null);
+        return { ...data, success: true, token: promoted.token, user: promoted.user };
+      }
       if (globalMfaChallenge) {
         const response = await api.post('/auth/global/verify-mfa', {
           mfa_challenge: globalMfaChallenge,
@@ -1353,7 +1550,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       if (epoch === authEpochRef.current && mountedRef.current) setLoading(false);
     }
-  }, [authStage, ensureCurrent, globalMfaChallenge, invalidateSession, pendingEmail, persistSession, readWorkspace, tenant]);
+  }, [authStage, ensureCurrent, globalMfaChallenge, globalSelectedCapacity, invalidateSession, pendingEmail, persistSession, readWorkspace, tenant]);
 
   const updateSovereignIdentity = useCallback(async (updates) => {
     if (!user) throw new Error('No authenticated identity is available.');
@@ -1369,7 +1566,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     const previousToken = token;
-    const path = user?.systemServicesWorkspace ? '/auth/global/logout' : '/auth/logout';
+    const path = user?.systemServicesWorkspace || user?.globalTenantSession === true
+      ? '/auth/global/logout' : '/auth/logout';
     invalidateSession();
     setTenant(readPersistedDiscoveredTenant());
     setAuthStage(AUTH_STATES.IDLE);
@@ -1379,6 +1577,8 @@ export const AuthProvider = ({ children }) => {
     setQrCodeData(null);
     setMfaTempToken(null);
     setGlobalMfaChallenge(null);
+    setGlobalSelectedCapacity(null);
+    setGlobalTenantSelector(null);
     emitAuthState(AUTH_STATES.IDLE);
     // Local invalidation precedes network I/O. A delayed logout response cannot
     // clear a later session; only the old explicit credential is submitted.
@@ -1420,6 +1620,9 @@ export const AuthProvider = ({ children }) => {
     qrCodeData,
     mfaTempToken,
     globalMfaChallenge,
+    globalCapacityOptions: globalTenantSelector?.options || [],
+    beginGlobalCapacityLogin,
+    selectGlobalCapacity,
     loading,
     error,
     discoverTenant,
@@ -1431,7 +1634,7 @@ export const AuthProvider = ({ children }) => {
     refreshWorkspace,
     setAuthStage,
     publicAuthPaths,
-  }), [user, token, sessionGeneration, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, globalMfaChallenge, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
+  }), [user, token, sessionGeneration, isAuthenticated, tenant, authStage, mfaRequired, pendingEmail, qrCodeData, mfaTempToken, globalMfaChallenge, globalTenantSelector, beginGlobalCapacityLogin, selectGlobalCapacity, loading, error, discoverTenant, login, verifyOTP, logout, updateSovereignIdentity, refreshWorkspace]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
@@ -1450,11 +1653,16 @@ export const useAuth = () => {
   return context;
 };
 
+/**
+ * @description Provider-owned context consumed through useAuth.
+ * @collaboration Existing application provider composition.
+ * @institutional Context state is a projection; it grants no server authority.
+ */
 export default AuthContext;
 
 /**
  * ARTIFACT: client/src/contexts/authContext.jsx
- * VERSION: v58.5.0-FOUNDER-DESIGNATION-AUTHENTICATED-PROJECTION
+ * VERSION: v58.7.0-GOVERNED-OWNER-CAPACITY-SELECTION
  * AUTHORITY BOUNDARY: browser projection only; workspace branding is exact D21B7 presentation provenance, workspace firstName/lastName are descriptive authenticated-person projection, and workspace legalPermissions are presentation provenance from Python EOS; none is browser authorization authority and Python EOS owns authentication/authorization/branding truth
  * TENANT POSTURE: authenticated tenant must match the discovered server-issued tenant and any non-null D21B7 branding tenant must match that exact workspace tenant
  * FAIL-CLOSED POSTURE: unrecognized/incomplete workspace responses, absent/malformed/foreign branding, malformed principal names, and malformed/duplicate/unknown legalPermissions fail closed; explicit branding null is authoritative no-branding, legacy branding aliases are removed, optional names are never inferred, and absent legalPermissions retains legacy role-baseline presentation only

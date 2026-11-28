@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Project Daily Attention Real Mongo Scalability Certificate
-VERSION: v1.0.0-ASSIGNED-ATTENTION-OVER-500-REPLICA-CERT
+VERSION: v1.1.0-AUDITED-WORK-PURPOSE-REPLICA-ATTENTION-CERT
 AUTHORITY: Synthetic disposable replica-set source read/authorization proof.
 EPITOME: Read all 511 delegated active tasks without silent pagination loss,
          suppress completed and cancelled rows and verify revoked project denial.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/integratio
 COLLABORATION / OWNERSHIP: project_attention_source, ProjectTaskRegistry,
          existing Projects accountability disposable MongoDB CI.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.1.0-AUDITED-WORK-PURPOSE-REPLICA-ATTENTION-CERT
+         adds real replica-set classification CAS/event persistence and current
+         My Work readback over 511 assigned tasks, with exact task/provenance
+         binding and no cross-tenant or participant privilege creation.
 CHANGELOG: v1.0.0-ASSIGNED-ATTENTION-OVER-500-REPLICA-CERT proves
          indexed source read completeness and current project record gating
          under real Mongo snapshot transactions, without creating IAM grants.
@@ -33,6 +37,9 @@ from pymongo.write_concern import WriteConcern
 from tools.eos.api import project_attention_source as attention
 from tools.eos.saas.projects.project_task_registry import (
     ProjectTask, ProjectTaskRegistry,
+)
+from tools.eos.saas.projects.project_work_purpose_registry import (
+    ProjectWorkPurposeRegistry,
 )
 
 TENANT = "attention-scale-tenant"
@@ -69,6 +76,12 @@ def test_complete_511_assigned_project_tasks_and_revocation(monkeypatch: Any) ->
         source = db["wilsy_project_tasks"]
         events = db["wilsy_project_task_events"]
         ProjectTaskRegistry.ensure_indexes(source, events)
+        purpose_store = ProjectWorkPurposeRegistry(
+            db["wilsy_project_work_purposes"], db["wilsy_project_work_purpose_events"],
+        )
+        ProjectWorkPurposeRegistry.ensure_indexes(
+            purpose_store.current, purpose_store.events,
+        )
         assert "wilsy_project_task_assignee_attention" in source.index_information()
         records = [_task(index, "BLOCKED" if index % 5 == 0 else "IN_PROGRESS").to_dict()
                    for index in range(511)]
@@ -118,6 +131,38 @@ def test_complete_511_assigned_project_tasks_and_revocation(monkeypatch: Any) ->
                    for row in accepted["items"])
         assert all(row["status"] in {"IN_PROGRESS", "BLOCKED"} for row in accepted["items"])
         assert examined == [PROJECT]
+
+        # The source registry writes independent evidence only through one
+        # caller-owned majority transaction; task content remains unchanged.
+        with client.start_session() as session:
+            session.with_transaction(
+                lambda owned: purpose_store.classify(
+                    task=_task(0, "BLOCKED"),
+                    actor_principal_id="source-authorized-project-owner",
+                    audience="PLATFORM_BUILD",
+                    reason="Audited source engineering classification for integration.",
+                    expected_task_revision=1, expected_purpose_revision=0,
+                    idempotency_key="project-attention-purpose-test-1",
+                    now=NOW, session=owned,
+                ),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern("majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+        classified = attention.read_project_attention(
+            context=context, tenant_id=TENANT, principal_id=PRINCIPAL,
+        )
+        selected = [row for row in classified["items"]
+                    if row["work_item_id"] == _task(0, "BLOCKED").task_id]
+        assert len(selected) == 1
+        evidence = selected[0]["audience_evidence"]
+        assert evidence["audience"] == "PLATFORM_BUILD"
+        assert evidence["source"] == "PROJECTS"
+        assert evidence["source_revision"] == 1
+        assert evidence["critical_gate"] is False
+        assert sum(row["audience_evidence"] is None
+                   for row in classified["items"]) == 510
+
         current["active"] = False
         denied = attention.read_project_attention(
             context=context, tenant_id=TENANT, principal_id=PRINCIPAL,
@@ -129,7 +174,7 @@ def test_complete_511_assigned_project_tasks_and_revocation(monkeypatch: Any) ->
 
 
 # ARTIFACT: test_project_attention_real_mongo.py
-# VERSION: v1.0.0-ASSIGNED-ATTENTION-OVER-500-REPLICA-CERT
+# VERSION: v1.1.0-AUDITED-WORK-PURPOSE-REPLICA-ATTENTION-CERT
 # AUTHORITY BOUNDARY: disposable registry proof, no real IAM/grant
 # TENANT POSTURE: exact tenant, principal, project and current participant
 # FAIL-CLOSED POSTURE: terminal, foreign, cross-principal and revoked work absent

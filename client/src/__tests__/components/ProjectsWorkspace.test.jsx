@@ -1,12 +1,53 @@
 /**
  * TITLE: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT
+ * VERSION: v2.83.0-HR-DENIED-NONDESTRUCTIVE-RETURN-CERT
+ * CHANGELOG: v2.83.0-HR-DENIED-NONDESTRUCTIVE-RETURN-CERT proves both HR capacities return to People after denied Projects read without opening a fake Owner-switch action or leaking project records.
+ * CHANGELOG: v2.82.0-HR-DENIED-OWNER-RECOVERY-CERT certifies the HR Projects 403 offers an explicit governed Owner switch without rendering projects or granting permissions.
+ * CHANGELOG: v2.81.3-VISIBLE-SOURCE-REVISION-EVIDENCE-CERT asserts source revision in the visible event summary rather than colliding with a screen-reader-only revision label.
+ * CHANGELOG: v2.81.2-SOURCE-EVENT-REVISION-CASE-CERT preserves exact source revision evidence while matching the new displayed 'Revision' presentation.
+ * CHANGELOG: v2.81.1-ACCEPTED-DISCUSSION-A11Y-AND-TOUCH-CERT retains approved 44px mobile action targets and validates actor-based activity semantics without weakening source-history assertions.
+ * CHANGELOG: v2.81.0-COMPLETED-SERVER-QUERY-CERT verifies completed-only EOS source query and immutable event metadata across source pagination, retaining task detail and selection semantics.
+ * CHANGELOG: v2.80.2-NODE-ISOLATED-CSS-CERT keeps UI behavior in Vitest, moves exact stylesheet text assertions to the separately executed Node native certificate so mocked CSS cannot silently become empty.
+ * CHANGELOG: v2.80.1-PORTABLE-CSS-SOURCE-CERT reads exact stylesheet through Vite raw assets rather than Node fs/path built-ins, retaining both CSS rule assertions and supporting local Vitest module loading.
+ * CHANGELOG: v2.80.0-COMPLETED-WORK-LIFECYCLE-VIEWS-CERT confirms Done tasks disappear from active work, remain in the Completed/All views and open their original source-backed task details; work selection resets on view changes, without mutation.
+ * CHANGELOG: v2.48.0-UNOBSTRUCTED-PROJECT-HEADER-CERT verifies the selected project's title remains in its own heading row and the all-projects action lives only in the project navigation strip.
  * AUTHORITY: Client contract evidence only; Python EOS owns Projects authority.
  * EPITOME: Proves exact-scope list/detail/summary validation and the user-facing
  *          create, update, status-transition and archive readback sequence.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectsWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Vitest mocks the existing authenticated api.js transport; no database is contacted.
- * CERTIFICATION / UPDATE DATE: 2026-11-20.
+ * CERTIFICATION / UPDATE DATE: 2026-11-24.
+ * CHANGELOG: v2.79.0-FOCUS-FIRST-TASK-ACTIVITY-EDITOR-CERT
+ *          verifies the focused Projects task replaces the source activity
+ *          history with an immediately focused comment editor on command.
+ *          Closing restores the original EOS timeline and preserves the
+ *          draft; verified publication still gates durable readback.
+ * CHANGELOG: v2.78.1-SINGLE-MODAL-EXIT-CERT checks
+ *          Activity in the focused Projects task workspace has one
+ *          visible parent Back to Work action and no redundant nested
+ *          Close; all source-backed content and navigation remain.
+ * CHANGELOG: v2.78.0-EXPANDABLE-ACTIVITY-READBACK-CERT uses
+ *          the accessible ordered source activity timeline for positional
+ *          assertions, and explicitly expands the immutable long MW-T12
+ *          comment before asserting its exact committed EOS readback.
+ *          Short entries and response/command proof remain unchanged.
+ * CHANGELOG: v2.77.0-LIST-FIRST-FREE-TIER-LOAD-CERT confirms that the
+ *          actionable Projects list is independently source-verified
+ *          before optional portfolio summary starts a second transaction.
+ *          No permission, timeout, schema or IAM mock relaxation.
+ * CHANGELOG: v2.76.0-SHARED-TASK-TAB-READ-CERT verifies switching from work
+ *          into project discussion preserves one task GET and the source
+ *          snapshot instead of remounting the same task panel and
+ *          restarting authorization and database reads.
+ * CHANGELOG: v2.75.2-MW-T12-SOURCE-EVIDENCE-CERT treats an EOS-sourced
+ *          immutable comment displayed after held readback as the actual
+ *          milestone certificate, independently of composer clearing UX.
+ * CHANGELOG: v2.75.1-MW-T12-ACTIVITY-READBACK-GATE-CERT waits for the actual
+ *          post-command source read rather than assuming a fixed GET
+ *          sequence; periodic component reads cannot satisfy the gate.
+ * CHANGELOG: v2.75.0-MW-T12-ACTIVITY-READBACK-SIMULATION exercises existing exact-task
+ *          comment commands, waits for independent readback and refreshes
+ *          history without inventing rollback, Strategy or release truth.
  * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
  * SECURITY / PRIVACY POSTURE: Synthetic exact-scope fixtures only; no tokens,
  *          real identities, private comments or production credentials.
@@ -14,6 +55,72 @@
  * AUTHORITY BOUNDARY: Mock client assertions only; Python EOS owns IAM,
  *          task commands, decisions, evidence and immutable audit truth.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution or approval grants.
+ * CHANGELOG: v2.74.0-ASYNC-SOURCE-READY-CLIENT-CERT
+ *          waits for the optional views to mount after project reads
+ *          and for contributor admission to become enabled only after
+ *          its independent participant/option sources verify.
+ * CHANGELOG: v2.73.0-QUEUES-FIRST-OPTIONAL-VIEWS-CERT opens the deliberately
+ *          deferred lifecycle/checklist disclosures before checking
+ *          visible evidence. The verified work grid remains first.
+ * CHANGELOG: v2.72.0-INDEPENDENT-MULTI-ASSIGNMENT-CERT certifies selected-task
+ *          contributor assignment issues distinct revision-guarded EOS
+ *          PATCH commands, verifies each persisted source before the
+ *          next, and never rewrites work status or uses a bulk endpoint.
+ * CHANGELOG: v2.71.4-BATCH-PAGINATION-ROW-CERT verifies
+ *          twenty source work records regardless of selection header.
+ * CHANGELOG: v2.71.3-DOM-ROW-COUNT-CERT accesses the actual
+ *          rendered table element when counting task rows, not the
+ *          Testing Library scoped-query collection.
+ * CHANGELOG: v2.71.2-SELECTION-HEADER-PAGING-CERT counts
+ *          actual source-verified work rows independently of the
+ *          contextual selected-work header in the grid.
+ * CHANGELOG: v2.71.1-FOCUSED-TASK-AND-PAGING-CERT
+ *          tracks the one Back to Work control, requires independently
+ *          rendered current-page buttons rather than stale DOM references,
+ *          and awaits asynchronous assignment-modal visibility without
+ *          weakening exact EOS role/readback assertions.
+ * CHANGELOG: v2.71.0-ACTIONABLE-WORK-TITLE-CERT checks the
+ *          task's semantic title button instead of a former inert span,
+ *          asserts actual selected-row checkbox and in-grid multi-select
+ *          state, and keeps exact-source upload denial assertions.
+ * CHANGELOG: v2.70.0-DROPZONE-ATTACHMENT-CERT verifies
+ *          accessible contributor Browse and owner upload denial
+ *          alongside the EOS-verified empty file state.
+ * CHANGELOG: v2.69.1-COMPACT-DISCLOSURE-READBACK-CERT
+ *          validates native disclosure state and source-owned assignment
+ *          readback instead of presentation-only revision label checks.
+ * CHANGELOG: v2.69.0-COMPACT-TASK-DETAILS-CERT
+ *          verifies title and description remain editable inside explicit
+ *          compact disclosure; accountability controls remain immediately
+ *          visible and command/readback semantics remain unchanged.
+ * CHANGELOG: v2.68.0-NONBLOCKING-VERIFIED-TASK-SAVE-CERT
+ *          task save closes after mandatory readback even with stalled
+ *          optional source reads; contributor assignment still requires
+ *          authorization and verified fresh task data.
+ * CHANGELOG: v2.67.0-ACCOUNTABILITY-ASSIGNMENT-READBACK-CERT
+ *          proves source-owned contributor assignment through authorized
+ *          PATCH, fresh list readback and reopened task owner display.
+ * CHANGELOG: v2.66.0-ACCOUNTABILITY-DATE-PERSISTENCE-CERT
+ *          asserts due-date changes are CAS-saved and independently
+ *          read back on reopening the same authorized task.
+ * CHANGELOG: v2.65.0-ACCOUNTABLE-TASK-EDITOR-FIRST-CERT
+ *          verifies accountability precedes secondary classification,
+ *          due date and contributor controls lead task editing, and
+ *          source authority still blocks unauthorized task changes.
+ * CHANGELOG: v2.64.1-FOREIGN-SOURCE-USER-ERROR-CERT
+ *          preserves the foreign-tenant fail-closed assertions while
+ *          verifying the current plain-language unavailable message.
+ * CHANGELOG: v2.64.0-NONBLOCKING-TASK-DRAWER-ADMISSION-CERT
+ *          proves a verified task opens while optional contributor,
+ *          member and capability requests never finish, without enabling
+ *          command buttons or weakening task or project verification.
+ * CHANGELOG: v2.63.0-EXACT-STRATEGY-TASK-FOCUS-CERT
+ *          verifies Strategy-selected task details only after exact-project
+ *          and exact-task readback, with no task mutation.
+ * CHANGELOG: v2.62.0-BOUNDED-PROJECT-TASK-PAGING-CERT
+ *          verifies ten-record default views, forward/back view navigation,
+ *          page-size selection and exact-visible selection on one authorized
+ *          EOS task batch; updates scope-accurate filter result wording.
  * CHANGELOG: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT asserts failed attachment sources cannot send the user into an unverified People workflow; exact-scope project participants and eligible tenant-member directory are independently preflighted on deliberate action and 403 stays on the task surface.
  * CHANGELOG: v2.60.0-ATTACHMENT-ERROR-SCHEMA-CERT pins explicit invalid task-attachment source envelope diagnostics and bounded safe EOS HTTP error classes while refusing unauthorized uploads.
  * CHANGELOG: v2.59.0-ATTACHMENT-OWNER-AUTHORITY-AND-FAILURE-CERT certifies owner-view attachment 503 source-code diagnosis and a functional route to People for explicit contributor admission. Upload stays unavailable without independently admitted participant IAM; unverified manifests do not fabricate empty files.
@@ -277,8 +384,6 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial command is exercised.
  */
 import React from 'react';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { within, act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -373,6 +478,25 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('Free-tier Projects read admission order', () => {
+  it('does not issue an optional summary transaction while the authorized list is pending', async () => {
+    let resolveList;
+    const pendingList = new Promise(resolve => { resolveList = resolve; });
+    api.get.mockImplementation(path => {
+      if (path === '/projects') return pendingList;
+      if (path === '/projects/summary') return Promise.resolve({ data: summary([]) });
+      throw new Error('Unexpected read: ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="list-first-free-tier-cert"/>);
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path === '/projects')).toHaveLength(1));
+    expect(api.get.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(0);
+    resolveList({ data: list([]) });
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path === '/projects/summary')).toHaveLength(1));
+    expect(api.get.mock.calls.filter(([path]) => path === '/projects')).toHaveLength(1);
+  });
+});
+
 describe('Project task attachment source and contributor authority boundary', () => {
   it('reports exact EOS attachment failure without sending owner into unverified People', async () => {
     const taskId = 'ptk-' + 'f'.repeat(48);
@@ -388,10 +512,10 @@ describe('Project task attachment source and contributor authority boundary', ()
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
       /task attachment source is unavailable \(HTTP 503\) · EOS PROJECT_ATTACHMENT_SOURCE_UNAVAILABLE/i,
     ));
-    expect(screen.getByText('Add an attachment')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Files & evidence' })).toBeVisible();
     expect(screen.queryByLabelText('Project attachment file')).not.toBeInTheDocument();
     expect(screen.getByRole('button', {
-      name: 'Check People access before contributor management',
+      name: 'Check contributor access',
     })).toBeDisabled();
     expect(openPeople).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
@@ -427,9 +551,9 @@ describe('Project task attachment source and contributor authority boundary', ()
     render(<ProjectTaskAttachmentsPanel tenantId={TENANT} principalId={PRINCIPAL}
       projectId={PROJECT_ID} taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
       participantMode={false} onManageContributors={openPeople} onClose={vi.fn()}/>);
-    expect(await screen.findByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(await screen.findByText(/No files attached yet/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', {
-      name: 'Check People access before contributor management',
+      name: 'Check contributor access',
     }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
       'Eligible tenant member directory: denied (HTTP 403) · EOS PROJECT_PARTICIPANT_DIRECTORY_DENIED',
@@ -466,9 +590,9 @@ describe('Project task attachment source and contributor authority boundary', ()
     render(<ProjectTaskAttachmentsPanel tenantId={TENANT} principalId={PRINCIPAL}
       projectId={PROJECT_ID} taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
       participantMode={false} onManageContributors={openPeople} onClose={vi.fn()}/>);
-    expect(await screen.findByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(await screen.findByText(/No files attached yet/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', {
-      name: 'Check People access before contributor management',
+      name: 'Check contributor access',
     }));
     await waitFor(() => expect(openPeople).toHaveBeenCalledTimes(1));
     expect(api.post).not.toHaveBeenCalled();
@@ -486,8 +610,8 @@ describe('Project task attachment source and contributor authority boundary', ()
       tenantId={TENANT} principalId={PRINCIPAL} projectId={PROJECT_ID}
       taskId={taskId} tenantHeaders={{ 'X-Tenant-ID': TENANT }}
       participantMode={true} onClose={vi.fn()}/>);
-    expect(await screen.findByLabelText('Project attachment file')).toBeVisible();
-    expect(screen.getByText(/EOS verified no file manifests/)).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Browse files' })).toBeVisible();
+    expect(screen.getByText(/No files attached yet/)).toBeVisible();
     expect(api.post).not.toHaveBeenCalled();
   });
 });
@@ -550,6 +674,93 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 
 
+  it('assigns multiple selected tasks only through independently verified EOS commands', async () => {
+    const storedProject = project();
+    const base = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      kind: 'TASK', parent_task_id: null, description: '', status: 'TODO',
+      assignee_principal_id: null, due_date: null, depends_on: [],
+      created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-23T08:00:00+00:00',
+      updated_at: '2026-11-23T08:00:00+00:00',
+      revision: 1, fingerprint: 'a'.repeat(128),
+    };
+    let tasks = [
+      { ...base, task_id: 'ptk-' + 'a'.repeat(48), title: 'First accountable task' },
+      { ...base, task_id: 'ptk-' + 'b'.repeat(48), title: 'Second accountable task' },
+    ];
+    let taskListReads = 0;
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([storedProject]) };
+      if (path === '/projects/summary') return { data: summary([storedProject]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(storedProject) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) {
+        taskListReads += 1;
+        return { data: {
+          schema: 'WILSY-PROJECT-TASK-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: tasks, limit: 50, offset: 0, has_more: false, next_offset: null,
+        } };
+      }
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) {
+        return { data: {
+          schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
+          tenant_id: TENANT, principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [{
+            principal_id: PRINCIPAL, tenant_id: TENANT, project_id: PROJECT_ID,
+            first_name: 'Verified', last_name: 'Contributor',
+            state: 'ACTIVE', role: 'CONTRIBUTOR',
+          }],
+          limit: 100, offset: 0, has_more: false, next_offset: null,
+        } };
+      }
+      throw new Error('Unexpected source ' + path);
+    });
+    api.patch.mockImplementation(async (path, body, options) => {
+      expect(path).toMatch(new RegExp('^/projects/.+/tasks/ptk-'));
+      expect(options.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(options.headers['Idempotency-Key']).toBeTruthy();
+      const id = path.split('/').at(-1);
+      const original = tasks.find(task => task.task_id === id);
+      expect(original).toBeDefined();
+      expect(body.expected_revision).toBe(original.revision);
+      expect(body.assignee_principal_id).toBe(PRINCIPAL);
+      expect(body.title).toBe(original.title);
+      expect(body.due_date).toBe(original.due_date);
+      const updated = { ...original, revision: original.revision + 1,
+        fingerprint: 'b'.repeat(128), assignee_principal_id: PRINCIPAL };
+      tasks = tasks.map(task => task.task_id === id ? updated : task);
+      return { data: {
+        schema: 'WILSY-PROJECT-TASK-RESULT/V1',
+        tenant_id: TENANT, principal_id: PRINCIPAL,
+        project_id: PROJECT_ID, task: updated,
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="governed-batch-assign-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Select First accountable task' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Second accountable task' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Assign selected…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Assign selected project tasks' });
+    expect(api.patch).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByRole('combobox', {
+      name: 'Assign selected tasks to contributor',
+    }), { target: { value: PRINCIPAL } });
+    fireEvent.click(within(dialog).getByRole('checkbox', {
+      name: /I confirm assignment to each selected task/,
+    }));
+    fireEvent.click(within(dialog).getByRole('button', {
+      name: 'Apply individual assignments',
+    }));
+    await waitFor(() => expect(within(dialog).getByText(/2 of 2 independently verified/)).toBeVisible());
+    expect(api.patch).toHaveBeenCalledTimes(2);
+    expect(taskListReads).toBeGreaterThanOrEqual(4);
+    expect(tasks.map(task => task.assignee_principal_id)).toEqual([PRINCIPAL, PRINCIPAL]);
+    expect(tasks.every(task => task.status === 'TODO')).toBe(true);
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('uses compact work row structure without expanding secondary content', () => {
     const item = { task_id: 'ptk-' + 'f'.repeat(48),
       title: 'Compact deliverable', kind: 'TASK', status: 'TODO',
@@ -563,7 +774,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(row.querySelector('details')).toBeNull();
     expect(row.querySelector('.hidden')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'More actions for Compact deliverable' }))
-      .toHaveClass('min-h-9');
+       .toHaveClass('min-h-11', 'md:min-h-9');
   });
 
   it('renders due today, tomorrow and overdue without rewriting the source dates', () => {
@@ -682,7 +893,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
   it('uses exact EOS assignment capability rather than edit capability in the assignment sheet', async () => {
     const source = project();
-    const task = { schema: 'wilsy.project.task.v1', tenant_id: TENANT,
+    let task = { schema: 'wilsy.project.task.v1', tenant_id: TENANT,
       project_id: PROJECT_ID, task_id: 'ptk-' + 'a'.repeat(48),
       kind: 'TASK', parent_task_id: null, title: 'Assign independently',
       description: '', status: 'TODO', assignee_principal_id: null,
@@ -721,13 +932,30 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       sessionScope="assign-not-edit-scope-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'Assign: Assign independently' }));
-    expect(screen.getByRole('dialog', { name: 'Assign work' })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Assign work' })).toBeVisible();
     fireEvent.change(screen.getByRole('combobox', { name: 'Reassign task' }), {
       target: { value: PRINCIPAL },
     });
     expect(screen.getByRole('button', { name: 'Save assignment' })).toBeEnabled();
     expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
     expect(api.patch).not.toHaveBeenCalled();
+    api.patch.mockImplementationOnce(async (path, body) => {
+      expect(path).toBe(`/projects/${PROJECT_ID}/tasks/${task.task_id}`);
+      expect(body).toEqual({ expected_revision: 1, title: 'Assign independently',
+        description: '', due_date: null, assignee_principal_id: PRINCIPAL });
+      task = { ...task, assignee_principal_id: PRINCIPAL, revision: 2,
+        fingerprint: 'b'.repeat(128) };
+      return { data: { schema: 'WILSY-PROJECT-TASK-RESULT/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, task } };
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save assignment' }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Assign work' })).not.toBeInTheDocument());
+    const assignedRow = await screen.findByRole('row', { name: /Assign independently/ });
+    assignedRow.focus();
+    fireEvent.keyDown(assignedRow, { key: 'Enter' });
+    const verifiedDrawer = await screen.findByRole('dialog', { name: 'Work details: Assign independently' });
+    await waitFor(() => expect(within(verifiedDrawer).getAllByText('Verified Contributor').length).toBeGreaterThan(0));
   });
 
   it('filters current-page project work to the exact current assignee without a write', async () => {
@@ -775,18 +1003,18 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByRole('dialog', { name: 'Confirm verified task completion' }))
       .not.toBeInTheDocument();
     fireEvent.keyDown(rows[0], { key: 'a' });
-    expect(screen.getByRole('dialog', { name: 'Assign work' })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Assign work' })).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Reassign task' })).toBeVisible();
     expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reassign: My accountable delivery' }));
-    expect(screen.getByRole('dialog', { name: 'Assign work' })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Assign work' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Save assignment' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }));
     expect(within(work).getByText('My accountable delivery')).toBeVisible();
     expect(within(work).getByText('Other contributor delivery')).toBeVisible();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select My accountable delivery' }));
-    expect(screen.getByText(/1 work item selected on this verified page/)).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: 'Select My accountable delivery' })).toBeChecked();
     fireEvent.click(screen.getByText(/Work filters, grouping and sorting/));
     fireEvent.change(screen.getByRole('combobox', { name: 'Work row density' }), {
       target: { value: 'compact' },
@@ -794,7 +1022,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(work.querySelector('tr[data-task-id]')).toHaveClass('h-11');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select all visible work' }));
     expect(screen.getByRole('checkbox', { name: 'Select Other contributor delivery' })).toBeChecked();
-    expect(screen.getByText(/2 work items selected on this verified page/)).toBeVisible();
+    expect(screen.getByText(/2 selected · verified current EOS batch/)).toBeVisible();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select all visible work' }));
     expect(screen.getByRole('checkbox', { name: 'Select My accountable delivery' })).not.toBeChecked();
     fireEvent.change(screen.getByRole('combobox', { name: 'Work row density' }), {
@@ -1032,12 +1260,22 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       expect(options.headers['Idempotency-Key']).toBeTruthy();
       expect(body).toEqual({
         expected_revision: 2, title: 'Updated task handoff',
-        description: '', due_date: null, assignee_principal_id: null,
+        description: '', due_date: '2026-12-11', assignee_principal_id: null,
       });
       work = [{
-        ...work[0], title: 'Updated task handoff', revision: 3,
+        ...work[0], title: 'Updated task handoff', due_date: '2026-12-11', revision: 3,
         fingerprint: 'c'.repeat(128),
       }];
+      // The task update must finish after verified task readback even when
+      // ancillary contributor/member/capability requests never respond.
+      const previouslyVerifiedGet = api.get.getMockImplementation();
+      const stalledSupportingRead = new Promise(() => {});
+      api.get.mockImplementation((sourcePath, ...args) => (
+        sourcePath === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`
+        || sourcePath === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`
+        || sourcePath === `/projects/${PROJECT_ID}/task-action-capabilities`
+          ? stalledSupportingRead : previouslyVerifiedGet(sourcePath, ...args)
+      ));
       return { data: {
         schema: 'WILSY-PROJECT-TASK-RESULT/V1',
         tenant_id: TENANT, principal_id: PRINCIPAL,
@@ -1055,10 +1293,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
     await waitFor(() => expect(screen.getByText('Build milestone execution', {
-      selector: '.wp-project-tasks tbody td span',
+      selector: '.wp-project-tasks tbody td button',
     })).toBeVisible());
     const row = screen.getByText('Build milestone execution', {
-      selector: '.wp-project-tasks tbody td span',
+      selector: '.wp-project-tasks tbody td button',
     }).closest('tr');
     expect(row).toHaveAttribute('data-task-id', taskId);
     row.focus();
@@ -1086,6 +1324,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       published.mockRestore();
     }
 
+    fireEvent.click(await screen.findByText('Additional views · lifecycle and checklist'));
     fireEvent.click(screen.getByText(/View lifecycle breakdown · 1 work items on this page/));
     expect(screen.getByText('Work lifecycle · current page')).toBeVisible();
     expect(screen.getByRole('button', { name: /Filter work to To do: 1 of 1 verified on page/ })).toBeVisible();
@@ -1102,7 +1341,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByText(/No work items on this verified page match/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: /Filter work to To do: 0 of 1 verified on page/ }));
     expect(screen.getByText('Build milestone execution', {
-      selector: '.wp-project-tasks tbody td span',
+      selector: '.wp-project-tasks tbody td button',
     })).toBeVisible();
     expect(commands).toBe(2);
     const reconciledRow = screen.getByRole('row', { name: /Build milestone execution/ });
@@ -1114,14 +1353,26 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(within(screen.getByRole('menu', {
        name: 'Actions for Build milestone execution',
      })).getByRole('menuitem', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Edit task title' }), {
-      target: { value: 'Updated task handoff' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes to EOS' }));
+    const additional = screen.getByText('Additional task details · title and description');
+    expect(additional.closest('details').open).toBe(false);
+    fireEvent.click(additional);
+    expect(additional.closest('details').open).toBe(true);
+    const taskTitleInput = screen.getByRole('textbox', { name: 'Edit task title' });
+    const assigneeInput = screen.getByRole('combobox', { name: 'Reassign task' });
+    expect(Boolean(assigneeInput.compareDocumentPosition(taskTitleInput) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    fireEvent.change(taskTitleInput, { target: { value: 'Updated task handoff' } });
+    fireEvent.change(screen.getByLabelText('Edit task due date'), { target: { value: '2026-12-11' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save task changes' }));
     await waitFor(() => expect(screen.getByText('Updated task handoff', {
-      selector: '.wp-project-tasks tbody td span',
+      selector: '.wp-project-tasks tbody td button',
     })).toBeVisible());
     expect(api.patch).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit work' })).not.toBeInTheDocument());
+    const revisedRow = screen.getByRole('row', { name: /Updated task handoff/ });
+    revisedRow.focus();
+    fireEvent.keyDown(revisedRow, { key: 'Enter' });
+    const reopened = screen.getByRole('dialog', { name: 'Work details: Updated task handoff' });
+    expect(within(reopened).getByText('Due 2026-12-11')).toBeVisible();
     expect(persisted.status).toBe('planned');
   });
 
@@ -1178,6 +1429,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="source-checklist-readback-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    fireEvent.click(await screen.findByText('Additional views · lifecycle and checklist'));
     fireEvent.click(await screen.findByText(/Checklist mode · 0\/1 completed/));
     const checkbox = await screen.findByRole('checkbox', {
       name: 'Mark completed: Evidence-backed operational acceptance',
@@ -1292,9 +1544,16 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="top-level-discussions-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    // Work and discussion project the same EOS task source. Switching view
+    // must not issue a second costly authentication/database read fanout.
+    await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td button' });
+    const taskPath = `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`;
+    const taskReads = () => api.get.mock.calls.filter(([path]) => path === taskPath).length;
+    expect(taskReads()).toBe(1);
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Project workspace views' }))
       .getByRole('button', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Project discussions workspace' })).toBeVisible();
+    expect(taskReads()).toBe(1);
     expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'EOS verified To-do checklist' })).not.toBeInTheDocument();
     const options = await screen.findByRole('list', { name: 'Verified discussion work items' });
@@ -1305,22 +1564,22 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.queryByRole('dialog', { name: /Work details:/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Write update' })).toHaveAttribute('aria-expanded', 'false');
     expect(document.querySelector('[aria-label="Verified task activity history"]')).toBeVisible();
-    expect(await screen.findByText('Work created')).toBeVisible();
-    expect(await screen.findByText('Evidence attached')).toBeVisible();
+    expect(await screen.findByText(/created this work/)).toBeVisible();
+    expect(await screen.findByText(/attached evidence/)).toBeVisible();
     expect(screen.getByText('Recent progress')).toBeVisible();
     const history = document.querySelector('[aria-label="Verified task activity history"]');
-    await waitFor(() => expect(history.querySelectorAll('li')).toHaveLength(5));
-    const entries = [...history.querySelectorAll('li')];
+    await waitFor(() => expect(history.querySelectorAll('li.relative')).toHaveLength(5));
+    const entries = [...history.querySelectorAll('li.relative')];
     expect(entries.map(item => item.textContent)).toEqual([
-      expect.stringContaining('Evidence attached'),
-      expect.stringContaining('Decision · approved'),
+      expect.stringContaining('attached evidence'),
+      expect.stringContaining('recorded a decision · approved'),
       expect.stringContaining('Recent progress'),
-      expect.stringContaining('Approval requested'),
-      expect.stringContaining('Work created'),
+      expect.stringContaining('requested approval'),
+      expect.stringContaining('created this work'),
     ]);
     expect(screen.getAllByRole('button', { name: 'Open governed decision' })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Open governed attachment' })).toBeVisible();
-    expect(screen.getByText(/revision 1/)).toBeVisible();
+    expect(within(history).getByText('Revision 1 · todo')).toBeVisible();
     fireEvent.click(within(options).getByRole('button', { name: /Current project delivery/ }));
     expect(await screen.findByRole('list', { name: 'Verified discussion work items' })).toBeVisible();
   });
@@ -1362,14 +1621,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="focused-discussion-cert"/>);
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
-    await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td span' });
+    await screen.findByText('Current project delivery', { selector: '.wp-project-tasks tbody td button' });
     fireEvent.click(within(screen.getByRole('row', { name: /Current project delivery/ }))
       .getByRole('button', { name: /More actions for Current project delivery/ }));
     fireEvent.click(within(screen.getByRole('menu', {
        name: 'Actions for Current project delivery',
      })).getByRole('menuitem', { name: 'Activity & discussion' }));
     expect(await screen.findByRole('region', { name: 'Activity & discussion' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Back to work queue' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '← Work' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Close task discussion' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Verified project tasks' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Verified task lifecycle chart' })).not.toBeInTheDocument();
     const discussion = screen.getByRole('region', { name: 'Activity & discussion' });
@@ -1383,6 +1643,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Close editor' }))
       .toHaveAttribute('aria-expanded', 'true');
     expect(discussion.querySelector('textarea[aria-label="New task comment"]')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveFocus();
+    expect(discussion.querySelector('[aria-label="Verified task activity history"]'))
+      .not.toBeInTheDocument();
     const draft = '**Development progress — 19 November 2026**\\n\\n- Source readback verified\\n- Pending mobile acceptance\\n\\n<script>alert(1)</script>'.replaceAll('\\n','\n');
     fireEvent.change(screen.getByRole('textbox', { name: 'New task comment' }), {
       target: { value: draft },
@@ -1393,15 +1656,132 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(preview).toHaveTextContent('<script>alert(1)</script>');
     expect(preview.querySelector('script')).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue(draft);
-    expect(discussion.querySelector('textarea').compareDocumentPosition(
-      discussion.querySelector('[aria-label="Verified task activity history"] ul'),
-    ) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(discussion.querySelector('textarea[aria-label="New task comment"]'))
+      .toHaveValue(draft);
     fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
     expect(discussion.querySelector('textarea')).not.toBeInTheDocument();
     expect(discussion.querySelector('[aria-label="Verified task activity history"]'))
       .toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Back to work queue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write update' }));
+    expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue(draft);
+    fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
+    fireEvent.click(screen.getByRole('button', { name: '← Work' }));
     expect(screen.getByRole('region', { name: 'Verified project tasks' })).toBeVisible();
+  });
+
+  it('simulates MW-T12 milestone recording with EOS comment readback and blocked release', async () => {
+    const storedProject = project({ name: 'WILSY OS — Unified Operating Platform Foundation', status: 'active' });
+    const taskId = 'ptk-' + 'c'.repeat(48);
+    const task = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, kind: 'TASK', parent_task_id: null,
+      title: 'MW-T12 — Certify production readiness and rollback', description: '',
+      status: 'IN_PROGRESS', assignee_principal_id: PRINCIPAL, due_date: '2026-11-23',
+      depends_on: [], created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      revision: 3, created_at: '2026-11-17T10:13:00+00:00',
+      updated_at: '2026-11-24T04:31:00+00:00', fingerprint: 'a'.repeat(128),
+    };
+    const sha = '840b294865a102ede84f77e3fc83ce4dcaabec19';
+    const milestone = [
+      '## MW-T12 — Engineering delivery update',
+      '**CI:** 23/23 exact-head GitHub workflows passed',
+      '**Commit:** ' + sha,
+      '**Local build:** successful, with nonblocking warnings',
+      '**Rollback and recovery:** NOT CERTIFIED — nonproduction drill pending',
+      '**Strategy outcome:** READBACK REQUIRED — no outcome score certified',
+      '**Task lifecycle:** IN_PROGRESS — production release remains BLOCKED',
+    ].join('\n\n');
+    const comment = {
+      schema: 'wilsy.project.comment.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, comment_id: 'pcm-' + 'd'.repeat(48),
+      author_principal_id: PRINCIPAL, body: milestone, mentions: [],
+      fingerprint: 'f'.repeat(128), created_at: '2026-11-24T04:35:00+00:00',
+    };
+    const comments = `/projects/${PROJECT_ID}/tasks/${taskId}/comments`;
+    let persisted = false;
+    let commentReads = 0;
+    let sourceReadbackHeld = false;
+    let releaseReadback;
+    const heldReadback = new Promise(resolve => { releaseReadback = resolve; });
+    mockProjectGet(async (route, config = {}) => {
+      if (route === '/projects') return { data: list([storedProject]) };
+      if (route === '/projects/summary') return { data: summary([storedProject]) };
+      if (route === `/projects/${PROJECT_ID}`) return { data: result(storedProject) };
+      if (route === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [task],
+        limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (route === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, items: [],
+        limit: 100, offset: 0, has_more: false, next_offset: null,
+      } };
+      if (route === comments + '?limit=50&offset=0') {
+        expect(config.headers['X-Tenant-ID']).toBe(TENANT);
+        commentReads += 1;
+        if (persisted && !sourceReadbackHeld) {
+          sourceReadbackHeld = true;
+          await heldReadback;
+        }
+        return { data: {
+          schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId,
+          items: persisted ? [comment] : [], limit: 50, offset: 0,
+          has_more: false, next_offset: null,
+        } };
+      }
+      throw new Error('Unexpected simulated EOS GET ' + route);
+    });
+    api.post.mockImplementation(async (route, payload, config) => {
+      expect(route).toBe(comments);
+      expect(payload).toEqual({ body: milestone, mentions: [] });
+      expect(config.headers['X-Tenant-ID']).toBe(TENANT);
+      expect(config.headers['Idempotency-Key']).toBeTruthy();
+      persisted = true;
+      return { data: {
+        schema: 'WILSY-PROJECT-COMMENT-RESULT/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, task_id: taskId, comment,
+      } };
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="mw-t12-milestone-simulation"/>);
+    fireEvent.click(await screen.findByRole('button', {
+      name: /View project WILSY OS — Unified Operating Platform Foundation/,
+    }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Project workspace views' }))
+      .getByRole('button', { name: 'Activity & discussion' }));
+    const queue = await screen.findByRole('list', { name: 'Verified discussion work items' });
+    fireEvent.click(within(queue).getByRole('button', { name: /MW-T12 — Certify production readiness and rollback/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Write update' }));
+    const editor = screen.getByRole('textbox', { name: 'New task comment' });
+    fireEvent.change(editor, { target: { value: milestone } });
+    fireEvent.click(screen.getByRole('button', { name: 'Publish to EOS' }));
+    await waitFor(() => expect(sourceReadbackHeld).toBe(true));
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(editor).toHaveValue(milestone);
+    expect(api.patch).not.toHaveBeenCalled();
+    await act(async () => { releaseReadback(); });
+    const history = document.querySelector('[aria-label="Verified task activity history"]');
+    await waitFor(() => expect(within(history).getByRole('button', { name: 'Read full update' })).toBeVisible());
+    expect(history).not.toHaveTextContent('23/23 exact-head GitHub workflows passed');
+    fireEvent.click(within(history).getByRole('button', { name: 'Read full update' }));
+    await waitFor(() => expect(history).toHaveTextContent('23/23 exact-head GitHub workflows passed'));
+    expect(history).toHaveTextContent(sha);
+    // Durable source content, not local draft clearing, is the certification gate.
+    expect(history).toHaveTextContent('NOT CERTIFIED');
+    expect(history).toHaveTextContent('READBACK REQUIRED');
+    expect(history).toHaveTextContent('production release remains BLOCKED');
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(commentReads).toBeGreaterThanOrEqual(3));
+    if (within(history).queryByRole('button', { name: 'Read full update' })) {
+      fireEvent.click(within(history).getByRole('button', { name: 'Read full update' }));
+    }
+    expect(history).toHaveTextContent('23/23 exact-head GitHub workflows passed');
+    expect(task.status).toBe('IN_PROGRESS');
+    expect(storedProject.status).toBe('active');
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.patch).not.toHaveBeenCalled();
   });
 
   it('prioritizes the task source and classifies real EOS HTTP 503 without auxiliary reads', async () => {
@@ -1544,7 +1924,10 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(within(management).getByRole('button', { name: 'Close' })).toHaveFocus();
     const eligible = await within(management).findByRole('combobox', { name: 'Eligible participant' });
     expect(eligible).toHaveValue(memberId);
-    fireEvent.click(within(management).getByRole('button', { name: /Add participant/ }));
+    const addContributor = within(management).getByRole('button', { name: /Add participant/ });
+    await waitFor(() => expect(addContributor).toBeEnabled());
+    fireEvent.click(addContributor);
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(within(screen.getByRole('combobox', { name: 'Task assignee' }))
       .getByRole('option', { name: 'Alex Mokoena' })).toHaveValue(memberId));
     expect(screen.getByPlaceholderText('Deliverable and action')).toHaveValue('Preserved governance draft');
@@ -1590,6 +1973,83 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Eligible participant' }),
       { target: { value: memberId } });
     expect(screen.queryByText('Source principal: ' + memberId)).not.toBeInTheDocument();
+  });
+
+  it('pages an authorized 22-task EOS batch without hiding records or selecting offscreen work', async () => {
+    const persisted = project();
+    const base = {
+      schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      description: '', status: 'TODO', assignee_principal_id: null, due_date: null,
+      depends_on: [], created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-18T06:00:00+00:00', updated_at: '2026-11-18T06:00:00+00:00',
+      revision: 1, fingerprint: 'a'.repeat(128),
+      kind: 'TASK', parent_task_id: null,
+    };
+    const rows = Array.from({ length: 22 }, (_, index) => ({
+      ...base, task_id: 'ptk-' + (index + 1).toString(16).padStart(48, '0'),
+      title: 'Batch task ' + String(index + 1).padStart(2, '0'),
+      status: index === 21 ? 'DONE' : 'TODO',
+    }));
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 50, offset: 0,
+        items: rows, has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/tasks/completed?limit=50&offset=0&search=&order=NEWEST`) return { data: {
+        schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, view: 'COMPLETED',
+        search: '', order: 'NEWEST', assignee_principal_id: null,
+        limit: 50, offset: 0, items: [{
+          ...rows[21], completed_at: rows[21].updated_at,
+          completed_by_principal_id: PRINCIPAL,
+        }], has_more: false, next_offset: null,
+      } };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return { data: {
+        schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+        principal_id: PRINCIPAL, project_id: PROJECT_ID, limit: 100, offset: 0,
+        items: [], has_more: false, next_offset: null,
+      } };
+      throw new Error('Unexpected GET ' + path);
+    });
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="bounded-project-work-paging-cert"/>);
+    fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Batch task 01' })).toBeVisible());
+    const grid = screen.getByRole('grid', { name: 'Project work grid' });
+    const views = screen.getByRole('group', { name: 'Work lifecycle view' });
+    expect(within(views).getByRole('button', { name: 'Active work' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(grid).queryByText('Batch task 22')).not.toBeInTheDocument();
+    fireEvent.click(within(views).getByRole('button', { name: 'Completed' }));
+    expect(await within(grid).findByText('Batch task 22')).toBeVisible();
+    expect(within(grid).queryByText('Batch task 01')).not.toBeInTheDocument();
+    fireEvent.click(within(grid).getByRole('button', { name: 'Batch task 22' }));
+    expect(await screen.findByRole('dialog', { name: 'Work details: Batch task 22' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Close work details' }));
+    fireEvent.click(within(views).getByRole('button', { name: 'All work' }));
+    expect(within(views).getByRole('button', { name: 'All work' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(within(grid).getAllByRole('row').length).toBe(11));
+    expect(within(grid).queryByText('Batch task 11')).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
+    expect(within(grid).getByText('Batch task 11')).toBeVisible();
+    expect(within(grid).queryByText('Batch task 01')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all visible work' }));
+    expect(screen.getByText(/10 selected · verified current EOS batch/)).toBeVisible();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Next view' })[0]);
+    expect(grid.querySelectorAll('tbody tr[data-task-id]')).toHaveLength(2);
+    expect(within(grid).getByText('Batch task 22')).toBeVisible();
+    fireEvent.change(screen.getAllByRole('combobox', {
+      name: 'Project work rows per view',
+    })[0], { target: { value: '20' } });
+    expect(grid.querySelectorAll('tbody tr[data-task-id]')).toHaveLength(20);
+    expect(within(grid).getByText('Batch task 01')).toBeVisible();
+    expect(screen.getByText(/10 selected · verified current EOS batch/)).toBeVisible();
+    fireEvent.click(within(views).getByRole('button', { name: 'Completed' }));
+    expect(screen.queryByText(/10 selected · verified current EOS batch/)).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('operates real task, subtask and milestone commands from the verified work queue', async () => {
@@ -1649,7 +2109,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: /View project Persisted roadmap/ }));
     await screen.findByRole('region', { name: 'Project work execution' });
     expect(await screen.findByText('Main delivery', {
-      selector: '.wp-project-tasks tbody td span',
+      selector: '.wp-project-tasks tbody td button',
     })).toBeVisible();
     fireEvent.click(await screen.findByText(/Checklist mode ·/));
     fireEvent.click(screen.getByRole('button', { name: 'Add checklist step to Main delivery' }));
@@ -1665,9 +2125,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
       target: { value: 'SUBTASK' },
     });
-    expect(screen.getByText(/1 shown \/ 2 verified on page 1\./)).toBeVisible();
+    expect(screen.getByText(/1 matching \/ 2 verified in EOS batch 1\./)).toBeVisible();
     expect(screen.queryByText('Main delivery', {
-      selector: '.wp-project-tasks tbody td span',
+      selector: '.wp-project-tasks tbody td button',
     })).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: 'Filter work type' }), {
       target: { value: 'ALL' },
@@ -1681,7 +2141,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save work to EOS' }));
     await waitFor(() => expect(screen.getByText('Sign-off checkpoint', {
-      selector: '.wp-project-tasks tbody td span',
+      selector: '.wp-project-tasks tbody td button',
     })).toBeVisible());
     expect(api.post).toHaveBeenCalledTimes(2);
     expect(persisted.status).toBe('planned');
@@ -1831,9 +2291,6 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Customize included work' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Generate a reviewable AI plan' })).toBeDisabled();
     expect(screen.queryByText(/legacy starter templates/)).not.toBeInTheDocument();
-    const sheet = readFileSync(resolve(process.cwd(), 'src/components/workspaces/ProjectsWorkspace.css'), 'utf8');
-    expect(sheet).toContain('[aria-label="Industry project templates"] form :is(label, legend)');
-    expect(sheet).toContain('-webkit-text-fill-color: #193451 !important;');
     expect(screen.queryByText(PROJECT_ID)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Project name'), {
       target: { value: 'Legal litigation delivery' },
@@ -2042,6 +2499,56 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('opens a Strategy-selected task only after its authorized project and work readback', async () => {
+    const persisted = project({ name: 'WILSY OS — Unified Operating Platform Foundation' });
+    const taskId = 'ptk-' + 'f'.repeat(48);
+    const task = { schema: 'wilsy.project.task.v1', tenant_id: TENANT, project_id: PROJECT_ID,
+      task_id: taskId, kind: 'TASK', parent_task_id: null, title: 'Certify production readiness and rollback',
+      description: '', status: 'TODO', assignee_principal_id: null, due_date: null, depends_on: [],
+      revision: 1, fingerprint: 'a'.repeat(128),
+      created_by_principal_id: PRINCIPAL, updated_by_principal_id: PRINCIPAL,
+      created_at: '2026-11-22T21:44:56+00:00', updated_at: '2026-11-22T21:44:56+00:00',
+    };
+    // Optional directories and command authorization deliberately never settle.
+    // The verified task must open, but edits must remain disabled.
+    const unresolvedAuxiliary = new Promise(() => {});
+    mockProjectGet(async path => {
+      if (path === '/projects') return { data: list([persisted]) };
+      if (path === '/projects/summary') return { data: summary([persisted]) };
+      if (path === `/projects/${PROJECT_ID}`) return { data: result(persisted) };
+      if (path === `/projects/${PROJECT_ID}/tasks?limit=50&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-TASK-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [task], limit: 50, offset: 0, has_more: false, next_offset: null },
+      };
+      if (path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`) return {
+        data: { schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1', tenant_id: TENANT,
+          principal_id: PRINCIPAL, project_id: PROJECT_ID,
+          items: [], limit: 100, offset: 0, has_more: false, next_offset: null },
+      };
+      throw new Error('Unexpected source read ' + path);
+    });
+    const projectRead = api.get.getMockImplementation();
+    api.get.mockImplementation((path, ...args) => (
+      path === `/projects/${PROJECT_ID}/participants?limit=100&offset=0`
+        || path === `/projects/${PROJECT_ID}/participant-options?limit=50&offset=0`
+        || path === `/projects/${PROJECT_ID}/task-action-capabilities`
+        ? unresolvedAuxiliary : projectRead(path, ...args)
+    ));
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope="exact-task-handoff-cert" focusProjectId={PROJECT_ID} focusTaskId={taskId}/>);
+    expect(await screen.findByRole('dialog', {
+      name: 'Work details: Certify production readiness and rollback',
+    })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Assign & schedule' })).toBeDisabled();
+    const readiness = screen.getByRole('region', { name: 'Source-verified task execution readiness' });
+    expect(within(readiness).getByText('Assignment required')).toBeVisible();
+    expect(within(readiness).getByText('Due date required')).toBeVisible();
+    expect(screen.getByText('Work classification and history').closest('details').open).toBe(false);
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
   it('refuses Strategy-handoff details when the authorized list omits that project', async () => {
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
       sessionScope="absent-project-handoff" focusProjectId={PROJECT_ID}/>);
@@ -2065,6 +2572,15 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'list');
     fireEvent.click(screen.getByRole('button', { name: /Persisted roadmap/ }));
     expect(await screen.findByRole('heading', { name: 'Persisted roadmap' })).toBeVisible();
+    // The secondary list-return action belongs to project view navigation,
+    // never beside the source-owned project title.
+    const detail = screen.getByRole('region', { name: 'Project detail' });
+    const projectHeader = detail.querySelector('.wp-detail-top');
+    const views = within(detail).getByRole('navigation', { name: 'Project workspace views' });
+    const allProjects = within(views).getByRole('button', { name: 'Back to projects table' });
+    expect(allProjects).toHaveTextContent('All projects');
+    expect(projectHeader).not.toContainElement(allProjects);
+    expect(projectHeader).toContainElement(screen.getByRole('heading', { name: 'Persisted roadmap' }));
     expect(container.querySelector('.wp-body')).toHaveAttribute('data-layout', 'detail');
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     expect(screen.getAllByText('Automatically assigned').length).toBeGreaterThan(0);
@@ -2158,8 +2674,9 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save audited assignment' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
-    // Wait for the revisioned EOS list/detail readback, not only the PATCH call.
-    await waitFor(() => expect(screen.getByText('Revision 2')).toBeInTheDocument());
+    // Wait for source readback, not a presentation-only revision label.
+    await waitFor(() => expect(api.get.mock.calls.filter(([path]) =>
+      path === `/projects/${PROJECT_ID}`).length).toBeGreaterThan(1));
     fireEvent.click(screen.getByRole('button', { name: 'Overview', exact: true }));
     await waitFor(() => {
       expect(screen.getByText('Assigned Owner')).toBeInTheDocument();
@@ -2189,9 +2706,6 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     expect(screen.getByText('EOS verified 0 eligible project owners and 0 active tenant departments.')).toBeInTheDocument();
     const accountability = screen.getByRole('region', { name: 'Project accountability' });
     expect(accountability).toHaveClass('wp-accountability');
-    const css = readFileSync(resolve(process.cwd(), 'src/components/workspaces/ProjectsWorkspace.css'), 'utf8');
-    expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*color:\s*#203a5e\s*!important;/);
-    expect(css).toMatch(/\.wilsy-projects \.wp-detail \.wp-accountability form label\s*\{[^}]*text-transform:\s*none\s*!important;/);
     expect(screen.getByRole('combobox', { name: 'Eligible project owner' })).toBeDisabled();
     expect(screen.getByRole('combobox', { name: 'Tenant department' })).toBeDisabled();
     expect(screen.getByText(/No eligible project owner has been verified/)).toBeInTheDocument();
@@ -2426,7 +2940,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
       ? { data: list([]) }
       : { data: summary([], 'another-tenant') });
     render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL} sessionScope="foreign-response-test"/>);
-    expect(await screen.findByRole('alert')).toHaveTextContent(/source is unavailable/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Projects couldn't load/i);
     expect(screen.queryByText('No projects in this tenant')).not.toBeInTheDocument();
     expect(screen.queryByText('0 active · 0 total')).not.toBeInTheDocument();
   });
@@ -2439,6 +2953,23 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/EOS denied Projects access/i));
     expect(screen.queryByText('No projects in this tenant')).not.toBeInTheDocument();
     expect(screen.queryByText(/0 active/)).not.toBeInTheDocument();
+  });
+
+  it.each(['tenant_hr_director', 'tenant_hr_manager'])('returns denied %s Projects to People without switching capacity or inventing records', async (selectedCapacity) => {
+    const onReturnToPeople = vi.fn();
+    api.get.mockRejectedValue(Object.assign(new Error('denied'), {
+      response: { status: 403, data: { detail: 'ACCESS_DENIED' } },
+    }));
+    render(<ProjectsWorkspace tenantId={TENANT} principalId={PRINCIPAL}
+      sessionScope={`hr-denied-${selectedCapacity}`}
+      selectedCapacity={selectedCapacity}
+      onReturnToPeople={onReturnToPeople}/>);
+    const action = await screen.findByRole('button', { name: 'Return to People' });
+    expect(screen.getByRole('alert')).toHaveTextContent(selectedCapacity === 'tenant_hr_director' ? 'HR Director session' : 'HR Manager session');
+    expect(screen.queryByRole('button', { name: 'Switch to Owner capacity' })).not.toBeInTheDocument();
+    fireEvent.click(action);
+    expect(onReturnToPeople).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('No projects in this tenant')).not.toBeInTheDocument();
   });
 
   it('keeps late list results from a prior tenant/principal/capacity scope out of the new workspace', async () => {
@@ -2499,7 +3030,7 @@ describe('ProjectsWorkspace source-backed lifecycle', () => {
 
 /*
  * ARTIFACT: WILSY OS Projects workspace interaction certificate
- * VERSION: v2.61.0-ATTACHMENT-PEOPLE-PREFLIGHT-CERT
+ * VERSION: v2.83.0-HR-DENIED-NONDESTRUCTIVE-RETURN-CERT
  * AUTHORITY BOUNDARY: Synthetic client transport only; EOS remains authoritative.
  * TENANT POSTURE: Tests validate synthetic exact tenant/principal scope; live isolation is not claimed.
  * FAIL-CLOSED POSTURE: Uncertainty and denial cannot create client-side business truth.

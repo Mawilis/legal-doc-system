@@ -1,26 +1,58 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
+ * TITLE: WILSY OS Conversation History Engine Durable Archive Certificate
+ * VERSION: v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT
+ * AUTHORITY: WILSY OS Core Governance
+ * EPITOME: Encrypted history transport, owner isolation and session fallback
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/wilsyAIConversationHistoryEngine.test.js
+ * COLLABORATION / OWNERSHIP: EOS history router and current Dock history engine
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT requires saved and deleted state to pass independent owner readback.
+ * CHANGELOG: v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT tests
+ *            same-tenant foreign-principal archive denial and non-elevation
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC2 CC7.2
+ * SECURITY / PRIVACY POSTURE: Synthetic scopes and prompts; no real secrets
+ * TENANT BOUNDARY: Exact identity scope is checked; mocks grant no IAM
+ * AUTHORITY BOUNDARY: Test-only evidence; Python EOS owns durable truth
+ * FINANCIAL AUTHORITY BOUNDARY: No paid model or payment execution
+ *
  * Wilsy OS — AI Conversation History Engine Session-Bound Certificate
  * ═══════════════════════════════════════════════════════════════════════════════
  * File:           client/tests/client/wilsyAIConversationHistoryEngine.test.js
- * Version:        v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
+ * Version:        v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT
  * Authority:      Wilsy OS Core Governance
  * Epitome:        Direct certificate for transient same-session conversation
- *                 history. No remote history route, durable persistence, legal
- *                 authority, tenant authority, or financial authority is implied.
+ *                 history with EOS-encrypted remote archive and explicit
+ *                 session-only fallback; no localStorage conversation data.
  * Classification: Production Test Artifact — Institutional Contract
  *
+ * CHANGELOG: v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT tests missing encryption key,
+ *     local unsaved-thread recovery and exact EOS archive posture.
  * Change Log:
+ *   2026-11-25 v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT — Verifies the authenticated
+ *     principal selector must match the EOS history response even when HTTP
+ *     succeeds, without creating cross-identity cached conversations.
+ *   2026-11-25 v5.6.0-EOS-DURABLE-HISTORY-ISOLATION-CERT — Tests approved Python EOS history transport,
+ *     durable create/revision/reload, archive isolation and failed-write
+ *     session fallback without treating saved text as live EOS evidence.
  *   2026-09-24 v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT — Replaced retired backend-history assumptions with
  *     direct session-memory, cache-integrity, fail-closed, and no-network proofs.
  *   2026-08-05 v5.1.1-KENNEL-PHASE5 — Fixed async integrity checks.
  *   2026-08-05 v5.1.0-KENNEL-PHASE5 — Initial creation.
  *
- * Certification Seal: PRODUCTION_READY_v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
+ * Certification Seal: PRODUCTION_READY_v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import { readFileSync } from 'node:fs';
+import { vi } from 'vitest';
+
+const { mockGet, mockPut, mockDelete } = vi.hoisted(() => ({
+  mockGet: vi.fn(), mockPut: vi.fn(), mockDelete: vi.fn(),
+}));
+vi.mock('../../src/services/api.js', () => ({
+  default: { get: mockGet, put: mockPut, delete: mockDelete },
+}));
 import {
   normalizeWilsyAIConversationText,
   resolveWilsyAIConversationWorkspace,
@@ -33,11 +65,17 @@ import {
   getCachedThreads,
   syncThreads,
   verifyThreadIntegrity,
+  deleteWilsyAIConversationThread,
+  wilsyAIConversationHistoryPosture,
+  wilsyAIConversationHistoryIssue,
 } from '../../src/components/intelligence/wilsyAIConversationHistoryEngine.js';
 
 describe('Wilsy AI Conversation History Engine — session-bound authority', () => {
   beforeEach(async () => {
     window.__WILSY_ACTIVE_TENANT__ = { tenantId: 'TEST_TENANT' };
+    mockGet.mockReset().mockRejectedValue(new Error('EOS history not configured'));
+    mockPut.mockReset().mockRejectedValue(new Error('EOS history not configured'));
+    mockDelete.mockReset().mockRejectedValue(new Error('EOS history not configured'));
     await clearWilsyAIConversationThreads();
   });
 
@@ -71,15 +109,16 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
     });
   });
 
-  describe('session-only transport boundary', () => {
-    it('contains no retired remote conversation route or api transport dependency', () => {
+  describe('canonical EOS history transport boundary', () => {
+    it('uses only Python EOS history, never a retired BFF or localStorage for transcripts', () => {
       const source = readFileSync(
         `${process.cwd()}/src/components/intelligence/wilsyAIConversationHistoryEngine.js`,
         'utf8',
       );
       expect(source).not.toContain('/api/ai/conversations');
-      expect(source).not.toMatch(/import\s+api\s+from/);
-      expect(source).not.toMatch(/\bapi\.(?:get|post|put|delete|patch)\s*\(/);
+      expect(source).toContain("'/wilsy-ai/history'");
+      expect(source).toContain("'/wilsy-ai/history/'");
+      expect(source).not.toMatch(/localStorage\.setItem\(/);
     });
 
     it('starts empty after an explicit same-session clear', async () => {
@@ -201,6 +240,165 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
     });
   });
 
+
+  describe('encrypted EOS history persistence and currentness', () => {
+    it('retains session work and classifies a missing encrypted archive key', async () => {
+      saveWilsyAIConversationThreads([{ id: 'local-note', title: 'Unsaved work',
+        workspace: 'Projects', storagePosture: 'SESSION_ONLY',
+        messages: [{ role: 'user', content: 'Preserve draft' }] }]);
+      mockGet.mockRejectedValue({ response: { status: 503,
+        data: { detail: 'WILSY_AI_HISTORY_KEY_UNAVAILABLE' } } });
+      const retained = await loadWilsyAIConversationThreads();
+      expect(retained).toHaveLength(1);
+      expect(retained[0].messages[0].content).toBe('Preserve draft');
+      expect(wilsyAIConversationHistoryPosture()).toBe('UNAVAILABLE');
+      expect(wilsyAIConversationHistoryIssue()).toBe('ENCRYPTION_KEY_UNAVAILABLE');
+    });
+
+    it('does not erase an unsaved thread on valid empty EOS recovery', async () => {
+      saveWilsyAIConversationThreads([{ id: 'local-note', title: 'Unsaved work',
+        workspace: 'Projects', storagePosture: 'SESSION_ONLY',
+        messages: [{ role: 'user', content: 'Keep current work' }] }]);
+      mockGet.mockResolvedValue({ data: { schema: 'WILSY-AI-HISTORY/V1',
+        tenant_id: 'TEST_TENANT', principal_id: 'principal-1', threads: [] } });
+      const retained = await loadWilsyAIConversationThreads({
+        tenantId: 'TEST_TENANT', principalId: 'principal-1',
+      });
+      expect(retained).toHaveLength(1);
+      expect(retained[0].messages[0].content).toBe('Keep current work');
+      expect(wilsyAIConversationHistoryPosture()).toBe('READY');
+      expect(wilsyAIConversationHistoryIssue()).toBe(null);
+    });
+
+    it('does not exhaust 30 archive slots by persisting automatic empty sessions', async () => {
+      const empty = await createWilsyAIConversationThread({
+        title: 'New Sovereign Session', workspace: 'WILSY OS',
+      });
+      expect(empty.storagePosture).toBe('SESSION_ONLY');
+      expect(mockPut).not.toHaveBeenCalled();
+      mockPut.mockResolvedValue({ data: {
+        schema: 'WILSY-AI-HISTORY-THREAD/V1', id: empty.id,
+        revision: 1, storagePosture: 'EOS_ENCRYPTED_HISTORY',
+      } });
+      mockGet.mockImplementation(async () => {
+        const [path, body] = mockPut.mock.calls.at(-1);
+        return { data: { schema: 'WILSY-AI-HISTORY/V1', tenant_id: 'TEST_TENANT', principal_id: 'test-principal',
+          threads: [{ id: path.split('/').pop(), title: body.title, workspace: body.workspace, messages: body.messages,
+            revision: body.expected_revision + 1, storagePosture: 'EOS_ENCRYPTED_HISTORY', authority: 'RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE' }] } };
+      });
+      const recorded = await persistWilsyAIConversationTurn({
+        threadId: empty.id,
+        message: { role: 'user', content: 'Inspect MW-T11' },
+      });
+      expect(recorded.storagePosture).toBe('EOS_ENCRYPTED_HISTORY');
+      expect(mockPut).toHaveBeenCalledWith(
+        '/wilsy-ai/history/' + encodeURIComponent(empty.id),
+        expect.objectContaining({ expected_revision: 0 }),
+        expect.anything(),
+      );
+    });
+
+    it('persists a thread, revises its transcript and recovers it after browser-memory reset', async () => {
+      const records = new Map();
+      mockPut.mockImplementation(async (path, body) => {
+        const id = path.split('/').pop();
+        const previous = records.get(id);
+        if (body.expected_revision !== (previous?.revision || 0)) {
+          throw Object.assign(new Error('conflict'), { response: { status: 409 } });
+        }
+        const revision = body.expected_revision + 1;
+        records.set(id, {
+          id, revision, title: body.title, workspace: body.workspace,
+          updatedAt: '2026-11-25T14:55:00Z', messages: body.messages,
+          storagePosture: 'EOS_ENCRYPTED_HISTORY',
+          authority: 'RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE',
+        });
+        return { data: {
+          schema: 'WILSY-AI-HISTORY-THREAD/V1', id, revision,
+          storagePosture: 'EOS_ENCRYPTED_HISTORY',
+        } };
+      });
+      mockGet.mockImplementation(async () => ({
+        data: { schema: 'WILSY-AI-HISTORY/V1', tenant_id: 'TEST_TENANT',
+          principal_id: 'test-principal', threads: [...records.values()] },
+      }));
+      const created = await createWilsyAIConversationThread({
+        title: 'Foundation review', workspace: 'Projects',
+      });
+      expect(created.storagePosture).toBe('EOS_ENCRYPTED_HISTORY');
+      expect(created.revision).toBe(1);
+      const saved = await persistWilsyAIConversationTurn({
+        threadId: created.id,
+        message: { role: 'assistant', content: 'EOS task source was inspected',
+          timestamp: '2026-11-25T14:55:00Z',
+          meta: { source: 'PYTHON_EOS', phase: 'SOURCE_VERIFIED_READ_ONLY' } },
+      });
+      expect(saved.storagePosture).toBe('EOS_ENCRYPTED_HISTORY');
+      expect(saved.revision).toBe(2);
+      expect(wilsyAIConversationHistoryPosture()).toBe('READY');
+      await clearWilsyAIConversationThreads();
+      const recovered = await loadWilsyAIConversationThreads();
+      expect(recovered).toHaveLength(1);
+      expect(recovered[0].title).toBe('Foundation review');
+      expect(recovered[0].revision).toBe(2);
+      expect(recovered[0].messages[0].meta).toEqual({
+        source: 'EOS_SAVED_TRANSCRIPT', phase: 'HISTORICAL_NOT_LIVE_EVIDENCE',
+      });
+      expect(await verifyThreadIntegrity(recovered[0])).toBe(true);
+      mockDelete.mockImplementation(async () => {
+        records.delete(created.id);
+        return { data: { schema: 'WILSY-AI-HISTORY-DELETED/V1', id: created.id, deleted: true } };
+      });
+      await deleteWilsyAIConversationThread(created.id);
+      expect(mockDelete).toHaveBeenCalledWith(
+        '/wilsy-ai/history/' + encodeURIComponent(created.id),
+        expect.objectContaining({ params: { expected_revision: 2 } }),
+      );
+      expect(getCachedThreads()).toHaveLength(0);
+    });
+
+    it('refuses foreign-scope archive even when EOS HTTP returns 200', async () => {
+      mockGet.mockResolvedValue({ data: {
+        schema: 'WILSY-AI-HISTORY/V1', tenant_id: 'FOREIGN_TENANT',
+        principal_id: 'foreign', threads: [],
+      } });
+      expect(await loadWilsyAIConversationThreads()).toEqual([]);
+      expect(wilsyAIConversationHistoryPosture()).toBe('UNAVAILABLE');
+    });
+
+    it('refuses same-tenant history for a different authenticated principal', async () => {
+      mockGet.mockResolvedValue({ data: {
+        schema: 'WILSY-AI-HISTORY/V1', tenant_id: 'TEST_TENANT',
+        principal_id: 'principal-B', threads: [],
+      } });
+      const recovered = await loadWilsyAIConversationThreads({
+        tenantId: 'TEST_TENANT', principalId: 'principal-A',
+      });
+      expect(recovered).toEqual([]);
+      expect(wilsyAIConversationHistoryPosture()).toBe('UNAVAILABLE');
+    });
+
+    it('does not erase a saved thread on an unverified EOS deletion', async () => {
+      mockPut.mockImplementation(async (path, body) => ({
+        data: { schema: 'WILSY-AI-HISTORY-THREAD/V1',
+          id: path.split('/').pop(), revision: body.expected_revision + 1,
+          storagePosture: 'EOS_ENCRYPTED_HISTORY' },
+      }));
+      mockGet.mockImplementation(async () => {
+        const [path, body] = mockPut.mock.calls.at(-1);
+        return { data: { schema: 'WILSY-AI-HISTORY/V1', tenant_id: 'TEST_TENANT', principal_id: 'test-principal',
+          threads: [{ id: path.split('/').pop(), title: body.title, workspace: body.workspace, messages: body.messages,
+            revision: body.expected_revision + 1, storagePosture: 'EOS_ENCRYPTED_HISTORY', authority: 'RECORDED_TRANSCRIPT_NOT_CURRENT_SOURCE' }] } };
+      });
+      const thread = await createWilsyAIConversationThread({
+        title: 'Retention', workspace: 'Projects',
+      });
+      expect(thread.storagePosture).toBe('EOS_ENCRYPTED_HISTORY');
+      await expect(deleteWilsyAIConversationThread(thread.id)).rejects.toThrow();
+      expect(getCachedThreads()).toHaveLength(1);
+    });
+  });
+
   describe('cache lifecycle and integrity', () => {
     it('clears only the same-session cache', async () => {
       await createWilsyAIConversationThread({ title: 'Temporary' });
@@ -237,16 +435,16 @@ describe('Wilsy AI Conversation History Engine — session-bound authority', () 
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * INSTITUTIONAL CERTIFICATION SEAL — Conversation History v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
+ * INSTITUTIONAL CERTIFICATION SEAL — Conversation History v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT
  * ═══════════════════════════════════════════════════════════════════════════════
  * ARTIFACT: client/tests/client/wilsyAIConversationHistoryEngine.test.js
- * VERSION: v5.4.2-SESSION-BOUND-LEGAL-HISTORY-CERT
- * AUTHORITY BOUNDARY: test certificate only; transient browser session memory
+ * VERSION: v5.8.0-INDEPENDENT-ARCHIVE-READBACK-CERT
+ * AUTHORITY BOUNDARY: synthetic tests only; EOS source and IAM are independent
  * TENANT POSTURE: tenant identifiers partition presentation context but grant no access
- * DURABLE HISTORY AUTHORITY: none; no remote history route is assumed or probed
+ * DURABLE HISTORY AUTHORITY: Python EOS authenticated encrypted history; tests use mock transport only
  * LEGAL AUTHORITY: none
  * FINANCIAL EXECUTION AUTHORITY: none; Kennel EOS remains exclusive
  * FAIL-CLOSED POSTURE: unknown thread identities reject; integrity tampering rejects
  * END OF WILSY OS SOVEREIGN ARTIFACT
- * ═══════════════════════════════════════════════════════════════════════════════
  */
+

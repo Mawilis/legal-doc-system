@@ -3,15 +3,68 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE
+ * VERSION: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/HrDashboard.jsx
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
- * CERTIFICATION / UPDATE DATE: 2026-11-12
- * CHANGELOG:
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces canned approval reasons with checker-authored evidence, suppresses own-proposal review using a session-relative maker flag, and preserves EOS checker authority and durable readback.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON introduces the separate source-verified organization register, an authorized draft/submit/checker UI and independently validated readback, current tenant isolation, retained command idempotency and denied/unknown outcomes. No client-side permission grant or admission is inferred.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+CHANGELOG:
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
+ *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
+ *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
+ *   v2.13.0-FIRST-HR-LEADERSHIP-REQUEST opens a compact, actual EOS-backed first HR leadership DRAFT requisition in the headcount lane after current authorized source read. Independent approval, candidate admission and IAM grants remain unchanged.
+ *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY retains independent workforce/hiring/offer/headcount admission states, distinguishes denied from unavailable, and displays bounded source details without IAM elevation.
+ *   v2.12.1-HQ-RETURN-ICON-IMPORT includes the actual icon dependency required by the new contextual People header return control.
+ *   v2.12.0-COMPACT-CONTEXTUAL-HQ-RETURN mounts a single accessible compact Headquarters return inside the contextual People application header; removes the need for a duplicate external navigation rail.
+ *   v2.11.12-INDEPENDENT-SOURCE-READ-BOUNDARIES bounds Overview to concurrent independently governed sources and every other HR lane to its selected source; search no longer refetches unrelated workforce aggregates.
+ *   v2.11.11-READ-SCOPE-NOT-CHECKER-ENTITLEMENT labels tenant-visible submitted requisitions as source-owned requests, not personal approval assignments, because decision authority is rechecked only by the owning EOS command.
+ *   v2.11.10-CONTEXT-PEOPLE-MODULE-NAVIGATION maps global contextual People search shortcuts to the real authorized hiring, offers, workforce and paginated headcount lanes without cross-source record indexing.
+ *   v2.11.9-TRANSACTIONAL-HEADCOUNT-PAGE consumes true paginated transactional headcount Overview pages and independently validates exact-tenant provenance and total, preventing the old 200-record cap from appearing complete.
+ *   v2.11.8-PEOPLE-CONTEXT-SEARCH-SCOPE-RESET clears tenant-authorized workforce-only search terms on switching to independently authorized hiring/offer/headcount modules.
+ *   v2.11.6-TRUTHFUL-HEADCOUNT-ROW-COLUMNS renders canonical headcount requisition position, department, location, requested seats and status without generic invented 'Remote' or 'Normal' values.
+ *   v2.11.5-CORRECT-OVERVIEW-RECOVERY-BRANCH keeps the nonadmitted Overview recovery branch syntactically closed and exclusive from source-admitted work.
+ *   v2.11.4-SINGLE-AUTHORIZED-OVERVIEW-RECOVERY displays one actionable access recovery when all current People sources are denied; authorized users see only source-backed work and indicators, never duplicate error cards.
+ *   v2.11.3-SOURCE-OWNED-HEADCOUNT-DECISION-ROWS includes independently source-authorized submitted headcount requisitions in the actionable People queue and exposes their read-only governed source view, not a self-approval shortcut.
+ *   v2.11.2-CANONICAL-HEADCOUNT-READ-SOURCE wires Overview and Headcount read pagination to the existing exact-tenant EOS headcount requisition endpoint, with bounded browser projection and no legacy BFF headcount route.
+ *   v2.11.1-GLOBAL-CONTEXT-PEOPLE-SEARCH accepts global People query intents and runs text search only through the existing independent, tenant-authorized employee directory source.
+ *   v2.11.0-CANONICAL-PEOPLE-OVERVIEW-SOURCE reads the new Python EOS workforce Overview with strict tenant/source provenance, renders admitted active headcount and departments and never calls deprecated /hr/snapshot.
+ *   v2.10.0-EMPLOYER-AWARE-WORK-FIRST-OVERVIEW places verified actionable People decisions first; replaces oversized lifecycle hero/chain card with a compact employer-aware working header and source-navigation actions. Keeps all source authorization and fail-closed behavior.
+ *   v2.9.6-NONADMITTED-PROCESS-NO-FANOUT ensures unconnected onboarding/exit lanes do not issue speculative HR read requests; verified Overview and supported sources retain exact bound reads.
+ *   v2.9.5-HONEST-EMPTY-EXECUTIVE-OVERVIEW avoids four decorative unavailable KPI cards when all People sources are denied; one source-verification message replaces unverified numbers.
+ *   v2.9.4-EXPLICIT-ONBOARDING-EXIT-NAV brings Onboarding and Exit into the prototype's lifecycle navigation while withholding noncertified source actions and avoiding speculative API reads.
+ *   v2.9.3-CANONICAL-ONE-MAIN-LANDMARK uses a named People application region inside the existing Headquarters main landmark, avoiding nested main elements without changing source ownership.
+ *   v2.9.2-OVERVIEW-AUTHORITY-AND-TENANT-CONTEXT surfaces an explicit current HR-authority denial and exact selected employer context on the prototype-grounded Overview without bypassing authorization.
+ *   v2.9.1-PEOPLE-LIFECYCLE-ICON-AND-NAV-FIX restores the required actual source-navigation icon import and correct Overview transition title.
+ *   v2.9.0-PROTOTYPE-GROUNDED-PEOPLE-APPLICATION implements the uploaded Hire-to-Exit prototype's autonomous navigation, compact lifecycle briefing and real source-backed approval work rows without importing sample staff or changing the WILSY logo.
+ *   v2.8.7-HR01-REMOVE-DUPLICATE-LEGACY-PROFILE — Unmounts the unconditional black/gold legacy HR profile card, which ignores the supplied isOpen prop; canonical OS account chrome remains authoritative.
+ *   v2.8.6-HR01-DISTINCT-FAIL-CLOSED-NOTICES — Preserves distinct denied and unavailable notice semantics while making both accessible under legacy HR styles.
+ *   v2.8.5-HR01-STRICT-EMPLOYEE-PROVENANCE — Rejects workforce payloads without canonical EOS provenance and projects only directory-safe fields into browser state; no passthrough of backend employee extras.
+ *   v2.8.4-HR01-CONTRAST-AND-SEARCH-CERT — Applies scoped, contrast-safe People headings, denied notice and input classes against legacy inherited styling; no IAM override.
+ *   v2.8.3-M03-SOURCE-VERIFIED-COMMAND-ENTRY — Disables candidate/offer create actions until the selected EOS source has a current verified read, preventing misleading commands on denied or unavailable HR views.
+ *   v2.8.2-M03-LIGHT-SESSION-GATES — Removes remaining black legacy unauthenticated/tenant-reverification panels, preserving fail-closed EOS scope semantics.
+ *   v2.8.1-M03-SHARED-STATUS-SEMANTICS — Uses the same EOS-derived lifecycle badges as Projects for employee, candidate and offer rows; text remains explicit and unknown states neutral.
+ *   v2.8.0-M03-PEOPLE-UNIFIED-WORKSPACE — Retires the nested legacy black/gold HR chrome and wrong logo, uses existing OS shell and source-backed People rows, preserves Python EOS hiring commands, and blocks unconnected modules from simulated mutations.
  *   v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE — States that institutional offer signing does not prove candidate identity, removes the misleading candidate-signature claim, and explains why source ACCEPTED status is not verified candidate consent or employment.
  *   v2.6.0-EOS-CANDIDATE-EVIDENCE-LOOP — Streams candidate evidence through existing EOS custody, verifies exact-version binary readback and SHA3-512 before enabling a stage transition, and clears candidate bytes on scope invalidation.
  *   v2.5.0-EOS-HIRING-COMMAND-LOOP — Wires candidate intake, evidence-backed transitions, offer preparation and governed offer decisions/sending to existing EOS commands with exact-scope readback.
@@ -47,8 +100,10 @@ import {
   Briefcase,
   Calendar,
   CheckCircle,
+  ChevronLeft,
   CreditCard,
   Download,
+  ArrowUpRight,
   Edit,
   Globe2,
   Heart,
@@ -74,11 +129,11 @@ import api from '../../services/api';
 import * as hrService from '../../services/hrService';
 import { resolveCountryOption, searchSovereignCountries } from '../../data/sovereignCountryRegistry';
 import { exportCSV } from '../../utils/exportHelpers';
-import WilsyProfilePanel, { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
-import WilsyOSDashboardChrome from '../os/WilsyOSDashboardChrome';
+import { hydrateWilsyProfileRuntime } from '../shared/WilsyProfilePanel';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
-import wilsyLogo from '../../assets/logo/wilsy-logo.svg';
+import FounderHeadcountStart, { HeadcountDraftSubmit, HeadcountIndependentDecision } from './FounderHeadcountStart';
 import styles from './HrDashboard.module.css';
+import { workStatusClasses } from '../../theme/workStatus.js';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
 
@@ -150,10 +205,19 @@ const classifyHrReadFailure = (error) => {
   return HR_READ_STATE.SOURCE_UNAVAILABLE;
 };
 const hrReadErrorCode = (error) => {
-  const candidate = error?.code || error?.response?.data?.detail || error?.response?.data?.code;
-  if (typeof candidate === 'string' && /^[A-Z0-9_.:-]{1,100}$/.test(candidate)) return candidate;
+  // Axios ERR_BAD_REQUEST covers every HTTP 4xx and is not an EOS denial
+  // reason. Prefer an exact bounded source code or the actual HTTP status.
+  const detail = error?.response?.data?.detail;
+  const sourceCode = typeof detail === 'object' && detail !== null
+    ? detail.code : detail;
+  const candidates = [sourceCode, error?.response?.data?.code];
+  for (const code of candidates) {
+    if (typeof code === 'string' && /^[A-Z][A-Z0-9_.:-]{2,99}$/.test(code)) return code;
+  }
   const status = error?.response?.status || error?.status;
-  return Number.isInteger(status) ? `HTTP_${status}` : 'HR_SOURCE_UNAVAILABLE';
+  return Number.isInteger(status) ? `HTTP_${status}`
+    : typeof error?.code === 'string' && /^[A-Z][A-Z0-9_]{2,99}$/.test(error.code)
+      ? error.code : 'HR_SOURCE_UNAVAILABLE';
 };
 const unavailableReadState = (previous, errorCode) => ({
   status: HR_READ_STATE.SOURCE_UNAVAILABLE,
@@ -2284,10 +2348,20 @@ const buildHrWorkspace = ({ activeTab, snapshot, datasets, datasetReadStates, sn
  * @returns {JSX.Element} HR operating dashboard.
  * @collaboration Wilson mandated HR must become a usable business operating surface, not a static data table.
  */
-const HrDashboard = () => {
+const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const { activeTenant, authorityMismatch } = useTenants();
   const auth = useAuth() || {};
   const { user: authUser, logout } = auth;
+  const currentCapacity = typeof authUser?.role === 'string'
+    ? authUser.role : null;
+  const isHrOperatingCapacity = currentCapacity === 'tenant_hr_manager'
+    || currentCapacity === 'tenant_hr_director';
+  const enterHrCapacity = async () => {
+    // Logout revokes this exact session through its existing auth provider.
+    // A fresh EOS-listed choice and MFA are mandatory: no header role switch.
+    await logout();
+    window.location.assign('/login?capacity=hr');
+  };
   const authenticatedTenantId = typeof auth.tenantId === 'string'
     && auth.tenantId.trim() === auth.tenantId
     && auth.tenantId.length > 0
@@ -2316,7 +2390,31 @@ const HrDashboard = () => {
   tenantScopeKeyRef.current = tenantScopeKey;
   const previousTenantScopeKeyRef = useRef(tenantScopeKey);
   const user = authUser || {};
-  const [activeTab, setActiveTab] = useState('employees');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [morePeopleModulesOpen, setMorePeopleModulesOpen] = useState(false);
+  const [peopleQueueFilter, setPeopleQueueFilter] = useState('all');
+  const [peopleVerificationHelpOpen, setPeopleVerificationHelpOpen] = useState(false);
+  const [workforceView, setWorkforceView] = useState('directory');
+  const [workforceOrganization, setWorkforceOrganization] = useState(null);
+  const [workforceOrganizationState, setWorkforceOrganizationState] = useState('IDLE');
+  const [workforceOrganizationRefresh, setWorkforceOrganizationRefresh] = useState(0);
+  const [workforceStructure, setWorkforceStructure] = useState(null);
+  const [workforceStructureStatus, setWorkforceStructureStatus] = useState('IDLE');
+  const [organizationFormOpen, setOrganizationFormOpen] = useState(false);
+  const [organizationReviewId, setOrganizationReviewId] = useState(null);
+  const [organizationDecisionReason, setOrganizationDecisionReason] = useState('');
+  const [organizationKind, setOrganizationKind] = useState('departments');
+  const [organizationForm, setOrganizationForm] = useState({record_id:'',name:'',parent_id:'',department_id:'',effective_from:'',capacity:'1'});
+  const [organizationCommandState, setOrganizationCommandState] = useState({status:'IDLE', message:''});
+  const workforceStructureSequenceRef = useRef(0);
+  const organizationCommandKeysRef = useRef({});
+
+  const workforceOrganizationSequenceRef = useRef(0);
+  const [selectedWorkforceEmployeeId, setSelectedWorkforceEmployeeId] = useState(null);
+  const [workforceDetail, setWorkforceDetail] = useState(null);
+  const [workforceDetailStatus, setWorkforceDetailStatus] = useState('IDLE');
+  const workforceDetailSequenceRef = useRef(0);
+  const [workforceSearchDraft, setWorkforceSearchDraft] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -2391,6 +2489,22 @@ const HrDashboard = () => {
     for (const datasetName of Object.keys(DATASET_DEFAULTS)) {
       datasetRequestSequencesRef.current[datasetName] = (datasetRequestSequencesRef.current[datasetName] || 0) + 1;
     }
+    workforceDetailSequenceRef.current += 1;
+    workforceOrganizationSequenceRef.current += 1;
+    workforceStructureSequenceRef.current += 1;
+    organizationCommandKeysRef.current = {};
+    setWorkforceStructure(null);
+    setWorkforceStructureStatus('IDLE');
+    setOrganizationFormOpen(false);
+    setOrganizationReviewId(null);
+    setOrganizationDecisionReason('');
+    setOrganizationCommandState({status:'IDLE',message:''});
+    setWorkforceOrganization(null);
+    setWorkforceOrganizationState('IDLE');
+    setWorkforceView('directory');
+    setSelectedWorkforceEmployeeId(null);
+    setWorkforceDetail(null);
+    setWorkforceDetailStatus('IDLE');
     setSnapshot(createEmptySnapshot());
     setSnapshotReadState({ status: HR_READ_STATE.AUTHENTICATION_REQUIRED, verifiedAt: null, lastVerifiedAt: null, lastVerifiedStatus: null, errorCode, revalidating: false });
     setDatasets(DATASET_DEFAULTS);
@@ -2414,6 +2528,24 @@ const HrDashboard = () => {
     if (previousTenantScopeKeyRef.current === tenantScopeKey) return;
     previousTenantScopeKeyRef.current = tenantScopeKey;
     setDataScopeKey(null);
+    workforceOrganizationSequenceRef.current += 1;
+    workforceStructureSequenceRef.current += 1;
+    organizationCommandKeysRef.current = {};
+    setWorkforceStructure(null);
+    setWorkforceStructureStatus('IDLE');
+    setOrganizationFormOpen(false);
+    setOrganizationReviewId(null);
+    setOrganizationDecisionReason('');
+    setOrganizationCommandState({status:'IDLE',message:''});
+    setWorkforceOrganization(null);
+    setWorkforceOrganizationState('IDLE');
+    setWorkforceView('directory');
+    setSearchTerm('');
+    setWorkforceSearchDraft('');
+    setSelectedWorkforceEmployeeId(null);
+    workforceDetailSequenceRef.current += 1;
+    setWorkforceDetail(null);
+    setWorkforceDetailStatus('IDLE');
     hiringCommandKeysRef.current.clear();
     hiringCommandInFlightRef.current = null;
     setShowHiringCommand(false);
@@ -2645,8 +2777,24 @@ const HrDashboard = () => {
     snapshotRequestSequenceRef.current = requestSequence;
     setSnapshotReadState((previous) => ({ ...previous, revalidating: true, errorCode: null }));
     try {
-      const response = await api.get('/hr/snapshot', { params: { tenantId }, headers: { 'X-Tenant-ID': tenantId } });
-      const verifiedSnapshot = normalizeSnapshot(response?.data);
+      const response = await api.get('/hr/workforce/overview', { headers: { 'X-Tenant-ID': tenantId } });
+      const payload = response?.data;
+      if (!payload || payload.schema !== 'WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1'
+        || payload.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+        || payload.tenant_id !== tenantId || !payload.metrics
+        || !Number.isSafeInteger(payload.metrics.active_employees) || payload.metrics.active_employees < 0
+        || !Number.isSafeInteger(payload.metrics.departments) || payload.metrics.departments < 0) {
+        throw Object.assign(new Error('HR_OVERVIEW_PROVENANCE_INVALID'),
+          { code: 'HR_OVERVIEW_PROVENANCE_INVALID' });
+      }
+      const verifiedSnapshot = normalizeSnapshot({
+        sourceStatus: 'SOURCE_VERIFIED',
+        summary: { employee: {
+          total: payload.metrics.active_employees,
+          departments: payload.metrics.departments,
+        } },
+        timestamp: payload.generated_at,
+      });
       if (tenantScopeKeyRef.current !== requestedScopeKey || snapshotRequestSequenceRef.current !== requestSequence) return { status: 'SUPERSEDED' };
       const verifiedAt = new Date().toISOString();
       setSnapshot(verifiedSnapshot);
@@ -2697,22 +2845,68 @@ const HrDashboard = () => {
           headers: { 'X-Tenant-ID': tenantId }
         });
         const sourcePage = response?.data;
-        if (!sourcePage || !Array.isArray(sourcePage.items)) return sourcePage;
+        if (sourcePage?.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+          || !Array.isArray(sourcePage.items)
+          || sourcePage.items.some(employee => !employee || typeof employee.employeeId !== 'string'
+            || employee.employeeId.length === 0)) {
+          throw Object.assign(new Error('HR_WORKFORCE_PROVENANCE_INVALID'), { code: 'HR_WORKFORCE_PROVENANCE_INVALID' });
+        }
         return {
-          ...sourcePage,
-          items: sourcePage.items.map((employee) => ({
-            ...employee,
+          items: sourcePage.items.map(employee => ({
             id: employee.employeeId,
-            name: employee.displayName || employee.preferredName,
-            email: employee.workEmail,
-            position: employee.jobTitle,
-            status: employee.employmentStatus
-          }))
+            employeeId: employee.employeeId,
+            name: employee.displayName || employee.preferredName || 'Name unavailable',
+            email: employee.workEmail || null,
+            department: employee.department || null,
+            position: employee.jobTitle || null,
+            managerId: employee.managerId || null,
+            status: employee.employmentStatus || null,
+          })),
+          total: sourcePage.total,
+          limit: sourcePage.limit,
+          offset: sourcePage.offset,
+          hasMore: sourcePage.hasMore,
+          source: sourcePage.source,
         };
       },
       candidates: () => hrService.getHiringCandidates(tenantId, params),
       offers: () => hrService.getHiringOffers(tenantId, params),
-      jobOpenings: () => hrService.getJobOpenings(tenantId, params),
+      jobOpenings: async () => {
+        // Existing canonical governed requisition source; do not call the
+        // retired BFF /hr/recruitment/openings prototype route.
+        const response = await api.get('/hr/headcount-requisitions/overview', {
+          params: { limit: params.limit, offset: params.offset },
+          headers: { 'X-Tenant-ID': tenantId },
+        });
+        const source = response?.data;
+        if (source?.schema !== 'WILSY-HEADCOUNT-OVERVIEW/V1'
+          || source?.source !== 'EOS_HEADCOUNT_REQUISITIONS'
+          || source?.tenant_id !== tenantId || !Array.isArray(source.items)
+          || !Number.isSafeInteger(source.total) || source.total < source.items.length
+          || source.limit !== params.limit || source.offset !== params.offset
+          || typeof source.hasMore !== 'boolean'
+          || source.items.some(item => typeof item?.requisition_id !== 'string'
+            || typeof item?.position_title !== 'string'
+            || !['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'].includes(item?.status))) {
+          throw Object.assign(new Error('HR_HEADCOUNT_PROVENANCE_INVALID'),
+            { code: 'HR_HEADCOUNT_PROVENANCE_INVALID' });
+        }
+        return {
+          items: source.items.map(item => ({
+            id: item.requisition_id,
+            title: item.position_title,
+            department: item.department_id,
+            location: item.work_location,
+            status: item.status,
+            headcount: item.headcount,
+            revision: item.revision,
+          })),
+          total: source.total,
+          offset: source.offset,
+          limit: source.limit,
+          hasMore: source.hasMore,
+        };
+      },
       payroll: () => hrService.getPayrollSummary(tenantId, params),
       benefits: () => hrService.getBenefits(tenantId, params),
       performance: () => hrService.getPerformanceReviews(tenantId, params),
@@ -2785,9 +2979,28 @@ const HrDashboard = () => {
     }
     const requestedScopeKey = tenantScopeKey;
     setIsRefreshing(true);
-    const reads = [fetchSnapshot(), fetchTabData(activeTab, pageStates[activeTab], searchTerm)];
-    if (activeTab !== 'employees') reads.push(fetchTabData('employees', pageStates.employees, ''));
-    if (!['jobOpenings', 'employees'].includes(activeTab)) reads.push(fetchTabData('jobOpenings', pageStates.jobOpenings, ''));
+    const sourceTab = Object.prototype.hasOwnProperty.call(pageStates, activeTab)
+      ? activeTab : null;
+    const reads = activeTab === 'overview'
+      ? [
+          fetchSnapshot(),
+          fetchTabData('employees', pageStates.employees, ''),
+          fetchTabData('candidates', pageStates.candidates, ''),
+          fetchTabData('offers', pageStates.offers, ''),
+          fetchTabData('jobOpenings', pageStates.jobOpenings, ''),
+        ]
+      : sourceTab ? [fetchTabData(sourceTab, pageStates[sourceTab], searchTerm)] : [];
+    // An authenticated exact-scope shell is not an authorized source result.
+    // Render immediately with PENDING per-source states while independent EOS
+    // reads continue. One slow source must not lock the entire People surface.
+    // No record or count is admitted until its own provenance validation passes.
+    if (tenantScopeKeyRef.current === requestedScopeKey
+      && invalidatedSessionScopeKeyRef.current !== requestedScopeKey) {
+      setDataScopeKey(requestedScopeKey);
+      setLoading(false);
+    }
+    // Each non-Overview lane reads only its own independently authorized
+    // source; workforce typing must not refetch unrelated HR summaries.
     const outcomes = await Promise.all(reads);
     if (tenantScopeKeyRef.current !== requestedScopeKey) return;
     if (outcomes.some((outcome) => outcome.status === HR_READ_STATE.AUTHENTICATION_REQUIRED)) {
@@ -2805,6 +3018,197 @@ const HrDashboard = () => {
     loadDashboard();
   }, [loadDashboard]);
 
+  // Organization read is a bounded observational projection, not an approved
+  // department registry. Fresh EOS authorization is required every time the
+  // view is entered or refreshed; superseded tenant results are discarded.
+  useEffect(() => {
+    if (activeTab !== 'employees' || workforceView !== 'organization' || !tenantScopeKey) return undefined;
+    const scope = tenantScopeKey;
+    const sequence = ++workforceOrganizationSequenceRef.current;
+    setWorkforceOrganization(null);
+    setWorkforceOrganizationState('PENDING');
+    void api.get('/hr/workforce/organization', {headers: {'X-Tenant-ID': tenantId}})
+      .then(response => {
+        if (sequence !== workforceOrganizationSequenceRef.current
+          || tenantScopeKeyRef.current !== scope
+          || invalidatedSessionScopeKeyRef.current === scope) return;
+        const data = response?.data;
+        const rows = data?.departments;
+        const valid = data?.schema === 'WILSY-HR-WORKFORCE-ORGANIZATION/V1'
+          && data?.source === 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+          && data?.status === 'OBSERVED_EMPLOYEE_DISTRIBUTION'
+          && data?.tenant_id === tenantId
+          && Number.isSafeInteger(data?.active_employees) && data.active_employees >= 0
+          && Number.isSafeInteger(data?.unassigned_employees) && data.unassigned_employees >= 0
+          && Number.isSafeInteger(data?.department_count)
+          && Array.isArray(rows) && rows.length === data.department_count && rows.length <= 200
+          && rows.every(row => typeof row?.name === 'string' && row.name.length > 0
+            && Number.isSafeInteger(row?.active_employees) && row.active_employees >= 1)
+          && rows.reduce((count, row) => count + row.active_employees, data.unassigned_employees)
+             === data.active_employees;
+        if (!valid) {setWorkforceOrganizationState('UNAVAILABLE'); return;}
+        setWorkforceOrganization(data);
+        setWorkforceOrganizationState('VERIFIED');
+      })
+      .catch(error => {
+        if (sequence !== workforceOrganizationSequenceRef.current
+          || tenantScopeKeyRef.current !== scope) return;
+        if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+          invalidateHrSessionScope(scope, hrReadErrorCode(error));
+          return;
+        }
+        setWorkforceOrganizationState(error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+      });
+    return () => {workforceOrganizationSequenceRef.current += 1;};
+  }, [activeTab, workforceView, workforceOrganizationRefresh, tenantScopeKey, tenantId]);
+
+  // Independent emerging-canonical organization registry. The verified
+  // employee distribution above never substitutes for approved departments.
+  useEffect(() => {
+    if (activeTab !== 'employees' || workforceView !== 'organization' || !tenantScopeKey) return undefined;
+    const scope = tenantScopeKey;
+    const seq = ++workforceStructureSequenceRef.current;
+    setWorkforceStructure(null);
+    setWorkforceStructureStatus('PENDING');
+    void api.get('/hr/workforce/structure', {headers: {'X-Tenant-ID': tenantId}})
+      .then(response => {
+        if (seq !== workforceStructureSequenceRef.current
+          || tenantScopeKeyRef.current !== scope
+          || invalidatedSessionScopeKeyRef.current === scope) return;
+        const data = response?.data;
+        const items = data?.items;
+        const valid = data?.schema === 'WILSY-HR-ORGANIZATION-REGISTRY/V1'
+          && data?.source === 'EOS_HR_ORGANIZATION_REGISTRY'
+          && data?.tenant_id === tenantId
+          && Number.isSafeInteger(data?.count)
+          && Array.isArray(items) && items.length === data.count && items.length <= 200
+          && items.every(item => ['DEPARTMENT','POSITION'].includes(item?.kind)
+            && ['DRAFT','SUBMITTED','APPROVED','REJECTED'].includes(item?.status)
+            && typeof item?.record_id === 'string' && typeof item?.name === 'string'
+            && Number.isSafeInteger(item?.revision) && item.revision >= 1);
+        if (!valid) { setWorkforceStructureStatus('UNAVAILABLE'); return; }
+        setWorkforceStructure(data);
+        setWorkforceStructureStatus('VERIFIED');
+      })
+      .catch(error => {
+        if (seq !== workforceStructureSequenceRef.current || tenantScopeKeyRef.current !== scope) return;
+        if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+          invalidateHrSessionScope(scope, hrReadErrorCode(error));
+          return;
+        }
+        setWorkforceStructureStatus(error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
+      });
+    return () => { workforceStructureSequenceRef.current += 1; };
+  }, [activeTab, workforceView, workforceOrganizationRefresh, tenantId, tenantScopeKey]);
+
+  /**
+   * @function runOrganizationCommand
+   * @description Execute one exact-tenant EOS organization command, then require
+   * an independent matching registry readback before displaying verified change.
+   * Pending-key retention makes safe retries use the same idempotency evidence.
+   * Neither UI state nor this function grants department approval or IAM.
+   */
+  const runOrganizationCommand = async (action, item = null) => {
+    if (organizationCommandState.status === 'PENDING' || !tenantScopeKey
+      || workforceStructureStatus !== 'VERIFIED') return;
+    const scope = tenantScopeKey;
+    const kind = item ? (item.kind === 'POSITION' ? 'positions' : 'departments') : organizationKind;
+    const recordId = item?.record_id || organizationForm.record_id.trim();
+    const payload = action === 'create' ? {
+      record_id: recordId,
+      name: organizationForm.name.trim(),
+      effective_from: organizationForm.effective_from,
+      ...(organizationForm.parent_id.trim() ? {parent_id:organizationForm.parent_id.trim()}:{}),
+      ...(kind === 'positions' ? {
+        department_id:organizationForm.department_id.trim(),
+        capacity:Number(organizationForm.capacity),
+      }:{}),
+    } : action === 'submit' ? {expected_revision:item.revision} : {
+      expected_revision:item.revision,
+      decision:action === 'approve' ? 'APPROVE' : 'REJECT',
+      reason: organizationDecisionReason.trim(),
+    };
+    if (action === 'create' && (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$/.test(recordId)
+      || payload.name.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(payload.effective_from)
+      || (kind === 'positions' && (!payload.department_id || !Number.isInteger(payload.capacity)
+        || payload.capacity < 1 || payload.capacity > 500)))) {
+      setOrganizationCommandState({status:'INVALID',message:'Enter a valid identifier, name, effective date and approved department for a position.'});
+      return;
+    }
+    if (['approve','reject'].includes(action) && (item?.current_principal_is_maker
+      || organizationDecisionReason.trim().length < 5 || organizationDecisionReason.trim().length > 2000)) {
+      setOrganizationCommandState({status:'INVALID',message:'Independent review requires a different maker and your own explanation (5–2000 characters).'});
+      return;
+    }
+    const path = '/hr/workforce/structure/' + kind
+      + (action === 'create' ? '' : '/' + encodeURIComponent(recordId)
+        + (action === 'submit' ? '/submit' : '/decision'));
+    const signature = JSON.stringify({scope,path,payload});
+    let key = organizationCommandKeysRef.current[signature];
+    if (!key) {
+      key = crypto.randomUUID();
+      organizationCommandKeysRef.current[signature] = key;
+    }
+    setOrganizationCommandState({status:'PENDING',message:'Saving and verifying organizational evidence…'});
+    try {
+      const result = await api.post(path,payload,{
+        headers:{'X-Tenant-ID':tenantId,'Idempotency-Key':key},
+      });
+      const saved = result?.data?.record;
+      if (result?.data?.schema !== 'WILSY-HR-ORGANIZATION-COMMAND/V1'
+        || result?.data?.tenant_id !== tenantId || saved?.record_id !== recordId) {
+        setOrganizationCommandState({status:'UNVERIFIED',message:'Command response could not be verified.'});
+        return;
+      }
+      const snapshot = await api.get('/hr/workforce/structure',{headers:{'X-Tenant-ID':tenantId}});
+      if (tenantScopeKeyRef.current !== scope || invalidatedSessionScopeKeyRef.current === scope) return;
+      const read = snapshot?.data;
+      const check = read?.items?.find(entry => entry.kind === saved.kind && entry.record_id === recordId);
+      if (read?.schema !== 'WILSY-HR-ORGANIZATION-REGISTRY/V1'
+        || read?.tenant_id !== tenantId || read?.source !== 'EOS_HR_ORGANIZATION_REGISTRY'
+        || check?.revision !== saved.revision || check?.status !== saved.status) {
+        setOrganizationCommandState({status:'UNVERIFIED',message:'Command acknowledged; fresh registry readback has not confirmed the change. Retry safely.'});
+        return;
+      }
+      delete organizationCommandKeysRef.current[signature];
+      setWorkforceStructure(read);
+      setWorkforceStructureStatus('VERIFIED');
+      setOrganizationFormOpen(false);
+      setOrganizationReviewId(null);
+      setOrganizationDecisionReason('');
+      setOrganizationCommandState({status:'VERIFIED',message:saved.kind + ' ' + recordId + ' · ' + saved.status + ' · revision ' + saved.revision + ' verified after readback.'});
+    } catch (error) {
+      if (tenantScopeKeyRef.current !== scope) return;
+      if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(scope, hrReadErrorCode(error));return;
+      }
+      setOrganizationCommandState({
+        status:error?.response?.status === 403 ? 'DENIED' : 'UNVERIFIED',
+        message:error?.response?.status === 403
+          ? 'This capacity does not have the independent organization command permission.'
+          : 'Organization command or readback failed. No success is claimed; retry with the retained idempotency key.',
+      });
+    }
+  };
+
+  // The text box remains responsive while EOS only receives a settled query.
+  // Search is always executed server-side against the current authorized tenant.
+  useEffect(() => {
+    if (activeTab !== 'employees' || workforceSearchDraft === searchTerm) return undefined;
+    const handle = window.setTimeout(() => {
+      setSelectedWorkforceEmployeeId(null);
+      workforceDetailSequenceRef.current += 1;
+      setWorkforceDetail(null);
+      setWorkforceDetailStatus('IDLE');
+      setPageStates(previous => ({
+        ...previous,
+        employees: { ...previous.employees, offset: 0 },
+      }));
+      setSearchTerm(workforceSearchDraft);
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [activeTab, workforceSearchDraft, searchTerm]);
+
   /**
    * @function changeTab
    * @description Opens a specific HR operating lane.
@@ -2813,9 +3217,103 @@ const HrDashboard = () => {
    * @collaboration HR navigation must change the business process, not repaint the same list.
    */
   const changeTab = (tabId) => {
+    workforceDetailSequenceRef.current += 1;
+    setSelectedWorkforceEmployeeId(null);
+    setWorkforceDetail(null);
+    setWorkforceDetailStatus('IDLE');
+    if (tabId !== 'employees') {
+      setSearchTerm('');
+      setWorkforceSearchDraft('');
+    }
     setActiveTab(tabId);
-    pushFeedback({ tone: 'ready', title: `${getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
+    setMorePeopleModulesOpen(false);
+    pushFeedback({ tone: 'ready', title: `${tabId === 'overview' ? 'People overview' : getTabConfig(tabId).label} opened`, detail: 'Workspace process changed.' });
   };
+
+  /**
+   * @function inspectWorkforceEmployee
+   * @description Fetch one canonical directory-only employee using the same
+   * exact tenant, current IAM and session authority as the workforce page.
+   * No private employee file, admission or compensation read is performed.
+   */
+  const inspectWorkforceEmployee = async (employeeId) => {
+    const requestedScope = tenantScopeKey;
+    const seq = ++workforceDetailSequenceRef.current;
+    setWorkforceDetail(null);
+    if (employeeId === selectedWorkforceEmployeeId) {
+      setSelectedWorkforceEmployeeId(null);
+      setWorkforceDetailStatus('IDLE');
+      return;
+    }
+    if (!requestedScope || !isVerifiedReadState(datasetReadStates.employees)
+      || !datasets.employees.items.some(person => person.employeeId === employeeId)) return;
+    setSelectedWorkforceEmployeeId(employeeId);
+    setWorkforceDetailStatus('PENDING');
+    try {
+      const response = await api.get('/hr/workforce/' + encodeURIComponent(employeeId), {
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      if (seq !== workforceDetailSequenceRef.current || tenantScopeKeyRef.current !== requestedScope
+        || invalidatedSessionScopeKeyRef.current === requestedScope) return;
+      const result = response?.data;
+      const person = result?.employee;
+      if (result?.schema !== 'WILSY-HR-WORKFORCE-DIRECTORY-DETAIL/V1'
+        || result?.source !== 'AUTHORISED_HR_EMPLOYEE_REGISTRY'
+        || result?.tenant_id !== tenantId || person?.employeeId !== employeeId) {
+        setWorkforceDetailStatus('UNAVAILABLE');
+        return;
+      }
+      setWorkforceDetail({
+        employeeId,
+        name: person.displayName || person.preferredName || null,
+        position: person.jobTitle || null,
+        department: person.department || null,
+        managerId: person.managerId || null,
+        email: person.workEmail || null,
+        status: person.employmentStatus || null,
+        location: person.workLocation || null,
+      });
+      setWorkforceDetailStatus('VERIFIED');
+    } catch (error) {
+      if (seq !== workforceDetailSequenceRef.current || tenantScopeKeyRef.current !== requestedScope) return;
+      if (classifyHrReadFailure(error) === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
+        invalidateHrSessionScope(requestedScope, hrReadErrorCode(error));
+        return;
+      }
+      setWorkforceDetailStatus(error?.response?.status === 403 ? 'DENIED'
+        : error?.response?.status === 404 ? 'NOT_FOUND' : 'UNAVAILABLE');
+    }
+  };
+
+  // Global shell owns the search button, People owns its current source reads.
+  // This event is a navigation/query intent, never an authorization grant.
+  useEffect(() => {
+    const openPeopleSearch = (event) => {
+      if (!tenantScopeKey || typeof event?.detail?.query !== 'string') return;
+      const query = event.detail.query.trim().slice(0, 80);
+      if (query.length < 2) return;
+      const sourceShortcuts = {
+        hiring: 'candidates', recruitment: 'candidates',
+        offers: 'offers', workforce: 'employees', employees: 'employees',
+        headcount: 'jobOpenings', requisitions: 'jobOpenings',
+        roles: 'jobOpenings', overview: 'overview',
+      };
+      const tab = sourceShortcuts[query.toLowerCase()];
+      if (tab) {
+        setSearchTerm('');
+        setWorkforceSearchDraft('');
+        setActiveTab(tab);
+        return;
+      }
+      // A free-text query is executed only against /api/hr/workforce with
+      // the exact selected tenant and its current EOS read authorization.
+      setWorkforceSearchDraft(query);
+      setSearchTerm(query);
+      setActiveTab('employees');
+    };
+    window.addEventListener('wilsy:people-context-search', openPeopleSearch);
+    return () => window.removeEventListener('wilsy:people-context-search', openPeopleSearch);
+  }, [tenantScopeKey]);
 
   /**
    * @function openMutationModal
@@ -3654,7 +4152,7 @@ const HrDashboard = () => {
       employees: [item.name, item.email, item.department || 'Unassigned', item.position || 'Staff', item.status || 'ACTIVE'],
       candidates: [item.candidate_id, item.requisition_id, item.stage, item.source, item.revision],
       offers: [item.offer_id, item.candidate_id, item.requisition_id, item.status, item.revision],
-      jobOpenings: [item.title || item.name, item.department || 'Unassigned', item.location || 'Remote', item.priority || 'Normal', item.status || 'OPEN'],
+      jobOpenings: [item.title || 'Position unavailable', item.department || 'Department unavailable', item.location || 'Location unavailable', item.headcount ?? 'Not verified', item.status ?? 'Not verified'],
       payroll: [item.employeeName || item.name, item.period || 'Current', `${formatMoney(item.grossPay)} gross`, `${formatMoney(item.employeeTax || item.statutoryDeductions || 0)} tax`, item.status || item.payrollGateStatus || 'READY'],
       benefits: [item.name, item.coverage || 'Coverage pending', formatMoney(item.cost), item.status || 'ACTIVE', item.type || 'Benefit'],
       performance: [item.employeeName || item.name, item.reviewerName || 'Reviewer pending', `${item.rating || '—'} / ${item.productivityScore || 0}`, item.period || 'Current', item.status || 'PENDING'],
@@ -3664,7 +4162,13 @@ const HrDashboard = () => {
       artifacts: [item.artifactTitle || item.name, item.artifactType || 'HR Artifact', item.artifactFormat || 'HTML', item.proofHash ? item.proofHash.slice(0, 14) : 'Proof pending', item.status || 'GENERATED']
     };
     const sourceIdentity = item.id || item.employeeId || item.candidate_id || item.offer_id || item.requisition_id || 'record';
-    return (rows[activeTab] || rows.employees).map((value, index) => <td key={`${sourceIdentity}-${index}`}>{value ?? 'Unavailable'}</td>);
+    const statusIndex = { employees: 4, candidates: 2, offers: 3, jobOpenings: 4 }[activeTab];
+    return (rows[activeTab] || rows.employees).map((value, index) => <td
+      key={`${sourceIdentity}-${index}`} className="px-4 py-3 text-sm text-slate-800">
+      {index === statusIndex && typeof value === 'string'
+        ? <span className={workStatusClasses(value)}>{value.replaceAll('_', ' ')}</span>
+        : value ?? 'Unavailable'}
+    </td>);
   };
 
   /**
@@ -3949,6 +4453,7 @@ const HrDashboard = () => {
   const activeDataset = datasets[activeTab] || EMPTY_DATASET;
   const hiringSearchDisabled = ['candidates', 'offers'].includes(activeTab);
   const activeTableColumns = {
+    jobOpenings: ['Position', 'Department', 'Work location', 'Requested seats', 'EOS Status'],
     candidates: ['Candidate ID', 'Approved Requisition', 'EOS Stage', 'Source', 'Revision'],
     offers: ['Offer ID', 'Candidate ID', 'Requisition ID', 'Offer Status', 'Revision']
   }[activeTab] || ['Primary', 'Source', 'Domain', 'Metric', 'Status'];
@@ -3957,10 +4462,10 @@ const HrDashboard = () => {
   const currentPage = Math.floor((activeDataset.offset || 0) / (activeDataset.limit || DEFAULT_PAGE.limit)) + 1;
 
   if (!tenantScopeKey || snapshotReadState.status === HR_READ_STATE.AUTHENTICATION_REQUIRED || activeReadState.status === HR_READ_STATE.AUTHENTICATION_REQUIRED) {
-    return <main role="status" className="min-h-[40vh] rounded-2xl border border-amber-300/20 bg-slate-950 p-8 text-amber-100"><h1 className="text-xl font-semibold">Authentication required</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">The current principal and tenant session must be revalidated by Python EOS before HR data can be displayed.</p></main>;
+    return <main role="status" className="min-h-[40vh] rounded-xl border border-amber-200 bg-amber-50 p-6 text-slate-950"><h1 className="text-xl font-semibold">Authentication required</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">The current principal and tenant session must be revalidated by Python EOS before HR data can be displayed.</p></main>;
   }
   if (dataScopeKey !== tenantScopeKey && !loading) {
-    return <main role="status" className="min-h-[40vh] rounded-2xl border border-white/10 bg-slate-950 p-8 text-slate-200"><h1 className="text-xl font-semibold">Verifying current HR workspace</h1><p className="mt-3 text-sm text-slate-400">The previous principal or tenant view is not carried into this session.</p></main>;
+    return <main role="status" className="min-h-[40vh] rounded-xl border border-slate-200 bg-white p-6 text-slate-900"><h1 className="text-xl font-semibold">Verifying current HR workspace</h1><p className="mt-3 text-sm text-slate-600">The previous principal or tenant view is not carried into this session.</p></main>;
   }
   if (loading) {
     return (
@@ -3971,244 +4476,846 @@ const HrDashboard = () => {
     );
   }
 
-  const hrChromeLeftRail = (
-    <nav aria-label="HR workspace modules">
-      {HR_TABS.map((tab) => {
-        const TabIcon = tab.icon;
-        const active = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            data-active={active ? 'true' : 'false'}
-            onClick={() => changeTab(tab.id)}
-            title={tab.label}
-          >
-            {TabIcon ? <TabIcon size={15} aria-hidden /> : null}
-            <span>{tab.label}</span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-
-  const hrTenantIdentity = {
-    name: activeTenant?.name || activeTenant?.displayName || activeTenant?.companyName || 'Authenticated workspace',
-    displayName: activeTenant?.name || activeTenant?.displayName || 'Authenticated workspace',
-    logo: activeTenant?.logo || activeTenant?.logoUrl || wilsyLogo,
-    logoUrl: activeTenant?.logo || activeTenant?.logoUrl || wilsyLogo,
-    status: 'TENANT COMMAND',
-    tenantId
+  const isSourceConnected = ['employees', 'candidates', 'offers', 'jobOpenings'].includes(activeTab);
+  const actionLabel = activeTab === 'candidates' ? 'Create candidate'
+    : activeTab === 'offers' ? 'Prepare offer' : null;
+  const startSourceCommand = () => {
+    if (activeTab === 'candidates') beginHiringCommand('candidateCreate');
+    if (activeTab === 'offers') beginHiringCommand('offerCreate');
   };
-
-  const hrStory = 'People operating system — hire, govern, pay, and prove every employee action.';
+  const shownDataset = isSourceConnected ? activeDataset : EMPTY_DATASET;
+  const shownState = isSourceConnected ? activeReadState : null;
+  const workforcePageReady = isVerifiedReadState(shownState) && !shownState?.revalidating;
+  const overviewHasAuthorizedSource = isVerifiedReadState(snapshotReadState)
+    || ['candidates', 'offers', 'jobOpenings']
+      .some(key => isVerifiedReadState(datasetReadStates[key]));
+  // Source admission is per operation: a denied directory does not prove that
+  // hiring or headcount was denied, and an outage must not be called a 403.
+  const overviewSources = [
+    { id: 'employees', label: 'Workforce', state: snapshotReadState },
+    { id: 'candidates', label: 'Hiring', state: datasetReadStates.candidates },
+    { id: 'offers', label: 'Offers', state: datasetReadStates.offers },
+    { id: 'jobOpenings', label: 'Headcount', state: datasetReadStates.jobOpenings },
+  ];
+  const overviewAccessDenied = overviewSources.some(source => source.state?.status === HR_READ_STATE.ACCESS_DENIED);
+  const overviewSourcePending = overviewSources.some(source => source.state?.status === HR_READ_STATE.PENDING || source.state?.revalidating);
+  const overviewSourceUnavailable = overviewSources.some(source => source.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE);
+  const overviewAuthRequired = overviewSources.some(source => source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED);
+  const peopleModules = [
+    { id: 'overview', title: 'Overview' },
+    { id: 'employees', title: 'Workforce' },
+    { id: 'candidates', title: 'Hiring' },
+    { id: 'onboarding', title: 'Onboarding' },
+    { id: 'offers', title: 'Offers' },
+    { id: 'jobOpenings', title: 'Headcount & roles' },
+    { id: 'timeoff', title: 'Leave & attendance' },
+    { id: 'performance', title: 'Performance' },
+    { id: 'payroll', title: 'Payroll inputs' },
+    { id: 'benefits', title: 'Growth' },
+    { id: 'relations', title: 'Disciplinary' },
+    { id: 'exit', title: 'Exit' },
+    { id: 'artifacts', title: 'People Files' },
+    { id: 'activity', title: 'Activity & audit' },
+  ];
+  // Progressive navigation is a presentation choice only. It is never used as
+  // IAM evidence. Hide no module unless all four independent sources verify
+  // the employer's genuine first-use state.
+  const firstUseVerified = isVerifiedReadState(snapshotReadState)
+    && snapshot.summary?.employee?.total === 0
+    && ['candidates', 'offers', 'jobOpenings'].every(key =>
+      isVerifiedReadState(datasetReadStates[key]) && datasets[key].total === 0);
+  const firstUsePrimaryTabs = new Set(['overview','jobOpenings','candidates','employees']);
+  const primaryPeopleModules = firstUseVerified
+    ? peopleModules.filter(module => firstUsePrimaryTabs.has(module.id))
+    : peopleModules;
+  const secondaryPeopleModules = firstUseVerified
+    ? peopleModules.filter(module => !firstUsePrimaryTabs.has(module.id))
+    : [];
+  const hiringCandidatesVerified = isVerifiedReadState(datasetReadStates.candidates);
+  const hiringRequisitionsVerified = isVerifiedReadState(datasetReadStates.jobOpenings);
+  const hiringOffersVerified = isVerifiedReadState(datasetReadStates.offers);
+  const hiringPipelineVerified = hiringCandidatesVerified && hiringRequisitionsVerified && hiringOffersVerified;
+  const hiringLoadedCandidates = hiringCandidatesVerified ? datasets.candidates.items : [];
+  const hiringHasApprovedRequisition = hiringRequisitionsVerified
+    && datasets.jobOpenings.items.some(item => item.status === 'APPROVED');
 
   return (
-    <WilsyOSDashboardChrome
-      dashboardKey="hr"
-      commandLabel="Wilsy OS HR"
-      title="People Operating System"
-      role="HR_OPERATOR"
-      posture="HR_LEDGER"
-      storyMessages={[hrStory]}
-      tenant={hrTenantIdentity}
-      operator={null}
-      leftRail={hrChromeLeftRail}
-      search={{
-        value: hiringSearchDisabled ? '' : searchTerm,
-        onChange: hiringSearchDisabled ? undefined : (event) => setSearchTerm(event.target.value),
-        placeholder: hiringSearchDisabled ? 'EOS hiring search is not available on this page' : 'Search HR ledger…'
-      }}
-      actions={{
-        primaryLabel: activeTab === 'employees' ? 'Employee admission unavailable' : activeTab === 'candidates' ? 'Create candidate' : activeTab === 'offers' ? 'Prepare offer' : (workspace?.primary || 'HR command unavailable'),
-        onPrimaryAction: () => activeTab === 'candidates' ? beginHiringCommand('candidateCreate') : activeTab === 'offers' ? beginHiringCommand('offerCreate') : openMutationModal(),
-        primaryDisabled: Boolean(isRefreshing || activeTab === 'employees'),
-        onLiveSync: () => loadDashboard(),
-        isRefreshing,
-        liveSyncLabel: 'Resync'
-      }}
-      account={{
-        isOpen: showProfilePanel,
-        onOpen: () => setShowProfilePanel(true),
-        onClose: () => setShowProfilePanel(false),
-        user: user || {},
-        label: 'COMMAND',
-        CommandCenterComponent: WilsyAccountCommandCenter
-      }}
-      metrics={[]}
-    >
-
-      <div
-        className={styles.hrShell}
-        data-rail={isRailOpen ? 'open' : 'closed'}
-        data-profile-mode={profileRuntime.mode?.resolvedMode || 'night'}
-        data-profile-accent={profileRuntime.theme?.id || 'sovereign-gold'}
-        style={{
-          '--hr-runtime-accent': profileRuntime.theme?.color || '#d4af37',
-          '--wilsy-os-accent': profileRuntime.theme?.color || '#d4af37',
-          '--wilsy-os-accent-glow': profileRuntime.theme?.glow || '#ffe875',
-          '--wilsy-os-accent-contrast': profileRuntime.theme?.contrast || '#070806',
-          '--wilsy-os-bg': profileRuntime.mode?.background || '#030403',
-          '--wilsy-os-panel': profileRuntime.mode?.panel || 'rgba(14, 16, 12, 0.94)',
-          '--wilsy-os-surface': profileRuntime.mode?.surface || 'rgba(0, 0, 0, 0.72)',
-          '--wilsy-os-ink': profileRuntime.mode?.ink || '#f5f1df',
-          '--wilsy-os-muted': profileRuntime.mode?.muted || 'rgba(245, 241, 223, 0.58)',
-          '--wilsy-os-grid-opacity': profileRuntime.mode?.gridOpacity || '0.08'
-        }}
-      >
-        <main className={styles.hrFrame}>
-          <section className={styles.hrWorkspace}>
-            <section className={styles.hrFeedback} data-tone={feedback.tone}>
-              <strong>{feedback.title}</strong>
-              <span>{feedback.detail}</span>
-              <em>{snapshotReadState.status === HR_READ_STATE.VERIFIED_DATA ? (snapshot.sourceStatus || 'SOURCE_VERIFIED') : snapshotReadState.status}</em>
-              {snapshotReadState.status === HR_READ_STATE.SOURCE_UNAVAILABLE && <div role="status" className="mt-2 flex flex-wrap items-center gap-3 text-xs text-amber-200"><span>{snapshotReadState.lastVerifiedAt ? `Summary source unavailable. Values from ${new Date(snapshotReadState.lastVerifiedAt).toLocaleString()} are not current.` : `Summary source unavailable (${snapshotReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). Counts are withheld.`}</span><button type="button" onClick={fetchSnapshot} disabled={snapshotReadState.revalidating}>Retry summary</button></div>}
-              {snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED && <p role="alert" className="mt-2 text-xs text-red-200">Summary access denied by Python EOS. Summary values are withheld.</p>}
-            </section>
-
-            <section className={styles.hrHero}>
-              <div>
-                <span>{workspace.kicker}</span>
-                <h2>{workspace.title}</h2>
-                <p>{workspace.description}</p>
-              </div>
-              <div className={styles.hrHeroActions}>
-                <label className={styles.hrSearch}>
-                  <Search size={16} />
-                  <input value={hiringSearchDisabled ? '' : searchTerm} onChange={hiringSearchDisabled ? undefined : event => setSearchTerm(event.target.value)} readOnly={hiringSearchDisabled} placeholder={hiringSearchDisabled ? 'EOS hiring search is not available on this page' : 'Search HR ledger...'} />
-                </label>
-                <button type="button" onClick={() => openArtifactGenerator()}>
-                  <FileText size={15} />
-                  Contract / Letter
+    <React.Fragment>
+      <div className={styles.peopleSurface} data-testid="people-os-workspace" data-source="PYTHON_EOS">
+        <header className={styles.peopleAppHeader}>
+          <div className={styles.peopleToolbar}>
+            <div className={styles.peopleHeaderIdentity}>
+              {typeof onReturnToHeadquarters === 'function' && (
+                <button type="button" className={styles.peopleReturnButton}
+                  aria-label="Return to Headquarters" title="Return to Headquarters"
+                  onClick={onReturnToHeadquarters}>
+                  <ChevronLeft size={18} aria-hidden="true" />
                 </button>
+              )}
+              <div className={styles.peopleTitleGroup}>
+                <h1 className={styles.peopleHeading}>People</h1>
+                <span className={styles.peopleLifecycleLabel}>Hire to Exit</span>
               </div>
-            </section>
-
-            <section className={styles.hrArtifactStrip} aria-label="HR artifact shortcuts">
-              {artifactCatalog.slice(0, 4).map(artifact => (
-                <button
-                  type="button"
-                  key={artifact.id}
-                  onClick={() => openArtifactGenerator(null, artifact.id)}
-                >
-                  <FileText size={15} />
-                  <span>{artifact.label}</span>
-                </button>
-              ))}
-            </section>
-
-            <section className={styles.hrKpis}>
-              {workspace.kpis.map(([label, value, detail]) => (
-                <article key={`${activeTab}-${label}`}>
-                  <span>{label}</span>
-                  <strong>{typeof value === 'number' ? formatCount(value) : value}</strong>
-                  <small>{detail}</small>
-                </article>
-              ))}
-            </section>
-
-            <section className={styles.hrGrid}>
-              <div className={styles.hrPanel}>
-                <header>
-                  <div>
-                    <span>Live Ledger</span>
-                    <h3>{activeConfig.label}</h3>
+            </div>
+            <div className={styles.peopleToolbarActions}>
+              <button type="button" className={styles.peopleRefreshButton}
+                aria-label={isRefreshing ? 'Verifying People data' : 'Refresh People data'} title={isRefreshing ? 'Verifying People data' : 'Refresh People data'}
+                onClick={() => loadDashboard()} disabled={isRefreshing}>
+                <RefreshCw size={17} className={isRefreshing ? 'animate-spin' : undefined} aria-hidden="true" />
+              </button>
+              {actionLabel && <button type="button" disabled={isRefreshing || !tenantScopeKey || !isVerifiedReadState(activeReadState)}
+                className="rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"
+                onClick={startSourceCommand}><Plus size={15} className="mr-1 inline-block" aria-hidden />{actionLabel}</button>}
+            </div>
+          </div>
+          <nav className={styles.peopleNav} aria-label="People operating functions">
+            {primaryPeopleModules.map(module => {
+              const selected = activeTab === module.id;
+              return <button type="button" key={module.id} onClick={() => changeTab(module.id)}
+                aria-current={selected ? 'page' : undefined}
+                className={selected ? styles.peopleNavActive : styles.peopleNavButton}>
+                {module.title}
+              </button>;
+            })}
+            {secondaryPeopleModules.length > 0 && <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+              <button type="button" aria-expanded={morePeopleModulesOpen}
+                aria-controls="people-additional-functions"
+                className={secondaryPeopleModules.some(module => module.id === activeTab)
+                  ? styles.peopleNavActive : styles.peopleNavButton}
+                onClick={() => setMorePeopleModulesOpen(open => !open)}>
+                More functions {morePeopleModulesOpen ? '−' : '+'}
+              </button>
+              {morePeopleModulesOpen && <div id="people-additional-functions"
+                style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                {secondaryPeopleModules.map(module => <button type="button" key={module.id}
+                  onClick={() => changeTab(module.id)}
+                  aria-current={activeTab === module.id ? 'page' : undefined}
+                  className={activeTab === module.id ? styles.peopleNavActive : styles.peopleNavButton}>
+                  {module.title}
+                </button>)}
+              </div>}
+            </div>}
+          </nav>
+        </header>
+        <div className={styles.peopleMain + " min-w-0 flex-1"} role="region" aria-label="People application content">
+          {activeTab === 'overview' && (
+            <div className={styles.overview} data-testid="people-lifecycle-overview">
+              {overviewHasAuthorizedSource && (datasetReadStates.employees?.status === HR_READ_STATE.ACCESS_DENIED
+                || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED) && (
+                  <div className={styles.overviewAuthority} role="alert">
+                    <strong>People source access denied for the current operating capacity</strong>
+                    <p>Current HR records are withheld by Python EOS. The existing Founder designation does not create workforce-directory or employee-file permissions. Select an authorized HR capacity through the global session before retrying.</p>
+                    <button type="button" onClick={() => changeTab('employees')}>Inspect workforce source</button>
                   </div>
-                  <div className={styles.hrPager}>
-                    <button type="button" onClick={() => updatePageOffset(false)} disabled={activeDataset.offset === 0 || isRefreshing}>Prev</button>
-                    <span>{currentPage}/{totalPages}</span>
-                    <button type="button" onClick={() => updatePageOffset(true)} disabled={!activeDataset.hasMore || isRefreshing}>Next</button>
+                )}
+              <section className={styles.overviewIntro} aria-labelledby="people-lifecycle-heading">
+                <div className={styles.overviewLead}>
+                  <div className={styles.overviewLeadLine}>
+                    <h2 id="people-lifecycle-heading">People <em>at work.</em></h2>
+                    <p className={styles.tenantContext}>Employer · {tenantId}</p>
                   </div>
-                </header>
-                {(activeReadState.revalidating || [HR_READ_STATE.PENDING, HR_READ_STATE.SOURCE_UNAVAILABLE, HR_READ_STATE.ACCESS_DENIED].includes(activeReadState.status)) && <div role={activeReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'} className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm"><span>{activeReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied by Python EOS. No rows are displayed for this source.' : activeReadState.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? activeReadState.lastVerifiedAt ? `Source unavailable (${activeReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). Showing last verified results from ${new Date(activeReadState.lastVerifiedAt).toLocaleString()}; current results are not verified.` : `Source unavailable (${activeReadState.errorCode || 'HR_SOURCE_UNAVAILABLE'}). No verified results are available.` : activeReadState.revalidating && activeReadState.verifiedAt ? `Updating. Results were last verified at ${new Date(activeReadState.verifiedAt).toLocaleString()}.` : 'Checking the authorized HR source…'}</span>{tenantScopeKey && activeReadState.status !== HR_READ_STATE.ACCESS_DENIED && <button type="button" onClick={() => fetchTabData(activeTab, pageStates[activeTab], searchTerm)} disabled={activeReadState.revalidating} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">Retry source read</button>}</div>}
-                <div className={styles.hrTableWrap}>
-                  <table>
-                    <thead>
-                      <tr>
-                        {activeTableColumns.map(header => <th key={header}>{header}</th>)}
-                        <th>Command</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activeDataset.items.map(item => (
-                        <tr key={item.id || item.employeeId || item.candidate_id || item.offer_id || item.requisition_id}>
-                          {renderRowCells(item)}
-                          <td>
-                            {activeTab === 'employees' ? (
-                              <span className="text-xs text-slate-400">Read only</span>
-                            ) : activeTab === 'candidates' ? (
-                              <div className="flex flex-wrap gap-2">
-                                {['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK'].includes(item.stage) && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('candidateTransition', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Advance with evidence</button>}
-                                {item.stage === 'SELECTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerCreate', item)} className="rounded-lg border border-amber-300/30 px-2 py-1 text-xs text-amber-100 disabled:opacity-50">Prepare offer</button>}
-                                {!['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK', 'SELECTED'].includes(item.stage) && <span className="text-xs text-slate-400">Terminal stage</span>}
-                              </div>
-                            ) : activeTab === 'offers' ? (
-                              <div className="grid gap-2">
-                                {item.status === 'DRAFT' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerSubmit', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Submit for approval</button>}
-                                {item.status === 'SUBMITTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerDecision', item)} className="rounded-lg border border-emerald-300/25 px-2 py-1 text-xs text-emerald-100 disabled:opacity-50">Independent decision</button>}
-                                {item.status === 'APPROVED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerSend', item)} className="rounded-lg border border-white/15 px-2 py-1 text-xs disabled:opacity-50">Send approved offer</button>}
-                                {item.status === 'SENT' && <span className="max-w-56 text-xs text-slate-400">Offer sent. Candidate signature-to-identity verification is not configured; acceptance is unavailable.</span>}
-                                {item.status === 'ACCEPTED' && <span className="max-w-56 text-xs text-amber-100">EOS reports ACCEPTED, but candidate identity binding is not certified; this does not prove candidate consent or employment.</span>}
-                                {!['DRAFT', 'SUBMITTED', 'APPROVED', 'SENT', 'ACCEPTED'].includes(item.status) && <span className="text-xs text-slate-400">No command is available for this offer state.</span>}
-                              </div>
-                            ) : (
-                              <>
-                                <button type="button" onClick={() => openMutationModal(activeConfig.modalType, item)}><Edit size={14} /></button>
-                                {activeTab === 'payroll' && <button type="button" onClick={() => generatePayslip(item)}><FileText size={14} /></button>}
-                                {!['payroll', 'artifacts'].includes(activeTab) && <button type="button" onClick={() => deleteRecord(item)}><Trash2 size={14} /></button>}
-                              </>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                      {!activeDataset.items.length && activeReadState.status === HR_READ_STATE.VERIFIED_EMPTY && activeDataset.total === 0 && <tr><td colSpan={6}>{activeTab === 'employees' ? 'No employees recorded.' : ['candidates', 'offers'].includes(activeTab) ? `No ${activeConfig.label.toLowerCase()} recorded by Python EOS.` : `No ${activeConfig.label.toLowerCase()} records recorded.`}</td></tr>}
-                      {!activeDataset.items.length && activeReadState.status === HR_READ_STATE.VERIFIED_DATA && activeDataset.total > 0 && <tr><td colSpan={6}>No records are on this page; the authorized source reports {activeDataset.total} records.</td></tr>}
-                    </tbody>
-                  </table>
+                  <p className={styles.overviewTagline}>Hire to Exit · One governed employee chain, from approved headcount to access revocation.</p>
                 </div>
-              </div>
-
-              <aside className={styles.hrPanel}>
-                <header>
-                  <div>
-                    <span>Operating Process</span>
-                    <h3>Next Work</h3>
+                <div className={styles.overviewActions} aria-label="People work navigation">
+                  <button type="button" onClick={() => changeTab('employees')}>Workforce directory <ArrowUpRight size={15} aria-hidden /></button>
+                  <button type="button" onClick={() => changeTab('candidates')}>Hiring pipeline <ArrowUpRight size={15} aria-hidden /></button>
+                  <button type="button" onClick={() => changeTab('offers')}>Employment offers <ArrowUpRight size={15} aria-hidden /></button>
+                </div>
+              </section>
+              {!overviewHasAuthorizedSource && (
+                <section className={styles.overviewRecovery} role="status" aria-label="People source admission">
+                  <div className={styles.overviewRecoverySummary}>
+                    <h3>{overviewSourcePending ? 'Verifying People sources…'
+                      : overviewAuthRequired ? 'People authentication required'
+                      : overviewAccessDenied ? 'People source access needs an authorized capacity'
+                      : overviewSourceUnavailable ? 'People source verification unavailable'
+                      : 'People sources are not yet verified'}</h3>
+                    <p>{overviewSourcePending ? 'Checking the current session and independently governed People sources.'
+                      : overviewAuthRequired ? 'Sign in with a current Global Principal session to verify employer data.'
+                      : overviewAccessDenied ? `EOS rejected the current People reads. Active session: ${currentCapacity || 'unverified'}. HR Manager/Director assignments require a newly selected Global Principal operating session; Founder designation alone does not grant HR permission.`
+                      : 'EOS could not verify the current source reads. Refresh to retry; unavailable is not an empty workforce.'}</p>
                   </div>
-                  <button type="button">{workspace.process.length}</button>
-                </header>
-                <div className={styles.hrProcess}>
-                  {workspace.process.map((step, index) => (
-                    <button key={step} type="button" onClick={() => runProcessStep(step, index)}>
-                      <span>{String(index + 1).padStart(2, '0')}</span>
-                      <strong>{step}</strong>
-                      <small>{activeConfig.label}</small>
+                  {tenantId === 'WILSYTENANT-4CD2FZ4O' && !overviewSourcePending
+                    && !isHrOperatingCapacity && overviewAccessDenied && (
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <button type="button" onClick={enterHrCapacity}
+                        className="min-h-10 rounded-md bg-blue-800 px-4 text-sm font-semibold text-white hover:bg-blue-900">
+                        Enter HR operating capacity
+                      </button>
+                      <span className="text-xs text-slate-600">
+                        Reauthenticate, select a verified HR capacity, then complete MFA
+                      </span>
+                    </div>
+                  )}
+                  <div className={styles.overviewSourceChecks} aria-label="People source verification results">
+                    {overviewSources.map(source => (
+                      <button type="button" key={source.id} onClick={() => changeTab(source.id)}
+                        className={styles.overviewSourceCheck}
+                        aria-label={`Inspect ${source.label}: ${source.state?.status || 'not verified'}`}>
+                        <strong>{source.label}</strong>
+                        <span>{isVerifiedReadState(source.state) ? 'Verified'
+                          : source.state?.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied'
+                          : source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED ? 'Sign in'
+                          : source.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Unavailable'
+                          : 'Verifying'}</span>
+                        {source.state?.errorCode && <small>{source.state.errorCode}</small>}
+                        <ArrowUpRight size={13} aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {overviewHasAuthorizedSource && <React.Fragment>
+              <section className={styles.overviewSection} aria-labelledby="people-brief-heading">
+                <div className={styles.overviewSectionHead}>
+                  <div><p className={styles.eyebrow} style={{textTransform:'none',letterSpacing:0,fontSize:12}}>Workforce snapshot</p><h3 id="people-brief-heading">People lifecycle at a glance</h3></div>
+                  <span>Select a measure to open its source</span>
+                </div>
+                <div className={styles.peopleKpiGrid} style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,225px),1fr))',gap:0,border:'1px solid #cbd7e6',borderRadius:12,overflow:'hidden',background:'#fff'}}>
+                  {[
+                    { title: 'Active workforce', state: snapshotReadState, total: snapshot.summary?.employee?.total, action: 'employees', note: 'Employee authority', empty: 'No active employees yet' },
+                    { title: 'Hiring candidates', state: datasetReadStates.candidates, total: datasets.candidates.total, action: 'candidates', note: 'Candidate pipeline', empty: 'No candidates yet' },
+                    { title: 'Employment offers', state: datasetReadStates.offers, total: datasets.offers.total, action: 'offers', note: 'Offer governance', empty: 'No offers yet' },
+                    { title: 'Headcount requests', state: datasetReadStates.jobOpenings, total: datasets.jobOpenings.total, action: 'jobOpenings', note: 'Position request authority', empty: 'Ready to plan a position' },
+                  ].map(metric => {
+                    const verified = isVerifiedReadState(metric.state);
+                    const empty = verified && metric.total === 0;
+                    return <button key={metric.title} type="button" className={styles.peopleKpi}
+                      onClick={() => changeTab(metric.action)}
+                      aria-label={`${metric.title}: ${verified ? metric.total : 'not currently verified'}. Open ${metric.note}`}
+                      style={{minHeight:96,outlineOffset:-3,border:'none',borderRight:'1px solid #e1e8f1',borderRadius:0,background:'transparent',boxShadow:'none',padding:'16px 18px',transition:'background 150ms ease'}}>
+                      <span style={{color:'#243e60'}}>{metric.title}</span>
+                      <strong style={{color:'#112f53'}}>{verified ? metric.total : '—'}</strong>
+                      <small style={{color:'#4b607a',fontSize:12,lineHeight:1.45,textTransform:'none',letterSpacing:0,fontWeight:500}}>
+                        {empty ? metric.empty : verified ? metric.note
+                          : metric.state?.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied · inspect source'
+                          : metric.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Source unavailable · inspect'
+                          : 'Verification pending'}
+                      </small>
+                    </button>;
+                  })}
+                </div>
+              </section>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,470px),1fr))',gap:24,alignItems:'start'}}>
+                <section className={styles.overviewSection} aria-labelledby="people-queue-heading" style={{minWidth:0}}>
+                  <div className={styles.overviewSectionHead}>
+                    <div><p className={styles.eyebrow} style={{textTransform:'none',letterSpacing:0,fontSize:12}}>Today's work · independent decisions</p><h3 id="people-queue-heading">Decisions & next actions</h3></div>
+                    <span>Every action is checked by EOS</span>
+                  </div>
+                  {(() => {
+                    const items = [
+                      ...(isVerifiedReadState(datasetReadStates.jobOpenings)
+                        ? datasets.jobOpenings.items.filter(item => item.status === 'SUBMITTED').map(item => ({
+                          key: 'requisition:' + item.id, title: 'Review requisition · ' + item.title,
+                          detail: 'Department ' + item.department + ' · Pending independent decision',
+                          source: 'jobOpenings', status: item.status, label: 'Inspect request',
+                        })) : []),
+                      ...(isVerifiedReadState(datasetReadStates.offers)
+                        ? datasets.offers.items.filter(item => ['DRAFT', 'SUBMITTED', 'APPROVED'].includes(item.status)).map(item => ({
+                          key: 'offer:' + item.offer_id, title: 'Employment offer · ' + item.offer_id,
+                          detail: 'Independent reviewer and offer authority', source: 'offers', status: item.status, label: 'Open offer',
+                        })) : []),
+                      ...(isVerifiedReadState(datasetReadStates.candidates)
+                        ? datasets.candidates.items.filter(item => ['SELECTED', 'REFERENCE_CHECK'].includes(item.stage)).map(item => ({
+                          key: 'candidate:' + item.candidate_id, title: 'Candidate · ' + item.candidate_id,
+                          detail: 'Candidate evidence and offer readiness', source: 'candidates', status: item.stage, label: 'Open candidate',
+                        })) : []),
+                    ];
+                    const visible = peopleQueueFilter === 'all' ? items : items.filter(item => item.source === peopleQueueFilter);
+                    const filteredEmpty = peopleQueueFilter !== 'all';
+                    const verifiedWorkSources = ['jobOpenings','offers','candidates'].every(key => isVerifiedReadState(datasetReadStates[key]));
+                    return <React.Fragment>
+                      <div role="group" aria-label="Filter authorized People decisions" style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
+                        {[
+                          {id:'all',label:'All decisions'}, {id:'jobOpenings',label:'Headcount'},
+                          {id:'offers',label:'Offers'}, {id:'candidates',label:'Hiring'},
+                        ].map(filter => <button type="button" key={filter.id} aria-pressed={peopleQueueFilter === filter.id}
+                          onClick={() => setPeopleQueueFilter(filter.id)}
+                          style={{padding:'7px 11px',borderRadius:7,border:'1px solid #bacadd',fontSize:12,fontWeight:650,
+                            background:peopleQueueFilter === filter.id ? '#173c70' : '#fff',
+                            color:peopleQueueFilter === filter.id ? '#fff' : '#173c70'}}>
+                          {filter.label}{filter.id === 'all' ? ` · ${items.length}` : ''}
+                        </button>)}
+                      </div>
+                      {visible.length === 0 ? <div className={styles.queueEmpty} role="status" style={{padding:'20px 22px',borderStyle:'solid',background:'#fff',borderRadius:12}}>
+                        <strong style={{display:'block',fontSize:15,color:'#183755',marginBottom:5}}>
+                          {filteredEmpty ? 'No decisions match this filter'
+                            : verifiedWorkSources ? 'Nothing needs review in these pages'
+                            : 'Some sources still need verification'}
+                        </strong>
+                        <p style={{fontSize:12,color:'#4b607a',lineHeight:1.55}}>
+                          {filteredEmpty ? 'The selected queue has no matching work in the loaded source pages. Clear the filter to see other decisions.'
+                            : verifiedWorkSources ? 'There are no decisions requiring attention in the verified pages. Start with headcount or open another People source.'
+                            : 'Some sources are not verified. Open a source to inspect its status before acting.'}
+                        </p>
+                        {filteredEmpty
+                          ? <button type="button" onClick={() => setPeopleQueueFilter('all')}
+                              style={{marginTop:12,border:'1px solid #a8bad2',borderRadius:7,padding:'8px 12px',background:'#fff',color:'#173c70',fontSize:12,fontWeight:700}}>Clear filter</button>
+                          : <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center',marginTop:13}}>
+                              {isVerifiedReadState(datasetReadStates.jobOpenings) && <button type="button"
+                                onClick={() => changeTab('jobOpenings')}
+                                style={{border:'1px solid #173c70',borderRadius:7,padding:'9px 12px',background:'#173c70',color:'#fff',fontSize:12,fontWeight:750}}>Open Headcount requests <ArrowUpRight size={14} style={{display:'inline',verticalAlign:'middle'}} aria-hidden /></button>}
+                              {isVerifiedReadState(datasetReadStates.candidates) && <button type="button" onClick={() => changeTab('candidates')}
+                                style={{border:'1px solid #a8bad2',borderRadius:7,padding:'9px 12px',background:'#fff',color:'#173c70',fontSize:12,fontWeight:700}}>Hiring pipeline</button>}
+                              {isVerifiedReadState(datasetReadStates.offers) && <button type="button" onClick={() => changeTab('offers')}
+                                style={{border:'1px solid #a8bad2',borderRadius:7,padding:'9px 12px',background:'#fff',color:'#173c70',fontSize:12,fontWeight:700}}>Employment offers</button>}
+                            </div>}
+                      </div> : <div className={styles.peopleQueue} aria-live="polite">
+                        {visible.map(item => <article key={item.key} className={styles.peopleQueueRow}>
+                          <div style={{minWidth:0,flex:'1 1 230px'}}>
+                            <strong>{item.title}</strong><p>{item.detail}</p>
+                            <span className={workStatusClasses(item.status)} style={{display:'inline-block',marginTop:7}}>{item.status.replaceAll('_', ' ')}</span>
+                          </div>
+                          <div className={styles.peopleQueueActions}>
+                            <button type="button" onClick={() => changeTab(item.source)}>{item.label} <ArrowUpRight size={14} aria-hidden /></button>
+                          </div>
+                        </article>)}
+                      </div>}
+                      <p style={{fontSize:11,color:'#536781',marginTop:10}}>
+                        Showing authorized pages, not complete history.
+                        {overviewSources.some(source => isVerifiedReadState(source.state) && source.state.verifiedAt)
+                          ? ' Last browser verification: ' + new Date(Math.max(...overviewSources.filter(source => isVerifiedReadState(source.state) && source.state.verifiedAt).map(source => Date.parse(source.state.verifiedAt)).filter(Number.isFinite))).toLocaleString()
+                          : ' No completed source verification timestamp.'}
+                      </p>
+                    </React.Fragment>;
+                  })()}
+                </section>
+                <aside className={styles.overviewSection} aria-label="Workforce source readiness" style={{minWidth:0}}>
+                  <div className={styles.overviewSectionHead}>
+                    <div><p className={styles.eyebrow} style={{textTransform:'none',letterSpacing:0,fontSize:12}}>Connected sources</p><h3>Lifecycle coverage</h3></div>
+                    <span>{overviewSources.filter(source => isVerifiedReadState(source.state)).length} of {overviewSources.length} reads verified</span>
+                  </div>
+                  <div style={{display:'grid',gap:0,border:'1px solid #cbd7e6',borderRadius:12,overflow:'hidden',background:'#fff'}}>
+                    {overviewSources.map((source, sourceIndex) => {
+                      const verified = isVerifiedReadState(source.state);
+                      const statusLabel = verified ? 'Ready'
+                        : source.state?.status === HR_READ_STATE.ACCESS_DENIED ? 'Access denied'
+                        : source.state?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Unavailable'
+                        : source.state?.status === HR_READ_STATE.AUTHENTICATION_REQUIRED ? 'Sign in'
+                        : 'Verifying';
+                      return <button key={source.id} type="button" onClick={() => changeTab(source.id)}
+                        aria-label={`Open ${source.label} source: ${statusLabel}`}
+                        style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',alignItems:'center',gap:12,
+                          padding:'14px 16px',background:'#fff',border:0,borderBottom:sourceIndex < overviewSources.length - 1 ? '1px solid #e1e8f1' : 'none',borderRadius:0,color:'#173457',
+                          textAlign:'left',width:'100%',outlineOffset:-3}}>
+                        <span style={{display:'grid',gap:3,minWidth:0}}>
+                          <strong style={{display:'block',fontSize:13,fontWeight:750,color:'#142b49',opacity:1}}>{source.label}</strong>
+                          <span style={{display:'block',fontSize:12,lineHeight:1.4,color:'#50657e',opacity:1,textTransform:'none',letterSpacing:0,fontWeight:450}}>
+                            {verified ? 'Current authorized read completed'
+                              : source.state?.status === HR_READ_STATE.PENDING ? 'Checking connection'
+                              : 'Open for details'}
+                          </span>
+                        </span>
+                        <span style={{display:'flex',alignItems:'center',gap:8,fontSize:11,color:'#234467',whiteSpace:'nowrap'}}>
+                          {statusLabel}<ArrowUpRight size={14} aria-hidden />
+                        </span>
+                      </button>;
+                    })}
+                  </div>
+                  <div style={{marginTop:12,borderTop:'none',paddingTop:8}}>
+                    <button type="button" aria-expanded={peopleVerificationHelpOpen} onClick={() => setPeopleVerificationHelpOpen(value => !value)}
+                      style={{display:'inline-flex',gap:6,alignItems:'center',padding:'6px 0',background:'transparent',
+                        border:0,color:'#173c70',fontWeight:750,fontSize:12,textDecoration:'underline',textUnderlineOffset:3}}>
+                      {peopleVerificationHelpOpen ? 'Hide verification details' : 'How verification works'}
                     </button>
-                  ))}
-                </div>
-                <div className={styles.hrTelemetry}>
-                  <span><Activity size={14} /> HR Telemetry</span>
-                  {hrActivities.length === 0 && <small>No HR telemetry events yet.</small>}
-                  {hrActivities.map((event, index) => (
-                    <small key={`${event.id || event.timestamp || 'hr'}-${index}`}>{event.eventType || 'HR_EVENT'} // {event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : 'LIVE'}</small>
-                  ))}
-                </div>
-              </aside>
-            </section>
-          </section>
-        </main>
+                    {peopleVerificationHelpOpen && <p style={{fontSize:12,color:'#425a76',lineHeight:1.65,marginTop:5}}>
+                      A verified source read confirms only that Python EOS returned an authorized, tenant-scoped result to this session.
+                      It does not certify approval, full historical coverage, employee admission or permission to act. Headcount,
+                      hiring, offers and workforce have separate authorities. Onboarding, leave, payroll and exit remain outside
+                      these four indicators until independent EOS reads are certified. Current browser verification times do not
+                      represent the source event time.
+                    </p>}
+                  </div>
+                </aside>
+              </div>
+              </React.Fragment>}
 
-        <WilsyProfilePanel
-          isOpen={showProfilePanel}
-          onClose={() => setShowProfilePanel(false)}
-          user={user}
-          activeTenant={activeTenant}
-          access={{ userId: user?.id || user?._id, userRole: user?.role, edition: activeTenant?.edition }}
-          onSignOut={logout}
-          onThemeChange={handleProfileThemeChange}
-          onModeChange={handleProfileModeChange}
-          onProfileAction={handleProfilePanelAction}
-        />
+            </div>
+          )}
+          {activeTab !== 'overview' && <React.Fragment>
+          {(!isSourceConnected || shownState?.status === HR_READ_STATE.ACCESS_DENIED
+            || shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE
+            || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED)
+            && <div data-tone={shownState?.status === HR_READ_STATE.ACCESS_DENIED
+              || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'denied' : 'unavailable'}
+              role={shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'alert' : 'status'}
+              className={styles.peopleNotice + ' mb-4 rounded-lg border px-4 py-3 text-sm '
+                + (shownState?.status === HR_READ_STATE.ACCESS_DENIED || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED
+                  ? 'border-rose-200 bg-rose-50 text-rose-950'
+                  : 'border-amber-200 bg-amber-50 text-amber-950')}>
+              <strong className={styles.peopleNoticeTitle + " block"}>{!isSourceConnected ? 'Source execution not yet connected'
+                : shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'People source access denied'
+                : snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED ? 'People summary access denied'
+                : 'People source unavailable'}</strong>
+              <p className="mt-1">{!isSourceConnected
+                ? 'This function is part of the MW-M03 People lifecycle. Its source-owned commands and approvals are not yet certified in this client. No simulated records or actions are shown.'
+                : shownState?.status === HR_READ_STATE.ACCESS_DENIED || snapshotReadState.status === HR_READ_STATE.ACCESS_DENIED
+                  ? 'Python EOS has not authorized the current tenant and operating capacity for this HR read. Select an eligible HR capacity or request the separate workforce permission; Founder status does not bypass IAM.'
+                  : 'Python EOS has not returned a current verified People result. Existing records are not represented as empty or zero.'}</p>
+            </div>}
+          {activeTab === 'employees' && <section className={styles.workforceSurface} aria-labelledby="workforce-directory-heading" data-testid="eos-workforce-directory">
+            <div style={{display:'flex',gap:6,padding:'12px 20px 0',background:'#fff'}} role="group" aria-label="Workforce views">
+              {[
+                {id:'directory',label:'Directory'},
+                {id:'organization',label:'Organization'},
+              ].map(view => <button type="button" key={view.id}
+                onClick={() => {setWorkforceView(view.id); setSelectedWorkforceEmployeeId(null);}}
+                aria-pressed={workforceView === view.id}
+                style={{padding:'8px 15px',fontSize:13,fontWeight:700,borderRadius:7,
+                  border:'1px solid #b8c9dd',
+                  background:workforceView === view.id ? '#173c70' : '#fff',
+                  color:workforceView === view.id ? '#fff' : '#173c70'}}>
+                {view.label}
+              </button>)}
+            </div>
+            {workforceView === 'directory' && <React.Fragment>
+            <div className={styles.workforceHeader}>
+              <div className={styles.workforceHeading}>
+                <h2 id="workforce-directory-heading">Workforce directory</h2>
+                <p>Search people on this employer, then open a person to see their work details.</p>
+                <p className={styles.workforceSummary} aria-live="polite">
+                  {workforcePageReady
+                    ? <><span className={styles.workforceCount}>{shownDataset.total.toLocaleString()}</span> {shownDataset.total === 1 ? 'person' : 'people'} · Page {currentPage} of {totalPages}</>
+                    : shownState?.status === HR_READ_STATE.PENDING ? 'Checking the workforce source…'
+                    : shownState?.status === HR_READ_STATE.ACCESS_DENIED ? 'Directory access denied'
+                    : shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE ? 'Workforce source unavailable'
+                    : 'Workforce source not verified'}
+                </p>
+              </div>
+              <div className={styles.workforceToolbar}>
+                <label className={styles.workforceSearch}>
+                  <Search size={17} aria-hidden="true" />
+                  <input aria-label="Search workforce" type="search" value={workforceSearchDraft}
+                    placeholder="Search name, employee ID, role or department"
+                    maxLength={80} autoComplete="off"
+                    onChange={event => setWorkforceSearchDraft(event.target.value)} />
+                </label>
+                {workforceSearchDraft && <button type="button" onClick={() => {
+                  setWorkforceSearchDraft('');
+                  setSearchTerm('');
+                  setSelectedWorkforceEmployeeId(null);
+                  setPageStates(previous => ({...previous, employees: {...previous.employees, offset: 0}}));
+                }}>Clear</button>}
+                <button type="button" disabled={isRefreshing || !workforcePageReady}
+                  onClick={() => fetchTabData('employees', pageStates.employees, searchTerm)}>Refresh</button>
+                <button type="button" disabled={isRefreshing || !workforcePageReady || activeDataset.offset === 0}
+                  onClick={() => {setSelectedWorkforceEmployeeId(null); updatePageOffset(false);}} aria-label="Previous workforce page">Previous</button>
+                <span className={styles.workforceSummary} aria-live="polite">{currentPage}/{totalPages}</span>
+                <button type="button" disabled={isRefreshing || !workforcePageReady || !activeDataset.hasMore}
+                  onClick={() => {setSelectedWorkforceEmployeeId(null); updatePageOffset(true);}} aria-label="Next workforce page">Next</button>
+              </div>
+            </div>
+            {shownState?.revalidating && shownState?.status !== HR_READ_STATE.PENDING && <div className={styles.workforceEmpty} role="status">
+              <div><strong>Updating workforce results</strong><p>The previous page is withheld while EOS verifies this query for the current employer.</p></div>
+            </div>}
+            {shownState?.status === HR_READ_STATE.PENDING && <div className={styles.workforceEmpty} role="status">
+              <div><strong>Verifying the directory</strong><p>Employee details stay hidden until this tenant's EOS source returns a valid page.</p></div>
+            </div>}
+            {shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE && <div className={styles.workforceEmpty} role="status">
+              <div><strong>Directory temporarily unavailable</strong><p>EOS could not verify the current directory page. No employee data is represented as empty.</p></div>
+              <button type="button" onClick={() => fetchTabData('employees', pageStates.employees, searchTerm)}>Retry directory</button>
+            </div>}
+            {shownState?.status === HR_READ_STATE.ACCESS_DENIED && <div className={styles.workforceEmpty} role="alert">
+              <div><strong>Workforce access denied</strong><p>Choose an authorized People operating capacity. No directory records have been disclosed.</p></div>
+            </div>}
+            {workforcePageReady && shownDataset.items.length === 0 && <div className={styles.workforceEmpty} role="status">
+              <div>
+                <strong>{workforceSearchDraft.trim().length >= 2 ? 'No matching employees' : shownDataset.total === 0 ? 'No people yet' : 'No records on this page'}</strong>
+                <p>{workforceSearchDraft.trim().length >= 2
+                  ? 'The authorized source returned no records for this search. Clear your query to return to the full directory.'
+                  : shownDataset.total === 0
+                  ? 'Build your team by requesting headcount and starting a hiring pipeline. Employee invitations will become available only when admission is approved.'
+                  : 'This page is empty although the source reports existing records. Return to the first page or refresh.'}</p>
+              </div>
+              {workforceSearchDraft.trim().length >= 2
+                ? <button type="button" onClick={() => {setWorkforceSearchDraft('');
+                  setSearchTerm('');setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));}}>Clear search</button>
+                : shownDataset.total === 0
+                ? <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
+                    <button type="button" onClick={() => changeTab('jobOpenings')}>Request headcount <ArrowUpRight size={15} aria-hidden /></button>
+                    <button type="button" onClick={() => changeTab('candidates')}>Hiring pipeline <ArrowUpRight size={15} aria-hidden /></button>
+                    <button type="button" onClick={() => setWorkforceView('organization')}>View organization <ArrowUpRight size={15} aria-hidden /></button>
+                  </div>
+                : <button type="button" onClick={() => setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}))}>First page</button>}
+            </div>}
+            {workforcePageReady && shownDataset.items.length > 0 && <div className={styles.workforceTableRegion} role="region" aria-label="Verified workforce directory results" tabIndex={0}>
+              <table className={styles.workforceTable}>
+                <thead><tr><th scope="col">Employee</th><th scope="col">Role</th><th scope="col">Department</th><th scope="col">Reporting to</th><th scope="col">Status</th></tr></thead>
+                <tbody>
+                  {shownDataset.items.map(person => <tr key={person.employeeId}>
+                    <td><button type="button" className={styles.workforcePerson} aria-expanded={selectedWorkforceEmployeeId === person.employeeId}
+                      onClick={() => void inspectWorkforceEmployee(person.employeeId)}>
+                      {person.name || 'Name unavailable'}<small>{person.employeeId}</small>
+                    </button></td>
+                    <td>{person.position || 'Not recorded'}</td>
+                    <td>{person.department || 'Not assigned'}</td>
+                    <td>{person.managerId || 'Not recorded'}</td>
+                    <td><span className={workStatusClasses(person.status || 'UNKNOWN')}>{person.status ? person.status.replaceAll('_',' ') : 'Unverified'}</span></td>
+                  </tr>)}
+                </tbody>
+              </table>
+            </div>}
+            {workforcePageReady && selectedWorkforceEmployeeId && <div className={styles.workforceDetails} role="region" aria-label="Employee directory preview">
+                {workforceDetailStatus === 'PENDING' && <p role="status" className={styles.workforceSummary}>Verifying this employee's directory details with EOS…</p>}
+                {workforceDetailStatus === 'DENIED' && <p role="alert" className={styles.workforceSummary}>EOS denied this employee detail read for the current session.</p>}
+                {workforceDetailStatus === 'NOT_FOUND' && <p role="status" className={styles.workforceSummary}>This employee is not available in the current authorized directory.</p>}
+                {workforceDetailStatus === 'UNAVAILABLE' && <p role="status" className={styles.workforceSummary}>Employee details could not be verified. No profile is displayed.</p>}
+                {workforceDetailStatus === 'VERIFIED' && workforceDetail && (() => {
+                  const selected = workforceDetail;
+                  return <React.Fragment>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
+                  <div><h3>{selected.name || 'Name unavailable'}</h3><p className={styles.workforceSummary}>Directory preview · {selected.employeeId}</p></div>
+                  <button type="button" onClick={() => setSelectedWorkforceEmployeeId(null)}>Close preview</button>
+                </div>
+                <dl>
+                  <div><dt>Role</dt><dd>{selected.position || 'Not recorded'}</dd></div>
+                  <div><dt>Department</dt><dd>{selected.department || 'Not assigned'}</dd></div>
+                  <div><dt>Reporting to</dt><dd>{selected.managerId || 'Not recorded'}</dd></div>
+                  <div><dt>Work email</dt><dd>{selected.email || 'Not recorded'}</dd></div>
+                  <div><dt>Employment status</dt><dd>{selected.status || 'Not verified'}</dd></div>
+                </dl>
+                <p className={styles.workforceSummary} style={{marginTop:14}}>Directory-only preview. Protected employment files, personal identity and compensation require separate EOS authority.</p>
+                  </React.Fragment>;
+                })()}
+              </div>}
+            </React.Fragment>}
+            {workforceView === 'organization' && <section aria-labelledby="workforce-organization-heading"
+              style={{padding:'22px',borderTop:'1px solid #dbe5f0',background:'#fff',color:'#142b49'}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:20}}>
+                <div style={{display:'grid',gap:5}}>
+                  <h2 id="workforce-organization-heading" style={{fontSize:22,fontWeight:750,color:'#102744',margin:0}}>Organization &amp; positions</h2>
+                  <p style={{fontSize:13,color:'#4c6078',margin:0}}>See where people work and plan positions before the first hire.</p>
+                </div>
+                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
+                  style={{border:'1px solid #aabdd3',borderRadius:8,background:'#fff',color:'#173c70',fontSize:12,fontWeight:700,padding:'10px 13px',minHeight:40}}>
+                  Refresh organization
+                </button>
+              </div>
+              {workforceOrganizationState === 'PENDING' && <p role="status" style={{padding:16,color:'#4b607a'}}>Checking your organization…</p>}
+              {workforceOrganizationState === 'DENIED' && <p role="alert" style={{padding:16,color:'#4b607a'}}>Organization information is not available to this operating capacity.</p>}
+              {workforceOrganizationState === 'UNAVAILABLE' && <div role="status" style={{display:'grid',gap:10,padding:16,border:'1px solid #d3deeb',borderRadius:10}}>
+                <strong style={{color:'#142b49'}}>Organization is temporarily unavailable</strong>
+                <p style={{fontSize:13,color:'#4b607a'}}>The current organization records could not be confirmed. Previous records are not shown as an empty organization.</p>
+                <button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)}
+                  style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'9px 13px',color:'#173c70',fontWeight:700}}>Try again</button>
+              </div>}
+              {workforceOrganizationState === 'VERIFIED' && workforceOrganization && <React.Fragment>
+                <div aria-label="Current observed organization" style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:18}}>
+                  {[
+                    {label:'Departments with people',value:workforceOrganization.department_count},
+                    {label:'Active employees',value:workforceOrganization.active_employees},
+                    {label:'Without a department',value:workforceOrganization.unassigned_employees},
+                  ].map(metric => <div key={metric.label} style={{display:'flex',alignItems:'baseline',gap:8,padding:'10px 13px',background:'#f5f8fc',border:'1px solid #dce5f0',borderRadius:9}}>
+                    <span style={{fontSize:20,fontWeight:800,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{metric.value}</span>
+                    <span style={{fontSize:12,color:'#405a78'}}>{metric.label}</span>
+                  </div>)}
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,410px),1fr))',gap:16,alignItems:'start'}}>
+                  <section aria-labelledby="observed-departments-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
+                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
+                      <h3 id="observed-departments-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Departments</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Shown from active employee assignments, not an approved department register.</p>
+                    </div>
+                    {workforceOrganization.departments.length === 0
+                      ? <div style={{padding:'21px 17px',display:'grid',gap:8}} role="status">
+                          <strong style={{fontSize:15,color:'#142f50'}}>No departments with people yet</strong>
+                          <p style={{fontSize:13,color:'#4b607a',lineHeight:1.6}}>You can plan positions before hiring. Departments will appear here once authorized employee assignments exist.</p>
+                        </div>
+                      : workforceOrganization.departments.map((unit,i) => <div key={unit.name}
+                          style={{display:'flex',gap:10,justifyContent:'space-between',alignItems:'center',padding:'13px 17px',borderBottom:i === workforceOrganization.departments.length-1 ? 'none' : '1px solid #e1e8f1'}}>
+                          <div style={{minWidth:0}}>
+                            <strong style={{fontSize:13,color:'#163551'}}>{unit.name}</strong>
+                            <p style={{fontSize:12,color:'#526781',marginTop:3}}>{unit.active_employees} active {unit.active_employees === 1 ? 'person' : 'people'}</p>
+                          </div>
+                          <button type="button" onClick={() => {
+                            setWorkforceView('directory');
+                            setWorkforceSearchDraft(unit.name);
+                            setSearchTerm(unit.name);
+                            setPageStates(previous => ({...previous,employees:{...previous.employees,offset:0}}));
+                          }} aria-label={'Search workforce in ' + unit.name + ', ' + unit.active_employees + ' active employees'}
+                            style={{padding:'9px 12px',borderRadius:8,background:'#fff',color:'#173c70',border:'1px solid #afc2d8',fontSize:12,fontWeight:700,minHeight:40}}>View people</button>
+                        </div>)}
+                  </section>
+                  <section aria-labelledby="position-planning-heading" style={{border:'1px solid #d1deec',borderRadius:11,overflow:'hidden',minWidth:0}}>
+                    <div style={{padding:'15px 17px',borderBottom:'1px solid #dbe5f0',background:'#f8fafd'}}>
+                      <h3 id="position-planning-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Position planning</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Existing requisitions and independent approval decisions.</p>
+                    </div>
+                    {isVerifiedReadState(datasetReadStates.jobOpenings) && !datasetReadStates.jobOpenings?.revalidating
+                      ? <div style={{padding:'18px 17px',display:'grid',gap:13}}>
+                          <div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'baseline'}}>
+                            <span style={{fontSize:13,color:'#405a78'}}>Headcount requests</span>
+                            <strong style={{fontSize:21,color:'#142f50',fontVariantNumeric:'tabular-nums'}}>{datasets.jobOpenings.total}</strong>
+                          </div>
+                          <p style={{fontSize:12,color:'#526781'}}>Approved requests on the loaded page: {datasets.jobOpenings.items.filter(item => item.status === 'APPROVED').length}. This is not a total approved-position count.</p>
+                          {datasets.jobOpenings.total === 0
+                            ? <p style={{fontSize:13,lineHeight:1.6,color:'#4b607a'}}>No position requests yet. Begin with a role, department and business justification, then submit it for independent approval.</p>
+                            : <div style={{display:'grid',gap:8}}>
+                                {datasets.jobOpenings.items.slice(0,4).map(item => <div key={item.id}
+                                  style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',borderTop:'1px solid #e1e8f1',paddingTop:9}}>
+                                  <span style={{fontSize:13,color:'#183551',fontWeight:650}}>{item.title || 'Untitled request'}</span>
+                                  <span style={{fontSize:12,color:'#526781'}}>{item.status || 'Status unavailable'}</span>
+                                </div>)}
+                                {datasets.jobOpenings.hasMore && <span style={{fontSize:11,color:'#526781'}}>Additional requests are available in Headcount &amp; roles.</span>}
+                              </div>}
+                          <button type="button" onClick={() => changeTab('jobOpenings')}
+                            style={{justifySelf:'start',padding:'10px 14px',minHeight:40,borderRadius:8,background:'#173c70',color:'#fff',fontSize:13,fontWeight:750}}>
+                            {datasets.jobOpenings.total === 0 ? 'Request headcount' : 'Manage headcount requests'} <ArrowUpRight size={14} aria-hidden />
+                          </button>
+                        </div>
+                      : <div style={{padding:'18px 17px',display:'grid',gap:10}}>
+                          <p role="status" style={{fontSize:13,color:'#4b607a'}}>Headcount requests are not currently verified. No position count is inferred.</p>
+                          <button type="button" onClick={() => changeTab('jobOpenings')}
+                            style={{justifySelf:'start',padding:'9px 12px',border:'1px solid #afc2d8',borderRadius:8,color:'#173c70',fontSize:12,fontWeight:700}}>Inspect headcount source</button>
+                        </div>}
+                  </section>
+                </div>
+                <section aria-labelledby="organization-registry-heading" style={{border:'1px solid #d1deec',borderRadius:11,marginTop:18,overflow:'hidden'}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,padding:'15px 17px',background:'#f8fafd',borderBottom:'1px solid #dbe5f0'}}>
+                    <div>
+                      <h3 id="organization-registry-heading" style={{fontSize:15,fontWeight:750,color:'#142f50'}}>Governed structure</h3>
+                      <p style={{fontSize:12,color:'#526781',marginTop:4}}>Real departments and positions · drafts require independent approval.</p>
+                    </div>
+                    {workforceStructureStatus === 'VERIFIED' && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      <button type="button" onClick={() => {setOrganizationKind('departments');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create department</button>
+                      <button type="button" onClick={() => {setOrganizationKind('positions');setOrganizationFormOpen(true);setOrganizationCommandState({status:'IDLE',message:''});}}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'9px 12px',fontWeight:700,color:'#173c70',background:'#fff'}}>Create position</button>
+                    </div>}
+                  </div>
+                  {workforceStructureStatus === 'PENDING' && <p role="status" style={{padding:17,color:'#4b607a'}}>Checking the approved structure register…</p>}
+                  {workforceStructureStatus === 'DENIED' && <p role="alert" style={{padding:17,color:'#4b607a'}}>Access to the organization register is denied for this capacity.</p>}
+                  {workforceStructureStatus === 'UNAVAILABLE' && <p role="status" style={{padding:17,color:'#4b607a'}}>The organization register could not be verified. No approved structure is displayed.</p>}
+                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <div style={{padding:'15px 17px'}}>
+                    {workforceStructure.items.length === 0
+                      ? <p style={{fontSize:13,color:'#526781'}}>No department or position proposals yet. Create a draft to begin the governed approval process.</p>
+                      : <div style={{display:'grid',gap:8}}>
+                          {workforceStructure.items.map(item => <div key={item.kind+':'+item.record_id}
+                            style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',border:'1px solid #dce6f1',borderRadius:8,padding:'12px 14px'}}>
+                            <div>
+                              <strong style={{fontSize:13,color:'#143454'}}>{item.name}</strong>
+                              <p style={{fontSize:12,color:'#526781',marginTop:4}}>{item.kind === 'POSITION' ? 'Position' : 'Department'} · {item.record_id} · {item.status} · Revision {item.revision}</p>
+                              {item.kind === 'POSITION' && <p style={{fontSize:12,color:'#526781'}}>Department {item.department_id} · Planned capacity {item.capacity}</p>}
+                            </div>
+                            <div style={{display:'flex',gap:7}}>
+                              {item.status === 'DRAFT' && <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => runOrganizationCommand('submit',item)}
+                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Submit for approval</button>}
+                              {item.status === 'SUBMITTED' && !item.current_principal_is_maker && <button type="button"
+                                disabled={organizationCommandState.status === 'PENDING'}
+                                onClick={() => {setOrganizationReviewId(item.kind+':'+item.record_id);setOrganizationDecisionReason('');setOrganizationCommandState({status:'IDLE',message:''});}}
+                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Review decision</button>}
+                              {item.status === 'SUBMITTED' && item.current_principal_is_maker && <span style={{fontSize:12,color:'#526781'}}>Awaiting independent checker</span>
+                            </div>
+                          </div>)}
+                        </div>}
+                  </div>}
+                  {workforceStructureStatus === 'VERIFIED' && organizationReviewId && (() => {
+                    const entry = workforceStructure.items.find(item => item.kind+':'+item.record_id === organizationReviewId);
+                    if (!entry || entry.status !== 'SUBMITTED' || entry.current_principal_is_maker) return null;
+                    return <section aria-label="Organization independent review" style={{padding:'15px 17px',borderTop:'1px solid #dce6f1',display:'grid',gap:11}}>
+                      <strong style={{color:'#142f50',fontSize:14}}>Review {entry.name}</strong>
+                      <label style={{display:'grid',gap:5,fontSize:12,color:'#304e6e',fontWeight:650}}>
+                        Your decision reason
+                        <textarea rows={3} minLength={5} maxLength={2000} required value={organizationDecisionReason}
+                          onChange={event => setOrganizationDecisionReason(event.target.value)}
+                          style={{padding:'10px 12px',border:'1px solid #aabbd0',borderRadius:8,color:'#142f50',background:'#fff',fontSize:13}}/>
+                      </label>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:9}}>
+                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('approve',entry)}
+                          style={{padding:'9px 13px',borderRadius:8,background:'#173c70',color:'#fff',fontWeight:700}}>Approve proposal</button>
+                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('reject',entry)}
+                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70',fontWeight:700}}>Reject proposal</button>
+                        <button type="button" onClick={() => {setOrganizationReviewId(null);setOrganizationDecisionReason('');}}
+                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70'}}>Cancel</button>
+                      </div>
+                    </section>;
+                  })()}
+                  {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
+                    style={{display:'grid',gap:11,padding:'17px',borderTop:'1px solid #dce6f1',background:'#fff'}} aria-label="Organization draft form">
+                    <strong style={{color:'#142f50',fontSize:15}}>New {organizationKind === 'departments' ? 'department' : 'position'} draft</strong>
+                    {[
+                      {key:'record_id',label:'Unique code',required:true},
+                      {key:'name',label:'Name',required:true},
+                      ...(organizationKind === 'positions' ? [{key:'department_id',label:'Approved department code',required:true},{key:'capacity',label:'Planned capacity',required:true}] : []),
+                      {key:'parent_id',label:'Parent code (optional)',required:false},
+                      {key:'effective_from',label:'Effective from (YYYY-MM-DD)',required:true},
+                    ].map(field => <label key={field.key} style={{display:'grid',gap:5,fontSize:12,fontWeight:650,color:'#304e6e'}}>
+                      {field.label}
+                      <input required={field.required} maxLength={field.key==='name'?180:120}
+                        value={organizationForm[field.key]} onChange={event => setOrganizationForm(prev => ({...prev,[field.key]:event.target.value}))}
+                        style={{border:'1px solid #9bb1cd',borderRadius:7,color:'#142f50',background:'#fff',padding:'10px 12px',fontSize:13}}/>
+                    </label>)}
+                    <div style={{display:'flex',gap:9,alignItems:'center',flexWrap:'wrap'}}>
+                      <button type="submit" disabled={organizationCommandState.status==='PENDING'}
+                        style={{background:'#173c70',color:'#fff',borderRadius:8,padding:'10px 14px',fontWeight:700}}>Save draft</button>
+                      <button type="button" onClick={() => setOrganizationFormOpen(false)}
+                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'10px 14px',color:'#173c70'}}>Cancel</button>
+                    </div>
+                  </form>}
+                  {!!organizationCommandState.message && <p role="status" style={{fontSize:12,color:organizationCommandState.status==='VERIFIED'?'#194c3d':'#7a302d',padding:'10px 17px'}}>
+                    {organizationCommandState.message}
+                  </p>}
+                </section>
+                <p style={{fontSize:12,color:'#526781',lineHeight:1.5,marginTop:13}}>Observed staff assignments, requested headcount and approved organizational records are separate authorities. Drafts do not create hires or approve budget.</p>
+              </React.Fragment>}
+            </section>}
+          </section>}
+          {activeTab === 'candidates' && <section aria-labelledby="people-hiring-heading"
+            style={{background:'#fff',border:'1px solid #ccd9e8',borderRadius:12,overflow:'hidden',color:'#183451'}}>
+            <div style={{padding:'21px 24px',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,flexWrap:'wrap',borderBottom:'1px solid #e1e9f3'}}>
+              <div>
+                <h2 id="people-hiring-heading" style={{color:'#102744',fontSize:23,lineHeight:1.3,fontWeight:750}}>Hiring pipeline</h2>
+                <p style={{marginTop:6,fontSize:13,color:'#455e79'}}>Move from approved roles to candidates, interviews and offers.</p>
+              </div>
+              <button type="button" onClick={() => changeTab('jobOpenings')}
+                style={{padding:'9px 13px',border:'1px solid #afc2d8',borderRadius:8,color:'#173c70',fontWeight:700,fontSize:13}}>
+                Headcount &amp; roles <ArrowUpRight size={14} aria-hidden />
+              </button>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(175px,1fr))',background:'#f9fbfe',borderBottom:'1px solid #e1e9f3'}}>
+              {[
+                {label:'Approved roles',verified:hiringRequisitionsVerified,value:hiringRequisitionsVerified ? datasets.jobOpenings.items.filter(item => item.status === 'APPROVED').length : null,detail:'On loaded headcount page'},
+                {label:'Candidates',verified:hiringCandidatesVerified,value:hiringCandidatesVerified ? datasets.candidates.total : null,detail:'Current hiring records'},
+                {label:'In interview',verified:hiringCandidatesVerified,value:hiringCandidatesVerified ? hiringLoadedCandidates.filter(item => item.stage === 'INTERVIEW').length : null,detail:'On loaded candidate page'},
+                {label:'Offers',verified:hiringOffersVerified,value:hiringOffersVerified ? datasets.offers.total : null,detail:'Current offer records'},
+              ].map(metric => <div key={metric.label} style={{minWidth:0,padding:'15px 20px',borderRight:'1px solid #e1e9f3'}}>
+                <span style={{display:'block',fontSize:12,fontWeight:650,color:'#3c5673'}}>{metric.label}</span>
+                <strong style={{display:'block',fontSize:24,fontWeight:750,color:'#132f51',marginTop:4,fontVariantNumeric:'tabular-nums'}}>{metric.verified ? metric.value : '—'}</strong>
+                <small style={{fontSize:11,color:'#5c7086'}}>{metric.verified ? metric.detail : 'Awaiting verification'}</small>
+              </div>)}
+            </div>
+            {shownState?.status === HR_READ_STATE.PENDING && <p role="status" style={{padding:22,color:'#455e79'}}>Checking the current hiring pipeline…</p>}
+            {shownState?.status === HR_READ_STATE.SOURCE_UNAVAILABLE && <p role="status" style={{padding:22,color:'#455e79'}}>The hiring pipeline is temporarily unavailable. Refresh to try again.</p>}
+            {shownState?.status === HR_READ_STATE.ACCESS_DENIED && <p role="alert" style={{padding:22,color:'#455e79'}}>This capacity cannot access the hiring pipeline.</p>}
+            {isVerifiedReadState(shownState) && !shownState?.revalidating && shownDataset.total === 0 && <div style={{padding:'27px 24px',display:'grid',gap:13}}>
+              <div>
+                <h3 style={{fontSize:17,fontWeight:750,color:'#142d4b'}}>No candidates yet</h3>
+                <p style={{color:'#4b607a',fontSize:13,marginTop:6,lineHeight:1.6}}>Start with approved headcount, then create your first candidate. Each application follows its own review and evidence process.</p>
+              </div>
+              <div style={{display:'flex',gap:9,flexWrap:'wrap'}}>
+                <button type="button" onClick={() => changeTab('jobOpenings')}
+                  style={{background:'#173c70',color:'#fff',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700}}>Request headcount</button>
+                <button type="button"
+                  onClick={() => beginHiringCommand('candidateCreate')}
+                  title="Candidate intake requires an approved requisition; EOS independently verifies the submitted ID"
+                  style={{border:'1px solid #afc2d8',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700,color:'#173c70'}}>
+                  Start candidate intake
+                </button>
+                <button type="button" onClick={() => changeTab('offers')}
+                  style={{border:'1px solid #afc2d8',padding:'10px 15px',borderRadius:8,fontSize:13,fontWeight:700,color:'#173c70'}}>View offers</button>
+              </div>
+              {!hiringHasApprovedRequisition && <p style={{fontSize:12,color:'#4b607a'}}>Candidate intake requires an approved requisition, which may be outside the current page. The submitted requisition ID is independently checked before creation.</p>}
+            </div>}
+            {isVerifiedReadState(shownState) && !shownState?.revalidating && shownDataset.total > 0 && <div style={{padding:'15px 20px',display:'grid',gap:10}}>
+              <p style={{fontSize:12,color:'#526982'}}>Current authorized candidate page · {shownDataset.total} total candidates</p>
+              {shownDataset.items.map(item => <article key={item.candidate_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:14,flexWrap:'wrap',padding:'13px 15px',border:'1px solid #d4dfeb',borderRadius:9}}>
+                <div style={{minWidth:0}}>
+                  <strong style={{fontSize:13,color:'#143351'}}>{item.candidate_id}</strong>
+                  <p style={{fontSize:12,color:'#536982',marginTop:4}}>Requisition {item.requisition_id} · {item.stage?.replaceAll('_',' ') || 'Stage unavailable'}</p>
+                </div>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  {['APPLIED','SCREENING','INTERVIEW','REFERENCE_CHECK'].includes(item.stage) && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('candidateTransition',item)}
+                    style={{border:'1px solid #afc2d8',padding:'8px 12px',borderRadius:7,color:'#173c70',fontSize:12,fontWeight:700}}>Advance with evidence</button>}
+                  {item.stage === 'SELECTED' && <button type="button" disabled={hiringCommandState.status === 'PENDING'} onClick={() => beginHiringCommand('offerCreate',item)}
+                    style={{border:'1px solid #afc2d8',padding:'8px 12px',borderRadius:7,color:'#173c70',fontSize:12,fontWeight:700}}>Prepare offer</button>}
+                </div>
+              </article>)}
+              {shownDataset.hasMore && <button type="button" onClick={() => updatePageOffset(true)}
+                style={{padding:'9px 12px',border:'1px solid #afc2d8',color:'#173c70',borderRadius:7,justifySelf:'start',fontWeight:700}}>Next candidates</button>}
+              {shownDataset.offset > 0 && <button type="button" onClick={() => updatePageOffset(false)}
+                style={{padding:'9px 12px',border:'1px solid #afc2d8',color:'#173c70',borderRadius:7,justifySelf:'start',fontWeight:700}}>Previous candidates</button>}
+            </div>}
+          </section>}
+          {activeTab !== 'employees' && activeTab !== 'candidates' && <section className="rounded-xl border border-slate-200 bg-white" aria-labelledby="people-current-heading">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 sm:px-5">
+              <div>
+                <p className="text-xs font-semibold text-slate-600">People operations</p>
+                <h2 id="people-current-heading" className="mt-1 text-lg font-bold !text-[#142b49]">
+                  {peopleModules.find(module => module.id === activeTab)?.title || 'People'}
+                </h2>
+                <p className="mt-1 text-xs text-slate-600">
+                  {isSourceConnected ? 'Current records for this employer' : 'This service is not yet available in People.'}
+                </p>
+              </div>
+              {isSourceConnected && <div className="flex flex-wrap items-center gap-2">
+                {activeTab === 'employees' && <label className={styles.peopleSearch + " flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2"}>
+                  <Search size={16} aria-hidden />
+                  <input aria-label="Search workforce" value={searchTerm} onChange={event => setSearchTerm(event.target.value)}
+                    placeholder="Find a person" className={styles.peopleSearchInput + " min-w-0 border-0 bg-transparent text-sm outline-none"}/>
+                </label>}
+                <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-blue-800 disabled:opacity-50"
+                  disabled={isRefreshing || activeDataset.offset === 0} onClick={() => updatePageOffset(false)}>Previous</button>
+                <span className="text-xs text-slate-600">{currentPage}/{totalPages}</span>
+                <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-blue-800 disabled:opacity-50"
+                  disabled={isRefreshing || !activeDataset.hasMore} onClick={() => updatePageOffset(true)}>Next</button>
+              </div>}
+            </div>
+            {activeTab === 'jobOpenings' && <div className="border-t border-slate-200 px-4 py-3">
+              <FounderHeadcountStart
+                tenantId={tenantId}
+                admitted={Boolean(tenantScopeKey) && isVerifiedReadState(shownState)}
+                onCreated={() => loadDashboard()}
+              />
+            </div>}
+            {isSourceConnected && shownState?.status === HR_READ_STATE.PENDING
+              && <p role="status" className="p-5 text-sm text-slate-600">Verifying authorized People source…</p>}
+            {isSourceConnected && shownState?.status === HR_READ_STATE.VERIFIED_EMPTY
+              && <p role="status" className="p-5 text-sm text-slate-600">No records yet. Choose a relevant action to begin.</p>}
+            {isSourceConnected && isVerifiedReadState(shownState) && shownDataset.items.length > 0
+              && <div className="overflow-x-auto" role="region" aria-label="Verified People records" tabIndex={0}>
+                <table className="w-full min-w-[680px] text-left text-sm">
+                  <thead className="bg-slate-100 text-xs font-semibold text-slate-700"><tr>
+                    {activeTableColumns.map(column => <th key={column} className="px-4 py-3">{column}</th>)}
+                    <th className="px-4 py-3">Authorized action</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {shownDataset.items.map((item, index) => <tr key={item.id || item.employeeId || item.candidate_id || item.offer_id || index}
+                      className="align-middle hover:bg-blue-50/40">
+                      {renderRowCells(item)}
+                      <td className="px-4 py-3">
+                        {activeTab === 'candidates' && ['APPLIED', 'SCREENING', 'INTERVIEW', 'REFERENCE_CHECK'].includes(item.stage)
+                          ? <button type="button" disabled={hiringCommandState.status === 'PENDING'}
+                            onClick={() => beginHiringCommand('candidateTransition', item)}
+                            className="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">Advance with evidence</button>
+                          : activeTab === 'candidates' && item.stage === 'SELECTED'
+                            ? <button type="button" disabled={hiringCommandState.status === 'PENDING'}
+                              onClick={() => beginHiringCommand('offerCreate', item)}
+                              className="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">Prepare offer</button>
+                            : activeTab === 'jobOpenings' && item.status === 'DRAFT'
+                            ? <HeadcountDraftSubmit tenantId={tenantId}
+                                admitted={Boolean(tenantScopeKey) && isVerifiedReadState(shownState)}
+                                requisition={item} onSubmitted={() => loadDashboard()} />
+                            : activeTab === 'jobOpenings' && item.status === 'SUBMITTED'
+                            ? <HeadcountIndependentDecision tenantId={tenantId}
+                                admitted={Boolean(tenantScopeKey) && isVerifiedReadState(shownState)}
+                                requisition={item} onDecided={() => loadDashboard()} />
+                            : activeTab === 'jobOpenings' && item.status === 'APPROVED'
+                              ? <button type="button" onClick={() => changeTab('candidates')}
+                                className="min-h-9 rounded-md border border-emerald-300 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 hover:bg-emerald-100">
+                                Open candidate intake
+                              </button>
+                            : activeTab === 'offers' && ['DRAFT', 'SUBMITTED', 'APPROVED'].includes(item.status)
+                              ? <button type="button" disabled={hiringCommandState.status === 'PENDING'}
+                                onClick={() => beginHiringCommand(item.status === 'DRAFT' ? 'offerSubmit'
+                                  : item.status === 'SUBMITTED' ? 'offerDecision' : 'offerSend', item)}
+                                className="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-800">
+                                {item.status === 'DRAFT' ? 'Submit for review'
+                                  : item.status === 'SUBMITTED' ? 'Independent decision' : 'Send approved offer'}
+                              </button> : <span className="text-xs text-slate-500">Read only</span>}
+                      </td>
+                    </tr>)}
+                  </tbody>
+                </table>
+              </div>}
+            {isSourceConnected && shownState?.status === HR_READ_STATE.VERIFIED_DATA
+              && shownDataset.items.length === 0 && <p className="p-5 text-sm text-slate-600">
+                No records on this authorized page. EOS reports {shownDataset.total} total records.</p>}
+            {!isSourceConnected && <p className="p-5 text-sm text-slate-700">
+              The next implementation milestone is the certified EOS lifecycle for this function. It cannot be simulated by client state or a static dashboard.</p>}
+          </section>}
 
+          </React.Fragment>}
+        </div>
         {showArtifactModal && (
           <div className={styles.hrModal} role="dialog" aria-modal="true" aria-label="HR artifact generator">
             <section>
@@ -4704,7 +5811,7 @@ const HrDashboard = () => {
           </div>
         )}
       </div>
-    </WilsyOSDashboardChrome>
+    </React.Fragment>
   );
 };
 
@@ -4712,7 +5819,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.7.0-CANDIDATE-ACCEPTANCE-UNAVAILABLE
+ * VERSION: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.

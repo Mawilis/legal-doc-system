@@ -1,13 +1,81 @@
 /**
  * TITLE: WILSY OS Source-Backed Project Task Discussion
- * VERSION: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES
+ * VERSION: v1.20.4-NARRATIVE-ONLY-COLLAPSED-PREVIEW
  * AUTHORITY: Python EOS task collaboration comment and participation endpoints.
  * EPITOME: Read immutable task conversation pages and publish reviewed comments
  *          with explicit eligible participant mentions and durable EOS readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTaskCommentsPanel.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel owns task selection; api.js
  *          transports the exact session; EOS owns command/audit/read authority.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
+ * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
+ *          participant IDs can be explicitly selected as mentions.
+ * TENANT BOUNDARY: Every list/result is checked against active exact tenant,
+ *          project, task and principal; late prior session replies are ignored.
+ * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
+ *          approvals; EOS rechecks every mentioned principal on creation.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v1.20.4-NARRATIVE-ONLY-COLLAPSED-PREVIEW excludes source certification lines and other structured evidence from collapsed activity excerpts while retaining full immutable detail on expansion.
+ * CHANGELOG: v1.20.3-STABLE-ADVANCED-FILTER-LABEL keeps the advanced-filter control accessible name stable when filters become active; source counts and active indicators remain visually available.
+ * CHANGELOG: v1.20.2-COMPACT-GOVERNED-ACTIVITY keeps secondary filters under explicit disclosure, reduces card spacing, and identifies immutable audited comment corrections without new commands.
+ * CHANGELOG: v1.20.1-STABLE-ACTIVITY-FILTER-NAMES preserves accessible category button names independent of changing source-page counts; counts remain visually readable.
+ * CHANGELOG: v1.20.0-CONTEXTUAL-ACTIVITY-CONTROLS introduces page-scoped counts, mine/date filters, order switching, day grouping and natural-language actor events without changing EOS authority.
+ * CHANGELOG: v1.19.0-FOCUSED-ENTERPRISE-ACTIVITY separates discussion, decisions, evidence and lifecycle events into local filters and text search over verified EOS pages, makes long comment previews meaningful, and removes redundant feed chrome without modifying audit authority.
+ * CHANGELOG: v1.18.2-EXPLICIT-CORRECTION-WINDOW explicitly explains the EOS-authoritative 30-minute correction deadline inside the composer before a user attempts to submit.
+ * CHANGELOG: v1.18.1-CORRECTION-IDEMPOTENCY-SCOPE binds command idempotency to exact original/fingerprint/reason so distinct correction intents never share the same replay key.
+ * CHANGELOG: v1.18.0-SERVER-ENFORCED-30MIN-CORRECTION sends structured correction identity, original fingerprint and reason to Python EOS, exposes the correction control only during the 30-minute window, and keeps the original as immutable evidence.
+ * CHANGELOG: v1.17.1-CORRECTION-DRAFT-ISOLATION ensures a canceled correction draft cannot become an unrelated ordinary update when the editor is reopened.
+ * CHANGELOG: v1.17.0-APPEND-ONLY-COMMENT-CORRECTION lets the original author revise text through a reasoned, linked immutable correction, revalidates the original EOS comment before post, and preserves the complete audit chain without an unauthorized mutation route.
+ * CHANGELOG: v1.16.0-FOCUS-FIRST-ACTIVITY-COMPOSER puts the
+ *          existing source-owned comment editor directly under the action
+ *          bar and replaces the timeline while writing. Opening explicitly
+ *          focuses the textarea; closing restores the untouched history.
+ *          Verified publication returns to the reloaded source timeline.
+ *          No authorization, command, evidence or persistence changes.
+ * CHANGELOG: v1.15.0-ACTIVITY-ACTION-GROUP-SPACING gives each
+ *          source-backed activity action group consistent 16px horizontal
+ *          gutters, 12px wrapped-row gutters, and 16px breathing room
+ *          against section dividers. Small screens wrap without adjoining
+ *          controls or border contact. Shared wp-button semantics, source
+ *          state, IAM and evidence remain unchanged.
+ * CHANGELOG: v1.14.0-COMPACT-WORKSPACE-ACTION-DENSITY adopts the
+ *          existing shared Projects 36px compact action pattern for all
+ *          Activity toolbar, evidence, composer, paging and source-retry
+ *          controls. Source-backed reading remains visually primary;
+ *          mobile actions wrap without oversized button geometry.
+ *          No text, command, authorization or response contract changes.
+ * CHANGELOG: v1.13.2-REQUIRED-GOVERNANCE-HEADER-PLACEMENT moves
+ *          mandatory institutional authority and privacy declarations ahead
+ *          of the long history, satisfying the first-100-line integrity
+ *          contract without any runtime/UI behavior change.
+ * CHANGELOG: v1.13.1-SOURCE-VERIFIED-ACTOR-LABELS displays
+ *          self as You, source-verified participant names when available,
+ *          and a neutral recorded-actor fallback instead of truncated
+ *          internal principal identifiers or implementation labels.
+ *          Stored author IDs and EOS audit identity remain unchanged.
+ * CHANGELOG: v1.13.0-FOCUSED-ACTIVITY-TIMELINE projects a compact
+ *          newest-first source-owned activity stream with a readable
+ *          author/date hierarchy. Long immutable EOS comments begin with
+ *          a bounded text-only preview and disclose the complete safe
+ *          Markdown on explicit request, without changing comment bodies,
+ *          authenticated pagination, event visibility, source authority
+ *          or publishing. No AI summarization or unsourced task status.
+ * CHANGELOG: v1.12.0-SINGLE-ACTIVITY-SCOPE-READ defers the
+ *          four independent initial activity/evidence GETs beyond
+ *          discarded React StrictMode mount effects. Explicit retries
+ *          and EOS source authorization remain independent and unchanged.
+ * CHANGELOG: v1.11.0-STABLE-ACTIVITY-REQUEST-SCOPE stabilizes
+ *          semantically equal parent-provided tenant headers so ordinary
+ *          parent rerenders cannot restart all four task activity GETs.
+ *          Actual header changes still revalidate source scope; EOS-owned
+ *          status, pagination, evidence and explicit retry remain unchanged.
+ * CHANGELOG: v1.10.0-INDEPENDENT-ACTIVITY-RECOVERY
+ *          displays independently verified task lifecycle, approval
+ *          and evidence events even if the comment source fails.
+ *          Classifies the comment read failure with safe EOS status,
+ *          offers an explicit retry, and leaves comment writing closed
+ *          until its separately verified source becomes ready.
  * CHANGELOG: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES derives mention display only from
  *          EOS-verified first and last names, never principal IDs.
  * CHANGELOG: v1.9.0-INLINE-GOVERNED-TASK-EVIDENCE adds task-scoped evidence uploads inline
@@ -64,14 +132,6 @@
  *          presentation never upgrades a participant to owner IAM.
  * CHANGELOG: v1.8.0-ACTIVITY-FIRST-OPERATING-SURFACE introduces task-threaded
  *          discussion that does not infer notification dispatch or approvals.
- * COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; WCAG 2.2 AA.
- * SECURITY / PRIVACY POSTURE: React escapes plain comment bodies; only sourced
- *          participant IDs can be explicitly selected as mentions.
- * TENANT BOUNDARY: Every list/result is checked against active exact tenant,
- *          project, task and principal; late prior session replies are ignored.
- * AUTHORITY BOUNDARY: UI never grants IAM/participation, task authority or
- *          approvals; EOS rechecks every mentioned principal on creation.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle, MessageSquare, RefreshCw, Send, X } from 'lucide-react';
@@ -81,6 +141,9 @@ import ProjectTaskAttachmentsPanel from './ProjectTaskAttachmentsPanel.jsx';
 const LIST = 'WILSY-PROJECT-COMMENT-LIST/V1';
 const RESULT = 'WILSY-PROJECT-COMMENT-RESULT/V1';
 const COMMENT = /^pcm-[a-f0-9]{48}$/;
+// Reuse the existing Projects action class with the same compact override
+// already used by task/workspace actions. Minimum height remains 36px.
+const ACTIVITY_ACTION_CLASS = 'wp-button !min-h-9 !px-3 !py-1 !text-xs';
 
 function checkComment(value, tenantId, projectId, taskId) {
   return Boolean(
@@ -154,10 +217,55 @@ function MarkdownText({ value }) {
   return <div className="min-w-0" data-testid="safe-markdown-discussion">{elements}</div>;
 }
 
+/**
+ * The saved comment is immutable EOS evidence. Only its *presentation* is
+ * shortened for the read-first timeline; full text remains accessible in
+ * place without a second request or rewriting authoritative content.
+ */
+function ActivityCommentBody({ value }) {
+  const [expanded, setExpanded] = useState(false);
+  const source = String(value || '').replace(/\r\n?/g, '\n');
+  const lines = source.split('\n').map(line => line.trim()).filter(Boolean);
+  const long = source.length > 360 || lines.length > 7;
+  if (!long) return <MarkdownText value={source}/>;
+  const first = (lines[0] || '').replace(/^(?:#{1,3}\s+|[-*]\s+|\d+\.\s+)/, '')
+    .replace(/\*\*/g, '').trim();
+  const introduction = first.length > 180 ? first.slice(0, 177).trimEnd() + '…' : first;
+  // A real content preview, not a line counter masquerading as a summary.
+  const detail = lines.slice(1).find(line => {
+    const prose = line.replace(/^(?:#{1,3}\s+|[-*]\s+|\d+\.\s+)/, '')
+      .replace(/\*\*/g, '').trim();
+    // A collapsed preview is narrative orientation, not a raw extract of
+    // certification details, digests, decisions or milestone evidence.
+    // The exact complete source remains available only after expansion.
+    return prose.length >= 24
+      && /[.!?]$/.test(prose)
+      && !/^(?:CI|commit|revision|status|evidence|approval|milestone|SHA|certification|production|gate)\s*:/i.test(prose)
+      && !/^(?:completed engineering work|outstanding acceptance|progress|status|evidence)\s*:?$/i.test(prose);
+  }) || '';
+  const detailPreview = detail.replace(/^(?:#{1,3}\s+|[-*]\s+|\d+\.\s+)/, '')
+    .replace(/\*\*/g, '').trim().slice(0, 150);
+  return <div className="min-w-0" data-testid="compact-project-activity-comment">
+    {expanded ? <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <MarkdownText value={source}/>
+    </div> : <div className="mt-2 max-w-full space-y-1">
+      <p className="break-words text-sm font-medium leading-6 text-slate-900">{introduction}</p>
+      {detailPreview && detailPreview !== introduction &&
+        <p className="line-clamp-2 break-words text-xs leading-5 text-slate-600">{detailPreview}</p>}
+    </div>}
+    <button type="button" className="mt-2 inline-flex min-h-9 items-center rounded-md px-2 text-xs font-semibold text-blue-800 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      aria-expanded={expanded} onClick={() => setExpanded(open => !open)}>
+      {expanded ? 'Collapse update' : 'Read full update'}
+    </button>
+  </div>;
+}
+
+
 /** @description Source-owned comments with explicit bounded mentions. */
 export default function ProjectTaskCommentsPanel({
   tenantId, projectId, principalId, taskId, participants,
   tenantHeaders, onClose, participantMode = false, onViewApprovals, onViewAttachments,
+  showClose = true,
 }) {
   const [items, setItems] = useState([]);
   const [events, setEvents] = useState([]);
@@ -171,8 +279,16 @@ export default function ProjectTaskCommentsPanel({
   const [approvalHasMore, setApprovalHasMore] = useState(false);
   const [attachmentHasMore, setAttachmentHasMore] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
+  const [activityFilter, setActivityFilter] = useState('ALL');
+  const [activityQuery, setActivityQuery] = useState('');
+  const [activityMineOnly, setActivityMineOnly] = useState(false);
+  const [showAdvancedActivityFilters, setShowAdvancedActivityFilters] = useState(false);
+  const [activityDateRange, setActivityDateRange] = useState('ALL');
+  const [activitySort, setActivitySort] = useState('NEWEST');
   const [showTaskEvidence, setShowTaskEvidence] = useState(false);
   const [body, setBody] = useState('');
+  const [correction, setCorrection] = useState(null);
+  const [correctionReason, setCorrectionReason] = useState('');
   const [mentions, setMentions] = useState([]);
   const [state, setState] = useState('LOADING');
   const [offset, setOffset] = useState(0);
@@ -185,6 +301,7 @@ export default function ProjectTaskCommentsPanel({
   const generation = useRef(0);
   const discussionRef = useRef(null);
   const composerRef = useRef(null);
+  const composerInputRef = useRef(null);
   const navigatedScope = useRef(null);
   const command = useRef({ fingerprint: '', key: '' });
   const contributorEligible = Array.isArray(participants) && participants.some(person =>
@@ -199,7 +316,19 @@ export default function ProjectTaskCommentsPanel({
   const sourceBase = '/projects/' + encodeURIComponent(projectId)
     + (participantMode ? '/my-project/tasks/' : '/tasks/')
     + encodeURIComponent(taskId);
-  const headers = tenantHeaders || {};
+  // Parent task view may recreate an equal tenantHeaders object on every
+  // render. Depending on object identity restarted four EOS GETs, including
+  // long-running comments, whenever the parent refreshed any UI state.
+  // Keep a stable value snapshot; actual header changes still trigger reads.
+  const headersRef = useRef(null);
+  const candidateHeaders = tenantHeaders && typeof tenantHeaders === 'object' ? tenantHeaders : {};
+  const previousHeaders = headersRef.current;
+  const candidateKeys = Object.keys(candidateHeaders);
+  if (!previousHeaders || candidateKeys.length !== Object.keys(previousHeaders).length
+      || candidateKeys.some(key => previousHeaders[key] !== candidateHeaders[key])) {
+    headersRef.current = { ...candidateHeaders };
+  }
+  const headers = headersRef.current;
 
   const loadEvents = useCallback(async (nextOffset = 0) => {
     const active = scope;
@@ -233,7 +362,7 @@ export default function ProjectTaskCommentsPanel({
       setEventHasMore(false);
       setEventState('UNAVAILABLE');
     }
-  }, [scope, eventRoute, tenantHeaders, tenantId, principalId, projectId, taskId]);
+  }, [scope, eventRoute, headers, tenantId, principalId, projectId, taskId]);
 
   const loadEvidence = useCallback(async (kind) => {
     const active = scope;
@@ -297,7 +426,7 @@ export default function ProjectTaskCommentsPanel({
       setSourceHasMore(false);
       setSourceState('UNAVAILABLE');
     }
-  }, [scope, sourceBase, tenantHeaders, tenantId, projectId, taskId, principalId]);
+  }, [scope, sourceBase, headers, tenantId, projectId, taskId, principalId]);
 
   const load = useCallback(async (nextOffset = 0) => {
     const sequence = ++generation.current;
@@ -327,13 +456,19 @@ export default function ProjectTaskCommentsPanel({
       setItems([]);
       setHasMore(false);
       const code = cause?.response?.status;
-      setError(code === 401 ? 'Sign in to read task comments.'
-        : code === 403 ? 'EOS denied this task discussion.'
-          : 'Comments could not be verified from EOS. Refresh to reconcile.');
+      setError(code === 401 ? 'Comments require an authenticated EOS session (HTTP 401).'
+        : code === 403 ? 'EOS denied this task comment source (HTTP 403). Check the selected operating capacity.'
+          : code === 404 ? 'Task comments endpoint is not available in this EOS runtime (HTTP 404).'
+            : code === 503 ? 'Task comment source is unavailable (HTTP 503); other independently verified activity remains readable.'
+              : code === 429 ? 'EOS rate-limited the task comments request (HTTP 429).'
+                : cause?.code === 'ECONNABORTED' ? 'Task comments timed out before EOS verification.'
+                  : cause?.message === 'PROJECT_COMMENT_SOURCE_INVALID'
+                    ? 'Task comment response did not satisfy the EOS scope or pagination contract.'
+                    : 'Task comments could not reach or be verified by EOS. Other sources are checked independently.');
       setState(code === 401 || code === 403 ? 'DENIED' : 'UNAVAILABLE');
       return false;
     }
-  }, [scope, tenantId, principalId, projectId, taskId, route, tenantHeaders]);
+  }, [scope, tenantId, principalId, projectId, taskId, route, headers]);
 
   useEffect(() => {
     generation.current += 1;
@@ -352,14 +487,22 @@ export default function ProjectTaskCommentsPanel({
     navigatedScope.current = null;
     setBody('');
     setMentions([]);
+    setCorrection(null);
+    setCorrectionReason('');
     setOffset(0);
     setHasMore(false);
     command.current = { fingerprint: '', key: '' };
-    void load(0);
-    void loadEvents();
-    void loadEvidence('approvals');
-    void loadEvidence('attachments');
-    return () => { generation.current += 1; };
+    let active = true;
+    // A discarded development mount must not issue four independent EOS
+    // transactions just to be immediately superseded by StrictMode replay.
+    queueMicrotask(() => {
+      if (!active) return;
+      void load(0);
+      void loadEvents();
+      void loadEvidence('approvals');
+      void loadEvidence('attachments');
+    });
+    return () => { active = false; generation.current += 1; };
   }, [scope, load, loadEvents, loadEvidence]);
 
   useEffect(() => {
@@ -370,7 +513,10 @@ export default function ProjectTaskCommentsPanel({
 
   useEffect(() => {
     if (showComposer && state === 'READY') {
-      composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'start' });
+      // A workspace action must make its editor immediately actionable,
+      // not leave keyboard focus on the trigger above a long activity log.
+      composerInputRef.current?.focus({ preventScroll: true });
+      composerRef.current?.scrollIntoView?.({ behavior: 'auto', block: 'nearest' });
     }
   }, [showComposer, state]);
 
@@ -397,21 +543,88 @@ export default function ProjectTaskCommentsPanel({
     })) : []),
   ].sort((a, b) => (Date.parse(b.time) || 0) - (Date.parse(a.time) || 0)
     || a.id.localeCompare(b.id));
+  // Filter the verified activity already in memory; do not infer unseen EOS
+  // pages, unread totals or cross-source notification delivery.
+  const activityCategories = [
+    { key: 'ALL', label: 'All activity' },
+    { key: 'COMMENT', label: 'Updates' },
+    { key: 'EVENT', label: 'Changes' },
+    { key: 'APPROVAL', label: 'Decisions' },
+    { key: 'ATTACHMENT', label: 'Files' },
+  ];
+  const categoryOf = entry => entry.type === 'comment' ? 'COMMENT'
+    : entry.type === 'event' ? 'EVENT'
+      : entry.type.startsWith('approval') ? 'APPROVAL' : 'ATTACHMENT';
+  const activityTerm = activityQuery.trim().toLocaleLowerCase();
+  const categoryCounts = activityCategories.reduce((counts, category) => ({
+    ...counts,
+    [category.key]: category.key === 'ALL' ? activity.length
+      : activity.filter(entry => categoryOf(entry) === category.key).length,
+  }), {});
+  const visibleActivity = activity.filter(entry => {
+    if (activityFilter !== 'ALL' && categoryOf(entry) !== activityFilter) return false;
+    if (activityMineOnly && entry.actor !== principalId) return false;
+    if (activityDateRange !== 'ALL') {
+      const timestamp = Date.parse(entry.time);
+      if (!Number.isFinite(timestamp)) return false;
+      const now = Date.now();
+      const age = now - timestamp;
+      if (age < 0) return false;
+      if (activityDateRange === 'TODAY' && new Date(timestamp).toDateString() !== new Date(now).toDateString()) return false;
+      if (activityDateRange === '7D' && age > 7 * 86400000) return false;
+      if (activityDateRange === '30D' && age > 30 * 86400000) return false;
+    }
+    if (!activityTerm) return true;
+    const searchable = entry.type === 'comment' ? entry.item.body
+      : entry.type === 'attachment' ? entry.item.filename
+        : entry.type === 'approval-request' ? entry.item.rationale
+          : entry.type === 'approval-decision' ? entry.item.decision_rationale
+            : [entry.item.event_type, entry.item.status_after].filter(Boolean).join(' ');
+    return typeof searchable === 'string' && searchable.toLocaleLowerCase().includes(activityTerm);
+  }).sort((a, b) => (activitySort === 'NEWEST' ? 1 : -1)
+    * ((Date.parse(b.time) || 0) - (Date.parse(a.time) || 0))
+    || a.id.localeCompare(b.id));
+  const activeSecondaryFilters = activityMineOnly || activityDateRange !== 'ALL' || Boolean(activityTerm);
+  const dayFor = value => Number.isFinite(Date.parse(value))
+    ? new Date(value).toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })
+    : 'Date unverified';
   const displayTime = value => Number.isFinite(Date.parse(value))
     ? new Date(value).toLocaleString() : 'Timestamp not verified';
-  const displayActor = id => id === principalId ? 'You (authenticated author)'
-    : 'Verified principal · ' + String(id).slice(0, 12) + '…';
+  const displayActor = id => {
+    if (id === principalId) return 'You';
+    const member = Array.isArray(participants)
+      ? participants.find(item => item?.principal_id === id) : null;
+    const first = typeof member?.first_name === 'string' ? member.first_name.trim() : '';
+    const last = typeof member?.last_name === 'string' ? member.last_name.trim() : '';
+    return [first, last].filter(Boolean).join(' ') || 'Recorded actor';
+  };
 
   const submit = async event => {
     event.preventDefault();
     if (state !== 'READY' || busy) return;
-    const text = body.trim();
-    if (!text || text.length > 5000) return;
+    const edited = body.trim();
+    const reason = correctionReason.trim();
+    if (correction && (reason.length < 10 || reason.length > 500
+      || edited === correction.body.trim())) {
+      setError('Provide a correction reason (10–500 characters) and change the original text.');
+      return;
+    }
+    // EOS owns the canonical audit wrapper and time-window admission.
+    const text = edited;
+    if (!text || text.length > 5000) {
+      setError('The correction exceeds the EOS 5,000-character comment limit.');
+      return;
+    }
     if (mentions.some(person => !participants.some(item => item.principal_id === person))) {
       setError('Mention recipient is not in the verified project participant page.');
       return;
     }
-    const fingerprint = JSON.stringify({ text, mentions });
+    const fingerprint = JSON.stringify({
+      text, mentions,
+      correction_of: correction?.comment_id || null,
+      correction_fingerprint: correction?.fingerprint || null,
+      correction_reason: correction ? reason : null,
+    });
     if (!command.current.key || command.current.fingerprint !== fingerprint) {
       if (typeof globalThis.crypto?.randomUUID !== 'function') {
         setError('Cannot establish a durable command key in this browser session.');
@@ -423,7 +636,30 @@ export default function ProjectTaskCommentsPanel({
     setBusy(true);
     setError('');
     try {
-      const { data } = await api.post(route, { body: text, mentions }, {
+      if (correction) {
+        // Re-read the exact current EOS page before appending a linked
+        // correction. Never let a stale or foreign comment be amended.
+        const { data: source } = await api.get(route + '?limit=50&offset=' + offset, { headers });
+        if (source?.schema !== LIST || source.tenant_id !== tenantId
+          || source.project_id !== projectId || source.task_id !== taskId
+          || source.principal_id !== principalId || source.offset !== offset
+          || !Array.isArray(source.items)
+          || !source.items.some(item => checkComment(item, tenantId, projectId, taskId)
+            && item.comment_id === correction.comment_id
+            && item.fingerprint === correction.fingerprint
+            && item.author_principal_id === principalId)) {
+          throw new Error('PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED');
+        }
+      }
+      if (currentScope.current !== active) return;
+      const { data } = await api.post(route, {
+        body: text, mentions,
+        ...(correction ? {
+          correction_of: correction.comment_id,
+          correction_fingerprint: correction.fingerprint,
+          correction_reason: reason,
+        } : {}),
+      }, {
         headers: { ...headers, 'Idempotency-Key': command.current.key },
       });
       if (currentScope.current !== active) return;
@@ -438,6 +674,9 @@ export default function ProjectTaskCommentsPanel({
       command.current = { fingerprint: '', key: '' };
       setBody('');
       setMentions([]);
+      setCorrection(null);
+      setCorrectionReason('');
+      setShowComposer(false);
     } catch (cause) {
       if (currentScope.current !== active) return;
       const code = cause?.response?.status;
@@ -454,7 +693,11 @@ export default function ProjectTaskCommentsPanel({
       const serverReason = typeof detail === 'string'
         && Object.prototype.hasOwnProperty.call(safeCodes, detail)
         ? safeCodes[detail] : null;
-      setError(code === 403 ? 'EOS denied your task comment.'
+      setError(code === 409 && detail === 'PROJECT_COMMENT_CORRECTION_WINDOW_EXPIRED'
+        ? 'The 30-minute correction window has expired. Ask an authorized reviewer to record a separate governance clarification.'
+        : cause?.message === 'PROJECT_COMMENT_CORRECTION_SOURCE_CHANGED'
+          ? 'The original comment could not be independently reverified. Refresh its activity before correcting it.'
+        : code === 403 ? 'EOS denied your task comment.'
         : code === 409 ? 'Mention eligibility or replay changed. Refresh and reconcile.'
           : code === 422 ? 'EOS rejected the comment input'
             + (safeFields.length ? ': ' + safeFields.join(', ') : '.')
@@ -467,19 +710,19 @@ export default function ProjectTaskCommentsPanel({
   };
 
   return <section ref={discussionRef} aria-label="Activity & discussion"
-    className="scroll-mt-24 border-t border-slate-200 pt-2">
-    <div className="flex items-center justify-between gap-3">
+    className="scroll-mt-24 border-t border-slate-200 pt-4">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pb-4">
       <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
         <MessageSquare size={16}/> Activity &amp; discussion
       </h4>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className="wp-button" disabled={busy}
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3">
+        <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={busy}
           onClick={() => {
             void load(offset); void loadEvents(eventOffset);
             void loadEvidence('approvals'); void loadEvidence('attachments');
           }}><RefreshCw size={14}/> Refresh</button>
-        <button type="button" className="wp-button" disabled={busy}
-          onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>
+        {showClose && <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={busy}
+          onClick={onClose} aria-label="Close task discussion"><X size={14}/> Close</button>}
       </div>
     </div>
     {(state === 'LOADING' || state === 'REFRESHING') &&
@@ -487,25 +730,43 @@ export default function ProjectTaskCommentsPanel({
         <LoaderCircle size={14} className="animate-spin"/> Verifying conversation…
       </p>}
     {(state === 'DENIED' || state === 'UNAVAILABLE') &&
-      <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
-    {state === 'READY' && <>
+      <div role="alert" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+        <span className="min-w-0 flex-1">{error}</span>
+        <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={busy}
+          onClick={() => void load(0)}>Retry comments</button>
+      </div>}
+    {(state === 'READY' || eventState === 'READY'
+      || approvalState === 'READY' || attachmentState === 'READY') && <>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2" aria-label="Verified discussion availability">
-        <p role="status" className="text-xs text-slate-600">
-          {items.length > 0 ? items.length + (hasMore ? '+ comments on this page' : ' comments on this page')
-            : 'No comments on this page'} · task activity
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-b border-slate-200 py-4" aria-label="Verified discussion availability">
+        <p role="status" className="text-xs text-slate-700">
+          {items.length} verified {items.length === 1 ? 'update' : 'updates'} on this comment page{hasMore ? ' · more EOS pages available' : ''}
         </p>
-        {contributorEligible && <button type="button" className="wp-button"
+        {state === 'READY' && contributorEligible && <button type="button" className={ACTIVITY_ACTION_CLASS}
           aria-expanded={showTaskEvidence}
-          onClick={() => setShowTaskEvidence(value => !value)}>
+          onClick={() => {
+            setShowComposer(false);
+            setShowTaskEvidence(value => !value);
+          }}>
           {showTaskEvidence ? 'Close file upload' : 'Upload task evidence'}
         </button>}
-        <button type="button" className="wp-button" aria-expanded={showComposer}
-          aria-controls="task-comment-composer" onClick={() => setShowComposer(current => !current)}>
+        {state === 'READY' && <button type="button" className={ACTIVITY_ACTION_CLASS} aria-expanded={showComposer}
+          aria-controls="task-comment-composer" onClick={() => {
+            setShowTaskEvidence(false);
+            if (showComposer && correction) {
+              // Never leak a copied correction into a later ordinary post.
+              setBody('');
+              setMentions([]);
+              setCorrection(null);
+              setCorrectionReason('');
+              command.current = { fingerprint: '', key: '' };
+            }
+            setShowComposer(current => !current);
+          }}>
           {showComposer ? 'Close editor' : 'Write update'}
-        </button>
+        </button>}
       </div>
-      {showTaskEvidence && contributorEligible &&
+      {state === 'READY' && showTaskEvidence && contributorEligible &&
         <div aria-label="Inline task evidence upload">
           <p className="mt-2 text-xs text-slate-700">Uploaded files belong to this task, not a single comment.
             EOS quarantines files until independently verified scan clearance.</p>
@@ -514,103 +775,21 @@ export default function ProjectTaskCommentsPanel({
             taskId={taskId} participantMode tenantHeaders={tenantHeaders}
             onClose={() => setShowTaskEvidence(false)}/>
         </div>}
-      <div id="verified-task-comment-history" aria-label="Verified task activity history">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-slate-700">Newest activity first · verified EOS pages</p>
-        <div className="flex flex-wrap gap-2">
-          {typeof onViewApprovals === 'function' &&
-            <button type="button" className="wp-button" onClick={onViewApprovals}>Decisions &amp; approvals</button>}
-          {typeof onViewAttachments === 'function' &&
-            <button type="button" className="wp-button" onClick={onViewAttachments}>Attachments &amp; evidence</button>}
-        </div>
-      </div>
-      <ul className="mt-2 divide-y divide-slate-200 border-t border-slate-200">
-        {activity.map(entry => <li className="p-3 text-sm" key={entry.id}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <strong className="break-words text-slate-900">
-              {entry.type === 'comment' ? 'Progress update / comment'
-                : entry.type === 'approval-request' ? 'Approval requested'
-                  : entry.type === 'approval-decision' ? 'Decision · ' + entry.item.status.toLowerCase()
-                    : entry.type === 'attachment' ? 'Evidence attached'
-                : entry.item.event_type === 'PROJECT_TASK_CREATED' ? 'Work created'
-                  : entry.item.event_type === 'PROJECT_TASK_REVISED' ? 'Work revised'
-                    : 'Lifecycle transition'}
-            </strong>
-            <time className="text-xs text-slate-600" dateTime={entry.time}>{displayTime(entry.time)}</time>
-          </div>
-          <p className="mt-1 text-xs text-slate-600" title={entry.actor}>
-            By {displayActor(entry.actor)}
-            {entry.type === 'event' ? ' · revision ' + entry.item.revision + ' · ' + entry.item.status_after.replaceAll('_', ' ').toLowerCase() : ''}
-          </p>
-          {entry.type === 'approval-request' && <p className="mt-2 break-words text-sm text-slate-800">
-            {entry.item.rationale}
-          </p>}
-          {entry.type === 'approval-decision' && entry.item.decision_rationale &&
-            <p className="mt-2 break-words text-sm text-slate-800">{entry.item.decision_rationale}</p>}
-          {entry.type === 'attachment' && <p className="mt-2 break-words text-sm text-slate-800">
-            {entry.item.filename} · {entry.item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
-              ? 'Scan verified clean' : 'Quarantined'}
-          </p>}
-          {entry.type.startsWith('approval') && typeof onViewApprovals === 'function' &&
-            <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
-              onClick={onViewApprovals}>Open governed decision</button>}
-          {entry.type === 'attachment' && typeof onViewAttachments === 'function' &&
-            <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
-              onClick={onViewAttachments}>Open governed attachment</button>}
-          {entry.type === 'comment' && <div className="mt-2"><MarkdownText value={entry.item.body}/></div>}
-          {entry.type === 'comment' && entry.item.mentions.length > 0 &&
-            <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
-        </li>)}
-        {activity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
-          No EOS-verified activity is available on these pages.
-        </li>}
-      </ul>
-      {(eventOffset > 0 || eventHasMore) &&
-        <nav aria-label="Task event pages" className="mt-3 flex items-center justify-between gap-2">
-          <button type="button" className="wp-button" disabled={eventOffset === 0 || eventState === 'LOADING'}
-            onClick={() => void loadEvents(Math.max(0, eventOffset - 50))}>Previous lifecycle events</button>
-          <span className="text-xs text-slate-600">Lifecycle page {Math.floor(eventOffset / 50) + 1}</span>
-          <button type="button" className="wp-button" disabled={!eventHasMore || eventState === 'LOADING'}
-            onClick={() => void loadEvents(eventOffset + 50)}>Next lifecycle events</button>
-        </nav>}
-      {(offset > 0 || hasMore) &&
-        <nav aria-label="Task comment pages" className="mt-2 flex items-center justify-between gap-2">
-          <button className="wp-button" type="button" disabled={busy || offset === 0}
-            onClick={() => void load(Math.max(0, offset - 50))}>Previous comments</button>
-          <span className="text-xs text-slate-600">Page {Math.floor(offset / 50) + 1}</span>
-          <button className="wp-button" type="button" disabled={busy || !hasMore}
-            onClick={() => void load(offset + 50)}>Next comments</button>
-        </nav>}
-
-      </div>
-      <details className="mt-3 text-sm text-slate-600" aria-label="Activity source diagnostics">
-        <summary className="cursor-pointer text-xs font-semibold text-slate-700">
-          Source status {eventState === 'UNAVAILABLE' || approvalState === 'UNAVAILABLE'
-            || attachmentState === 'UNAVAILABLE' ? '· some evidence unavailable' : '· source details'}
-        </summary>
-      {(approvalState === 'UNAVAILABLE' || attachmentState === 'UNAVAILABLE') &&
-        <p role="status" className="mt-2 text-sm text-amber-900">
-          {approvalState === 'UNAVAILABLE' ? 'Approval evidence unavailable. ' : ''}
-          {attachmentState === 'UNAVAILABLE' ? 'Attachment evidence unavailable. ' : ''}
-          Other verified activity remains readable; missing records are not inferred.
-        </p>}
-            {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
-        Task lifecycle evidence is unavailable. Other verified activity remains readable; no missing events are inferred.
-      </p>}
-      {(approvalState === 'LOADING' || attachmentState === 'LOADING') &&
-        <p role="status" className="mt-2 text-sm text-slate-600">Verifying decision and attachment evidence…</p>}
-      {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
-      <p className="mt-2 text-xs text-slate-600">Newest first across the currently verified source pages; totals are not inferred.
-        {hasMore || eventHasMore || approvalHasMore || attachmentHasMore
-          ? ' Additional source pages exist; this is not the complete history.' : ''}
-        {' '}Project Notes remain separate project-wide records.</p>
-
-      </details>
       {showComposer && <div id="task-comment-composer" ref={composerRef}
-        className="scroll-mt-28">
+        className="scroll-mt-28" role="region" aria-label="Write a progress update">
       <form onSubmit={submit} className="mt-3 space-y-2 rounded-lg border border-blue-200 bg-white p-4">
-        <label className="block text-sm font-semibold text-slate-800">Write a progress update
-          <textarea aria-label="New task comment" required rows={5}
+        {correction && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-slate-900">
+          <strong>Correct an existing entry · append-only audit</strong>
+          <p className="mt-1 text-xs">You can correct your own comment for 30 minutes from its EOS posting time. Python EOS checks the deadline again on submission. The original stays in EOS and your correction is a new linked audit entry.</p>
+          <label className="mt-3 block font-semibold">Reason for correction
+            <input aria-label="Reason for correction" required minLength={10} maxLength={500}
+              value={correctionReason} onChange={event => setCorrectionReason(event.target.value)}
+              placeholder="For example: Posted to MW-T09 instead of MW-T11"
+              className="mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm"/>
+          </label>
+        </div>}
+        <label className="block text-sm font-semibold text-slate-800">{correction ? 'Corrected update' : 'Write a progress update'}
+          <textarea ref={composerInputRef} aria-label="New task comment" required rows={5}
             maxLength={5000} value={body} onChange={event => setBody(event.target.value)}
             placeholder="Write a progress update. Use **bold**, *italic*, headings or lists."
             className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-normal text-slate-900"/>
@@ -640,17 +819,203 @@ export default function ProjectTaskCommentsPanel({
           </div>
           <p className="mt-2 text-xs text-slate-500">A mention is a source reference, not a delivered notification.</p>
         </fieldset>
-        <button className="wp-button wp-button-primary" type="submit"
-          disabled={busy || !body.trim()}><Send size={14}/> Publish to EOS</button>
+        <button className={ACTIVITY_ACTION_CLASS + " wp-button-primary"} type="submit"
+          disabled={busy || !body.trim() || Boolean(correction && correctionReason.trim().length < 10)}>
+          <Send size={14}/> {correction ? 'Publish correction to EOS' : 'Publish to EOS'}
+        </button>
       </form>
       </div>}
+      {!showComposer && <>
+      <div id="verified-task-comment-history" aria-label="Verified task activity history" className="pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
+        <div role="group" aria-label="Filter verified activity on current EOS pages"
+          className="flex max-w-full flex-wrap items-center gap-1.5">
+          {activityCategories.map(category => <button type="button" key={category.key}
+            aria-label={category.label}
+            aria-pressed={activityFilter === category.key}
+            onClick={() => setActivityFilter(category.key)}
+            className={'min-h-9 rounded-md border px-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+              + (activityFilter === category.key
+                ? 'border-slate-900 bg-slate-900 text-white'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+            {category.label} <span aria-hidden="true" title={categoryCounts[category.key] + ' on loaded EOS pages'}
+              className="ml-1 text-[10px] tabular-nums opacity-75">{categoryCounts[category.key]}</span>
+          </button>)}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="verified-activity-page-search">Search verified activity on loaded pages</label>
+          <input id="verified-activity-page-search" type="search" value={activityQuery}
+            onChange={event => setActivityQuery(event.target.value)}
+            placeholder="Find on these pages"
+            className="min-h-9 w-44 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-900 placeholder:text-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700"/>
+          <p className="text-xs text-slate-600" role="status">
+            {visibleActivity.length} matching · {activitySort === 'NEWEST' ? 'newest' : 'oldest'} first
+          </p>
+        </div>
+      </div>
+      <div className="mb-2 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
+        <button type="button" aria-expanded={showAdvancedActivityFilters}
+          aria-label={showAdvancedActivityFilters ? 'Hide filters' : 'More filters'}
+          aria-controls="activity-secondary-filters"
+          onClick={() => setShowAdvancedActivityFilters(value => !value)}
+          className={'min-h-9 rounded-md border px-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+            + (showAdvancedActivityFilters || activeSecondaryFilters
+              ? 'border-blue-300 bg-blue-50 text-blue-900'
+              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50')}>
+          {showAdvancedActivityFilters ? 'Hide filters' : 'More filters'}{activeSecondaryFilters ? ' · Active' : ''}
+        </button>
+        <span className="text-[11px] text-slate-600">Source-page filters only</span>
+        <div id="activity-secondary-filters" className={'flex flex-wrap items-center gap-2 '
+          + (showAdvancedActivityFilters ? '' : 'hidden')}>
+        <button type="button" aria-pressed={activityMineOnly} onClick={() => setActivityMineOnly(value => !value)}
+          className={'min-h-9 rounded-md border px-3 text-xs font-semibold ' + (activityMineOnly
+            ? 'border-blue-700 bg-blue-50 text-blue-900' : 'border-slate-300 bg-white text-slate-700')}>
+          Mine only
+        </button>
+        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          Date
+          <select aria-label="Filter activity date" value={activityDateRange} onChange={event => setActivityDateRange(event.target.value)}
+            className="min-h-9 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900">
+            <option value="ALL">All loaded dates</option>
+            <option value="TODAY">Today</option>
+            <option value="7D">Last 7 days</option>
+            <option value="30D">Last 30 days</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          Order
+          <select aria-label="Sort verified activity" value={activitySort} onChange={event => setActivitySort(event.target.value)}
+            className="min-h-9 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900">
+            <option value="NEWEST">Newest first</option>
+            <option value="OLDEST">Oldest first</option>
+          </select>
+        </label>
+        {activeSecondaryFilters && <button type="button" className="min-h-9 px-2 text-xs font-semibold text-blue-800 underline"
+          onClick={() => { setActivityMineOnly(false); setActivityDateRange('ALL'); setActivityQuery(''); }}>
+          Clear filters
+        </button>}
+        </div>
+      </div>
+      <ol className="space-y-1.5" aria-label="Source-verified task activity">
+        {visibleActivity.map((entry, index) => <React.Fragment key={entry.id}>
+          {(index === 0 || dayFor(visibleActivity[index - 1].time) !== dayFor(entry.time)) &&
+            <li className="border-b border-slate-200 pb-1 pt-2 text-xs font-semibold text-slate-600"
+              aria-label={'Activity dated ' + dayFor(entry.time)}>{dayFor(entry.time)}</li>}
+          <li className="relative min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+            <strong className="min-w-0 break-words text-sm font-semibold text-slate-900">
+              {entry.type === 'comment' ? displayActor(entry.actor) + ' posted a progress update'
+                : entry.type === 'approval-request' ? displayActor(entry.actor) + ' requested approval'
+                  : entry.type === 'approval-decision' ? displayActor(entry.actor) + ' recorded a decision · ' + entry.item.status.toLowerCase()
+                    : entry.type === 'attachment' ? displayActor(entry.actor) + ' attached evidence'
+                : entry.item.event_type === 'PROJECT_TASK_CREATED' ? displayActor(entry.actor) + ' created this work'
+                  : entry.item.event_type === 'PROJECT_TASK_REVISED' ? displayActor(entry.actor) + ' revised this work'
+                    : displayActor(entry.actor) + ' changed this work'}
+            </strong>
+            <time className="shrink-0 text-xs tabular-nums text-slate-600" dateTime={entry.time}>{displayTime(entry.time)}</time>
+          </div>
+          <p className="mt-1 text-xs text-slate-600">
+            {entry.type === 'event' ? 'Revision ' + entry.item.revision + ' · ' + entry.item.status_after.replaceAll('_', ' ').toLowerCase()
+              : entry.type === 'comment' ? 'Recorded EOS update' : 'Source-recorded event'}
+          </p>
+          {entry.type === 'approval-request' && <p className="mt-2 break-words text-sm text-slate-800">
+            {entry.item.rationale}
+          </p>}
+          {entry.type === 'approval-decision' && entry.item.decision_rationale &&
+            <p className="mt-2 break-words text-sm text-slate-800">{entry.item.decision_rationale}</p>}
+          {entry.type === 'attachment' && <p className="mt-2 break-words text-sm text-slate-800">
+            {entry.item.filename} · {entry.item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
+              ? 'Scan verified clean' : 'Quarantined'}
+          </p>}
+          {entry.type.startsWith('approval') && typeof onViewApprovals === 'function' &&
+            <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
+              onClick={onViewApprovals}>Open governed decision</button>}
+          {entry.type === 'attachment' && typeof onViewAttachments === 'function' &&
+            <button type="button" className="mt-2 text-sm font-semibold text-blue-800 underline"
+              onClick={onViewAttachments}>Open governed attachment</button>}
+          {entry.type === 'comment' && <ActivityCommentBody value={entry.item.body}/>}
+          {entry.type === 'comment' && entry.item.author_principal_id === principalId
+            && state === 'READY' && Number.isFinite(Date.parse(entry.item.created_at))
+            && Date.now() >= Date.parse(entry.item.created_at)
+            && Date.now() - Date.parse(entry.item.created_at) <= 30 * 60 * 1000
+            && <button type="button" disabled={busy}
+              className="mt-2 inline-flex min-h-9 items-center rounded-md border border-amber-300 bg-amber-50 px-2.5 text-xs font-semibold text-amber-950 hover:border-amber-500 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700"
+              title="Append a reasoned correction; the original EOS record stays immutable"
+              onClick={() => {
+                setCorrection({ comment_id: entry.item.comment_id,
+                  fingerprint: entry.item.fingerprint, body: entry.item.body });
+                setCorrectionReason('');
+                setBody(entry.item.body);
+                setMentions([]);
+                setShowComposer(true);
+                setShowTaskEvidence(false);
+                setError('');
+                command.current = { fingerprint: '', key: '' };
+              }}>Correct entry · audited</button>}
+          {entry.type === 'comment' && entry.item.author_principal_id === principalId
+            && Number.isFinite(Date.parse(entry.item.created_at))
+            && Date.now() - Date.parse(entry.item.created_at) > 30 * 60 * 1000
+            && <p className="mt-2 text-xs text-slate-600">
+              Correction window closed · Original record retained. A separately governed clarification is required.
+            </p>}
+          {entry.type === 'comment' && entry.item.mentions.length > 0 &&
+            <p className="mt-1 break-words text-xs text-slate-600">Mentions: {entry.item.mentions.length} source references</p>}
+        </li></React.Fragment>)}
+        {visibleActivity.length === 0 && eventState !== 'LOADING' && <li className="p-4 text-sm text-slate-600">
+          {activityFilter === 'ALL' && !activeSecondaryFilters ? 'No EOS-verified activity is available on these pages.'
+            : 'No matching verified records on the currently loaded pages. Other EOS pages may contain results.'}
+        </li>}
+      </ol>
+      {(eventOffset > 0 || eventHasMore) &&
+        <nav aria-label="Task event pages" className="mt-3 flex items-center justify-between gap-2">
+          <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={eventOffset === 0 || eventState === 'LOADING'}
+            onClick={() => void loadEvents(Math.max(0, eventOffset - 50))}>Previous lifecycle events</button>
+          <span className="text-xs text-slate-600">Lifecycle page {Math.floor(eventOffset / 50) + 1}</span>
+          <button type="button" className={ACTIVITY_ACTION_CLASS} disabled={!eventHasMore || eventState === 'LOADING'}
+            onClick={() => void loadEvents(eventOffset + 50)}>Next lifecycle events</button>
+        </nav>}
+      {(offset > 0 || hasMore) &&
+        <nav aria-label="Task comment pages" className="mt-2 flex items-center justify-between gap-2">
+          <button className={ACTIVITY_ACTION_CLASS} type="button" disabled={busy || offset === 0}
+            onClick={() => void load(Math.max(0, offset - 50))}>Previous comments</button>
+          <span className="text-xs text-slate-600">Page {Math.floor(offset / 50) + 1}</span>
+          <button className={ACTIVITY_ACTION_CLASS} type="button" disabled={busy || !hasMore}
+            onClick={() => void load(offset + 50)}>Next comments</button>
+        </nav>}
+
+      </div>
+      <details className="mt-3 text-sm text-slate-600" aria-label="Activity source diagnostics">
+        <summary className="cursor-pointer text-xs font-semibold text-slate-700">
+          Source status {state === 'UNAVAILABLE' || state === 'DENIED'
+            || eventState === 'UNAVAILABLE' || approvalState === 'UNAVAILABLE'
+            || attachmentState === 'UNAVAILABLE' ? '· some sources unavailable' : '· source details'}
+        </summary>
+      {(approvalState === 'UNAVAILABLE' || attachmentState === 'UNAVAILABLE') &&
+        <p role="status" className="mt-2 text-sm text-amber-900">
+          {approvalState === 'UNAVAILABLE' ? 'Approval evidence unavailable. ' : ''}
+          {attachmentState === 'UNAVAILABLE' ? 'Attachment evidence unavailable. ' : ''}
+          Other verified activity remains readable; missing records are not inferred.
+        </p>}
+            {eventState === 'UNAVAILABLE' && <p role="status" className="mt-2 text-sm text-amber-900">
+        Task lifecycle evidence is unavailable. Other verified activity remains readable; no missing events are inferred.
+      </p>}
+      {(approvalState === 'LOADING' || attachmentState === 'LOADING') &&
+        <p role="status" className="mt-2 text-sm text-slate-600">Verifying decision and attachment evidence…</p>}
+      {eventState === 'LOADING' && <p role="status" className="mt-2 text-sm text-slate-600">Verifying lifecycle evidence…</p>}
+      <p className="mt-2 text-xs text-slate-600">Sorting and filters apply only to currently verified source pages; totals are not inferred.
+        {hasMore || eventHasMore || approvalHasMore || attachmentHasMore
+          ? ' Additional source pages exist; this is not the complete history.' : ''}
+        {' '}Project Notes remain separate project-wide records.</p>
+
+      </details>
+      </>}
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
     </>}
   </section>;
 }
 
 // ARTIFACT: ProjectTaskCommentsPanel.jsx
-// VERSION: v1.9.1-VERIFIED-CONTRIBUTOR-MENTION-NAMES
+// VERSION: v1.20.4-NARRATIVE-ONLY-COLLAPSED-PREVIEW
 // AUTHORITY BOUNDARY: only EOS-authored comments; no notification dispatch
 // TENANT POSTURE: exact tenant/principal/project/task and replay-scoped drafts
 // FAIL-CLOSED POSTURE: malformed envelopes and missing mention choices deny

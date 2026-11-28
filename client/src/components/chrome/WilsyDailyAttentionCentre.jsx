@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Authenticated Daily Attention Centre
- * VERSION: v3.7.0-DRAFT-CREATION-TRUTH
+ * VERSION: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Interactive notification-bell entry to exact-tenant, authorised
  *          EOS My Work triage, with actionable navigation to source-owned
@@ -9,6 +9,26 @@
  * COLLABORATION / OWNERSHIP: Python EOS /api/my-work owns work visibility;
  *                            App.jsx owns authenticated chrome and navigation.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS reuses only still-valid exact-session read-through cache instead of forcing a duplicate read on opening; displays a compact non-authoritative task skeleton during verification.
+ * CHANGELOG: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS runs independent EOS My Work and Attention GETs concurrently on session admission and refresh; holds feed privately until coverage is verified against current projection. No partial results or new permissions.
+ * CHANGELOG: v3.11.0-SCOPED-REUSE-BOUNDED-LOAD reuses scoped read-through cache and renders a bounded loading skeleton.
+ * CHANGELOG: v3.10.1-FOUR-EDGE-KEYBOARD-RESIZE enables the
+ *          top resize edge and makes keyboard arrow controls match
+ *          the moving boundary. Full pointer resize stays bounded
+ *          by viewport and minimum readable dimensions.
+ * CHANGELOG: v3.10.0-ATTENTION-CONTEXTUAL-HEADER lets the
+ *          operating panel header follow detail, briefing, calendar
+ *          and creation focus from its reusable task workspace.
+ *          Header state is presentation-only and per-session.
+ * CHANGELOG: v3.9.0-EDGE-RESIZABLE-WORKSPACE adds
+ *          bounded pointer/keyboard edge resizing for the operating
+ *          panel; preserves float/dock, view state and EOS scope.
+ * CHANGELOG: v3.8.1-BLUEPRINT-JSX-CLOSURE corrects the
+ *          JSX class expression closing token in the expanded bell
+ *          task action. No EOS behavior, authority or source changes.
+ * CHANGELOG: v3.8.0-SHARED-WORK-BLUEPRINT-ATTENTION unifies
+ *          bell task rows with the reusable source-owned workforce
+ *          blueprint, preserving authenticated My Work handoff.
  * CHANGELOG: v3.7.0-DRAFT-CREATION-TRUTH differentiates a
  *            persisted CRM draft receipt from published active work,
  *            retaining source-verified creation and refreshing real feeds.
@@ -171,6 +191,7 @@ import {
   createAttentionSourceWork,
 } from '../../services/attentionFeedClient.js';
 import DailyAttentionWorkspace from '../attention/DailyAttentionWorkspace.jsx';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from '../workspaces/WorkTaskBlueprint.jsx';
 
 const FILTERS = Object.freeze([
   { id: 'ALL', label: 'All work', purpose: 'Review every active item currently included by EOS.' },
@@ -260,6 +281,9 @@ export default function WilsyDailyAttentionCentre({
   const rootRef = useRef(null);
   const panelRef = useRef(null);
   const dragRef = useRef(null);
+  const resizeRef = useRef(null);
+  const [panelSize, setPanelSize] = useState(null);
+  const [attentionSurface, setAttentionSurface] = useState('WORK');
   const [projection, setProjection] = useState(null);
   const [status, setStatus] = useState('IDLE');
   const [workError, setWorkError] = useState('');
@@ -284,6 +308,7 @@ export default function WilsyDailyAttentionCentre({
   const [loadingMore, setLoadingMore] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const feedGenerationRef = useRef(0);
+  const initialFeedPrefetchRef = useRef(null);
   const verifiedProjectionScopeRef = useRef(null);
   const verifiedAttentionScopeRef = useRef(null);
   const skipSelfInvalidationRefreshRef = useRef(false);
@@ -302,6 +327,7 @@ export default function WilsyDailyAttentionCentre({
     setProjection(null);
     verifiedProjectionScopeRef.current = null;
     verifiedAttentionScopeRef.current = null;
+    initialFeedPrefetchRef.current = null;
     setStatus('IDLE');
     setWorkError('');
     setRecoveryAttempts(0);
@@ -328,6 +354,8 @@ export default function WilsyDailyAttentionCentre({
     setExpanded(null);
     setView('WORK');
     setFloating(null);
+    setPanelSize(null);
+    setAttentionSurface('WORK');
   }, [liveScopeKey, systemServicesWorkspace]);
 
   useEffect(() => {
@@ -336,6 +364,7 @@ export default function WilsyDailyAttentionCentre({
       verifiedProjectionScopeRef.current = null;
       setAttentionFeed(null);
       verifiedAttentionScopeRef.current = null;
+      initialFeedPrefetchRef.current = null;
       setVerifiedAttentionCriteria(null);
       setAttentionFailureCriteria(null);
       setAttentionStatus('IDLE');
@@ -377,10 +406,28 @@ export default function WilsyDailyAttentionCentre({
       ? readUnifiedMyWork(
           workScope,
           { tenantId, principalId: auth.user.id },
-          { signal: controller.signal, force: true },
+          { signal: controller.signal, force: refreshId > 0 },
         )
       : api.get('/my-work', { forceNetworkRetry: true })
           .then((response) => assertAttentionProjection(response?.data, tenantId));
+    // Run the two independent authenticated read sources concurrently.
+    // The feed is held privately until the separately verified projection
+    // confirms identical admission/coverage; no provisional rows are shown.
+    if (workScope && liveScopeKey) {
+      const criteria = { filter, source, query: debouncedQuery.trim() };
+      const selectedView = {
+        ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
+      }[criteria.filter];
+      initialFeedPrefetchRef.current = {
+        scope: liveScopeKey, criteria,
+        promise: readAttentionFeed(
+          { tenantId, principalId: auth.user.id },
+          { view: selectedView,
+            sources: criteria.source !== 'ALL' ? criteria.source : undefined,
+            q: criteria.query, limit: 50, signal: controller.signal },
+        ).then((data) => ({ data }), (error) => ({ error })),
+      };
+    }
     request
       .then((verified) => {
         if (active) {
@@ -500,16 +547,27 @@ export default function WilsyDailyAttentionCentre({
     const selectedView = {
       ALL: 'active', OVERDUE: 'overdue', TODAY: 'due_today', HIGH: 'high_priority',
     }[filter];
-    readAttentionFeed(
-      { tenantId, principalId: auth.user.id },
-      {
-        view: selectedView,
-        sources: source !== 'ALL' ? source : undefined,
-        q: requestCriteria.query,
-        limit: 50,
-        signal: controller.signal,
-      },
-    ).then((verified) => {
+    const prefetch = initialFeedPrefetchRef.current;
+    const prefetchMatches = prefetch?.scope === liveScopeKey
+      && sameAttentionCriteria(prefetch.criteria, requestCriteria);
+    // A prefetched feed has no display authority on its own.
+    const request = prefetchMatches
+      ? prefetch.promise.then(({ data, error }) => {
+          if (error) throw error;
+          return data;
+        })
+      : readAttentionFeed(
+          { tenantId, principalId: auth.user.id },
+          {
+            view: selectedView,
+            sources: source !== 'ALL' ? source : undefined,
+            q: requestCriteria.query,
+            limit: 50,
+            signal: controller.signal,
+          },
+        );
+    initialFeedPrefetchRef.current = null;
+    request.then((verified) => {
       if (controller.signal.aborted || generation !== feedGenerationRef.current) return;
       const included = projection.sources_included || [];
       if (
@@ -1078,6 +1136,67 @@ export default function WilsyDailyAttentionCentre({
     setFloating(pos);
     return pos;
   };
+  // Layout is transient only; resizing must never alter authorized work.
+  const resizeEdge = (edge, event, phase) => {
+    if (phase === 'down') {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      event.stopPropagation();
+      const box = panelBounds();
+      const position = floating || floatAtPanel();
+      resizeRef.current = { id: event.pointerId, edge,
+        x: event.clientX, y: event.clientY,
+        left: position.x, top: position.y, width: box.width, height: box.height };
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      return;
+    }
+    const drag = resizeRef.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    if (phase === 'end') {
+      resizeRef.current = null;
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId))
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      return;
+    }
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    const west = edge.includes('left'), north = edge.includes('top');
+    const x = west ? Math.max(8, Math.min(drag.left + dx, drag.left + drag.width - 300)) : drag.left;
+    const y = north ? Math.max(8, Math.min(drag.top + dy, drag.top + drag.height - 240)) : drag.top;
+    const width = Math.max(Math.min(420, window.innerWidth - 16),
+      Math.min(drag.width + (west ? drag.left - x : edge.includes('right') ? dx : 0), window.innerWidth - x - 8));
+    const height = Math.max(Math.min(300, window.innerHeight - 16),
+      Math.min(drag.height + (north ? drag.top - y : edge.includes('bottom') ? dy : 0), window.innerHeight - y - 8));
+    setFloating(clamp(x, y, width, height));
+    setPanelSize({width, height});
+  };
+  const edgeHandle = edge => ({
+    role: 'separator', tabIndex: 0,
+    'aria-label': 'Resize daily attention ' + edge + ' edge',
+    'aria-orientation': edge === 'left' || edge === 'right' ? 'vertical' : 'horizontal',
+    style: {touchAction: 'none'},
+    onPointerDown: event => resizeEdge(edge, event, 'down'),
+    onPointerMove: event => resizeEdge(edge, event, 'move'),
+    onPointerUp: event => resizeEdge(edge, event, 'end'),
+    onPointerCancel: event => resizeEdge(edge, event, 'end'),
+    onKeyDown: event => {
+      const d = { ArrowLeft: [-16,0], ArrowRight: [16,0],
+        ArrowUp: [0,-16], ArrowDown: [0,16] }[event.key];
+      if (!d) return;
+      event.preventDefault();
+      const bounds = panelBounds();
+      const pos = floating || floatAtPanel();
+      const west = edge.includes('left'), north = edge.includes('top');
+      const east = edge.includes('right'), south = edge.includes('bottom');
+      const x = west ? Math.max(8, Math.min(pos.x + d[0], pos.x + bounds.width - 300)) : pos.x;
+      const y = north ? Math.max(8, Math.min(pos.y + d[1], pos.y + bounds.height - 240)) : pos.y;
+      const width = Math.max(Math.min(420, window.innerWidth - 16),
+        Math.min(bounds.width + (west ? pos.x - x : east ? d[0] : 0), window.innerWidth - x - 8));
+      const height = Math.max(Math.min(300, window.innerHeight - 16),
+        Math.min(bounds.height + (north ? pos.y - y : south ? d[1] : 0), window.innerHeight - y - 8));
+      setPanelSize({width, height});
+      setFloating(clamp(x, y, width, height));
+    },
+  });
   const handlePointerDown = (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const rect = panelBounds();
@@ -1151,17 +1270,30 @@ export default function WilsyDailyAttentionCentre({
           role="dialog"
           aria-label="Daily attention centre"
           data-floating={floating ? 'true' : 'false'}
-          style={floating
-            ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
-            : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }}
+          style={{
+            ...(floating
+              ? { position: 'fixed', left: floating.x, top: floating.y, right: 'auto' }
+              : { position: 'fixed', right: docked.right, top: docked.top, left: 'auto' }),
+            ...(panelSize ? {width: panelSize.width, height: panelSize.height,
+              maxWidth: 'calc(100vw - 16px)', maxHeight: 'calc(100dvh - 16px)'} : {}),
+          }}
           className={'fixed z-[90] flex max-h-[min(780px,calc(100vh-5rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#101d32] text-slate-100 shadow-2xl shadow-black/60 ' +
             (workScope ? 'w-[min(920px,calc(100vw-2rem))]' : 'w-[min(460px,calc(100vw-2rem))]')}
         >
+          <div {...edgeHandle('left')} className="absolute inset-y-3 left-0 z-30 w-2 cursor-ew-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('top')} className="absolute inset-x-3 top-0 z-30 h-2 cursor-ns-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('right')} className="absolute inset-y-3 right-0 z-30 w-2 cursor-ew-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('bottom')} className="absolute inset-x-3 bottom-0 z-30 h-2 cursor-ns-resize focus-visible:bg-amber-300/30"/>
+          <div {...edgeHandle('bottom-right')} className="absolute bottom-0 right-0 z-40 size-5 cursor-nwse-resize border-l border-t border-white/15 bg-white/10"/>
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#14243d] px-5 py-4">
             <div>
               <div className="flex items-center gap-2">
                 <Bell size={17} className="text-amber-300" />
-                <h2 className="text-base font-semibold text-white">Daily attention</h2>
+                <h2 className="text-base font-semibold text-white">{attentionSurface === 'DETAIL'
+                  ? 'Work details' : attentionSurface === 'BRIEFING'
+                    ? 'Priority briefing' : attentionSurface === 'CREATE'
+                      ? 'Create work' : attentionSurface === 'CALENDAR'
+                        ? 'Work calendar' : 'Daily attention'}</h2>
               </div>
               <p className="mt-1 text-xs leading-5 text-slate-400">
                 Your authorised EOS work across business functions.
@@ -1188,8 +1320,19 @@ export default function WilsyDailyAttentionCentre({
 
           {!hasCurrentVerifiedWorkspace && (status === 'LOADING'
             || (status === 'READY' && workScope && attentionStatus === 'LOADING')) && (
-            <div role="status" className="flex items-center gap-2 px-5 py-8 text-sm text-amber-200">
-              <RefreshCw size={16} className="animate-spin"/> Checking current work…
+            <div role="status" aria-live="polite" className="flex min-h-[175px] flex-col gap-3 px-5 py-5">
+              <div className="flex items-center gap-2 text-sm text-slate-200">
+                <RefreshCw size={15} className="animate-spin text-amber-300"/>
+                Verifying authorised work…
+              </div>
+              <p className="text-xs text-slate-400">
+                Preparing your task list, calendar and source permissions. No unverified results are displayed.
+              </p>
+              <div className="space-y-2" aria-hidden="true">
+                <div className="h-7 w-2/3 animate-pulse rounded-md bg-white/[0.07]"/>
+                <div className="h-7 w-4/5 animate-pulse rounded-md bg-white/[0.05]"/>
+                <div className="h-7 w-3/5 animate-pulse rounded-md bg-white/[0.04]"/>
+              </div>
             </div>
           )}
 
@@ -1223,6 +1366,7 @@ export default function WilsyDailyAttentionCentre({
               key={liveScopeKey}
               feed={attentionFeed}
               calendarItems={projection.items}
+              onSurfaceViewChange={setAttentionSurface}
               verifiedCriteria={verifiedAttentionCriteria}
               requestedCriteria={requestedAttentionCriteria}
               resultsUpdating={resultsUpdating}
@@ -1411,51 +1555,51 @@ export default function WilsyDailyAttentionCentre({
                     )}
                   </div>
                 ) : filteredItems.map((item) => (
-                  <article key={item.source_key} className="mb-1 flex flex-col gap-1 rounded-lg border border-white/10 bg-white/[0.025] px-3 py-2">
+                  <WorkTaskBlueprintRow key={item.source_key} className="mb-1 flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.08em]">
-                      <span className="font-semibold text-amber-200">{unifiedMyWorkSourceLabel(item.source)}</span>
-                      <span className={item.is_overdue ? 'font-semibold text-rose-300' : 'text-slate-400'}>
+                      <span className="font-semibold text-slate-700">{unifiedMyWorkSourceLabel(item.source)}</span>
+                      <span className={item.is_overdue ? 'font-semibold text-rose-800' : 'text-slate-600'}>
                         {item.is_overdue ? 'Overdue' : item.priority + ' priority'}
                       </span>
                     </div>
                     <button type="button" aria-expanded={expanded === item.source_key}
                       onClick={() => setExpanded((previous) => previous === item.source_key ? null : item.source_key)}
-                      className="mt-2 flex w-full items-start justify-between gap-2 text-left text-sm font-medium text-white hover:text-amber-100">
+                      className={'mt-1 flex w-full items-start justify-between gap-2 ' + workTaskBlueprint.title}>
                       <span className="min-w-0 break-words">{item.title}</span>
                       <ChevronDown size={15} className={'mt-0.5 shrink-0 transition ' +
                         (expanded === item.source_key ? 'rotate-180' : '')}/>
                     </button>
                     {item.whyRanked && (
-                      <p className="mt-1 text-[11px] text-amber-100/80">
+                      <p className="mt-1 text-xs text-slate-700">
                         Priority {item.urgencyScore}/100 · {item.whyRanked}
                       </p>
                     )}
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-600">
                       <span className="inline-flex items-center gap-1"><Clock3 size={12}/>{dueLabel(item.due_at)}</span>
                       <span>{item.status}</span>
                     </div>
                     <button type="button" onClick={() => onOpenWork(item)}
-                      aria-label={'Act on ' + item.title + ' in My Work'}
-                      className="mt-1 inline-flex w-fit items-center gap-2 rounded-lg border border-amber-300/50 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-300/10">
-                      Act in My Work <ArrowRight size={13}/>
+                      aria-label={'Open task ' + item.title}
+                      className={'mt-1 w-fit ' + workTaskBlueprint.secondary}>
+                      Open task <ArrowRight size={13}/>
                     </button>
                     {expanded === item.source_key && (
-                      <div className="mt-3 border-t border-white/10 pt-3">
+                      <div className="mt-2 border-t border-slate-200 pt-2">
                         {item.description && (
-                          <p className="mb-3 whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">
+                          <p className="mb-2 whitespace-pre-wrap break-words text-xs leading-5 text-slate-700">
                             {item.description}
                           </p>
                         )}
-                        <p className="text-[11px] leading-5 text-slate-400">
+                        <p className="text-xs leading-5 text-slate-600">
                           Work actions are verified and recorded by the owning EOS service.
                         </p>
                         <button type="button" onClick={() => onOpenWork(item)}
-                          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#081326] hover:bg-amber-200">
-                          Open in My Work <ArrowRight size={14}/>
+                          className={'mt-2 ' + workTaskBlueprint.primary}>
+                          Open authorized task <ArrowRight size={14}/>
                         </button>
                       </div>
                     )}
-                  </article>
+                  </WorkTaskBlueprintRow>
                 ))}
                 {workScope && attentionFeed?.nextCursor && (
                   <button type="button" disabled={loadingMore} onClick={loadMoreAttention}
@@ -1524,7 +1668,7 @@ function Stat({ label, value, urgent = false }) {
 
 /*
  * ARTIFACT: WilsyDailyAttentionCentre.jsx
- * VERSION: v3.7.0-DRAFT-CREATION-TRUTH
+ * VERSION: v3.12.0-CONCURRENT-VERIFIED-SOURCE-READS
  * AUTHORITY BOUNDARY: Authenticated read-only EOS work triage.
  * TENANT POSTURE: Exact tenant; only EOS-included source coverage is rendered.
  * FAIL-CLOSED POSTURE: Invalid, denied or unavailable sources show no fabricated items.

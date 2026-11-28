@@ -5,24 +5,58 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT
+ * VERSION: v1.35.0-PEOPLE-FOOTER-GRID-CERT
  * AUTHORITY: WILSY EOS frontend regression evidence
  * EPITOME: Verifies Headquarters renders only the source-backed My Work, Team,
  *          and HR requisition projections without manufacturing operational truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/WilsyHeadquartersWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: Exercises WilsyHeadquartersWorkspace and its API adapter seam.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.35.0-PEOPLE-FOOTER-GRID-CERT requires an actual bounded viewport grid with a dedicated footer row in People rather than relying on footer DOM existence or flex layout that can overflow.
+ * CHANGELOG: v1.35.0-PEOPLE-FOOTER-GRID-CERT verifies document callers supply exact tenant scope while shared API owns the current session bearer, preventing stale Owner/HR bearer overrides.
+ * CHANGELOG: v1.31.0-PEOPLE-COMPACT-INHEADER-RETURN-CERT proves the redundant breadcrumb strip is absent, the People application owns exactly one working back control and authenticated employer identity remains in the shared footer.
+ * CHANGELOG: v1.30.1-EXACT-EMPLOYER-DOM-SELECTOR locates the visible contextual employer container directly in the authenticated Headquarters DOM while retaining positive and foreign-tenant denial tests.
+ * CHANGELOG: v1.30.0-EXACT-EMPLOYER-HEADER-FOOTER-CERT verifies current tenant legal identity in People header/footer and denies presentation of a foreign tenant's legal name under the selected authenticated session.
+ * CHANGELOG: v1.29.0-PEOPLE-OWNED-CANVAS-AND-HQ-FOOTER-CERT certifies the source-owned People application layout, contextual return and bounded shared Headquarters footer at the original operating route.
+ * CHANGELOG: v1.29.0-HQ-TASK-NOT-ASSIGNED-PROJECTS-CERT verifies a Headquarters Projects work row routes directly to its task and never selects the assigned-projects view.
+ * CHANGELOG: v1.28.1-IN-CONTEXT-STRATEGY-NAV-CERT requires the M04 breadcrumb and primary action inside canonical Projects navigation, and rejects spurious return nav for ordinary Projects.
+ * CHANGELOG: v1.28.0-STRATEGY-RETURN-CERT certifies the exact Strategy-originated Projects return action and its absence for ordinary Projects; only presentation routing changes.
+ * CHANGELOG: v1.27.4-EXACT-NAVIGATION-HANDOFF-CERT asserts the
+ *          actual Projects destination and denies alternate My Work routing,
+ *          without relying on the portfolio title that is deliberately
+ *          hidden during focused project selection.
+ * CHANGELOG: v1.27.3-SOURCE-DETAIL-FOCUS-CERT validates an exact
+ *          Projects detail fetch from a source-authorized work handoff;
+ *          the overview's Projects heading intentionally disappears once
+ *          a verified project is selected for its focused task workspace.
+ * CHANGELOG: v1.27.2-EXACT-PROJECT-LIST-FOCUS-CERT supplies the
+ *          source-admitted project identity required for the governed
+ *          focusProjectId transition; unverified projects stay inaccessible.
+ * CHANGELOG: v1.27.1-PROJECTS-ROUTE-FIXTURE-CERT supplies the
+ *          authorized project list response when testing Headquarters' task
+ *          handoff into the canonical Projects workspace, as in the
+ *          already-certified direct navigation test.
+ * CHANGELOG: v1.27.0-CANONICAL-WORK-HANDOFF-CERT replaces retired
+ *          Headquarters summary-completion expectations with governed My
+ *          Work and exact-project task handoff and no duplicate source writes.
+ * CHANGELOG: v1.26.0-FOCUSED-WORK-RECOVERY-CERT verifies
+ *          unconfirmed completion stays visible in the focused
+ *          source record and the verified work queue returns only
+ *          after the user explicitly navigates Back to work.
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT verifies
+ *            a source-owned waiting predecessor appears in Headquarters
+ *            preview and detail without granting completion authority.
  * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT prohibits speculative Overview HR 403 probes and confirms the user-entered People workspace still performs exact tenant-scoped directory readback.
- * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT verifies the
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT verifies the
  *            Founder-approved Mission and Strategy text remains readable
  *            without claiming independent EOS publication.
  * CHANGELOG: v1.23.0-VERIFIED-OWNER-DRAFT-BADGE-CERT asserts a
  *            real owner-scoped EOS Draft count independently of the active
  *            queue, and rejects false zero when source admission fails.
- * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT proves
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT proves
  *            visible verified overdue, Open and In Progress filter
  *            counts, an owner-draft destination and filtered work rows.
- * CHANGELOG: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT accepts a single
+ * CHANGELOG: v1.25.0-DEPENDENCY-READINESS-PREVIEW-CERT accepts a single
  *            trustworthy verified active count when reads are shared across
  *            the Headquarters and Daily Attention coordinator, while still
  *            requiring the real source row and independent KPI evidence.
@@ -73,7 +107,7 @@ import {
   currentUnifiedMyWorkScope,
   invalidateUnifiedMyWork,
 } from '../../services/unifiedMyWorkSync.js';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import WilsyHeadquartersWorkspace from '../../components/workspaces/WilsyHeadquartersWorkspace.jsx';
 
 vi.mock('../../components/workspaces/MyWorkWorkspace.jsx', () => ({
@@ -85,7 +119,12 @@ vi.mock('../../components/workspaces/MyWorkWorkspace.jsx', () => ({
   ),
 }));
 vi.mock('../../components/hr/HrDashboard.jsx', () => ({
-  default: () => <section><h2>Canonical HR operating workspace</h2></section>,
+  default: ({ onReturnToHeadquarters }) => (
+    <section>
+      <button type="button" aria-label="Return to Headquarters" onClick={onReturnToHeadquarters}>Back</button>
+      <h2>Canonical HR operating workspace</h2>
+    </section>
+  ),
 }));
 const exactTenant = 'TENANT-HQ-SOURCE-CERT';
 const exactPrincipal = 'PRINCIPAL-HQ-SOURCE-CERT';
@@ -181,15 +220,107 @@ vi.mock('../../services/api.js', () => ({
   },
 }));
 
+const HeadquartersRouteProbe = () => {
+  const route = useLocation();
+  return <output data-testid="hq-canonical-route">{route.pathname + route.search}</output>;
+};
+
 const renderHeadquarters = (initialEntries = ['/'], authValue = auth, tenantIdValue = exactTenant) => render(
   <AuthContext.Provider value={authValue}>
     <MemoryRouter initialEntries={initialEntries}>
       <WilsyHeadquartersWorkspace tenantId={tenantIdValue}/>
+      <HeadquartersRouteProbe/>
     </MemoryRouter>
   </AuthContext.Provider>,
 );
 
 describe('WILSY Headquarters authenticated shell', () => {
+  it('returns directly from a Strategy-originated Projects task to the existing M04 execution document', async () => {
+    const project = 'prj-' + 'a'.repeat(48);
+    const task = 'ptk-' + 'b'.repeat(48);
+    renderHeadquarters(['/headquarters?section=projects&project=' + project
+      + '&task=' + task + '&returnTo=STRATEGY']);
+    const returnNav = await screen.findByRole('navigation', { name: 'Strategy project return' });
+    const returnAction = within(returnNav).getByRole('button', { name: 'Back to Strategy execution' });
+    expect(returnNav).toHaveTextContent('Our Strategy');
+    expect(returnNav).toHaveTextContent('M04 · Governed execution');
+    expect(returnAction).toBeVisible();
+    expect(returnAction).toHaveTextContent('Return to Strategy M04');
+    fireEvent.click(returnAction);
+    expect(await screen.findByRole('dialog', { name: /Our Strategy/i })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Back to Strategy execution' })).not.toBeInTheDocument();
+  });
+
+  it('does not display a Strategy return action for ordinary Projects navigation', async () => {
+    renderHeadquarters(['/headquarters?section=projects']);
+    expect(screen.queryByRole('navigation', { name: 'Strategy project return' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Back to Strategy execution' })).not.toBeInTheDocument();
+  });
+
+  it('shows source-verified project predecessor waiting in the Headquarters preview', async () => {
+    const previous = api.get.getMockImplementation();
+    api.get.mockImplementation((path, config = {}) => {
+      if (path === '/projects') return Promise.resolve({ data: {
+        schema: 'WILSY-PROJECT-LIST/V1',
+        tenant_id: exactTenant, principal_id: exactPrincipal,
+        limit: 100, offset: 0,
+        items: [{
+          project_id: 'prj-' + 'a'.repeat(48),
+          tenant_id: exactTenant, name: 'Verified dependency project',
+          code: 'SOURCE-GATED', summary: 'Current EOS-owned project',
+          status: 'active', created_by_principal_id: exactPrincipal,
+          revision: 1, created_at: '2026-11-16T12:00:00+00:00',
+          updated_at: '2026-11-16T12:00:00+00:00',
+          archived_at: null, target_date: null,
+        }],
+      } });
+      if (path === '/my-work') {
+        const payload = workProjection();
+        const taskId = 'ptk-' + 'c'.repeat(48);
+        payload.items.push({
+          tenant_id: exactTenant, source: 'PROJECTS',
+          source_key: 'PROJECTS:' + taskId, work_item_id: taskId,
+          project_id: 'prj-' + 'a'.repeat(48),
+          owner_principal_id: exactPrincipal,
+          title: 'Validate tenant configuration', description: '',
+          status: 'OPEN', priority: 'NORMAL', kind: 'TASK',
+          due_at: null, due_date: '2026-11-27', is_overdue: false,
+          dependency_total: 1, dependency_remaining: 1,
+          dependency_readiness: 'WAITING',
+          action_authority: 'SOURCE_SERVICE_ONLY', completion_route: null,
+        });
+        payload.summary.active_count = 4;
+        payload.summary.source_counts.PROJECTS = 1;
+        payload.sources_included.push('PROJECTS');
+        return Promise.resolve({ data: payload });
+      }
+      return previous(path, config);
+    });
+    try {
+      renderHeadquarters(['/headquarters?view=assigned']);
+      expect(await screen.findByText(/Waiting on 1 predecessor\(s\)/)).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', {
+        name: 'Open authorized record: Validate tenant configuration',
+      }));
+      expect(document.querySelector('.hq-subworkspace')).toBeTruthy();
+      expect(screen.queryByTestId('my-work-focus')).toBeNull();
+      const route = screen.getByTestId('hq-canonical-route');
+      await waitFor(() => expect(route.textContent).toContain('section=projects'));
+      const params = new URLSearchParams(route.textContent.split('?')[1]);
+      expect(params.get('project')).toBe('prj-' + 'a'.repeat(48));
+      expect(params.get('task')).toBe('ptk-' + 'c'.repeat(48));
+      expect(params.get('view')).not.toBe('assigned');
+      expect(screen.queryByRole('heading', { name: 'My assigned projects' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Products & R&D' }));
+      expect(screen.getByRole('button', { name: 'Projects & Delivery' })).toHaveAttribute('aria-current', 'page');
+      expect(screen.queryByRole('region', { name: 'Selected work record' })).toBeNull();
+      expect(api.post).not.toHaveBeenCalled();
+    } finally {
+      api.get.mockImplementation(previous);
+    }
+  });
+
+
   it('opens the EOS Projects workspace from the governed navigation with the selected tenant scope', async () => {
     const previous = api.get.getMockImplementation();
     api.get.mockImplementation((path, config = {}) => {
@@ -230,7 +361,8 @@ describe('WILSY Headquarters authenticated shell', () => {
       expect(document.querySelector('[data-document-state="FOUNDER_APPROVED_EOS_PENDING"]')).toBeTruthy();
       expect(screen.getByText('NOT YET PUBLISHED')).toBeVisible();
       const read = api.get.mock.calls.find(([path]) => path === '/company-operating-documents/' + classification);
-      expect(read[1].headers).toMatchObject({ 'X-Tenant-ID': exactTenant, Authorization: 'Bearer ' + auth.token });
+      expect(read[1].headers).toMatchObject({ 'X-Tenant-ID': exactTenant });
+      expect(read[1].headers).not.toHaveProperty('Authorization');
       fireEvent.click(screen.getByRole('button', { name: 'Close company document' }));
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     } finally { api.get.mockImplementation(previous); }
@@ -281,6 +413,62 @@ describe('WILSY Headquarters authenticated shell', () => {
   it('opens the canonical governed HR workflow through attention centre URL', async () => {
     renderHeadquarters(['/headquarters?section=hr-workspace']);
     expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+  });
+
+  it('gives People full application ownership and a way back without duplicating global branding', async () => {
+    renderHeadquarters(['/headquarters?section=hr-workspace']);
+    const layout = document.querySelector('.hq-layout');
+    expect(layout).toHaveClass('hq-layout--people-owned');
+    expect(document.querySelector('.hq-content')).toHaveClass('hq-content--people-owned');
+    expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'People operating application' })).toHaveAttribute('data-workspace-ownership', 'PEOPLE');
+    const footer = screen.getByRole('contentinfo', { name: 'Headquarters operating footer' });
+    expect(footer).toHaveTextContent('People · Hire to Exit');
+    expect(footer).toHaveTextContent('Python Kennel EOS');
+    const styles = document.querySelector('.wilsyHqShell style').textContent;
+    expect(styles).toContain('.wilsyHqShell .hq-layout--people-owned{display:block');
+    expect(styles).toContain('.wilsyHqShell{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;overflow:hidden}');
+    expect(styles).toContain('.wilsyHqShell>.hq-layout{height:100%!important;min-height:0;max-height:none!important;overflow:hidden}');
+    expect(styles).toContain('.wilsyHqShell>.hq-global-footer{position:relative;z-index:2;min-height:45px;max-height:none;visibility:visible;align-self:stretch;flex-shrink:0}');
+    expect(document.querySelector('.hq-people-navigation')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Return to Headquarters' })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to Headquarters' }));
+    expect(await screen.findByRole('heading', { name: 'WILSY Headquarters' })).toBeTruthy();
+    expect(layout).not.toHaveClass('hq-layout--people-owned');
+  });
+
+  it('shows exact authenticated employer identity in People header and shared footer', async () => {
+    const tenantBoundAuth = {
+      ...auth,
+      tenant: { tenantId: exactTenant, legalName: 'Verified Test Employer Ltd' },
+    };
+    renderHeadquarters(['/headquarters?section=hr-workspace'], tenantBoundAuth);
+    expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+    expect(document.querySelector('.hq-people-navigation')).toBeNull();
+    expect(document.querySelector('.hq-people-employer')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Return to Headquarters' })).toHaveLength(1);
+    const footer = screen.getByRole('contentinfo', { name: 'Headquarters operating footer' });
+    expect(footer).toHaveTextContent('Verified Test Employer Ltd');
+    expect(footer).toHaveTextContent(exactTenant);
+  });
+
+  it('does not present a foreign tenant legal name as current employer', async () => {
+    const foreignMetadata = {
+      ...auth,
+      tenant: { tenantId: 'FOREIGN-TENANT', legalName: 'Foreign Employer Ltd' },
+    };
+    renderHeadquarters(['/headquarters?section=hr-workspace'], foreignMetadata);
+    expect(await screen.findByRole('heading', { name: 'Canonical HR operating workspace' })).toBeTruthy();
+    expect(screen.queryByText('Foreign Employer Ltd')).toBeNull();
+    expect(screen.getByRole('contentinfo', { name: 'Headquarters operating footer' }))
+      .toHaveTextContent('Tenant verification pending');
+  });
+
+  it('keeps the shared Headquarters footer when the operating view changes', () => {
+    renderHeadquarters(['/headquarters']);
+    expect(screen.getByRole('contentinfo', { name: 'Headquarters operating footer' }))
+      .toHaveTextContent('Headquarters · Enterprise operations');
   });
 
   it('bounds the workspace and sidebar scroll rails and keeps nested groups closed until requested', () => {
@@ -460,8 +648,8 @@ describe('WILSY Headquarters authenticated shell', () => {
   it('opens an exact source record in view and hands it into My Work without inventing authority', async () => {
     renderHeadquarters();
     fireEvent.click(await screen.findByRole('button', { name: 'Open authorized record: Repair source workflow' }));
-    expect(screen.getByRole('region', { name: 'Selected work record' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Open source-governed workspace' }));
+    expect(screen.getByRole('heading', { name: 'My Work certified task centre' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Selected work record' })).toBeNull();
     expect(screen.getByTestId('my-work-focus').textContent).toBe('OPERATIONS:HQ-1');
     const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
     fireEvent.click(within(navigation).getByRole('button', { name: /My Work/ }));
@@ -863,61 +1051,24 @@ describe('WILSY Headquarters authenticated shell', () => {
     }
   });
 
-  it('completes source work only after independent readback and blocks duplicate clicks', async () => {
-    const originalGet = api.get.getMockImplementation();
-    let completed = false;
-    let acknowledge;
-    api.get.mockImplementation((path, config) => {
-      if (path.startsWith('/attention/actions/')) return Promise.resolve({ data: {
-        schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1', tenantId: exactTenant,
-        principalId: exactPrincipal, authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
-        sourceActions: path.endsWith('operations') ? { OPERATIONS: ['COMPLETE'] } : { CRM: ['COMPLETE'] },
-      } });
-      if (path === '/my-work' && completed) {
-        const next = workProjection(); next.items = next.items.filter((item) => item.work_item_id !== 'HQ-1');
-        next.summary = { active_count: 2, overdue_count: 0, source_counts: { OPERATIONS: 1, CRM: 1 } };
-        return Promise.resolve({ data: next });
-      }
-      return originalGet(path, config);
-    });
-    api.post.mockImplementation(() => new Promise((resolve) => { acknowledge = () => {
-      completed = true;
-      resolve({ data: { tenant_id: exactTenant, work_item_id: 'HQ-1', status: 'COMPLETED' } });
-    }; }));
-    try {
-      renderHeadquarters();
-      fireEvent.click(await screen.findByRole('button', { name: 'Open authorized record: Repair source workflow' }));
-      const input = await screen.findByLabelText('Completion note for Repair source workflow');
-      fireEvent.change(input, { target: { value: 'Verified source completion' } });
-      const complete = screen.getByRole('button', { name: 'Complete work' });
-      fireEvent.click(complete); fireEvent.click(complete);
-      expect(api.post).toHaveBeenCalledTimes(1);
-      expect(screen.queryByText(/Completion confirmed by EOS/)).toBeNull();
-      await act(async () => acknowledge());
-      expect(await screen.findByText('Completion confirmed by EOS and a fresh authorized work readback.')).toBeTruthy();
-      expect(screen.queryByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeNull();
-      expect(api.post).toHaveBeenCalledWith('/tenant-modules/operations/workspace/work-items/HQ-1/complete', { completion_note: 'Verified source completion' });
-    } finally { api.get.mockImplementation(originalGet); api.post.mockReset(); }
+  it('routes Headquarters completion into the canonical source workspace instead of issuing a duplicate command', async () => {
+    renderHeadquarters();
+    fireEvent.click(await screen.findByRole('button', { name: 'Open authorized record: Repair source workflow' }));
+    expect(screen.getByTestId('my-work-focus')).toHaveTextContent('OPERATIONS:HQ-1');
+    expect(screen.queryByLabelText('Completion note for Repair source workflow')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Complete work' })).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('never claims completion if the source acknowledges but the fresh projection still contains the record', async () => {
-    const originalGet = api.get.getMockImplementation();
-    api.get.mockImplementation((path, config) => path.startsWith('/attention/actions/')
-      ? Promise.resolve({ data: {
-        schema: 'WILSY-OS-ATTENTION-ACTION-AVAILABILITY/V1', tenantId: exactTenant,
-        principalId: exactPrincipal, authority: 'SOURCE_COMMAND_ENDPOINTS_REAUTHORIZE',
-        sourceActions: path.endsWith('operations') ? { OPERATIONS: ['COMPLETE'] } : { CRM: ['COMPLETE'] },
-      } }) : originalGet(path, config));
-    api.post.mockResolvedValue({ data: { tenant_id: exactTenant, work_item_id: 'HQ-1', status: 'COMPLETED' } });
-    try {
-      renderHeadquarters();
-      fireEvent.click(await screen.findByRole('button', { name: 'Open authorized record: Repair source workflow' }));
-      fireEvent.change(await screen.findByLabelText('Completion note for Repair source workflow'), { target: { value: 'Require fresh source truth' } });
-      fireEvent.click(screen.getByRole('button', { name: 'Complete work' }));
-      expect(await screen.findByText(/EOS acknowledged completion; current readback is unavailable/)).toBeTruthy();
-      expect(screen.queryByText('Completion confirmed by EOS and a fresh authorized work readback.')).toBeNull();
-      expect(screen.getByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
-    } finally { api.get.mockImplementation(originalGet); api.post.mockReset(); }
+  it('restores the authorized Headquarters queue after focused work navigation without claiming a completed record', async () => {
+    renderHeadquarters();
+    fireEvent.click(await screen.findByRole('button', { name: 'Open authorized record: Repair source workflow' }));
+    expect(screen.getByTestId('my-work-focus')).toHaveTextContent('OPERATIONS:HQ-1');
+    const navigation = screen.getByRole('navigation', { name: 'Headquarters navigation' });
+    fireEvent.click(within(navigation).getByRole('button', { name: /Headquarters/ }));
+    expect(await screen.findByRole('button', { name: 'Open authorized record: Repair source workflow' })).toBeTruthy();
+    expect(screen.queryByText('Completion confirmed by EOS and a fresh authorized work readback.')).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('refreshes source projections through the API instead of local browser state', async () => {
@@ -940,7 +1091,7 @@ describe('WILSY Headquarters authenticated shell', () => {
 });
 
 /* ARTIFACT: WILSY OS Headquarters workspace presentation certificate
- * VERSION: v1.24.0-LAZY-WORKFORCE-FANOUT-CERT
+ * VERSION: v1.35.0-PEOPLE-FOOTER-GRID-CERT
  * AUTHORITY BOUNDARY: Regression evidence only; tests do not grant permissions.
  * TENANT POSTURE: Fixtures represent server-scoped projections and supply no browser tenant input.
  * FAIL-CLOSED POSTURE: Source contracts are asserted before presentation claims are made.

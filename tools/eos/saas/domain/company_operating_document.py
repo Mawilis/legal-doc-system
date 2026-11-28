@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Company Operating Document Lifecycle.
-VERSION: v1.0.0-COMPANY-MISSION-STRATEGY-LIFECYCLE
+VERSION: v1.1.0-EXPLICIT-FOUNDER-STRATEGY-RATIFICATION
 AUTHORITY: Pure immutable company-document lifecycle; HTTP IAM owns admission.
 EPITOME: Distinguishes prepared, submitted and independently approved published
 Mission/Strategy revisions without inventing company policy or Founder sign-off.
@@ -7,6 +7,10 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/saas/d
 COLLABORATION / OWNERSHIP: CompanyOperatingDocumentRegistry persists revisions;
 company_operating_document_router reauthorizes exact company-tenant commands.
 CERTIFICATION / UPDATE DATE: 2026-11-13
+CHANGELOG: v1.1.0-EXPLICIT-FOUNDER-STRATEGY-RATIFICATION permits
+Strategy-only same-actor ratification under one server-owned immutable
+reference; HTTP and registry must verify durable Founder source authority.
+All other document/approval combinations remain independently published.
 CHANGELOG: v1.0.0-COMPANY-MISSION-STRATEGY-LIFECYCLE establishes bounded text,
 immutable revisions, deterministic SHA3-512 evidence and independent publication.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -30,10 +34,11 @@ from typing import Any, Final, Mapping
 
 from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 
-VERSION: Final = "v1.0.0-COMPANY-MISSION-STRATEGY-LIFECYCLE"
+VERSION: Final = "v1.1.0-EXPLICIT-FOUNDER-STRATEGY-RATIFICATION"
 SCHEMA: Final = "WILSY-COMPANY-OPERATING-DOCUMENT/V1"
 MAX_SECTIONS: Final = 24
 MAX_CONTENT: Final = 100_000
+FOUNDER_RATIFICATION_REFERENCE: Final = "WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123"
 
 
 class CompanyDocumentError(ValueError):
@@ -161,8 +166,15 @@ class CompanyOperatingDocumentRevision:
         if self.state is CompanyDocumentState.PUBLISHED:
             _text(self.approved_by_principal_id, 256, "COMPANY_DOCUMENT_APPROVER_REQUIRED")
             _text(self.approval_reference, 500, "COMPANY_DOCUMENT_APPROVAL_REQUIRED")
-            if self.approved_by_principal_id == self.author_principal_id:
+            if self.approved_by_principal_id == self.author_principal_id and not (
+                self.classification is CompanyDocumentClass.STRATEGY
+                and self.approval_reference == FOUNDER_RATIFICATION_REFERENCE
+            ):
                 raise CompanyDocumentError("COMPANY_DOCUMENT_INDEPENDENT_APPROVER_REQUIRED")
+            if (self.approval_reference == FOUNDER_RATIFICATION_REFERENCE
+                and (self.classification is not CompanyDocumentClass.STRATEGY
+                     or self.approved_by_principal_id != self.author_principal_id)):
+                raise CompanyDocumentError("COMPANY_DOCUMENT_FOUNDER_RATIFICATION_INVALID")
             if self.effective_from is None or instant(self.effective_from) != self.effective_from:
                 raise CompanyDocumentError("COMPANY_DOCUMENT_EFFECTIVE_DATE_REQUIRED")
         elif any(value is not None for value in (self.approved_by_principal_id, self.approval_reference, self.effective_from)):
@@ -241,8 +253,9 @@ class CompanyOperatingDocumentRevision:
                 now: datetime) -> CompanyOperatingDocumentRevision:
         """Record an independently authorized publisher's approval/publication.
 
-        Submission is not approval. A Founder label is not permission. Caller
-        IAM must admit the publisher; self-publication is always rejected.
+        Submission is not approval. Normal IAM publishers must be independent.
+        The exact source-verified Founder may ratify only Strategy through the
+        registry's separate server-owned action and immutable reference.
         """
         if self.state is not CompanyDocumentState.SUBMITTED:
             raise CompanyDocumentError("COMPANY_DOCUMENT_PUBLICATION_STATE_INVALID")
@@ -253,7 +266,7 @@ class CompanyOperatingDocumentRevision:
 
 
 # ARTIFACT: company_operating_document.py
-# VERSION: v1.0.0-COMPANY-MISSION-STRATEGY-LIFECYCLE
+# VERSION: v1.1.0-EXPLICIT-FOUNDER-STRATEGY-RATIFICATION
 # AUTHORITY BOUNDARY: Pure immutable lifecycle/evidence; HTTP IAM admits actors.
 # TENANT POSTURE: Exact canonical WILSY company tenant only.
 # FAIL-CLOSED POSTURE: Invalid text, time, lineage, digest or self-approval rejects.

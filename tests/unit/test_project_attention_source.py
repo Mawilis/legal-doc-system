@@ -1,11 +1,22 @@
 """TITLE: WILSY OS Exact-Participant Project Daily Attention Certificate
-VERSION: v1.0.0-PROJECT-ATTENTION-SOURCE-DENIAL-CERT
+VERSION: v1.2.1-COMPLETED-PREDECESSOR-CERT
 AUTHORITY: Synthetic authenticated-source isolation and projection tests.
 EPITOME: Verify exact principal/tenant queue, current project participation,
          blocked work, revoked visibility and denial of inherited founder IAM.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_attention_source.py
 COLLABORATION / OWNERSHIP: project_attention_source, Projects router, My Work.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.2.1-COMPLETED-PREDECESSOR-CERT verifies that a
+         completed predecessor exits My Work but unlocks its dependent.
+CHANGELOG: v1.2.0-DEPENDENCY-READINESS-SOURCE-CERT tests independent predecessor
+         status resolution and fail-closed missing records in the project snapshot.
+CHANGELOG: v1.1.1-BATCH-ATTENTION-PURPOSE-CERT adjusts synthetic
+         collection reads for bounded batch evidence while preserving exact
+         participant admission and unclassified visibility.
+CHANGELOG: v1.1.0-AUDITED-PURPOSE-SOURCE-ADAPTER-CERT certifies
+         missing work-purpose evidence remains visible as UNCLASSIFIED,
+         forwards exact source task revision and fails closed on tampering
+         while retaining existing participant/tenant scope.
 CHANGELOG: v1.0.0-PROJECT-ATTENTION-SOURCE-DENIAL-CERT certifies no cross-
          principal/tenant work, no revoked participant visibility or fake due time.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -51,9 +62,14 @@ class _Collection:
     def find(self, query, session):
         assert session is not None
         assert query["tenant_id"] == TENANT
+        if "task_id" in query:
+            assert query["project_id"] == PROJECT
+            requested = set(query["task_id"]["$in"])
+            return _Cursor([row for row in self.rows if row["task_id"] in requested])
         assert query["assignee_principal_id"] == PRINCIPAL
         assert set(query["status"]["$in"]) == {"TODO", "IN_PROGRESS", "BLOCKED"}
-        return _Cursor(self.rows)
+        return _Cursor([row for row in self.rows if row["assignee_principal_id"] == PRINCIPAL
+                        and row["status"] in {"TODO", "IN_PROGRESS", "BLOCKED"}])
 
 
 def _task(task_id, status):
@@ -75,7 +91,17 @@ def _context(role="PROJECTS_PARTICIPANT_CONTRIBUTOR"):
 
 
 def _wire(monkeypatch, rows, *, active=True, role="CONTRIBUTOR"):
-    database = {source.TASK_COLLECTION: _Collection(rows)}
+    class _AbsentPurpose:
+        def find(self, query, *, session):
+            assert session is not None
+            assert query["tenant_id"] == TENANT
+            assert set(query["task_id"]["$in"]).issubset({row["task_id"] for row in rows})
+            return []
+    database = {
+        source.TASK_COLLECTION: _Collection(rows),
+        source.PURPOSE_COLLECTION: _AbsentPurpose(),
+        source.PURPOSE_EVENT_COLLECTION: _AbsentPurpose(),
+    }
     monkeypatch.setattr(source.kernel_db, "get_database", lambda: database)
     def run(_context, callback):
         return callback(object(), object())
@@ -108,7 +134,56 @@ def test_projects_source_includes_delegated_and_blocked_work(monkeypatch):
     assert all(row["project_id"] == PROJECT for row in result["items"])
     assert all(row["due_at"] is None for row in result["items"])
     assert all(row["due_date"] == "2026-11-20" for row in result["items"])
+    assert all(row["revision"] == 1 and row["audience_evidence"] is None
+               for row in result["items"])
     assert calls == [PROJECT]  # one authorization per distinct project
+
+
+def test_verified_predecessor_controls_readiness_without_exposing_identity(monkeypatch):
+    predecessor = _task("ptk-" + "c" * 48, "TODO")
+    dependent = _task("ptk-" + "b" * 48, "TODO")
+    from dataclasses import replace
+    dependent = replace(dependent, depends_on=(predecessor.task_id,), fingerprint="")
+    _wire(monkeypatch, [dependent.to_dict(), predecessor.to_dict()])
+    result = source.read_project_attention(
+        context=_context(), tenant_id=TENANT, principal_id=PRINCIPAL,
+    )
+    entry = next(row for row in result["items"] if row["work_item_id"] == dependent.task_id)
+    assert entry["dependency_readiness"] == "WAITING"
+    assert entry["dependency_total"] == 1
+    assert entry["dependency_remaining"] == 1
+    assert "depends_on" not in entry
+    assert "predecessor" not in entry
+    assert predecessor.task_id not in repr(entry)
+
+
+def test_completed_predecessor_unlocks_readiness_without_new_command(monkeypatch):
+    from dataclasses import replace
+    predecessor = _task("ptk-" + "c" * 48, "DONE")
+    dependent = _task("ptk-" + "b" * 48, "TODO")
+    dependent = replace(dependent, depends_on=(predecessor.task_id,), fingerprint="")
+    _wire(monkeypatch, [dependent.to_dict(), predecessor.to_dict()])
+    result = source.read_project_attention(
+        context=_context(), tenant_id=TENANT, principal_id=PRINCIPAL,
+    )
+    assert len(result["items"]) == 1
+    row = result["items"][0]
+    assert row["dependency_total"] == 1
+    assert row["dependency_remaining"] == 0
+    assert row["dependency_readiness"] == "READY"
+
+
+def test_missing_predecessor_fails_closed(monkeypatch):
+    from dataclasses import replace
+    dependent = _task("ptk-" + "b" * 48, "TODO")
+    dependent = replace(dependent, depends_on=("ptk-" + "c" * 48,), fingerprint="")
+    _wire(monkeypatch, [dependent.to_dict()])
+    with pytest.raises(HTTPException) as error:
+        source.read_project_attention(
+            context=_context(), tenant_id=TENANT, principal_id=PRINCIPAL,
+        )
+    assert error.value.status_code == 503
+    assert error.value.detail == "PROJECT_ATTENTION_SOURCE_INVALID"
 
 
 def test_revoked_or_viewer_project_is_excluded(monkeypatch):
@@ -154,7 +229,7 @@ def test_corrupt_task_source_denies_complete_queue(monkeypatch):
 
 
 # ARTIFACT: test_project_attention_source.py
-# VERSION: v1.0.0-PROJECT-ATTENTION-SOURCE-DENIAL-CERT
+# VERSION: v1.2.1-COMPLETED-PREDECESSOR-CERT
 # AUTHORITY BOUNDARY: synthetic source admission, no live tenant IAM
 # TENANT POSTURE: exact principal and active-project record mandatory
 # FAIL-CLOSED POSTURE: stale, forged, revoked and inherited authority denied

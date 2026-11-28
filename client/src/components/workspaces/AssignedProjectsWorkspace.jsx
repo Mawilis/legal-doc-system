@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Participant Projects and Daily Execution Workspace
- * VERSION: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION
+ * VERSION: v1.9.0-VERIFIED-TASK-FOCUS
  * AUTHORITY: Python EOS participant-scoped Projects and notifications API.
  * EPITOME: Discover explicitly assigned projects, inspect work, act only on
  *          own delegated tasks, collaborate and acknowledge inbox signals.
@@ -8,6 +8,26 @@
  * COLLABORATION / OWNERSHIP: ProjectsWorkspace supplies navigation and exact
  *          authenticated session; EOS owns all source, task, IAM and receipts.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.9.0-VERIFIED-TASK-FOCUS preserves independently authorized assigned-task navigation from the Dock.
+ * CHANGELOG: v1.9.0-VERIFIED-TASK-FOCUS records the last
+ *          exact source scope and header snapshot when live mount dispatches.
+ *          Replayed effects and same-selector rerenders cannot issue a
+ *          second GET, but a changed selector generates new admission evidence
+ *          and manual Refresh always uses the source. No IAM/cache change.
+ * CHANGELOG: v1.8.0-ONE-ASSIGNED-PROJECT-READ-PER-SCOPE
+ *          stabilizes equal tenant headers so parent rerenders don't
+ *          repeat authorized participant reads, and defers the initial
+ *          list GET past the discarded React development StrictMode effect.
+ *          Real scope changes and manual refresh still read from EOS.
+ * CHANGELOG: v1.7.0-SHARED-PARTICIPANT-TASK-BLUEPRINT aligns
+ *          participant task rows and EOS commands to common enterprise
+ *          work typography and controls; assignee IDs remain source keys
+ *          but never replace display names in operating work lists.
+ * CHANGELOG: v1.6.0-FOCUSED-PARTICIPANT-PROJECT-WIDTH
+ *          preserves exact participant identity and work commands while
+ *          keeping the selected project in a single responsive column.
+ *          Hides the competing project registry until navigation back;
+ *          prevents inherited two-column desktop/mobile page overflow.
  * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION explains denied Contributor/Viewer discovery without treating project ownership as an implicit participant grant; no route or IAM change.
  * CHANGELOG: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION opens
  *          task-bound quarantined file evidence; no preview, download,
@@ -37,6 +57,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { workTaskBlueprint } from './WorkTaskBlueprint.jsx';
 import {
   ArrowLeft, Bell, Check, CheckCircle2, ClipboardList,
   LoaderCircle, MessageSquare, RefreshCw, ShieldCheck,
@@ -107,7 +128,7 @@ function checkNotice(item, tenantId, projectId, principalId) {
 /** @description Real participant workflow without any owner-role fallback. */
 export default function AssignedProjectsWorkspace({
   tenantId, principalId, tenantHeaders, sessionScope, onBack,
-  focusProjectId = null,
+  focusProjectId = null, focusTaskId = null,
 }) {
   const [projects, setProjects] = useState([]);
   const [projectOffset, setProjectOffset] = useState(0);
@@ -129,7 +150,17 @@ export default function AssignedProjectsWorkspace({
   const scope = [tenantId, principalId, sessionScope].join('\0');
   const currentScope = useRef(scope);
   currentScope.current = scope;
-  const headers = tenantHeaders || {};
+  const headersRef = useRef(null);
+  const incomingHeaders = tenantHeaders && typeof tenantHeaders === 'object'
+    ? tenantHeaders : {};
+  const previousHeaders = headersRef.current;
+  const headerKeys = Object.keys(incomingHeaders);
+  if (!previousHeaders || headerKeys.length !== Object.keys(previousHeaders).length
+      || headerKeys.some(key => previousHeaders[key] !== incomingHeaders[key])) {
+    headersRef.current = { ...incomingHeaders };
+  }
+  const headers = headersRef.current;
+  const admittedInitialRead = useRef(null);
 
   const list = useCallback(async (offset = 0) => {
     const active = scope, request = ++sequence.current;
@@ -162,7 +193,7 @@ export default function AssignedProjectsWorkspace({
         : status === 401 ? 'Sign in to see assigned projects.'
           : 'Assigned projects could not be verified. Retry source read.');
     }
-  }, [scope, tenantId, principalId, tenantHeaders]);
+  }, [scope, tenantId, principalId, headers]);
 
   useEffect(() => {
     sequence.current += 1;
@@ -174,8 +205,15 @@ export default function AssignedProjectsWorkspace({
     setError('');
     focusHandled.current = null;
     command.current = { fingerprint: '', key: '' };
-    void list(0);
-    return () => { sequence.current += 1; };
+    let active = true;
+    queueMicrotask(() => {
+      const admission = JSON.stringify([scope, ...Object.entries(headers)
+        .sort(([a], [b]) => a.localeCompare(b))]);
+      if (!active || admittedInitialRead.current === admission) return;
+      admittedInitialRead.current = admission;
+      void list(0);
+    });
+    return () => { active = false; sequence.current += 1; };
   }, [scope, list]);
 
   const openProject = async row => {
@@ -294,7 +332,7 @@ export default function AssignedProjectsWorkspace({
       });
     }
     return () => { live = false; };
-  }, [scope, listState, focusProjectId, projects, tenantId, principalId, tenantHeaders]);
+  }, [scope, listState, focusProjectId, projects, tenantId, principalId, headers]);
 
   const submit = async (fingerprint, action, confirm) => {
     if (busy || workState !== 'READY' || !selection) return;
@@ -325,6 +363,15 @@ export default function AssignedProjectsWorkspace({
       if (currentScope.current === active) setBusy(false);
     }
   };
+
+  // A URL is only a locator. Open discussion only for an independently
+  // authorized task on the loaded exact-project page; never synthesize a row.
+  useEffect(() => {
+    if (workState === 'READY' && selection?.project?.project_id === focusProjectId
+      && TASK_ID.test(focusTaskId || '') && work.some(item => item.task_id === focusTaskId)) {
+      setDiscussionTaskId(focusTaskId);
+    }
+  }, [focusProjectId, focusTaskId, workState, selection?.project?.project_id, work]);
 
   const transition = (task, status) => {
     if (!selection || selection.participation.role !== 'CONTRIBUTOR'
@@ -379,8 +426,9 @@ export default function AssignedProjectsWorkspace({
     {listState === 'LOADING' && <p role="status" className="rounded-lg bg-white p-4 text-slate-700">Verifying current project participation…</p>}
     {(listState === 'DENIED' || listState === 'UNAVAILABLE') &&
       <p role="alert" className="rounded-lg border border-rose-200 bg-white p-4 text-rose-800">{error}</p>}
-    {listState === 'READY' && <div className="wp-body" data-layout={selection ? 'detail' : 'list'}>
-      <section aria-label="Assigned project list" className="wp-panel min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+    {listState === 'READY' && <div className="wp-body grid w-full min-w-0 !grid-cols-1 gap-3" data-layout={selection ? 'detail' : 'list'}>
+      <section aria-label="Assigned project list" className={'wp-panel min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white '
+        + (selection ? 'hidden' : '')}>
         <ul className="divide-y divide-slate-200">
           {projects.map(row => <li key={row.project.project_id}>
             <button type="button" className="block w-full p-4 text-left hover:bg-blue-50"
@@ -404,7 +452,7 @@ export default function AssignedProjectsWorkspace({
               onClick={() => void list(projectOffset + 50)}>Next</button>
           </nav>}
       </section>
-      {selection && <aside className="wp-panel wp-detail min-w-0 rounded-xl border border-slate-200 bg-white p-4"
+      {selection && <aside className="wp-panel wp-detail w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-4"
         aria-label="Assigned project execution">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -433,27 +481,29 @@ export default function AssignedProjectsWorkspace({
                   <tr><th className="p-3">Task</th><th className="p-3">State</th><th className="p-3">Owner</th><th className="p-3">Action</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {work.map(task => <tr key={task.task_id}>
-                    <td className="p-3"><strong className="break-words text-slate-900">{task.title}</strong>
-                      <p className="mt-1 break-words text-xs text-slate-500">{task.description}</p></td>
-                    <td className="p-3 text-slate-700">{caption(task.status)}</td>
-                    <td className="break-all p-3 text-xs text-slate-700">
-                      {task.assignee_principal_id || 'Unassigned'}</td>
-                    <td className="p-3"><div className="flex flex-wrap gap-1.5">
+                  {work.map(task => <tr key={task.task_id}
+                    className="border-l-[3px] border-l-transparent bg-white hover:bg-slate-50">
+                    <td className="px-3 py-2"><strong className="break-words text-sm font-semibold text-slate-950">{task.title}</strong>
+                      <p className="mt-1 max-w-xl truncate text-xs text-slate-600" title={task.description}>{task.description}</p></td>
+                    <td className="px-3 py-2 text-xs font-semibold text-slate-700">{caption(task.status)}</td>
+                    <td className="px-3 py-2 text-xs text-slate-700">
+                      {!task.assignee_principal_id ? 'Unassigned'
+                        : task.assignee_principal_id === principalId ? 'You' : 'Assigned contributor'}</td>
+                    <td className="px-3 py-2"><div className="flex flex-wrap gap-1.5">
                       {selection.participation.role === 'CONTRIBUTOR'
                         && task.assignee_principal_id === principalId
                         && TRANSITIONS[task.status].map(next => <button type="button"
-                          key={next} className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                          key={next} className={workTaskBlueprint.primary + ' !min-h-8 !px-2'}
                           disabled={busy} onClick={() => transition(task, next)}>{caption(next)}</button>)}
-                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                      <button type="button" className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}
                         onClick={() => setAttachmentTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <ClipboardList size={13}/> Attachments
                       </button>
-                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                      <button type="button" className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}
                         onClick={() => setApprovalTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <ClipboardList size={13}/> Approvals
                       </button>
-                      <button type="button" className="wp-button !min-h-8 !px-2 !py-1 !text-xs"
+                      <button type="button" className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}
                         onClick={() => setDiscussionTaskId(value => value === task.task_id ? null : task.task_id)}>
                         <MessageSquare size={13}/> Discuss
                       </button>
@@ -529,7 +579,7 @@ export default function AssignedProjectsWorkspace({
 }
 
 // ARTIFACT: AssignedProjectsWorkspace.jsx
-// VERSION: v1.5.0-EXPLICIT-PARTICIPANT-ACCESS-EXPLANATION
+// VERSION: v1.9.0-VERIFIED-TASK-FOCUS
 // AUTHORITY BOUNDARY: principal's projects/tasks/notifications, no owner IAM
 // TENANT POSTURE: all read/write results exact principal, tenant and project
 // FAIL-CLOSED POSTURE: missing, foreign, malformed, uncertain or stale deny

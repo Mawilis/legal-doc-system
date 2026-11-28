@@ -1,18 +1,20 @@
 """TITLE: WILSY OS Project Execution Domain Certificate
-VERSION: v1.2.0-TASK-EVENT-READER-CERT
+VERSION: v1.3.1-BATCHED-COMPLETION-QUERY-CERT
 AUTHORITY: Synthetic immutable task domain certificate only.
 EPITOME: Validate task/subtask/milestone state, dependency syntax, fingerprints,
          revision CAS, terminal states and fail-closed mutation boundaries.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_project_task_registry.py
 COLLABORATION / OWNERSHIP: ProjectTaskRegistry and Projects router.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.3.1-BATCHED-COMPLETION-QUERY-CERT checks batched exact-revision completion evidence projection, timestamp accuracy and negative source rejection without assuming one database query per task.
+CHANGELOG: v1.3.0-COMPLETED-SOURCE-PAGING-CERT verifies filtered completion pages and exact-revision immutable actor/time, negative spoofing and bounded inputs.
 CHANGELOG: v1.2.0-TASK-EVENT-READER-CERT certifies
 bounded immutable event reads, strict source scoping, ISO datetime projection,
 revision ordering and redaction of replay secrets.
 CHANGELOG: v1.1.0-REVISIONED-TASK-EDIT-CERT certifies bounded
 revisioned task editing, assignee changes, immutable dependency graph and
 terminal editing denial without creating any IAM grant.
-CHANGELOG: v1.2.0-TASK-EVENT-READER-CERT establishes source-domain tests.
+CHANGELOG: v1.3.1-BATCHED-COMPLETION-QUERY-CERT establishes source-domain tests.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Synthetic project and principal identities only.
 TENANT BOUNDARY: No fallback tenant and no unverified record ownership.
@@ -47,6 +49,125 @@ def task(**values: object) -> ProjectTask:
     }
     data.update(values)
     return ProjectTask(**data)
+
+
+def test_completed_history_filters_before_paging_and_proves_immutable_actor_time() -> None:
+    """A completed row is only admitted alongside matching terminal evidence."""
+    from tools.eos.saas.projects.project_task_registry import ProjectTaskRegistry
+
+    done = task(
+        status="DONE", revision=3, updated_by_principal_id="reviewer-a",
+        updated_at=NOW + timedelta(microseconds=123456),
+    )
+    captured: dict[str, object] = {}
+
+    class Cursor:
+        def __init__(self, rows):
+            self.rows = rows
+        def sort(self, fields):
+            captured["sort"] = fields
+            return self
+        def skip(self, value):
+            captured["offset"] = value
+            return self
+        def limit(self, value):
+            captured["limit"] = value
+            return self.rows[:value]
+
+    class Tasks:
+        def find(self, query, *, session):
+            assert session == "verified-session"
+            captured["query"] = query
+            return Cursor([done.to_dict()])
+
+    class Events:
+        def find(self, query, projection, *, session):
+            captured["event_query"] = query
+            assert session == "verified-session"
+            assert "idempotency_key" not in projection
+            return [{
+                "schema": "wilsy.project.task.event.v1",
+                "task_id": TASK, "revision": 3,
+                "result_fingerprint": done.fingerprint,
+                "actor_principal_id": "reviewer-a",
+                "occurred_at": NOW + timedelta(microseconds=123000),
+                "result_snapshot": {"status": "DONE"},
+            }]
+
+    result, more = ProjectTaskRegistry(Tasks(), Events()).list_completed_page(
+        tenant_id="tenant-a", project_id=PROJECT,
+        session="verified-session", limit=1, offset=0,
+        search="Governed", assignee_principal_id="participant-a",
+        completion_order="NEWEST",
+    )
+    assert not more and len(result) == 1
+    assert result[0]["completed_by_principal_id"] == "reviewer-a"
+    assert result[0]["completed_at"] == done.updated_at.isoformat()
+    assert captured["query"] == {
+        "tenant_id": "tenant-a", "project_id": PROJECT, "status": "DONE",
+        "assignee_principal_id": "participant-a",
+        "title": {"$regex": "Governed", "$options": "i"},
+    }
+    assert captured["event_query"] == {
+        "tenant_id": "tenant-a", "project_id": PROJECT,
+        "event_type": "PROJECT_TASK_TRANSITIONED",
+        "$or": [{"task_id": TASK, "revision": 3}],
+    }
+    assert captured["offset"] == 0
+    assert captured["limit"] == 2
+
+
+@pytest.mark.parametrize("record", [
+    None,
+    {"schema": "wilsy.project.task.event.v1", "actor_principal_id": "different",
+     "occurred_at": NOW, "result_snapshot": {"status": "DONE"}},
+    {"schema": "wilsy.project.task.event.v1", "actor_principal_id": "owner-a",
+     "occurred_at": NOW + timedelta(seconds=2), "result_snapshot": {"status": "DONE"}},
+    {"schema": "wilsy.project.task.event.v1", "actor_principal_id": "owner-a",
+     "occurred_at": NOW, "result_snapshot": {"status": "IN_PROGRESS"}},
+])
+def test_completed_history_denies_missing_spoofed_or_changed_event(record) -> None:
+    from tools.eos.saas.projects.project_task_registry import ProjectTaskRegistry
+    done = task(status="DONE", revision=3)
+
+    class Cursor:
+        def sort(self, fields):
+            return self
+        def skip(self, amount):
+            return self
+        def limit(self, amount):
+            return [done.to_dict()]
+
+    class Tasks:
+        def find(self, query, *, session):
+            return Cursor()
+
+    class Events:
+        def find(self, query, projection, *, session):
+            return [] if record is None else [{
+                **record, "task_id": TASK, "revision": 3,
+                "result_fingerprint": done.fingerprint,
+            }]
+
+    with pytest.raises(ProjectTaskError, match="COMPLETION_SOURCE_INVALID"):
+        ProjectTaskRegistry(Tasks(), Events()).list_completed_page(
+            tenant_id="tenant-a", project_id=PROJECT, session="verified-session",
+        )
+
+
+def test_completed_history_rejects_unbounded_or_unsafe_filter() -> None:
+    from tools.eos.saas.projects.project_task_registry import ProjectTaskRegistry
+    registry = ProjectTaskRegistry(object(), object())
+    with pytest.raises(ProjectTaskError, match="FILTER_INVALID"):
+        registry.list_completed_page(
+            tenant_id="tenant-a", project_id=PROJECT,
+            session="verified-session", search="a" * 121,
+        )
+    with pytest.raises(ProjectTaskError, match="PAGE_INVALID"):
+        registry.list_completed_page(
+            tenant_id="tenant-a", project_id=PROJECT,
+            session="verified-session", offset=-1,
+        )
 
 
 def test_immutable_event_read_is_scoped_bounded_and_redacted() -> None:
@@ -214,7 +335,7 @@ def test_task_ids_are_stable_only_for_exact_command_origins() -> None:
 
 
 # ARTIFACT: test_project_task_registry.py
-# VERSION: v1.2.0-TASK-EVENT-READER-CERT
+# VERSION: v1.3.1-BATCHED-COMPLETION-QUERY-CERT
 # AUTHORITY BOUNDARY: domain-only, no membership/permission or persistence
 # TENANT POSTURE: exact synthetic project and principal identifiers
 # FAIL-CLOSED POSTURE: forged states, bad parent/dependencies and stale CAS deny

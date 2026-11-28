@@ -6,14 +6,18 @@
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Workspace Sign-In
  * WILSY OS — AUTHENTICATED WORKSPACE SIGN-IN
- * VERSION: v3.9.1-OFFICIAL-SQUARE-BRAND
+ * VERSION: v3.11.0-GLOBAL-OWNER-CAPACITY-SIGNIN
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Collects primary credentials and routes only on the server-issued
  *          MFA state; it never creates identity, tenant, role, or enrollment truth.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/auth/SovereignLogin.jsx
  * COLLABORATION / OWNERSHIP: authContext transports credentials to Python EOS;
  *                            SovereignMfaPortal owns the challenge presentation.
- * CERTIFICATION / UPDATE DATE: 2026-09-22
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v3.11.0-GLOBAL-OWNER-CAPACITY-SIGNIN routes canonical WILSY Owner sign-in through EOS-listed selected membership and MFA so concurrent HR capacities cannot make required company-document reads ambiguous. No legacy fallback or grant; customer sign-in and separate HR choices retain their existing contracts.
+ * CHANGELOG: v3.10.2-HR-SIGNIN-RECOVERY-AND-ERROR-STATE provides a deterministic exit to ordinary Owner login if EOS HR membership selection is denied, keeping errors visible in the mounted form without discarding credentials or altering IAM.
+ * CHANGELOG: v3.10.1-CLOSED-HR-CAPACITY-SELECTOR-JSX repairs the parenthesized EOS capacity-choice/legacy sign-in JSX boundary caught by exact-head production build.
+ * CHANGELOG: v3.10.0-EXPLICIT-FOUNDER-HR-CAPACITY-CHOICE adds a governed, opt-in HR login journey that offers only the canonical employer capacities returned by EOS, before MFA; legacy tenant sign-in stays intact.
  * CHANGELOG: v3.9.1-OFFICIAL-SQUARE-BRAND uses the same official
  * square platform mark. Credential, discovery, MFA and customer identity
  * contracts are preserved; no client-owned authentication authority is added.
@@ -92,18 +96,36 @@ import TenantIdentityCard from './TenantIdentityCard.jsx';
 export default function SovereignLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading, error: authError, tenant, authStage } = useAuth();
+  const { login, beginGlobalCapacityLogin, selectGlobalCapacity, loading, error: authError, tenant, authStage } = useAuth();
+  const hrCapacitySignIn = new URLSearchParams(location.search).get('capacity') === 'hr';
+  const [verifiedOptions, setVerifiedOptions] = useState([]);
+  const [selectedHrRole, setSelectedHrRole] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const resolvedTenant = location.state?.tenant || tenant;
+  const ownerCapacitySignIn = !hrCapacitySignIn
+    && resolvedTenant?.tenantId === 'WILSYTENANT-4CD2FZ4O';
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     try {
+      if (hrCapacitySignIn || ownerCapacitySignIn) {
+        const result = await beginGlobalCapacityLogin(
+          email.trim(), password, 'WILSYTENANT-4CD2FZ4O',
+          ...(ownerCapacitySignIn ? ['owner'] : []),
+        );
+        if (result.status !== 'CAPACITY_SELECTION_REQUIRED' || !result.options?.length) {
+          throw new Error('OPERATING_CAPACITY_SELECTION_NOT_VERIFIED');
+        }
+        setVerifiedOptions(result.options);
+        setSelectedHrRole('');
+        setPassword('');
+        return;
+      }
       const result = await login(email.trim(), password, resolvedTenant?.tenantId);
       if ([AUTH_STATES.MFA_SETUP, AUTH_STATES.MFA_RECONCILIATION_REQUIRED, AUTH_STATES.MFA_REQUIRED].includes(result.status)) {
         navigate('/mfa', { replace: true, state: { tenant: resolvedTenant } });
@@ -115,6 +137,21 @@ export default function SovereignLogin({ onLoginSuccess }) {
       }
     } catch (loginError) {
       setError(loginError?.response?.data?.detail || loginError?.response?.data?.message || loginError.message || 'Authentication service unavailable.');
+    }
+  };
+
+  const handleCapacityChoice = async (event) => {
+    event.preventDefault();
+    setError('');
+    try {
+      if (!verifiedOptions.some(option => option.tenantId === 'WILSYTENANT-4CD2FZ4O' && option.role === selectedHrRole)) {
+        throw new Error('OPERATING_CAPACITY_NOT_VERIFIED');
+      }
+      const result = await selectGlobalCapacity(selectedHrRole);
+      if (result.status !== AUTH_STATES.MFA_REQUIRED) throw new Error('OPERATING_MFA_CHALLENGE_NOT_VERIFIED');
+      navigate('/mfa', { replace: true, state: { tenant: resolvedTenant, capacity: selectedHrRole } });
+    } catch (selectionError) {
+      setError(selectionError?.response?.data?.detail || selectionError.message || 'Capacity selection denied by EOS');
     }
   };
 
@@ -134,7 +171,26 @@ export default function SovereignLogin({ onLoginSuccess }) {
             <TenantIdentityCard tenant={resolvedTenant} integrated />
           </div>
           <div style={authZoneStyle}>
-            <form onSubmit={handleSubmit} style={formStyle}>
+            {verifiedOptions.length ? (
+              <form onSubmit={handleCapacityChoice} style={formStyle} aria-label={hrCapacitySignIn ? 'Select verified HR capacity' : 'Select verified Owner capacity'}>
+                <p style={subtitleStyle}>Choose the operating capacity independently verified by Python EOS. Your Founder designation and Owner capacity remain unchanged.</p>
+                <label htmlFor="wilsy-hr-capacity" style={labelStyle}>Operating capacity</label>
+                <select id="wilsy-hr-capacity" value={selectedHrRole}
+                  onChange={event => setSelectedHrRole(event.target.value)}
+                  style={inputStyle} required>
+                  <option value="">Select a capacity</option>
+                  {verifiedOptions.map(option => (
+                    <option key={option.role} value={option.role}>
+                      {option.role === 'tenant_owner' ? 'Tenant Owner' : option.role === 'tenant_hr_director' ? 'HR Director' : 'HR Manager'}
+                    </option>
+                  ))}
+                </select>
+                {(error || authError) && <div role="alert" style={errorStyle}><AlertCircle size={16}/><span>{error || authError}</span></div>}
+                <button type="submit" disabled={loading || !selectedHrRole} style={buttonStyle}>
+                  Continue to MFA
+                </button>
+              </form>
+            ) : <form onSubmit={handleSubmit} style={formStyle}>
               <label htmlFor="work-email" style={labelStyle}>Work email</label>
               <input id="work-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} style={inputStyle} required />
               <div style={passwordLabelRowStyle}>
@@ -179,7 +235,17 @@ export default function SovereignLogin({ onLoginSuccess }) {
               <button type="submit" disabled={loading || !email.trim() || !password} style={buttonStyle}>
                 {loading ? <Loader2 size={18} className="animate-spin" /> : null}<span>Continue securely</span>
               </button>
-            </form>
+            </form>}
+            {hrCapacitySignIn && (
+              <button type="button" onClick={() => {
+                setVerifiedOptions([]);
+                setSelectedHrRole('');
+                setError('');
+                navigate('/login', { replace: true, state: { tenant: resolvedTenant } });
+              }} style={backButtonStyle}>
+                <ArrowLeft size={16} /> Return to normal Owner sign-in
+              </button>
+            )}
             <button type="button" onClick={() => navigate('/discovery', { replace: true })} style={backButtonStyle}><ArrowLeft size={16} /> Back to workspace discovery</button>
           </div>
         </div>
@@ -216,7 +282,7 @@ const footerStyle = { display: 'flex', justifyContent: 'space-between', gap: '16
 
 /**
  * ARTIFACT: client/src/components/auth/SovereignLogin.jsx
- * VERSION: v3.9.1-OFFICIAL-SQUARE-BRAND
+ * VERSION: v3.11.0-GLOBAL-OWNER-CAPACITY-SIGNIN
  * AUTHORITY BOUNDARY: credential transport and server-state routing only
  * TENANT POSTURE: no client tenant, role, or Founder fallback
  * FAIL-CLOSED POSTURE: incomplete auth responses remain unauthenticated

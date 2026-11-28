@@ -1,0 +1,247 @@
+"""TITLE: MW-T12 local Mongo consumer classification and privacy certificate.
+VERSION: v1.3.1-ALIGNED-PEER-PARAMETER-FIXTURE
+AUTHORITY: WILSY OS Core Governance / AGENTS.md.
+EPITOME: Verify no credential emission, exact Atlas target classification,
+         loopback/other handling and no inference of running EOS secret.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_mw_t12_local_consumer_probe.py
+COLLABORATION / OWNERSHIP: Existing MW-T12 read-only local listener/URI probe.
+CERTIFICATION / UPDATE DATE: 2026-11-25.
+CHANGELOG: v1.3.1-ALIGNED-PEER-PARAMETER-FIXTURE aligns mocked socket
+           function signature with optional candidate DNS peer set.
+CHANGELOG: v1.3.0-SECOND-ATLAS-DNS-SOCKET-TESTS covers
+           fresh DNS exact-three-node resolution and distinct matched
+           Wilsy Atlas socket classification without credential inference.
+CHANGELOG: v1.2.1-ALIGNED-SOCKET-FIXTURE-CONTRACT aligns the redaction test's mocked
+           socket classification with the complete v1.2.0 runtime result
+           contract (recognized, loopback, other and unparsed).
+CHANGELOG: v1.2.0-LOOPBACK-AND-UNPARSED-PEER-REGRESSION certifies
+           independently classified loopback, other and unparsed lsof
+           records, with denial of false Atlas or live-credential proof.
+CHANGELOG: v1.1.1-SYNTHETIC-LSOF-NEWLINE-FIX corrects synthetic
+           lsof byte fixtures to contain actual newline-delimited records.
+CHANGELOG: v1.1.0-LISTENER-OWNED-ATLAS-SOCKET-CERT adds
+           synthetic established TCP socket ownership checks and makes shell
+           classification tests independent of actual developer lsof output.
+CHANGELOG: v1.0.0-LOCAL-SECRET-FREE-CLASSIFICATION-TESTS adds synthetic
+           regression for missing, malformed and explicitly scoped URI cases;
+           verifies listener inspection cannot reveal environment/argv.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: Synthetic credentials only, no real URI.
+TENANT BOUNDARY: No external database connections or data reads.
+AUTHORITY BOUNDARY: Test does not attest running process MongoDB target.
+FINANCIAL AUTHORITY BOUNDARY: No paid resource activation.
+"""
+from __future__ import annotations
+
+import pytest
+
+from tools.eos.ops import mw_t12_local_consumer_probe as probe
+
+
+def test_atlas_srv_target_redacts_credentials_and_identity(capsys, monkeypatch):
+    """Only identified shared target classification and digest are returned."""
+    token = "synthetic-credential-never-log"
+    uri = ("mongodb+srv://synthetic:" + token
+           + "@legal-doc-test.xmlpwmq.mongodb.net/synthetic_db?retryWrites=true")
+    info = probe.classify_uri(uri)
+    assert info["target"] == "MW_T12_SHARED_TEST_ATLAS"
+    assert info["transport"] == "SRV_TLS"
+    monkeypatch.setenv("MONGODB_URI", uri)
+    monkeypatch.setattr(probe, "local_listener_pids", lambda: [12345])
+    monkeypatch.setattr(probe, "resolve_wilsy_atlas_nodes",
+                        lambda: frozenset())
+    monkeypatch.setattr(probe, "owned_established_mongo_peers",
+                        lambda pids, wilsy_peers=frozenset(): {
+                            "state": "NO_ACTIVE_MONGODB_SOCKET_OBSERVED",
+                                      "recognized": "0", "wilsy": "0",
+                                      "loopback": "0", "other": "0",
+                                      "unparsed": "0"})
+    probe.run()
+    output = capsys.readouterr().out
+    assert token not in output
+    assert "synthetic_db" not in output
+    assert "synthetic" not in output
+    assert "12345" not in output
+    assert "MW_T12_LIVE_EOS_RESOLVED_TARGET=NOT_VERIFIED" in output
+    assert "MW_T12_ATLAS_WILDCARD_RETIREMENT=BLOCKED" in output
+
+
+def test_atlas_shard_set_classified_independent_of_host_order():
+    """Exact three-node Mongo URI classifies the existing shared test cluster."""
+    raw = (
+        "mongodb://synthetic:pw@" + ",".join(
+            host + ":27017" for host in sorted(probe.ATLAS_SHARDS, reverse=True)
+        ) + "/synthetic_db?tls=true"
+    )
+    result = probe.classify_uri(raw)
+    assert result["target"] == "MW_T12_SHARED_TEST_ATLAS"
+    assert result["host_count"] == "3"
+
+
+def test_loopback_not_misidentified_as_atlas():
+    """Local replica-set is not an Atlas network consumer proof."""
+    result = probe.classify_uri("mongodb://127.0.0.1:27017/wilsy-os-dev")
+    assert result["target"] == "LOOPBACK_MONGODB"
+
+
+def test_other_atlas_target_remains_unverified():
+    """A different SRV cluster cannot inherit source ownership."""
+    result = probe.classify_uri("mongodb+srv://different.example.net/other")
+    assert result["target"] == "OTHER_OR_UNVERIFIED"
+
+
+@pytest.mark.parametrize("uri", [
+    "", "not-a-uri", "mongodb+srv://two.example.com,three.example.com/db",
+    "mongodb://localhost:99999/db", "mongodb://example.com:-1/db",
+    "mongodb://example.com:abc/db", "mongodb://example.com/db\nLEAK",
+])
+def test_malformed_or_missing_uri_denied_without_content(uri: str):
+    """Never echo the invalid original URI."""
+    with pytest.raises(probe.ProbeDenied):
+        probe.classify_uri(uri)
+
+
+def test_listener_pid_query_uses_no_process_environment_or_argv(monkeypatch):
+    """The local OS process probe is limited to lsof's PID-only selection."""
+    invocations = []
+
+    def fake_run(cmd, **kwargs):
+        invocations.append(cmd)
+        return type("Result", (), {
+            "returncode": 0,
+            "stdout": b"100\n100\n202\n",
+        })()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    assert probe.local_listener_pids() == [100, 202]
+    assert invocations == [[
+        "lsof", "-nP", "-tiTCP:9095", "-sTCP:LISTEN",
+    ]]
+
+
+def test_actual_eos_listener_socket_matches_reviewed_atlas(monkeypatch):
+    """Only exact listener-PID TCP27017 established peer counts as evidence."""
+    observed = []
+
+    def fake_run(command, **kwargs):
+        observed.append(command)
+        return type("Result", (), {"returncode": 0, "stdout":
+                    b"n127.0.0.1:50123->159.41.89.87:27017\n"
+                    b"n127.0.0.1:50124->159.41.89.104:27017\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    value = probe.owned_established_mongo_peers([789])
+    assert value == {"state": "MATCHES_REVIEWED_ATLAS_NODES",
+                     "recognized": "2", "wilsy": "0", "loopback": "0",
+                     "other": "0", "unparsed": "0"}
+    assert all("-p" in command and "789" in command for command in observed)
+    assert all("-F" in command and "n" in command for command in observed)
+
+
+def test_non_atlas_socket_never_attributed_to_shared_cluster(monkeypatch):
+    """Loopback and unrelated Mongo socket destinations remain unverified."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 0, "stdout":
+                    b"n127.0.0.1:50123->127.0.0.1:27017\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    result = probe.owned_established_mongo_peers([789])
+    assert result["state"] == "LOOPBACK_MONGODB_PEERS"
+    assert result["recognized"] == "0"
+    assert result["loopback"] == "1"
+    assert result["unparsed"] == "0"
+
+
+def test_unknown_peer_class_is_distinct_from_loopback(monkeypatch):
+    """A non-Atlas public peer must not be confused with localhost."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 0, "stdout":
+                    b"n127.0.0.1:51000->8.8.8.8:27017\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    result = probe.owned_established_mongo_peers([789])
+    assert result["state"] == "OTHER_MONGODB_PEERS"
+    assert result["other"] == "1"
+    assert result["loopback"] == "0"
+
+
+def test_unparsed_lsof_descriptor_not_called_a_connection(monkeypatch):
+    """Unknown descriptors are diagnostic counts, not established IP peers."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 0, "stdout":
+                    b"n->\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    result = probe.owned_established_mongo_peers([789])
+    assert result["state"] == "UNPARSED_SOCKET_RECORDS"
+    assert result["unparsed"] == "1"
+    assert result["other"] == "0"
+    assert result["recognized"] == "0"
+
+
+def test_absent_socket_is_not_proof_of_no_client(monkeypatch):
+    """No current sockets means no observation, not a credential revocation."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 1, "stdout": b""})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    assert probe.owned_established_mongo_peers([789])["state"] == (
+        "NO_ACTIVE_MONGODB_SOCKET_OBSERVED"
+    )
+
+
+def test_wilsy_atlas_dns_resolves_exact_three_nodes(monkeypatch):
+    """Snapshot separate provider-owned node DNS without a socket mutation."""
+    import socket
+    observed = []
+
+    def fake_lookup(host, port, *, family, type, proto):
+        observed.append(host)
+        index = probe.WILSY_ATLAS_SHARDS.index(host)
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "",
+                 ("159.41.88." + str(10 + index), 27017))]
+
+    monkeypatch.setattr(probe.socket, "getaddrinfo", fake_lookup)
+    result = probe.resolve_wilsy_atlas_nodes()
+    assert result == frozenset({"159.41.88.10", "159.41.88.11",
+                                "159.41.88.12"})
+    assert tuple(observed) == probe.WILSY_ATLAS_SHARDS
+
+
+def test_wilsy_dns_matched_socket_is_not_test_atlas(monkeypatch):
+    """Matching separate production-project Atlas nodes is only network proof."""
+    def fake_run(command, **kwargs):
+        return type("Result", (), {"returncode": 0,
+                 "stdout": b"n127.0.0.1:51000->159.41.88.10:27017\n"})()
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    result = probe.owned_established_mongo_peers(
+        [789], frozenset({"159.41.88.10", "159.41.88.11",
+                          "159.41.88.12"}),
+    )
+    assert result["state"] == "MATCHES_WILSY_ATLAS_NODES"
+    assert result["wilsy"] == "1"
+    assert result["recognized"] == "0"
+    assert result["other"] == "0"
+
+
+def test_empty_shell_environment_is_not_treated_as_live_eos_denial(
+    monkeypatch, capsys,
+):
+    """Unknown shell environment is evidence gap, not source downtime."""
+    monkeypatch.delenv("MONGODB_URI", raising=False)
+    monkeypatch.setattr(probe, "local_listener_pids", lambda: [])
+    probe.run()
+    output = capsys.readouterr().out
+    assert "MW_T12_LOCAL_EOS_9095_LISTENER=ABSENT" in output
+    assert "MW_T12_SHELL_MONGODB_URI_CLASSIFICATION=SHELL_MONGODB_URI_NOT_PRESENT" in output
+    assert "MW_T12_LIVE_EOS_RESOLVED_TARGET=NOT_VERIFIED" in output
+
+
+# ARTIFACT: tests/unit/test_mw_t12_local_consumer_probe.py
+# VERSION: v1.3.1-ALIGNED-PEER-PARAMETER-FIXTURE
+# AUTHORITY BOUNDARY: Mocked local evidence read only; no cloud changes.
+# TENANT POSTURE: Synthetic fixtures only.
+# FAIL-CLOSED POSTURE: Shell target never certifies a live EOS process.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

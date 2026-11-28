@@ -1,7 +1,7 @@
 """Direct certificate for authenticated recovery-contact verification issuance.
 
 TITLE: WILSY OS Recovery Contact Verification Request Service Direct Certificate
-VERSION: v1.0.0-R10E32-RECOVERY-CONTACT-VERIFICATION-REQUEST-CERT
+VERSION: v1.1.0-R10E-RECOVERY-STATUS-READBACK-CERT
 AUTHORITY: Wilsy OS Core Governance
 EPITOME: Certifies that authenticated verification issuance re-reads durable
          principal/email truth, ignores browser contact claims, rate-limits,
@@ -11,7 +11,7 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: Exercises R10E20 with synthetic canonical registries,
                            durable user projections, rate gate, and mail adapter.
 CERTIFICATION / UPDATE DATE: 2026-09-22
-CHANGELOG: v1.0.0-R10E32-RECOVERY-CONTACT-VERIFICATION-REQUEST-CERT introduces
+CHANGELOG: v1.1.0-R10E-RECOVERY-STATUS-READBACK-CERT introduces
            direct evidence for ACTIVE identity admission, durable principal/email
            binding, already-verified short circuit, separate rate gating,
            digest-only issuance, trusted-origin fragment delivery, secret-free
@@ -52,6 +52,7 @@ from tools.eos.saas.auth.password_recovery_contact_verification_registry import 
 from tools.eos.saas.auth.password_recovery_contact_verification_request_service import (
     RecoveryContactVerificationRequestError,
     RecoveryContactVerificationRequestService,
+    read_recovery_contact_status,
 )
 from tools.eos.saas.auth.password_recovery_request_service import (
     PasswordRecoveryRequestRateLimitedError,
@@ -181,6 +182,140 @@ def _service(
         verification_ttl=timedelta(minutes=30),
     )
     return service, verification_registry, contact_registry, auth_registry, rate_gate, delivery
+
+
+def test_global_principal_recovery_status_uses_canonical_credential_not_legacy_auth(
+    monkeypatch,
+) -> None:
+    from tools.eos.auth.principal_authority_repository import (
+        PrincipalAuthorityRepository,
+    )
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+
+    monkeypatch.setattr(
+        PrincipalAuthorityRepository, "get",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, status=PrincipalStatus.ACTIVE,
+        ),
+    )
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, normalized_email=DURABLE_EMAIL,
+        ),
+    )
+    existing = VerifiedRecoveryContact.issue(
+        contact_id="WILSY-RECOVERY-GLOBAL-STATUS-TEST",
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        channel=VerifiedRecoveryContactChannel.EMAIL,
+        address_digest=recovery_address_digest(DURABLE_EMAIL),
+        verified_at=OBSERVED,
+    )
+    auth = _AuthRegistry(_user(email="wrong-legacy@example.test"))
+    contacts = _ContactRegistry(existing)
+    global_identity = _identity().model_copy(
+        update={"principal_scope": "GLOBAL"},
+    )
+    assert read_recovery_contact_status(
+        identity=global_identity, auth_registry=auth,
+        contact_registry=contacts,
+    ) == "VERIFIED"
+    assert auth.revision_reads == []
+    assert auth.user_reads == []
+    assert contacts.lookups == [
+        (TENANT, PRINCIPAL, VerifiedRecoveryContactChannel.EMAIL)
+    ]
+
+
+def test_global_principal_recovery_status_rejects_missing_canonical_credentials(
+    monkeypatch,
+) -> None:
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+    from tools.eos.auth.principal_authority_repository import (
+        PrincipalAuthorityRepository,
+    )
+    monkeypatch.setattr(
+        PrincipalAuthorityRepository, "get",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, status=PrincipalStatus.ACTIVE,
+        ),
+    )
+    def missing_credential(principal_id):
+        raise RuntimeError("GLOBAL_CREDENTIAL_NOT_FOUND")
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        missing_credential,
+    )
+    with pytest.raises(RecoveryContactVerificationRequestError) as rejected:
+        read_recovery_contact_status(
+            identity=_identity().model_copy(update={"principal_scope": "GLOBAL"}),
+            auth_registry=_AuthRegistry(_user()),
+            contact_registry=_ContactRegistry(),
+        )
+    assert rejected.value.code == "RECOVERY_CONTACT_GLOBAL_PRINCIPAL_LOOKUP_FAILED"
+
+
+def test_recovery_status_reads_exact_durable_verified_contact_without_mail() -> None:
+    existing = VerifiedRecoveryContact.issue(
+        contact_id="WILSY-RECOVERY-CONTACT-STATUS-TEST",
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        channel=VerifiedRecoveryContactChannel.EMAIL,
+        address_digest=recovery_address_digest(DURABLE_EMAIL),
+        verified_at=OBSERVED,
+    )
+    _, _, contacts, auth, rate, delivery = _service(existing=existing)
+    result = read_recovery_contact_status(
+        identity=_identity(), auth_registry=auth, contact_registry=contacts,
+    )
+    assert result == "VERIFIED"
+    assert auth.revision_reads == [(TENANT, PRINCIPAL)]
+    assert contacts.lookups == [(TENANT, PRINCIPAL, VerifiedRecoveryContactChannel.EMAIL)]
+    assert rate.calls == []
+    assert delivery.messages == []
+
+
+def test_recovery_status_rejects_stale_email_and_foreign_tenant() -> None:
+    existing = VerifiedRecoveryContact.issue(
+        contact_id="WILSY-RECOVERY-CONTACT-STALE-TEST",
+        tenant_id=TENANT,
+        principal_id=PRINCIPAL,
+        channel=VerifiedRecoveryContactChannel.EMAIL,
+        address_digest=recovery_address_digest("previous@example.test"),
+        verified_at=OBSERVED,
+    )
+    _, _, contacts, auth, _, _ = _service(existing=existing)
+    assert read_recovery_contact_status(
+        identity=_identity(), auth_registry=auth, contact_registry=contacts,
+    ) == "VERIFICATION_REQUIRED"
+    foreign_auth = _AuthRegistry(_user(tenant_id="FOREIGN-TENANT"))
+    with pytest.raises(RecoveryContactVerificationRequestError) as rejected:
+        read_recovery_contact_status(
+            identity=_identity(), auth_registry=foreign_auth,
+            contact_registry=_ContactRegistry(existing),
+        )
+    assert rejected.value.code == "RECOVERY_CONTACT_PRINCIPAL_BINDING_MISMATCH"
+
+
+def test_recovery_status_does_not_convert_repository_failure_into_unverified() -> None:
+    class _UnavailableContacts(_ContactRegistry):
+        def get_active_by_principal(self, **kwargs):
+            from tools.eos.saas.auth.password_recovery_contact_registry import (
+                VerifiedRecoveryContactRegistryError,
+            )
+            raise VerifiedRecoveryContactRegistryError("RECOVERY_CONTACT_READ_FAILED")
+
+    with pytest.raises(RecoveryContactVerificationRequestError) as rejected:
+        read_recovery_contact_status(
+            identity=_identity(), auth_registry=_AuthRegistry(_user()),
+            contact_registry=_UnavailableContacts(),
+        )
+    assert rejected.value.code == "RECOVERY_CONTACT_LOOKUP_FAILED"
 
 
 def test_success_uses_durable_email_not_identity_email_and_returns_secret_free_status() -> None:
@@ -378,7 +513,7 @@ def test_naive_observation_time_rejects_before_dependency_calls() -> None:
 # SOVEREIGN ARTIFACT SEAL
 # =============================================================================
 # ARTIFACT: test_password_recovery_contact_verification_request_service.py
-# VERSION: v1.0.0-R10E32-RECOVERY-CONTACT-VERIFICATION-REQUEST-CERT
+# VERSION: v1.1.0-R10E-RECOVERY-STATUS-READBACK-CERT
 # AUTHORITY BOUNDARY: deterministic verification-issuance orchestration evidence
 # TENANT POSTURE: exact ACCESS tenant/principal + durable email binding certified
 # FAIL-CLOSED POSTURE: mismatch, rate, origin, delivery, revocation failure rejects

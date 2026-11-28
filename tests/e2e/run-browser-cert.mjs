@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS browser-certificate runner
- * VERSION: v1.13.0-COMPANY-DOCUMENT-BROWSER-SCOPE
+ * VERSION: v1.15.2-DISPOSABLE-HISTORY-ENCRYPTION
  * AUTHORITY: Test process lifecycle only.
  * EPITOME: Own the synthetic fixture, disposable Python EOS, frontend Vite,
  *          browser suite, bounded diagnostics, and ordered cleanup.
@@ -14,6 +14,16 @@
  * COLLABORATION / OWNERSHIP: L8-8M browser certification; EOS retains tenant,
  *                            Legal, and authorization authority.
  * CERTIFICATION / UPDATE DATE: 2026-11-13
+ * CHANGELOG: v1.15.2-DISPOSABLE-HISTORY-ENCRYPTION provides an ephemeral, independently generated 256-bit AEAD history key for the isolated certification EOS, without using Founder secrets.
+ * CHANGELOG: v1.15.1-DOCK-EVIDENCE-HANDOFF sets a per-run synthetic evidence directory for the selected Dock browser suite, preserving explicit operator override and disposable fixture cleanup.
+ * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an exact selected Dock suite with disposable task seeding and source verification.
+ * CHANGELOG: v1.15.0-DOCK-OPERATING-CERT-SCOPE adds an explicit
+ *            opt-in controlled restart of only the runner-owned EOS process.
+ *            It verifies before/after kernel health and independently admitted
+ *            authenticated Legal, commercial and SYSTEM read/denial contracts,
+ *            then continues the existing browser journey and Mongo readback.
+ *            No production/deployment/Atlas rollback is initiated; EOS service
+ *            recovery is a scoped development certificate, not MW-T12 closure.
  * CHANGELOG: v1.13.0-COMPANY-DOCUMENT-BROWSER-SCOPE adds an exact company-document suite,
  *            isolated company actors and independent immutable publication verification.
  *            All prior preflight, suite and cleanup gates remain intact.
@@ -85,6 +95,7 @@ const runDirectory = await mkdtemp(join(tmpdir(), 'wilsy-l8-8m-r3-'));
 const statePath = join(runDirectory, 'state.json');
 const viteConfigPath = join(clientDirectory, '.wilsy-browser-cert-vite-' + process.pid + '.config.js');
 const eosPort = Number.parseInt(process.env.BROWSER_CERT_EOS_PORT || '19095', 10);
+const mwT12Recovery = process.env.MW_T12_EOS_SERVICE_RECOVERY === '1';
 const MAX_DIAGNOSTIC_LINES = 24;
 const MAX_SAFE_MESSAGE_LENGTH = 240;
 const SAFE_DIAGNOSTIC_CODE = /^[A-Z][A-Z0-9_]{0,95}$/;
@@ -127,6 +138,9 @@ const environment = {
   BROWSER_CERT_STATE: statePath,
   MONGODB_URI: mongoUri,
   WILSY_JWT_SECRET: secret,
+  // Disposable fixture history must have its own AEAD key. Never borrow an
+  // operator's real history key or expose this random value in test output.
+  WILSY_AI_HISTORY_KEY_B64: randomBytes(32).toString('base64'),
   WILSY_PLATFORM_WORKFORCE_SCOPE_ID: 'browser-cert-platform-workforce',
   ENV: 'development',
   WILSY_KENNEL_DB_TLS: '0',
@@ -526,6 +540,44 @@ async function preflightSystemServices(eosBaseUrl) {
 }
 
 
+async function verifyMWT12ServiceRestart(eosProcess, eosBaseUrl, port) {
+  // The only process terminated here was started and retained by this runner.
+  // Identity and Mongo are fixture-owned; no external EOS process is targeted.
+  setPhase('mw_t12_service_recovery', 'controlled_eos_stop');
+  if (eosProcess.closed || !eosProcess.child.pid) {
+    throw new Error('MW_T12_EOS_SOURCE_PROCESS_NOT_ACTIVE');
+  }
+  if (!eosProcess.child.kill('SIGTERM')) {
+    throw new Error('MW_T12_EOS_TERMINATION_SIGNAL_FAILED');
+  }
+  const stopped = await Promise.race([
+    eosProcess.closedPromise.then(() => true),
+    delay(10_000).then(() => false),
+  ]);
+  if (!stopped) throw new Error('MW_T12_EOS_STOP_UNVERIFIED');
+
+  setPhase('mw_t12_service_recovery', 'real_process_relaunch');
+  const restarted = spawnOwned(
+    python,
+    ['-m', 'uvicorn', 'tools.eos.api.server:app', '--host', '127.0.0.1', '--port', String(port)],
+    { stdio: ['ignore', 'pipe', 'pipe'] },
+    'EOS',
+  );
+  const healthy = await waitFor(eosBaseUrl + '/api/kernel', 'EOS-RECOVERED');
+  if (!healthy.ok || restarted.closed || restarted.child.pid === eosProcess.child.pid) {
+    throw new Error('MW_T12_EOS_RESTART_HEALTH_UNVERIFIED');
+  }
+
+  setPhase('mw_t12_service_recovery', 'authenticated_independent_readback');
+  const after = await preflightAuthenticatedEos(eosBaseUrl);
+  await preflightSystemServices(eosBaseUrl);
+  if (after.length !== 2 || after.some(result => result.status !== 200)) {
+    throw new Error('MW_T12_AUTHENTICATED_RESTART_READBACK_FAILED');
+  }
+  console.info('[MW-T12-SERVICE-RECOVERY] status=PASS scope=RUNNER_OWNED_EOS_AUTHENTICATED_READBACK');
+  console.info('[MW-T12-SERVICE-RECOVERY] production_release_authorized=false eos_full_recovery_certified=false');
+}
+
 function failureEvidence(error, errorPhase, errorSubphase) {
   const evidence = {
     phase: safeText(error?.phase || errorPhase),
@@ -596,6 +648,13 @@ try {
       { stdio: ['ignore', 'pipe', 'pipe'] }, 'COMPANY_DOCUMENT_FIXTURE_SEED');
   }
 
+  const dockOperatingSuite = process.argv.slice(2).length === 1
+    && process.argv[2] === 'tests/e2e/dock-operating.browser.spec.js';
+  if (dockOperatingSuite) {
+    await runAndWait(python, [join(repo, 'tests/e2e/dock_operating_cert_fixture.py'), 'seed', '--state', statePath],
+      { stdio: ['ignore', 'pipe', 'pipe'] }, 'DOCK_FIXTURE_SEED');
+  }
+
   setPhase('startup', 'eos_startup');
   console.info('[BROWSER-CERT-STARTUP] service=EOS action=starting port=' + eosPort);
   const eosProcess = spawnOwned(
@@ -617,6 +676,10 @@ try {
       (result) => result.routeName + '=' + result.status + ':' + result.detailCode,
     ).join(',');
     throw new Error('BROWSER_CERT_EOS_PREFLIGHT_FAILED:' + summary);
+  }
+
+  if (mwT12Recovery) {
+    await verifyMWT12ServiceRestart(eosProcess, eosBaseUrl, eosPort);
   }
 
   const baseViteConfigPath = join(clientDirectory, 'vite.config.js');
@@ -665,6 +728,14 @@ try {
     BROWSER_CERT_BASE_URL: 'http://127.0.0.1:' + vitePort,
   };
   if (chrome) playwrightEnvironment.WILSY_BROWSER_EXECUTABLE = chrome;
+  if (dockOperatingSuite) {
+    // Preserve synthetic browser evidence beyond fixture cleanup. An explicit
+    // operator-supplied evidence directory takes precedence.
+    playwrightEnvironment.WILSY_DOCK_EVIDENCE_DIR = process.env.WILSY_DOCK_EVIDENCE_DIR
+      || await mkdtemp(join(tmpdir(), 'wilsy-dock-browser-evidence-'));
+    console.info('[BROWSER-CERT-DOCK-EVIDENCE] directory='
+      + playwrightEnvironment.WILSY_DOCK_EVIDENCE_DIR);
+  }
   await runAndWait(
     playwright,
     ['test', '--config', 'tests/e2e/playwright.config.js', ...process.argv.slice(2)],
@@ -688,7 +759,7 @@ try {
     && browserTestArguments[0] === 'tests/e2e/daily-attention-calendar.browser.spec.js';
   const headquartersSuite = browserTestArguments.length === 1
     && browserTestArguments[0] === 'tests/e2e/headquarters-operating-workspace.browser.spec.js';
-  const verificationScope = companyDocumentSuite ? 'company-documents' : headquartersSuite ? 'headquarters' : hrDashboardSuite ? 'hr'
+  const verificationScope = dockOperatingSuite ? 'dock' : companyDocumentSuite ? 'company-documents' : headquartersSuite ? 'headquarters' : hrDashboardSuite ? 'hr'
     : dailySuite ? 'daily'
       : systemSuite ? 'system' : broadSuite ? 'broad' : 'combined';
   await runAndWait(
@@ -758,7 +829,7 @@ try {
 if (failed) process.exitCode = 1;
 
 // ARTIFACT: run-browser-cert.mjs
-// VERSION: v1.13.0-COMPANY-DOCUMENT-BROWSER-SCOPE
+// VERSION: v1.15.2-DISPOSABLE-HISTORY-ENCRYPTION
 // AUTHORITY BOUNDARY: runner-owned disposable certification services only
 // TENANT POSTURE: UUID-isolated fixture database; external tenants are untouched
 // FAIL-CLOSED POSTURE: phase, health, preflight, browser, or cleanup failure returns non-zero

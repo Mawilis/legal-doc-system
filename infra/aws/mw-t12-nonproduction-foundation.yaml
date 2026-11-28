@@ -1,0 +1,249 @@
+# TITLE: MW-T12 Dormant Regional Fargate Foundation
+# VERSION: v1.3.0-ATLAS-THREE-NODE-DESTINATION-ADMISSION
+# AUTHORITY: WILSY OS Core Governance / AGENTS.md
+# EPITOME: Declare opt-in ECR, zero-task ECS cluster, closed security group
+#   and execution role only after external account-wide budget admission.
+# ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/infra/aws/mw-t12-nonproduction-foundation.yaml
+# COLLABORATION / OWNERSHIP: Existing GHCR Python EOS image publication and
+#   MW-T12 ECS read-only admission retain image and recovery authority.
+# CERTIFICATION / UPDATE DATE: 2026-11-25
+# CHANGELOG: v1.3.0-ATLAS-THREE-NODE-DESTINATION-ADMISSION
+#   Admit three DNS-reviewed Atlas replica-set addresses as separate /32
+#   security group egress rules with shared default-off condition; no compute.
+# CHANGELOG: v1.2.1-SCOPED-IAM-OPTIONAL-ENDPOINT-EGRESS
+#   Reconcile exact ECS execution role SSM GetParameters into CloudFormation.
+#   Optional 27017 outbound rule restricted to one reviewed Atlas IPv4 /32,
+#   disabled by default. No ingress, NAT, task or new service created.
+# CHANGELOG: v1.1.0-REGIONAL-FOUNDATION-BUDGET-SEPARATION
+#   Remove unsupported budget resource from Cape Town regional stack; require
+#   separate AWS Budgets API confirmation before any foundation deployment.
+#   Preserve dormant resources and prevent service/task activation.
+# CHANGELOG: v1.0.2-VALID-YAML-PREFLIGHT
+#   Reconstitute one complete YAML document after detecting a duplicated
+#   trailing block during post-commit validation; use literal-safe email
+#   validation and preserve the restricted log stream policy.
+# CHANGELOG: v1.0.1-STRICT-EMAIL-AND-LOG-ARN
+#   Correct CloudWatch Logs stream ARN resource scope and plain email regex;
+#   no change to opt-in conditions, permissions or billing activation.
+# CHANGELOG: v1.0.0-BUDGET-FIRST-DORMANT-ECS-FOUNDATION
+#   Establish account-level spend warnings with explicit recipient and USD
+#   budget, separate opt-in dormant resources, narrow task execution policy,
+#   no launched tasks, no service, no image publication and no new VPC/NAT.
+# COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001
+# SECURITY / PRIVACY POSTURE: No customer data, static credentials, public
+#   ingress, task identity grants, production resources or unpinned images.
+# TENANT BOUNDARY: No tenant persistence; only nonproduction infrastructure.
+# AUTHORITY BOUNDARY: Declares infrastructure only, not AWS activation,
+#   budget enforcement, deployment approval or rollback certification.
+# FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  MW-T12 regional dormant foundation; account-wide budget must first be
+  independently verified through AWS Budgets API outside this stack.
+  No running Fargate tasks, ECS services or task definitions are created.
+Parameters:
+  EnableDormantFoundation:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['false', 'true']
+    Description: >-
+      Explicit opt-in ONLY AFTER account-wide budget alerts are independently
+      verified. No ECS tasks are ever launched by this template.
+  ExistingVpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Existing reviewed nonproduction VPC (no VPC or NAT created).
+  EnableAtlasEndpointEgress:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['false', 'true']
+    Description: Optional exact reviewed Atlas node IPv4 /32 TCP 27017.
+  ApprovedAtlasEndpointCidr:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/32$'
+    Description: Verified one Atlas endpoint IPv4 /32, empty by default.
+  ApprovedAtlasEndpointCidr2:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/32$'
+    Description: Verified node 2 Atlas endpoint IPv4 /32, empty by default.
+  ApprovedAtlasEndpointCidr3:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/32$'
+    Description: Verified node 3 Atlas endpoint IPv4 /32, empty by default.
+Conditions:
+  FoundationApproved: !Equals [!Ref EnableDormantFoundation, 'true']
+  AtlasEgressApproved: !And
+    - !Condition FoundationApproved
+    - !Equals [!Ref EnableAtlasEndpointEgress, 'true']
+    - !Not [!Equals [!Ref ApprovedAtlasEndpointCidr, '']]
+    - !Not [!Equals [!Ref ApprovedAtlasEndpointCidr2, '']]
+    - !Not [!Equals [!Ref ApprovedAtlasEndpointCidr3, '']]
+Resources:
+  EosImageRepository:
+    Type: AWS::ECR::Repository
+    Condition: FoundationApproved
+    Properties:
+      RepositoryName: wilsy/mwt12-eos-nonproduction
+      ImageTagMutability: IMMUTABLE
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"Retain at most four rollback rehearsal images","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":4},"action":{"type":"expire"}}]}
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosRuntimeLogs:
+    Type: AWS::Logs::LogGroup
+    Condition: FoundationApproved
+    Properties:
+      LogGroupName: /wilsy/mwt12/nonproduction/eos
+      RetentionInDays: 1
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: FoundationApproved
+    Properties:
+      RoleName: wilsy-mwt12-eos-execution-nonproduction
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: OnlyEcsTasksInThisAccount
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*'
+      Policies:
+        - PolicyName: mwt12-ecr-and-logs-only
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ObtainEcrAuthToken
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              - Sid: PullOnlyOwnedRehearsalImage
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: !GetAtt EosImageRepository.Arn
+              - Sid: WriteOnlyRehearsalLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/wilsy/mwt12/nonproduction/eos:log-stream:*'
+              - Sid: ReadExactSyntheticAtlasSecureParameter
+                Effect: Allow
+                Action: ssm:GetParameters
+                Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/wilsy/mwt12/nonproduction/synthetic-mongodb-uri'
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosClosedSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: FoundationApproved
+    Properties:
+      GroupDescription: MW-T12 nonproduction EOS no inbound traffic, HTTPS egress only
+      VpcId: !Ref ExistingVpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: External TLS transport only, no database downgrade
+      Tags:
+        - Key: Name
+          Value: wilsy-mwt12-eos-closed
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+  EosAtlasEndpointEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: AtlasEgressApproved
+    Properties:
+      GroupId: !Ref EosClosedSecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      CidrIp: !Ref ApprovedAtlasEndpointCidr
+      Description: MW-T12 opt-in node-1 synthetic Atlas TLS egress
+  EosAtlasEndpointEgress2:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: AtlasEgressApproved
+    Properties:
+      GroupId: !Ref EosClosedSecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      CidrIp: !Ref ApprovedAtlasEndpointCidr2
+      Description: MW-T12 opt-in node-2 synthetic Atlas TLS egress
+  EosAtlasEndpointEgress3:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: AtlasEgressApproved
+    Properties:
+      GroupId: !Ref EosClosedSecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      CidrIp: !Ref ApprovedAtlasEndpointCidr3
+      Description: MW-T12 opt-in node-3 synthetic Atlas TLS egress
+  EosDormantCluster:
+    Type: AWS::ECS::Cluster
+    Condition: FoundationApproved
+    Properties:
+      ClusterName: wilsy-mwt12-nonproduction
+      CapacityProviders:
+        - FARGATE
+      ClusterSettings:
+        - Name: containerInsights
+          Value: disabled
+      Tags:
+        - Key: Environment
+          Value: nonproduction
+        - Key: Project
+          Value: MW-T12
+Outputs:
+  ComputeActivation:
+    Description: This stack creates zero task definitions, services or running tasks.
+    Value: DISABLED
+  EcrRepositoryUri:
+    Condition: FoundationApproved
+    Description: Dormant image repository; images not yet published or charged as storage.
+    Value: !GetAtt EosImageRepository.RepositoryUri
+  EcsClusterArn:
+    Condition: FoundationApproved
+    Value: !GetAtt EosDormantCluster.Arn
+  ExecutionRoleArn:
+    Condition: FoundationApproved
+    Value: !GetAtt EosExecutionRole.Arn
+  ClosedSecurityGroup:
+    Condition: FoundationApproved
+    Value: !Ref EosClosedSecurityGroup
+# ARTIFACT: infra/aws/mw-t12-nonproduction-foundation.yaml
+# VERSION: v1.3.0-ATLAS-THREE-NODE-DESTINATION-ADMISSION
+# AUTHORITY BOUNDARY: Regional dormant infrastructure; external budget required.
+# TENANT POSTURE: No real tenant, data, MFA or production connection.
+# FAIL-CLOSED POSTURE: Foundation defaults off; no task or service is started.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

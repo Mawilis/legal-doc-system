@@ -1,3 +1,20 @@
+"""TITLE: WILSY OS headcount requisition registry certification.
+VERSION: v1.1.0-HEADCOUNT-PAGINATED-OVERVIEW-REGRESSION
+AUTHORITY: WILSY OS Core Governance; synthetic tests only.
+EPITOME: Certifies tenant-scoped requisition registry and transactional
+         pagination without creating employee or authorization truth.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_headcount_requisition_registry.py
+COLLABORATION / OWNERSHIP: Python EOS headcount source, registry contract tests.
+CERTIFICATION / UPDATE DATE: 2026-11-27.
+CHANGELOG: v1.1.0-HEADCOUNT-PAGINATED-OVERVIEW-REGRESSION adds source-owned paged Overview test and
+           enforces the sovereign source-header/seal contract.
+COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
+SECURITY / PRIVACY POSTURE: Synthetic requisition records only; no credentials.
+TENANT BOUNDARY: Exact-tenant registry operations, negative foreign-tenant reads.
+AUTHORITY BOUNDARY: Tests do not grant IAM, employment or approval authority.
+FINANCIAL AUTHORITY BOUNDARY: No money movement; Kennel EOS exclusively.
+"""
+
 from datetime import datetime, timezone
 
 import pytest
@@ -178,3 +195,64 @@ def test_indexes_are_tenant_first_and_event_revision_unique():
     assert len(events.indexes) == 2
     assert all(keys[0][0] == "tenant_id" for keys, _ in current.indexes + events.indexes)
     assert events.indexes[-1][1]["unique"] is True
+
+
+def test_headcount_overview_page_uses_exact_tenant_and_transactional_total():
+    class PagedCursor:
+        def __init__(self, rows):
+            self.rows = rows
+        def sort(self, order):
+            assert order == [("requisition_id", 1)]
+            self.rows.sort(key=lambda row: row["requisition_id"])
+            return self
+        def skip(self, offset):
+            self.rows = self.rows[offset:]
+            return self
+        def limit(self, limit):
+            self.rows = self.rows[:limit]
+            return self
+        def __iter__(self):
+            return iter(self.rows)
+
+    class PagedCollection:
+        def __init__(self):
+            self.rows = []
+            self.seen = []
+        def count_documents(self, query, session=None):
+            assert session is not None
+            self.seen.append(dict(query))
+            return len([row for row in self.rows if row["tenant_id"] == query["tenant_id"]])
+        def find(self, query, session=None):
+            assert session is not None
+            self.seen.append(dict(query))
+            return PagedCursor([row.copy() for row in self.rows if row["tenant_id"] == query["tenant_id"]])
+
+    current = PagedCollection()
+    for i in range(5):
+        template = make_requisition()
+        value = HeadcountRequisition(
+            **{**template.to_dict(), "requisition_id": f"REQ-{i:03d}", "fingerprint": ""}
+        )
+        current.rows.append(value.to_dict())
+    foreign = make_requisition("OTHER-TENANT").to_dict()
+    current.rows.append(foreign)
+    registry = HeadcountRequisitionRegistry(current, Collection())
+    session = object()
+    first, total = registry.list_overview_page(
+        tenant_id=TENANT, session=session, limit=2, offset=1,
+    )
+    assert total == 5
+    assert [item.requisition_id for item in first] == ["REQ-001", "REQ-002"]
+    assert current.seen == [{"tenant_id": TENANT}, {"tenant_id": TENANT}]
+    with pytest.raises(HeadcountRequisitionRegistryError, match="HEADCOUNT_OFFSET_INVALID"):
+        registry.list_overview_page(tenant_id=TENANT, session=session, offset=-1)
+    with pytest.raises(HeadcountRequisitionRegistryError, match="SESSION_REQUIRED"):
+        registry.list_overview_page(tenant_id=TENANT, session=None)
+
+# ARTIFACT: tests/unit/test_headcount_requisition_registry.py
+# VERSION: v1.1.0-HEADCOUNT-PAGINATED-OVERVIEW-REGRESSION
+# AUTHORITY BOUNDARY: Regression evidence only; independent EOS maker-checker remains authoritative.
+# TENANT POSTURE: Synthetic exact-tenant and foreign-tenant scenarios.
+# FAIL-CLOSED POSTURE: Invalid pagination, corrupt record and missing transaction session deny.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT

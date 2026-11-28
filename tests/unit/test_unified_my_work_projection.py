@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Unified My Work Source Projection Certificate
-VERSION: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT
+VERSION: v1.2.0-PREDECESSOR-EVIDENCE-CERT
 AUTHORITY: Synthetic read-only EOS source composition and denial tests.
 EPITOME: Verify independently admitted Legal, Operations, Intelligence, CRM,
          HR and Projects work shapes, cross-tenant rejection and blocked work.
@@ -7,6 +7,15 @@ ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_
 COLLABORATION / OWNERSHIP: unified_my_work_projection composes only sources
          already admitted by the canonical authenticated My Work router.
 CERTIFICATION / UPDATE DATE: 2026-11-18
+CHANGELOG: v1.2.0-PREDECESSOR-EVIDENCE-CERT verifies
+         exact-source predecessor readiness and denial of conflicting counts.
+CHANGELOG: v1.1.1-LEGACY-SOURCE-AUDIENCE-COMPATIBILITY-CERT
+         preserves previously admitted source rows carrying an unrelated
+         zero-based source revision when no category evidence is present.
+CHANGELOG: v1.1.0-SOURCE-WORK-AUDIENCE-ENVELOPE-CERT proves
+         work rows remain visible and UNCLASSIFIED without classification
+         evidence, accepts exact revision-attested audience metadata and
+         fails closed on stale or foreign audience assertions.
 CHANGELOG: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT adds Projects
          delegated/blocked task tests and seals the complete existing artifact.
 COMPLIANCE: AGENTS.md; POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
@@ -40,6 +49,55 @@ def item(work_item_id="task-1", *, title="Prepare report", status="OPEN",
         "priority": priority,
         "due_at": due_at,
     }
+
+
+def test_m01_work_audience_is_visible_unclassified_until_source_attests():
+    """M01 source owned taxonomy cannot guess a classification from title."""
+    row = item("operating-looking-item", title="Weekly operations review")
+    result = build_unified_my_work(
+        tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+        operations={"tenant_id": TENANT, "items": [row]},
+    )
+    assert result["summary"]["active_count"] == 1
+    assert result["items"][0]["audience"] == "UNCLASSIFIED"
+    assert result["items"][0]["critical_gate"] is False
+    assert result["items"][0]["audience_evidence_ref"] is None
+
+
+def test_legacy_zero_based_source_revision_without_audience_remains_visible():
+    """An unrelated version-zero work source is not made inaccessible by M01."""
+    row = {**item("legacy-zero"), "revision": 0}
+    snapshot = build_unified_my_work(
+        tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+        crm={"tenant_id": TENANT, "items": [row]},
+    )
+    assert snapshot["summary"]["active_count"] == 1
+    assert snapshot["items"][0]["audience"] == "UNCLASSIFIED"
+
+
+def test_m01_current_source_audience_proof_and_foreign_revision_denial():
+    """Only the admitted source's exact item and revision can tag work."""
+    row = item("source-item", title="Source classification is not a title regex")
+    row["revision"] = 3
+    row["audience_evidence"] = {
+        "tenant_id": TENANT, "source": "OPERATIONS", "record_id": "source-item",
+        "source_revision": 3, "audience": "OPERATING", "source_verified": True,
+        "evidence_ref": "source-audit-3", "critical_gate": False,
+        "critical_gate_evidence_ref": None,
+    }
+    result = build_unified_my_work(
+        tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+        operations={"tenant_id": TENANT, "items": [row]},
+    )
+    assert result["items"][0]["audience"] == "OPERATING"
+    assert result["items"][0]["audience_source_revision"] == 3
+    for field, value in (("tenant_id", "FOREIGN"), ("source_revision", 2)):
+        malicious = {**row, "audience_evidence": {**row["audience_evidence"], field: value}}
+        with pytest.raises(ValueError):
+            build_unified_my_work(
+                tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+                operations={"tenant_id": TENANT, "items": [malicious]},
+            )
 
 
 def test_unifies_authorized_source_reads_and_preserves_source_ownership():
@@ -169,10 +227,14 @@ def test_project_tasks_join_daily_attention_without_inherited_authority():
         projects={"tenant_id": TENANT, "items": [
             {**item("ptk-" + "b" * 48, title="Deliver current module", status="OPEN"),
              "tenant_id": TENANT, "project_id": project_id,
-             "due_date": "2026-11-20", "owner_principal_id": PRINCIPAL},
+             "due_date": "2026-11-20", "owner_principal_id": PRINCIPAL,
+             "dependency_total": 1, "dependency_remaining": 1,
+             "dependency_readiness": "WAITING"},
             {**item("ptk-" + "c" * 48, title="Blocked dependency", status="BLOCKED"),
              "tenant_id": TENANT, "project_id": project_id,
-             "due_date": None, "owner_principal_id": PRINCIPAL},
+             "due_date": None, "owner_principal_id": PRINCIPAL,
+             "dependency_total": 0, "dependency_remaining": 0,
+             "dependency_readiness": "READY"},
         ]},
     )
     assert result["summary"]["active_count"] == 2
@@ -200,12 +262,35 @@ def test_project_attention_rejects_forged_work_source(changes):
         **item("ptk-" + "d" * 48, status="BLOCKED"),
         "tenant_id": TENANT, "project_id": "prj-" + "e" * 48,
         "owner_principal_id": PRINCIPAL, "due_date": None,
+        "dependency_total": 0, "dependency_remaining": 0,
+        "dependency_readiness": "READY",
         **changes,
     }
     with pytest.raises(UnifiedMyWorkProjectionError, match="PROJECTS_SOURCE_ITEM_INVALID"):
         build_unified_my_work(
             tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
             projects={"tenant_id": TENANT, "items": [source]},
+        )
+
+
+@pytest.mark.parametrize("bad", [
+    {"dependency_readiness": "READY", "dependency_total": 1, "dependency_remaining": 1},
+    {"dependency_total": 1, "dependency_remaining": 2},
+    {"dependency_total": True},
+])
+def test_project_dependency_readiness_rejects_forged_evidence(bad):
+    row = {
+        **item("ptk-" + "b" * 48, status="OPEN"),
+        "tenant_id": TENANT, "project_id": "prj-" + "a" * 48,
+        "owner_principal_id": PRINCIPAL,
+        "dependency_total": 1, "dependency_remaining": 1,
+        "dependency_readiness": "WAITING",
+        **bad,
+    }
+    with pytest.raises(UnifiedMyWorkProjectionError, match="PROJECTS_DEPENDENCY_EVIDENCE_INVALID"):
+        build_unified_my_work(
+            tenant_id=TENANT, principal_id=PRINCIPAL, now=NOW,
+            projects={"tenant_id": TENANT, "items": [row]},
         )
 
 
@@ -219,7 +304,7 @@ def test_rejects_malformed_source_item_instead_of_silently_dropping_it():
         )
 
 # ARTIFACT: test_unified_my_work_projection.py
-# VERSION: v1.0.0-PROJECTS-DAILY-ATTENTION-PROJECTION-CERT
+# VERSION: v1.2.0-PREDECESSOR-EVIDENCE-CERT
 # AUTHORITY BOUNDARY: pure projection checks; no IAM or source mutation
 # TENANT POSTURE: exact source envelope and row validation
 # FAIL-CLOSED POSTURE: malformed, forged or foreign project work denies

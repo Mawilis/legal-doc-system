@@ -1,13 +1,39 @@
 /**
  * TITLE: WILSY OS Exact-Reviewer Project Business Decisions
- * VERSION: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET
+ * VERSION: v1.5.0-SOLO-OPERATOR-REVIEW-CLARITY
  * AUTHORITY: Python EOS ProjectApprovalRegistry, participant IAM and audit.
  * EPITOME: Request business review from eligible task contributors, read
  *          source decisions and let only the named reviewer decide once.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTaskApprovalsPanel.jsx
  * COLLABORATION / OWNERSHIP: Owner ProjectTasksPanel or participant AssignedProjects
  *          mounts this shared presentation; EOS alone owns decision truth.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.5.0-SOLO-OPERATOR-REVIEW-CLARITY distinguishes
+ *          a single-contributor operating project from independently
+ *          reviewed work, avoids presenting an unusable review form when
+ *          no other EOS-verified reviewer exists, and directs the operator
+ *          to ordinary task work without granting reviewer authority.
+ * CHANGELOG: v1.4.0-REVIEWER-ELIGIBILITY-RECOVERY explains the
+ *          source-verified independent-reviewer gate beside the selector,
+ *          provides project People and retry actions at the decision point,
+ *          and does not enable selection without eligible EOS contributors.
+ * CHANGELOG: v1.3.1-PARTICIPANT-DECISION-ISOLATION keeps
+ *          participant reviewer decisions independent of owner-only
+ *          directory reads. Reviewer discovery is for owners requesting
+ *          independent review, never an implicit contributor grant.
+ * CHANGELOG: v1.3.0-VERIFIED-PARENT-REVIEWER-HANDOFF accepts
+ *          only source-verified parent participant snapshots (including
+ *          limited-page disclosure), independently reprobes when missing.
+ *          Reuses EOS-only contribution instead of multiplying reads.
+ * CHANGELOG: v1.2.1-REVIEWER-REQUEST-SCOPE-GUARD avoids
+ *          shadowing the scope-ref while validating independently
+ *          refreshed contributor responses against the active task.
+ * CHANGELOG: v1.2.0-VERIFIED-REVIEWER-DISCOVERY validates
+ *          a fresh independently authorized project participant list
+ *          before showing eligible distinct reviewers; displays
+ *          verified names, never opaque IDs; distinguishes pending,
+ *          denied, unavailable and no-independent-reviewer states.
+ *          It cannot add roles or approve its own decisions.
  * CHANGELOG: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET binds explicitly selected, source-verified scan-cleared task attachments to the immutable review packet and independently verified readback; prior rationale-only decisions remain distinct.
  * CHANGELOG: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET adds independent request,
  *          reviewer decision, revision CAS, source readback and failure states.
@@ -87,7 +113,8 @@ function verifiedAttachment(item, tenantId, projectId, taskId) {
 /** @description Render one auditable exact-task decision workflow. */
 export default function ProjectTaskApprovalsPanel({
   tenantId, projectId, principalId, taskId, participants = [],
-  tenantHeaders, participantMode = false, onClose,
+  tenantHeaders, participantMode = false, onClose, showClose = true, onManageContributors = null,
+  participantAuthorityState = 'UNVERIFIED', participantHasMore = false,
 }) {
   const [state, setState] = useState('LOADING');
   const [items, setItems] = useState([]);
@@ -103,6 +130,9 @@ export default function ProjectTaskApprovalsPanel({
   const [responses, setResponses] = useState({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reviewerSource, setReviewerSource] = useState('VERIFYING');
+  const [verifiedReviewers, setVerifiedReviewers] = useState([]);
+  const [reviewerSourceError, setReviewerSourceError] = useState('');
   const scope = [tenantId, projectId, principalId, taskId, participantMode].join('\0');
   const active = useRef(scope);
   active.current = scope;
@@ -297,9 +327,78 @@ export default function ProjectTaskApprovalsPanel({
       payload, item.approval_id);
   };
 
-  const options = participants.filter(person =>
-    person?.state === 'ACTIVE' && person?.role === 'CONTRIBUTOR'
-    && person?.principal_id !== principalId);
+  // The parent source may still be verifying when this task panel mounts.
+  // Independent project participant GET makes the reviewer selector accurate
+  // without assuming that a tenant member is a project contributor.
+  const refreshReviewers = useCallback(async () => {
+    const requestScope = scope;
+    setReviewerSource('VERIFYING');
+    setReviewerSourceError('');
+    try {
+      const response = await api.get(
+        '/projects/' + encodeURIComponent(projectId) + '/participants?limit=100&offset=0',
+        { headers },
+      );
+      if (active.current !== requestScope) return;
+      const data = response?.data;
+      if (data?.schema !== 'WILSY-PROJECT-PARTICIPANT-LIST/V1'
+        || data.tenant_id !== tenantId || data.principal_id !== principalId
+        || data.project_id !== projectId || data.limit !== 100 || data.offset !== 0
+        || !Array.isArray(data.items) || data.items.length > 100
+        || typeof data.has_more !== 'boolean'
+        || data.next_offset !== (data.has_more ? data.items.length : null)
+        || data.items.some(person => person?.tenant_id !== tenantId
+          || person.project_id !== projectId || person.state !== 'ACTIVE'
+          || !['VIEWER', 'CONTRIBUTOR'].includes(person.role)
+          || typeof person.principal_id !== 'string'
+          || !person.principal_id)
+      ) throw new Error('PROJECT_REVIEWER_SOURCE_INVALID');
+      setVerifiedReviewers(data.items.filter(person =>
+        person.role === 'CONTRIBUTOR' && person.principal_id !== principalId));
+      setReviewerSource(data.has_more ? 'PARTIAL' : 'READY');
+    } catch (cause) {
+      if (active.current !== requestScope) return;
+      setVerifiedReviewers([]);
+      const status = cause?.response?.status;
+      setReviewerSource(status === 403 || status === 401 ? 'DENIED' : 'UNAVAILABLE');
+      setReviewerSourceError(status === 403 ? 'EOS denied the project contributor directory (HTTP 403).'
+        : status === 401 ? 'Authenticate to inspect eligible project contributors (HTTP 401).'
+          : status === 503 ? 'The EOS project contributor source is unavailable (HTTP 503).'
+            : status === 404 ? 'Project contributor source is not available in this EOS runtime (HTTP 404).'
+              : 'EOS could not verify the project contributor directory.');
+    }
+  }, [scope, projectId, tenantId, principalId, tenantHeaders]);
+  useEffect(() => {
+    setReviewer('');
+    // The participant decision pane is not a reviewer requester.
+    // Never issue an owner-only directory read from its operating capacity.
+    if (participantMode) {
+      setVerifiedReviewers([]);
+      setReviewerSource('READY');
+      setReviewerSourceError('');
+      return;
+    }
+    if (participantAuthorityState === 'VERIFIED') {
+      setVerifiedReviewers(participants.filter(person =>
+        person?.state === 'ACTIVE' && person.role === 'CONTRIBUTOR'
+          && person.principal_id !== principalId));
+      setReviewerSource(participantHasMore ? 'PARTIAL' : 'READY');
+      setReviewerSourceError('');
+      return;
+    }
+    setVerifiedReviewers([]);
+    setReviewerSource('VERIFYING');
+    if (participantAuthorityState !== 'VERIFYING') void refreshReviewers();
+  }, [scope, refreshReviewers, participantAuthorityState, participantHasMore, participants, principalId, participantMode]);
+  const options = verifiedReviewers;
+  const noIndependentReviewer = !participantMode
+    && (reviewerSource === 'READY' || reviewerSource === 'PARTIAL')
+    && options.length === 0;
+  const reviewerName = person => {
+    const name = [person.first_name, person.last_name].filter(value =>
+      typeof value === 'string' && value.trim()).join(' ').trim();
+    return name || 'Verified contributor · name unavailable';
+  };
 
   return <section aria-label="Task approvals" className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
     <header className="flex items-center justify-between gap-3">
@@ -309,8 +408,8 @@ export default function ProjectTaskApprovalsPanel({
       <div className="flex gap-2">
         <button type="button" className="wp-button" disabled={busy}
           onClick={() => void load(offset)}><RefreshCw size={14}/> Refresh</button>
-        <button type="button" className="wp-button" disabled={busy}
-          onClick={onClose} aria-label="Close task approvals"><X size={14}/></button>
+        {showClose && <button type="button" className="wp-button" disabled={busy}
+          onClick={onClose} aria-label="Close task approvals"><X size={14}/></button>}
       </div>
     </header>
     <p className="mt-2 text-xs text-slate-600">A project decision is business review evidence. It does not complete a task, approve spending, release money or prove a digital signature.</p>
@@ -367,18 +466,48 @@ export default function ProjectTaskApprovalsPanel({
         <button type="button" className="wp-button" disabled={busy || !hasMore}
           onClick={() => void load(offset + 50)}>Next</button>
       </nav>}
-      {!participantMode && <form onSubmit={requestReview} className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+      {noIndependentReviewer && <section aria-label="Solo operator review guidance"
+        className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+        <h5 className="text-base font-bold">Solo project operation</h5>
+        <p className="mt-2 leading-relaxed">EOS has verified no other active eligible contributor on the current project participant page. You can continue your authorized task work, record activity and attach evidence without requesting an independent business review.</p>
+        <p className="mt-2 leading-relaxed">An independent review requires a different verified contributor. Founder or Owner status does not convert a self-attestation into an independent approval. Deployment, rollback certification and financial release remain separately governed.</p>
+        {reviewerSource === 'PARTIAL' && <p className="mt-2 font-semibold">Additional participant pages exist. Verify those pages before concluding that the project has no other reviewer.</p>}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" className="wp-button wp-button-primary" disabled={busy}
+            onClick={() => onClose?.()}>Return to task work</button>
+          <button type="button" className="wp-button" disabled={busy}
+            onClick={() => void refreshReviewers()}>Recheck eligible reviewers</button>
+          {typeof onManageContributors === 'function' && <button type="button"
+            className="wp-button" disabled={busy} onClick={onManageContributors}>Open project People</button>}
+        </div>
+      </section>}
+      {!participantMode && !noIndependentReviewer && <form onSubmit={requestReview} className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-white p-3">
         <h5 className="font-semibold text-slate-900">Request independent review</h5>
         <label className="block text-sm font-semibold text-slate-800">Named project contributor
           <select aria-label="Review contributor" required value={reviewer}
+            disabled={busy || reviewerSource === 'VERIFYING' || reviewerSource === 'DENIED'
+              || reviewerSource === 'UNAVAILABLE' || !options.length}
             onChange={event => setReviewer(event.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm font-normal text-slate-900">
             <option value="">Select a verified contributor</option>
             {options.map(person => <option key={person.principal_id} value={person.principal_id}>
-              {person.principal_id}
+              {reviewerName(person)}
             </option>)}
           </select>
+          {reviewerSource === 'VERIFYING' && <span role="status" className="mt-2 block text-xs font-normal text-slate-700">
+            EOS is verifying project contributors before independent review can be requested.
+          </span>}
+          {reviewerSource !== 'VERIFYING' && options.length === 0 && <span role="status" className="mt-2 block text-xs font-normal text-amber-900">
+            {reviewerSourceError || 'No other active project contributor is verified. You cannot nominate yourself as the independent reviewer.'}
+          </span>}
         </label>
+        {reviewerSource !== 'VERIFYING' && options.length === 0 && <div className="flex flex-wrap gap-2">
+          <button type="button" className="wp-button !min-h-10 !px-3 !text-xs" disabled={busy}
+            onClick={() => void refreshReviewers()}>Verify eligible contributors</button>
+          {typeof onManageContributors === 'function' && <button type="button"
+            className="wp-button !min-h-10 !px-3 !text-xs" disabled={busy}
+            onClick={onManageContributors}>Open project People</button>}
+        </div>}
         <label className="block text-sm font-semibold text-slate-800">Review request rationale
           <textarea aria-label="Review request rationale" required rows={3} maxLength={3000}
             value={rationale} onChange={event => setRationale(event.target.value)}
@@ -431,9 +560,20 @@ export default function ProjectTaskApprovalsPanel({
           disabled={busy || !reviewer || !rationale.trim() || !options.some(person => person.principal_id === reviewer)}>
           Request EOS review
         </button>
-        {options.length === 0 && <p className="text-xs text-slate-600">
-          No verified independent contributors are available on this participant page.
-        </p>}
+        <div role="status" className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
+          {reviewerSource === 'VERIFYING' ? 'Verifying independently eligible contributors with EOS…'
+            : reviewerSourceError ? reviewerSourceError
+              : options.length === 0 ? 'No independent project contributor is verified. The signed-in requester cannot approve their own review.'
+                : options.length + ' independent contributor(s) verified for review.'}
+          {reviewerSource === 'PARTIAL' && ' More contributor pages exist; only this page is eligible.'}
+          <button type="button" className="wp-button !min-h-9 !px-3 !text-xs"
+            disabled={busy || reviewerSource === 'VERIFYING'}
+            onClick={() => void refreshReviewers()}>Refresh contributors</button>
+          {options.length === 0 && typeof onManageContributors === 'function' && <button
+            type="button" className="wp-button !min-h-9 !px-3 !text-xs" onClick={onManageContributors}>
+            Manage project people
+          </button>}
+        </div>
       </form>}
       {error && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
     </>}
@@ -441,7 +581,7 @@ export default function ProjectTaskApprovalsPanel({
 }
 
 // ARTIFACT: ProjectTaskApprovalsPanel.jsx
-// VERSION: v1.1.0-EXACT-SCAN-CLEARED-REVIEW-PACKET
+// VERSION: v1.5.0-SOLO-OPERATOR-REVIEW-CLARITY
 // AUTHORITY BOUNDARY: source business review UI, no IAM/financial/task authority
 // TENANT POSTURE: exact tenant, task, project, participant and session scope
 // FAIL-CLOSED POSTURE: source mismatch or unverified command readback denies

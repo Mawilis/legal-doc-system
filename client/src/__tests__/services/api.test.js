@@ -1,18 +1,28 @@
 /**
  * TITLE: WILSY OS Institutional HTTP Transport Regression Certificate
- * VERSION: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT
+ * VERSION: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Existing HTTP contracts and critical post-MFA bootstrap requests
  *          cannot be misclassified as degraded dashboard source reads.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/services/api.test.js
  * COLLABORATION / OWNERSHIP: api.js transport, server-owned EOS session truth.
  * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CHANGELOG: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT verifies strict history body and tenant-bound Dock reads.
+ * CHANGELOG: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT asserts that
+ *            authenticated Projects, My Work, attention and CRM cannot
+ *            leave the browser without an EOS-verified transport tenant;
+ *            navigation retains the exact selected ID, logout clears it,
+ *            and alias candidates remain rejected.
+ * CHANGELOG: v1.6.0-STRICT-FOUNDER-STRATEGY-BODY-CERT
+ *            certifies new Founder draft, submit, ratify and link commands
+ *            preserve exact strict Pydantic bodies without injected timestamp;
+ *            forensic evidence stays in headers and unrelated body rules hold.
  * CHANGELOG: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT asserts multipart file bytes, MIME, size and name instead of File object identity (FormData may clone the File upon append), preserving the wire-level safety contract.
  * CHANGELOG: v1.4.0-NATIVE-FORMDATA-BOUNDARY-TRANSPORT-CERT verifies that native FormData clears the global application/json default using AxiosHeaders or ordinary header objects while preserving a single file part, bearer, tenant, idempotency and forensic headers. JSON-only commands retain canonical JSON handling.
  * CHANGELOG: v1.3.0-CRM-STATUS-CANCEL-JSON-CONTRACT verifies
  *            no extra timestamp fields in CRM status/cancel POSTs while
  *            cryptographic forensic headers remain intact.
- * CHANGELOG: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT verifies six exact
+ * CHANGELOG: v1.6.0-STRICT-FOUNDER-STRATEGY-BODY-CERT verifies six exact
  *            company-document mutation paths retain caller fields and forensic headers.
  * CHANGELOG: v1.1.0 verifies post-MFA session bootstrap, SYSTEM bootstrap,
  *            covenant status, normal dashboard backoff and 403 separation.
@@ -158,6 +168,63 @@ describe('api.js – Sovereign HTTP Client', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  describe('EOS-verified tenant navigation transport interlock', () => {
+    const scopedUrls = [
+      '/projects?limit=1',
+      '/projects/prj-' + 'a'.repeat(48) + '/tasks',
+      '/my-work',
+      '/attention/actions/crm',
+      '/crm/owner-workspace',
+    ];
+    const activeId = 'WILSYTENANT-4CD2FZ4O';
+
+    it('rejects tenant-bound requests locally while workspace bootstrap is unresolved', async () => {
+      localStorageMock.setItem('wilsy_auth_token', 'synthetic-session-bearer');
+      for (const url of scopedUrls) {
+        await expect(requestInterceptorCapture.fulfilled({
+          url, method: 'get', headers: {},
+        })).rejects.toMatchObject({
+          code: 'VERIFIED_TENANT_CONTEXT_REQUIRED',
+          isClientAuthGuard: true,
+        });
+      }
+      // Bootstrap is allowed to obtain the EOS-owned authenticated tenant.
+      const bootstrap = await requestInterceptorCapture.fulfilled({
+        url: '/auth/workspace-bootstrap',
+        method: 'get',
+        headers: { Authorization: 'Bearer synthetic-session-bearer' },
+      });
+      expect(bootstrap.headers['X-Tenant-ID']).toBeUndefined();
+    });
+
+    it('keeps the exact canonical tenant throughout successive workspace navigations', async () => {
+      localStorageMock.setItem('wilsy_auth_token', 'synthetic-session-bearer');
+      setActiveTenantTransportId(activeId);
+      for (const url of scopedUrls) {
+        const sealed = await requestInterceptorCapture.fulfilled({
+          url, method: 'get',
+          headers: { 'X-Tenant-ID': 'wilsy' },
+        });
+        expect(sealed.headers['X-Tenant-ID']).toBe(activeId);
+        expect(sealed.headers.Authorization).toBe('Bearer synthetic-session-bearer');
+      }
+      setActiveTenantTransportId(null);
+      await expect(requestInterceptorCapture.fulfilled({
+        url: '/projects', method: 'get', headers: {},
+      })).rejects.toMatchObject({ code: 'VERIFIED_TENANT_CONTEXT_REQUIRED' });
+    });
+
+    it('rejects display aliases as active tenant IDs without inventing a fallback', () => {
+      expect(() => setActiveTenantTransportId('wilsy')).toThrow(
+        'ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID',
+      );
+      expect(() => setActiveTenantTransportId('WILSY')).toThrow(
+        'ACTIVE_TENANT_TRANSPORT_CONTEXT_INVALID',
+      );
+      expect(() => setActiveTenantTransportId(activeId)).not.toThrow();
+    });
+  });
+
   // ──────────────────────────────────────────────────────────────────────────
   // Strict legal-acceptance transport contract
   // ──────────────────────────────────────────────────────────────────────────
@@ -235,6 +302,36 @@ describe('api.js – Sovereign HTTP Client', () => {
           expect(sealed.headers['x-request-seal']).toEqual(expect.any(String));
           expect(sealed.headers['Idempotency-Key']).toBe('synthetic-key');
         }
+      }
+    });
+
+    it('preserves exact Founder Strategy command bodies without injected timestamp (HTTP 422 regression)', async () => {
+      bindAuthenticatedTransport();
+      const cases = [
+        ['founder-drafts', {
+          expected_revision: 0, title: 'Synthetic approved Strategy', document_version: '1.1.0',
+          sections: [{ section_id: 'strategic-vision', title: 'Strategic Vision',
+            body: 'Synthetic strategy content with exact schema.' }],
+        }],
+        ['founder-submit', { expected_revision: 1 }],
+        ['founder-ratify', { expected_revision: 2, effective_from: '2026-11-23T06:00:00.000Z' }],
+        ['project-links', { pillar_id: 'pillar-one', project_id: 'prj-' + 'a'.repeat(48),
+          expected_strategy_revision: 3, expected_project_revision: 6 }],
+        ['founder-project-links', { pillar_id: 'pillar-one', project_id: 'prj-' + 'a'.repeat(48),
+          expected_strategy_revision: 3, expected_project_revision: 6 }],
+      ];
+      for (const [action, body] of cases) {
+        const sealed = await requestInterceptorCapture.fulfilled({
+          url: '/company-operating-documents/STRATEGY/' + action,
+          method: 'post', data: structuredClone(body),
+          headers: { 'Idempotency-Key': 'synthetic-founder-key' },
+        });
+        expect(sealed.data).toEqual(body);
+        expect(sealed.data).not.toHaveProperty('timestamp');
+        expect(sealed.headers['Idempotency-Key']).toBe('synthetic-founder-key');
+        expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+        expect(sealed.headers['x-cryptographic-nonce']).toEqual(expect.any(String));
+        expect(sealed.headers['x-request-seal']).toEqual(expect.any(String));
       }
     });
 
@@ -454,6 +551,19 @@ describe('api.js – Sovereign HTTP Client', () => {
       expect(sealed.data.get('file').name).toBe('report.pdf');
     });
 
+    it('preserves the exact encrypted-history PUT body and forensic headers', async () => {
+      bindAuthenticatedTransport();
+      const body = { expected_revision: 0, title: 'Task-bound work', workspace: 'Projects', messages: [],
+        work_locator: { workspace: 'PROJECTS', project_id: 'prj-' + 'a'.repeat(48), task_id: 'ptk-' + 'b'.repeat(48) } };
+      const sealed = await requestInterceptorCapture.fulfilled({
+        url: '/wilsy-ai/history/session-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa', method: 'put', data: { ...body }, headers: {},
+      });
+      expect(sealed.data).toEqual(body);
+      expect(sealed.data).not.toHaveProperty('timestamp');
+      expect(sealed.headers['x-forensic-timestamp']).toEqual(expect.any(String));
+      expect(sealed.headers['X-Tenant-ID']).toBe(tenantId);
+    });
+
     it('preserves historical timestamp body injection for unrelated mutation routes', async () => {
       expect(requestInterceptorCapture.fulfilled).toEqual(expect.any(Function));
 
@@ -602,7 +712,7 @@ describe('api.js – Sovereign HTTP Client', () => {
 
 /*
  * ARTIFACT: client/src/__tests__/services/api.test.js
- * VERSION: v1.5.0-NATIVE-FORMDATA-FILE-PROJECTION-CERT
+ * VERSION: v1.8.0-ENCRYPTED-HISTORY-TRANSPORT-CERT
  * AUTHORITY BOUNDARY: Tests only, never creates browser authorization.
  * TENANT POSTURE: Synthetic credentials and endpoint identities.
  * FAIL-CLOSED POSTURE: Actual EOS errors remain errors; no invented success.

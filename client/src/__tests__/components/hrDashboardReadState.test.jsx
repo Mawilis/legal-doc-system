@@ -1,14 +1,17 @@
 /**
  * TITLE: WILSY OS HR Dashboard Read-State Runtime Regressions
- * VERSION: v1.7.0-EOS-CANDIDATE-EVIDENCE-LOOP
+ * VERSION: v1.8.2-HIRING-EMPTY-CONTRACT-RECONCILIATION
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Exercises mounted HR dashboard behavior when EOS invalidates a session,
  *          an exact tenant scope changes during an outstanding read, or a command
  *          acknowledgement cannot be confirmed by current source readback.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/hrDashboardReadState.test.jsx
  * COLLABORATION / OWNERSHIP: Runtime regression coverage for HrDashboard.jsx and its authenticated source adapters.
- * CERTIFICATION / UPDATE DATE: 2026-11-12
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.8.2-HIRING-EMPTY-CONTRACT-RECONCILIATION uses current People navigation and canonical workforce provenance; preserves source-readback, custody, 401 and cross-tenant race assertions.
  * CHANGELOG:
+ *   v1.8.2-HIRING-EMPTY-CONTRACT-RECONCILIATION asserts the real verified-empty Hiring heading instead of deleted prototype copy; preserves all candidate command idempotency, evidence, tenant, session, and source readback journeys.
+ *   v1.8.2-HIRING-EMPTY-CONTRACT-RECONCILIATION checks the canonical Workforce employee button after the tab's table-to-directory migration; existing candidate command, session invalidation, tenant swap and EOS readback checks are preserved.
  *   v1.7.0-EOS-CANDIDATE-EVIDENCE-LOOP — Certifies streamed candidate evidence custody, exact binary digest/size readback, stage-command gating, and stale-scope evidence response rejection.
  *   v1.6.0-EOS-HIRING-COMMAND-LOOP — Certifies source-owned candidate command acknowledgement, exact tenant readback, stable idempotent retry, and no legacy write path.
  *   v1.5.0-CANONICAL-HIRING-READS — Exercises the Python EOS candidate and offer projections, asserts opaque identity display, and prevents local legacy mutations.
@@ -26,7 +29,7 @@
 
 import React from 'react';
 import { sha3_512 } from 'js-sha3';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
@@ -150,6 +153,7 @@ import HrDashboard from '../../components/hr/HrDashboard.jsx';
 
 const validPage = (name) => ({
   data: {
+    source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
     items: [{
       employeeId: name,
       displayName: name,
@@ -186,7 +190,7 @@ const setAuthenticatedScope = (tenantId, principalId, sessionGeneration = 1) => 
     isAuthenticated: true,
     tenantId,
     sessionGeneration,
-    user: { id: principalId, email: `${principalId}@example.invalid`, role: 'HR_OPERATOR' },
+    user: { id: principalId, email: `${principalId}@example.invalid`, role: 'tenant_hr_manager' },
     logout: vi.fn(),
   };
   mockState.tenant = {
@@ -195,7 +199,16 @@ const setAuthenticatedScope = (tenantId, principalId, sessionGeneration = 1) => 
   };
 };
 
-const renderDashboard = () => render(<HrDashboard />);
+const openLane = async (name) => {
+  const nav = await screen.findByRole('navigation', { name: 'People operating functions' });
+  fireEvent.click(within(nav).getByRole('button', { name, exact: true }));
+};
+
+const renderDashboard = async () => {
+  const view = render(<HrDashboard />);
+  await openLane('Workforce');
+  return view;
+};
 
 afterEach(() => {
   cleanup();
@@ -220,7 +233,11 @@ beforeEach(() => {
   mockState.jobOpeningRead.mockReset().mockResolvedValue(emptyPage);
   mockState.jobOpeningCreate.mockReset().mockResolvedValue({ id: 'synthetic-opening-1' });
   mockState.apiGet.mockImplementation((path) => {
-    if (path === '/hr/snapshot') return Promise.resolve(emptySnapshot);
+    if (path === '/hr/workforce/overview') return Promise.resolve({ data: {
+      schema: 'WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1', source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+      tenant_id: mockState.auth.tenantId, metrics: { active_employees: 1, departments: 1 },
+      generated_at: '2026-11-27T00:00:00Z',
+    } });
     if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
     return Promise.reject(Object.assign(new Error('synthetic unavailable source'), { response: { status: 404 } }));
   });
@@ -228,7 +245,7 @@ beforeEach(() => {
 
 describe('mounted HR dashboard read-state boundaries', () => {
   it('renders canonical candidate and offer pages without exposing profile references or legacy write controls', async () => {
-    mockState.candidateRead.mockResolvedValueOnce({
+    mockState.candidateRead.mockResolvedValue({
       items: [{
         tenant_id: 'TENANT-HR-A', candidate_id: 'CAN-EOS-2026-01',
         requisition_id: 'REQ-EOS-2026-01', candidate_profile_reference: 'PROFILE-PRIVATE-REF',
@@ -236,7 +253,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
       }],
       total: 1, limit: 12, offset: 0, hasMore: false,
     });
-    mockState.offerRead.mockResolvedValueOnce({
+    mockState.offerRead.mockResolvedValue({
       items: [{
         tenant_id: 'TENANT-HR-A', offer_id: 'OFFER-EOS-2026-01',
         candidate_id: 'CAN-EOS-2026-01', requisition_id: 'REQ-EOS-2026-01',
@@ -245,22 +262,20 @@ describe('mounted HR dashboard read-state boundaries', () => {
       total: 1, limit: 12, offset: 0, hasMore: false,
     });
 
-    renderDashboard();
-    expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Hiring Pipeline' }));
+    await renderDashboard();
+    expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
+    await openLane('Hiring');
     expect(await screen.findByText('CAN-EOS-2026-01')).toBeInTheDocument();
     expect(screen.getByText('REQ-EOS-2026-01')).toBeInTheDocument();
     expect(screen.queryByText('PROFILE-PRIVATE-REF')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open primary HR command' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Open primary HR command' })).toHaveAttribute('title', 'Create candidate');
+    expect(screen.getByRole('button', { name: 'Create candidate', exact: true })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Advance with evidence' })).toBeInTheDocument();
     expect(mockState.candidateRead).toHaveBeenCalledWith('TENANT-HR-A', expect.objectContaining({ limit: 12, offset: 0 }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Employment Offers' }));
+    await openLane('Offers');
     expect(await screen.findByText('OFFER-EOS-2026-01')).toBeInTheDocument();
     expect(screen.queryByText('123456789')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open primary HR command' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Open primary HR command' })).toHaveAttribute('title', 'Prepare offer');
+    expect(screen.getByRole('button', { name: 'Prepare offer', exact: true })).toBeEnabled();
     expect(mockState.offerRead).toHaveBeenCalledWith('TENANT-HR-A', expect.objectContaining({ limit: 12, offset: 0 }));
     expect(mockState.legacyCandidateRead).not.toHaveBeenCalled();
     expect(mockState.legacyCandidateCreate).not.toHaveBeenCalled();
@@ -281,8 +296,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
     const reference = `candidate-evidence://${evidenceId}/${evidenceVersionId}`;
     const updatedCandidate = { ...candidate, stage: 'SCREENING', revision: 2, fingerprint: 'b'.repeat(128) };
     mockState.candidateRead
-      .mockResolvedValueOnce({ items: [candidate], total: 1, limit: 12, offset: 0, hasMore: false })
-      .mockResolvedValueOnce({ items: [updatedCandidate], total: 1, limit: 12, offset: 0, hasMore: false });
+      .mockResolvedValue({ items: [candidate], total: 1, limit: 12, offset: 0, hasMore: false });
     mockState.candidateEvidenceUpload.mockResolvedValueOnce({
       status: 'CUSTODY_REGISTERED', custody_registered: true,
       candidate_id: candidate.candidate_id, evidence_id: evidenceId,
@@ -294,15 +308,16 @@ describe('mounted HR dashboard read-state boundaries', () => {
     mockState.candidateEvidenceReadback.mockResolvedValueOnce({
       blob: readbackBlob, contentDigestSha3_512: digest, contentLength: file.size,
     });
-    mockState.candidateTransition.mockResolvedValueOnce({
-      ...updatedCandidate, tenant_id: 'TENANT-HR-A',
+    mockState.candidateTransition.mockImplementationOnce(async () => {
+      mockState.candidateRead.mockResolvedValue({ items: [updatedCandidate], total: 1, limit: 12, offset: 0, hasMore: false });
+      return { ...updatedCandidate, tenant_id: 'TENANT-HR-A' };
     });
     vi.stubGlobal('crypto', { randomUUID: () => 'fixed-uuid' });
 
     try {
-      renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Hiring Pipeline' }));
+      await renderDashboard();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
+      await openLane('Hiring');
       expect(await screen.findByText(candidate.candidate_id)).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Advance with evidence' }));
       const runCommand = screen.getByRole('button', { name: 'Run EOS command' });
@@ -342,16 +357,16 @@ describe('mounted HR dashboard read-state boundaries', () => {
       requisition_id: 'REQ-APPROVED-RACE-1', stage: 'APPLIED', revision: 1,
       fingerprint: 'c'.repeat(128),
     };
-    mockState.candidateRead.mockResolvedValueOnce({
+    mockState.candidateRead.mockResolvedValue({
       items: [candidate], total: 1, limit: 12, offset: 0, hasMore: false,
     });
     mockState.candidateEvidenceUpload.mockReturnValueOnce(pendingUpload.promise);
     vi.stubGlobal('crypto', { randomUUID: () => 'race-uuid' });
 
     try {
-      const view = renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Hiring Pipeline' }));
+      const view = await renderDashboard();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
+      await openLane('Hiring');
       expect(await screen.findByText(candidate.candidate_id)).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Advance with evidence' }));
       const file = new File(['late evidence'], 'profile.pdf', { type: 'application/pdf' });
@@ -389,18 +404,19 @@ describe('mounted HR dashboard read-state boundaries', () => {
       source: 'CAREERS_PORTAL', stage: 'APPLIED', revision: 1,
       fingerprint: 'c'.repeat(128),
     };
-    mockState.candidateRead
-      .mockResolvedValueOnce(emptyPage)
-      .mockResolvedValueOnce({ items: [candidate], total: 1, limit: 12, offset: 0, hasMore: false });
-    mockState.candidateCreate.mockResolvedValueOnce(candidate);
+    mockState.candidateRead.mockResolvedValue(emptyPage);
+    mockState.candidateCreate.mockImplementationOnce(async () => {
+      mockState.candidateRead.mockResolvedValue({ items: [candidate], total: 1, limit: 12, offset: 0, hasMore: false });
+      return candidate;
+    });
     vi.stubGlobal('crypto', { randomUUID: () => 'candidate-command-key-1' });
 
     try {
-      renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Hiring Pipeline' }));
-      expect(await screen.findByText('No hiring pipeline recorded by Python EOS.')).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Open primary HR command' }));
+      await renderDashboard();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
+      await openLane('Hiring');
+      expect(await screen.findByRole('heading', { name: 'No candidates yet' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Create candidate', exact: true }));
       fireEvent.change(screen.getByLabelText(/Candidate ID/), { target: { value: candidate.candidate_id } });
       fireEvent.change(screen.getByLabelText(/Approved requisition ID/), { target: { value: candidate.requisition_id } });
       fireEvent.change(screen.getByLabelText(/Opaque candidate profile reference/), { target: { value: candidate.candidate_profile_reference } });
@@ -414,7 +430,7 @@ describe('mounted HR dashboard read-state boundaries', () => {
         candidate_profile_reference: candidate.candidate_profile_reference,
         source: candidate.source,
       }, 'TENANT-HR-A', 'candidate-command-key-1');
-      expect(mockState.candidateRead).toHaveBeenCalledTimes(2);
+      expect(mockState.candidateRead).toHaveBeenCalledTimes(3);
       expect(mockState.legacyCandidateCreate).not.toHaveBeenCalled();
     } finally {
       vi.unstubAllGlobals();
@@ -430,19 +446,22 @@ describe('mounted HR dashboard read-state boundaries', () => {
       fingerprint: 'd'.repeat(128),
     };
     const readbackFailure = Object.assign(new Error('synthetic source timeout'), { response: { status: 503 } });
-    mockState.candidateRead
-      .mockResolvedValueOnce(emptyPage)
-      .mockRejectedValueOnce(readbackFailure)
-      .mockResolvedValueOnce({ items: [candidate], total: 1, limit: 12, offset: 0, hasMore: false });
-    mockState.candidateCreate.mockResolvedValue(candidate);
+    mockState.candidateRead.mockResolvedValue(emptyPage);
+    mockState.candidateCreate.mockImplementationOnce(async () => {
+      mockState.candidateRead.mockRejectedValueOnce(readbackFailure);
+      return candidate;
+    }).mockImplementationOnce(async () => {
+      mockState.candidateRead.mockResolvedValue({ items: [candidate], total: 1, limit: 12, offset: 0, hasMore: false });
+      return candidate;
+    });
     vi.stubGlobal('crypto', { randomUUID: () => 'candidate-command-key-retry' });
 
     try {
-      renderDashboard();
-      expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Hiring Pipeline' }));
-      expect(await screen.findByText('No hiring pipeline recorded by Python EOS.')).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Open primary HR command' }));
+      await renderDashboard();
+      expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
+      await openLane('Hiring');
+      expect(await screen.findByRole('heading', { name: 'No candidates yet' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Create candidate', exact: true }));
       fireEvent.change(screen.getByLabelText(/Candidate ID/), { target: { value: candidate.candidate_id } });
       fireEvent.change(screen.getByLabelText(/Approved requisition ID/), { target: { value: candidate.requisition_id } });
       fireEvent.change(screen.getByLabelText(/Opaque candidate profile reference/), { target: { value: candidate.candidate_profile_reference } });
@@ -468,12 +487,17 @@ describe('mounted HR dashboard read-state boundaries', () => {
   it('clears retained rows and rejects pending source reads when any current-scope read returns 401', async () => {
     const pendingCandidate = deferred();
     let workforceReads = 0;
-    mockState.candidateRead.mockReturnValue(pendingCandidate.promise);
+    let rejectWorkforce = false;
+
     mockState.apiGet.mockImplementation((path) => {
-      if (path === '/hr/snapshot') return Promise.resolve(emptySnapshot);
+      if (path === '/hr/workforce/overview') return Promise.resolve({ data: {
+      schema: 'WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1', source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+      tenant_id: mockState.auth.tenantId, metrics: { active_employees: 1, departments: 1 },
+      generated_at: '2026-11-27T00:00:00Z',
+    } });
       if (path === '/hr/workforce') {
         workforceReads += 1;
-        if (workforceReads === 1) return Promise.resolve(validPage('Tenant A Verified Employee'));
+        if (!rejectWorkforce) return Promise.resolve(validPage('Tenant A Verified Employee'));
         const error = new Error('synthetic expired session');
         error.response = { status: 401 };
         return Promise.reject(error);
@@ -481,11 +505,14 @@ describe('mounted HR dashboard read-state boundaries', () => {
       return Promise.reject(Object.assign(new Error('synthetic unavailable source'), { response: { status: 404 } }));
     });
 
-    renderDashboard();
-    expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
+    await renderDashboard();
+    expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hiring Pipeline' }));
+    rejectWorkforce = true;
+    mockState.candidateRead.mockReturnValue(pendingCandidate.promise);
+    await openLane('Hiring');
     await waitFor(() => expect(mockState.candidateRead).toHaveBeenCalled());
+    await openLane('Overview');
     expect(await screen.findByRole('heading', { name: 'Authentication required' })).toBeInTheDocument();
     expect(screen.queryByText('Tenant A Verified Employee')).not.toBeInTheDocument();
 
@@ -508,7 +535,11 @@ describe('mounted HR dashboard read-state boundaries', () => {
     const tenantARead = deferred();
     let tenantAStarted = false;
     mockState.apiGet.mockImplementation((path, config = {}) => {
-      if (path === '/hr/snapshot') return Promise.resolve(emptySnapshot);
+      if (path === '/hr/workforce/overview') return Promise.resolve({ data: {
+      schema: 'WILSY-PEOPLE-WORKFORCE-OVERVIEW/V1', source: 'AUTHORISED_HR_EMPLOYEE_REGISTRY',
+      tenant_id: mockState.auth.tenantId, metrics: { active_employees: 1, departments: 1 },
+      generated_at: '2026-11-27T00:00:00Z',
+    } });
       if (path === '/hr/workforce' && config.headers?.['X-Tenant-ID'] === 'TENANT-HR-A') {
         tenantAStarted = true;
         return tenantARead.promise;
@@ -519,55 +550,56 @@ describe('mounted HR dashboard read-state boundaries', () => {
       return Promise.reject(Object.assign(new Error('synthetic unavailable source'), { response: { status: 404 } }));
     });
 
-    const view = renderDashboard();
+    const view = render(<HrDashboard />);
     await waitFor(() => expect(tenantAStarted).toBe(true));
 
     setAuthenticatedScope('TENANT-HR-B', 'PRINCIPAL-HR-B', 2);
     view.rerender(<HrDashboard />);
-    expect(await screen.findByText('Tenant B Verified Employee')).toBeInTheDocument();
+    await openLane('Workforce');
+    expect(await screen.findByRole('button', { name: /Tenant B Verified Employee/ })).toBeInTheDocument();
 
     await act(async () => {
       tenantARead.resolve(validPage('Tenant A Late Employee'));
       await tenantARead.promise;
     });
 
-    expect(screen.getByText('Tenant B Verified Employee')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tenant B Verified Employee/ })).toBeInTheDocument();
     expect(screen.queryByText('Tenant A Late Employee')).not.toBeInTheDocument();
     expect(mockState.apiGet).toHaveBeenCalledWith('/hr/workforce', expect.objectContaining({
       headers: { 'X-Tenant-ID': 'TENANT-HR-B' },
     }));
   });
 
-  it('reports a successful command acknowledgement as unverified when source readback fails', async () => {
-    renderDashboard();
-    expect(await screen.findByText('Tenant A Verified Employee')).toBeInTheDocument();
-
-    const readbackFailure = Object.assign(
-      new Error('synthetic readback outage'),
-      { response: { status: 503 } },
-    );
-    mockState.jobOpeningRead.mockReset()
-      .mockResolvedValueOnce(emptyPage)
-      .mockRejectedValueOnce(readbackFailure);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open Roles' }));
-    await waitFor(() => expect(mockState.jobOpeningRead).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Open primary HR command' })).toBeEnabled());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open primary HR command' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save HR Record' }));
-
-    await waitFor(() => expect(mockState.jobOpeningCreate).toHaveBeenCalled());
-    await waitFor(() => expect(mockState.jobOpeningRead).toHaveBeenCalledTimes(2));
-    expect(await screen.findByText('HR command accepted; readback unavailable')).toBeInTheDocument();
-    expect(screen.getByText('The source acknowledged the command, but current readback could not be verified. No updated state is claimed.')).toBeInTheDocument();
-    expect(screen.queryByText('HR command accepted and verified')).not.toBeInTheDocument();
+  it('rejects an acknowledged candidate when current readback has a different fingerprint', async () => {
+    await renderDashboard();
+    expect(await screen.findByRole('button', { name: /Tenant A Verified Employee/ })).toBeInTheDocument();
+    await openLane('Hiring');
+    expect(await screen.findByRole('heading', { name: 'No candidates yet' })).toBeInTheDocument();
+    const candidate = {
+      tenant_id: 'TENANT-HR-A', candidate_id: 'CAN-ACK-MISMATCH',
+      requisition_id: 'REQ-ACK-MISMATCH', candidate_profile_reference: 'candidate-profile://opaque/mismatch',
+      source: 'CAREERS_PORTAL', stage: 'APPLIED', revision: 1, fingerprint: 'e'.repeat(128),
+    };
+    mockState.candidateCreate.mockImplementationOnce(async () => {
+      mockState.candidateRead.mockResolvedValue({ items: [{ ...candidate, fingerprint: 'f'.repeat(128) }],
+        total: 1, limit: 12, offset: 0, hasMore: false });
+      return candidate;
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create candidate', exact: true }));
+    fireEvent.change(screen.getByLabelText(/Candidate ID/), { target: { value: candidate.candidate_id } });
+    fireEvent.change(screen.getByLabelText(/Approved requisition ID/), { target: { value: candidate.requisition_id } });
+    fireEvent.change(screen.getByLabelText(/Opaque candidate profile reference/), { target: { value: candidate.candidate_profile_reference } });
+    fireEvent.change(screen.getByLabelText(/Application source/), { target: { value: candidate.source } });
+    fireEvent.click(screen.getByRole('button', { name: 'Run EOS command' }));
+    expect(await screen.findByText(/current source page does not prove the exact identity/)).toHaveTextContent('No success is claimed.');
+    expect(screen.queryByText(/is confirmed by the current tenant-scoped EOS readback/)).not.toBeInTheDocument();
+    expect(mockState.legacyCandidateCreate).not.toHaveBeenCalled();
   });
 });
 
 /**
  * ARTIFACT: client/src/__tests__/components/hrDashboardReadState.test.jsx
- * VERSION: v1.7.0-EOS-CANDIDATE-EVIDENCE-LOOP
+ * VERSION: v1.8.2-HIRING-EMPTY-CONTRACT-RECONCILIATION
  * AUTHORITY BOUNDARY: Mounted UI behavior only; Python EOS owns source and authorization truth.
  * TENANT POSTURE: Synthetic exact tenant/principal scopes; no cross-tenant source data is persisted.
  * FAIL-CLOSED POSTURE: A 401 clears retained HR rows, superseded tenant responses are ignored, and failed readback is not reported as verified success.

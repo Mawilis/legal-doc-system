@@ -6,14 +6,19 @@ FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusi
 WILSY OS Suite-scoped durable browser certification verifier.
 
 TITLE: WILSY OS Suite-Scoped Durable Browser Certificate
-VERSION: v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT
+VERSION: v1.7.0-DOCK-DURABLE-SOURCE-CERT
 AUTHORITY: Disposable certification verifier; Python EOS owns business truth.
 EPITOME: Verify the durable consequences of independently selected test suites.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/e2e/browser_cert_scope_verify.py
 COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
                             existing Legal and SYSTEM certification suites.
 CERTIFICATION / UPDATE DATE: 2026-11-13
-CHANGELOG: v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT adds exact company-document revision/receipt verification
+CHANGELOG: v1.7.0-DOCK-DURABLE-SOURCE-CERT independently verifies the exact selected Dock browser task and archive effects.
+CHANGELOG: v1.7.0-DOCK-DURABLE-SOURCE-CERT requires
+           exactly four independently completed Headquarters browser work
+           items, one from each 1440/1760/1024/390 viewport. Existing
+           UUID, owner, completion and foreign-tenant checks are unchanged.
+           v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT adds exact company-document revision/receipt verification
            via a companion fixture; all existing scope checks are preserved.
            v1.4.0-HEADQUARTERS-DURABLE-SOURCE-CERT independently rehydrates
            both desktop/mobile Headquarters source completions, exact creator,
@@ -229,7 +234,7 @@ def verify_daily(database, state):
 
 
 def verify_headquarters(database, state):
-    """Require exactly two independently completed Headquarters browser tasks.
+    """Require exactly four independently completed Headquarters browser tasks.
 
     The browser suite proves authenticated command routing and tenant denial.
     This read-only companion certifies that each result actually persisted
@@ -245,7 +250,7 @@ def verify_headquarters(database, state):
         "description": "",
         "title": {"$regex": "^Headquarters source work hq-browser-"},
     }))
-    if len(rows) != 2:
+    if len(rows) != 4:
         raise RuntimeError("BROWSER_CERT_HEADQUARTERS_WORK_CARDINALITY_INVALID")
 
     work_ids = {row.get("work_item_id") for row in rows}
@@ -262,9 +267,9 @@ def verify_headquarters(database, state):
         return parsed.version == 4 and str(parsed) == value.lower()
 
     if (
-        len(work_ids) != 2
+        len(work_ids) != 4
         or not all(isinstance(value, str) and value for value in work_ids)
-        or len(request_keys) != 2
+        or len(request_keys) != 4
         or not all(is_v4_uuid(value) for value in request_keys)
     ):
         raise RuntimeError("BROWSER_CERT_HEADQUARTERS_WORK_IDENTITY_INVALID")
@@ -464,7 +469,7 @@ def verify_hr_denial(database, state):
 def main():
     parser = argparse.ArgumentParser(description="Suite-scoped durable browser certificate verifier")
     parser.add_argument("--state", type=Path, required=True)
-    parser.add_argument("--scope", choices=("system", "broad", "combined", "daily", "hr", "headquarters", "company-documents"), default="combined")
+    parser.add_argument("--scope", choices=("system", "broad", "combined", "daily", "hr", "headquarters", "company-documents", "dock"), default="combined")
     args = parser.parse_args()
     state = json.loads(args.state.read_text(encoding="utf-8"))
     client = MongoClient(_uri(), serverSelectionTimeoutMS=5000)
@@ -481,6 +486,9 @@ def main():
         if args.scope == "company-documents":
             from company_document_cert_fixture import verify as verify_company_documents
             verify_company_documents(database, state)
+        if args.scope == "dock":
+            from dock_operating_cert_fixture import verify as verify_dock
+            verify_dock(database, state)
         if args.scope == "headquarters":
             verify_headquarters(database, state)
     finally:
@@ -492,9 +500,11 @@ if __name__ == "__main__":
     main()
 
 # ARTIFACT: tests/e2e/browser_cert_scope_verify.py
-# VERSION: v1.5.0-COMPANY-DOCUMENT-DURABLE-CERT
+# VERSION: v1.7.0-DOCK-DURABLE-SOURCE-CERT
 # AUTHORITY BOUNDARY: Disposable read-only source verification only.
 # TENANT POSTURE: Exact disposable tenant; HR scope confirms no employee admission.
 # FAIL-CLOSED POSTURE: Missing/partial/foreign work never passes certification.
 # FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
 # END OF WILSY OS SOVEREIGN ARTIFACT
+
+

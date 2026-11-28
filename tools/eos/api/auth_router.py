@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: Wilsy OS Authentication Router.
-VERSION: v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS
+VERSION: v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL
 AUTHORITY: Wilsy OS Core Governance.
 EPITOME: Canonical authentication HTTP endpoints, including bounded token verification,
 MFA setup and verification, password-recovery request and reset completion, login,
@@ -13,8 +13,20 @@ discovery, and logout.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/auth_router.py
 COLLABORATION / OWNERSHIP: Authentication service and FastAPI server consume this router;
 credential and identity authorities remain in tools.eos.auth.
-CERTIFICATION / UPDATE DATE: 2026-11-13.
+CERTIFICATION / UPDATE DATE: 2026-11-27.
 CHANGELOG:
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Tenant-bound workspace bootstrap rereads the exact active AuthRegistry principal and tenant before returning durable account email; missing or divergent evidence fails closed and sign-in/JWT metadata never masquerades as account proof. No role, IAM, MFA, tenant or recovery-contact mutation.
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Workspace bootstrap reads authenticated Global Principal account email from the exact durable PrincipalCredentialRepository rather than optional JWT display metadata. Missing credential email fails closed without inventing contact verification.
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Classifies authenticated recovery status 503 failures into bounded source-stage headers and code-only server logging without identity or email exposure.
+  v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL: Adds independently authenticated SMTP-free recovery-contact evidence read, with bounded source-unavailable responses and no client-supplied email.
+  v1.21.2-PRIVACY-SAFE-LOGIN-STAGES: Adds opt-in WILSY_AUTH_TIMING=1 phase timings for admission throttling, credential verification, throttle reset and tenant/MFA evidence. No passwords, emails, user IDs, tokens or tenant identifiers are logged; HTTP responses and enforcement unchanged.
+  v1.21.1-LOGIN-WORKER-ISOLATION: Isolates the synchronous tenant-bound login rate-limit, MongoDB identity checks and bcrypt work from the FastAPI event loop through its own worker thread; preserves existing admission, 429/503 semantics and MFA challenge issuance. No credentials are logged, no timeout increased, no identity or IAM mutations added.
+  v1.21.0-WORKSPACE-READS-THREADPOOL-ISOLATION: Delegates synchronous
+  MongoDB-backed workspace-bootstrap and module-manifest read composition to
+  FastAPI's worker threads instead of blocking its shared asyncio event loop.
+  All dependency-authenticated currentness, caller-owned transaction retries,
+  founder designation, branding, module entitlements and 401/403/503 semantics
+  remain unchanged. No cache, timeout, grant or new runtime client.
   v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS: Separately reads
   persisted Founder title with canonical ACTIVE identity/tenant/owner role
   plus audit proof; no client-provided designation or IAM grant.
@@ -137,7 +149,9 @@ from ..saas.auth.password_recovery_contact_verification_registry import (
 )
 from ..saas.auth.password_recovery_contact_verification_request_service import (
     RecoveryContactVerificationRequestError,
+    RecoveryContactVerificationRequestResult,
     RecoveryContactVerificationRequestService,
+    read_recovery_contact_status,
 )
 from ..saas.auth.password_recovery_contact_verification_service import (
     RecoveryContactVerificationCode,
@@ -368,6 +382,8 @@ def _workspace_bootstrap_http_error(
         "WORKSPACE_BOOTSTRAP_PERMISSION_AUTHORITY_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_UNAVAILABLE",
         "WORKSPACE_BOOTSTRAP_PRINCIPAL_PROFILE_INVALID",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_UNAVAILABLE",
+        "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_INVALID",
     }
     if code in unavailable:
         return HTTPException(
@@ -422,6 +438,57 @@ def _workspace_principal_profile(
         exact_optional_name(getattr(user, "firstName", None)),
         exact_optional_name(getattr(user, "lastName", None)),
     )
+
+
+def _workspace_durable_account_email(
+    identity: SovereignIdentity, projection: Any,
+) -> str | None:
+    """Read the current principal's durable sign-in email, not JWT metadata.
+
+    Legacy TENANT identities use the exact AuthRegistry user/tenant record;
+    GLOBAL identities use the existing PrincipalCredentialRepository. Neither
+    path asserts independent mailbox or recovery-contact verification.
+    """
+    if getattr(identity, "principal_scope", None) != "GLOBAL":
+        try:
+            user = get_auth_registry(None).get_user_by_id(projection.principal_id)
+        except Exception as error:
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_UNAVAILABLE"
+            ) from error
+        if (
+            user is None
+            or getattr(user, "id", None) != projection.principal_id
+            or getattr(user, "tenantId", None) != projection.tenant_id
+            or not isinstance(getattr(user, "email", None), str)
+            or not str(user.email).strip()
+            or str(user.email) != str(user.email).strip()
+        ):
+            raise WorkspaceBootstrapProjectionError(
+                "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_INVALID"
+            )
+        return str(user.email)
+    try:
+        from tools.eos.auth.principal_credential_repository import (
+            PrincipalCredentialRepository,
+        )
+        credential = PrincipalCredentialRepository.get_by_principal(
+            projection.principal_id
+        )
+    except Exception as error:
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_UNAVAILABLE"
+        ) from error
+    if (
+        credential.principal_id != projection.principal_id
+        or not isinstance(credential.normalized_email, str)
+        or not credential.normalized_email
+        or credential.normalized_email != credential.normalized_email.strip()
+    ):
+        raise WorkspaceBootstrapProjectionError(
+            "WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_INVALID"
+        )
+    return credential.normalized_email
 
 
 class WorkspaceModuleManifestProjectionError(RuntimeError):
@@ -781,7 +848,7 @@ def _workspace_branding_asset_delivery(
 
 
 @router.get("/workspace-bootstrap")
-async def workspace_bootstrap(
+def workspace_bootstrap(
     identity: SovereignIdentity = Depends(get_current_identity),
     principal_repository: Any = Depends(get_principal_authority_repository),
     membership_repository: Any = Depends(get_tenant_membership_repository),
@@ -844,6 +911,14 @@ async def workspace_bootstrap(
 
     started = time.perf_counter()
     try:
+        account_email = _workspace_durable_account_email(identity, projection)
+    except WorkspaceBootstrapProjectionError as error:
+        record_phase("principal_email", started, "failed")
+        raise _workspace_bootstrap_http_error(error) from error
+    record_phase("principal_email", started, "ok")
+
+    started = time.perf_counter()
+    try:
         branding = _workspace_branding_projection(projection.tenant_id)
     except TenantBrandingWorkspaceProjectionError as error:
         record_phase("branding_projection", started, "failed")
@@ -897,7 +972,7 @@ async def workspace_bootstrap(
         "status": "READY",
         "user": {
             "id": projection.principal_id,
-            "email": projection.email,
+            "email": account_email,
             "firstName": first_name,
             "lastName": last_name,
             "institutionalDesignation": founder_designation,
@@ -926,7 +1001,7 @@ async def workspace_bootstrap(
 
 
 @router.get("/module-manifest")
-async def workspace_module_manifest(
+def workspace_module_manifest(
     identity: SovereignIdentity = Depends(get_current_identity),
 ) -> dict[str, object]:
     """Return the exact tenant's product-eligible module navigation projection.
@@ -1155,7 +1230,7 @@ def _recovery_contact_verification_request_service(
         auth_registry=get_auth_registry(None),
         rate_limit_gate=rate_limit,
         delivery_adapter=RecoveryContactVerificationEmailDelivery.from_environment(),
-        public_origin=os.environ.get("WILSY_PUBLIC_APP_ORIGIN", ""),
+        public_origin=_configured_password_recovery_origin(),
     )
 
 
@@ -1175,6 +1250,61 @@ def _recovery_contact_verification_completion_service(
     )
 
 
+def _recovery_contact_status_read(identity: SovereignIdentity) -> str:
+    """Read verified-contact evidence without constructing any mail dependency."""
+    return read_recovery_contact_status(
+        identity=identity,
+        auth_registry=get_auth_registry(None),
+        contact_registry=VerifiedRecoveryContactRegistry(),
+    )
+
+
+@router.get("/recovery-contact/status")
+async def recovery_contact_status(
+    identity: SovereignIdentity = Depends(get_current_identity),
+) -> dict[str, str]:
+    """Authenticated, SMTP-independent current-address verification readback.
+
+    No email or address digest is returned. Unknown, stale and unavailable
+    source states are never presented as verified or as an empty result.
+    """
+    from starlette.concurrency import run_in_threadpool
+
+    try:
+        result = await run_in_threadpool(_recovery_contact_status_read, identity)
+    except Exception as error:
+        # Authenticated caller only: bounded failure stage, never email,
+        # digest, contact identifier, raw error or credential material.
+        code = (
+            error.code if isinstance(error, RecoveryContactVerificationRequestError)
+            else "RECOVERY_CONTACT_STATUS_UNEXPECTED_FAILURE"
+        )
+        if code in {
+            "RECOVERY_CONTACT_PRINCIPAL_LOOKUP_FAILED",
+            "RECOVERY_CONTACT_GLOBAL_PRINCIPAL_LOOKUP_FAILED",
+            "RECOVERY_CONTACT_PRINCIPAL_BINDING_MISMATCH",
+            "RECOVERY_CONTACT_PRINCIPAL_NOT_ACTIVE",
+        }:
+            stage = "PRINCIPAL_SOURCE"
+        elif code == "RECOVERY_CONTACT_LOOKUP_FAILED":
+            stage = "CONTACT_SOURCE"
+        elif code == "RECOVERY_CONTACT_EMAIL_INVALID":
+            stage = "DURABLE_EMAIL"
+        else:
+            stage = "SOURCE_UNAVAILABLE"
+        _log_error(
+            RuntimeError(code),
+            "RECOVERY_CONTACT_STATUS_SOURCE_UNAVAILABLE",
+            tenant_id="redacted",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery email status is temporarily unavailable.",
+            headers={"X-Wilsy-Recovery-Status-Stage": stage},
+        ) from None
+    return {"status": result}
+
+
 @router.post(
     "/recovery-contact/request-verification",
     status_code=status.HTTP_202_ACCEPTED,
@@ -1188,11 +1318,19 @@ async def request_recovery_contact_verification(
     supplies selectors only; the service re-reads durable principal/email truth.
     """
 
-    try:
-        result = _recovery_contact_verification_request_service().request_verification(
+    # Durable registry reads and encrypted SMTP delivery are synchronous.
+    # Keep them off the shared async EOS event loop, preserving one issuance
+    # attempt and the existing rate, token, and revocation semantics.
+    from starlette.concurrency import run_in_threadpool
+
+    def issue_verification() -> RecoveryContactVerificationRequestResult:
+        return _recovery_contact_verification_request_service().request_verification(
             identity=identity,
             observed_at=datetime.now(timezone.utc),
         )
+
+    try:
+        result = await run_in_threadpool(issue_verification)
     except RecoveryContactVerificationRequestError as error:
         if error.code == "RECOVERY_CONTACT_VERIFICATION_RATE_LIMITED":
             raise HTTPException(
@@ -1202,6 +1340,19 @@ async def request_recovery_contact_verification(
         _log_error(
             RuntimeError(error.code),
             "RECOVERY_CONTACT_VERIFICATION_REQUEST_FAILED",
+            tenant_id=identity.tenant_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Recovery email verification is temporarily unavailable.",
+        ) from None
+    except Exception as error:
+        # Dependency construction can fail before request_verification runs:
+        # missing SMTP credentials, invalid trusted HTTPS origin, or index
+        # initialization. Never expose configuration values or mail secrets.
+        _log_error(
+            RuntimeError(type(error).__name__),
+            "RECOVERY_CONTACT_VERIFICATION_DEPENDENCY_UNAVAILABLE",
             tenant_id=identity.tenant_id,
         )
         raise HTTPException(
@@ -1367,6 +1518,29 @@ def _require_discovered_tenant_binding(tenant_id: object, user: Any) -> None:
 # ─── LOGIN ──────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=AuthResponse, response_model_exclude_none=True)
 async def login(request: AuthRequest, http_request: Request):
+    """Run the synchronous legacy credential authority off the ASGI event loop.
+
+    Starlette's bounded worker pool owns the blocking MongoDB and bcrypt
+    execution; this wrapper does not retry or issue an extra login attempt.
+    """
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(_login_sync, request, http_request)
+
+
+def _login_sync(request: AuthRequest, http_request: Request):
+    """Preserve all existing rate-limit, tenant binding and MFA semantics."""
+    # Do not log even hashed identities, tenant names, credentials or challenge
+    # artifacts. Operators can identify slow MongoDB stages by constant name.
+    import time
+    def _measure(phase: str, operation: Any, *args: Any, **kwargs: Any) -> Any:
+        if os.getenv("WILSY_AUTH_TIMING") != "1":
+            return operation(*args, **kwargs)
+        started = time.perf_counter()
+        try:
+            return operation(*args, **kwargs)
+        finally:
+            logger.info("[AUTH_LOGIN_TIMING] phase=%s elapsed_ms=%.1f",
+                phase, (time.perf_counter() - started) * 1000)
     observed_at = datetime.now(timezone.utc)
     peer = http_request.client
     if peer is None or not isinstance(peer.host, str) or not peer.host:
@@ -1377,7 +1551,7 @@ async def login(request: AuthRequest, http_request: Request):
     source_address = peer.host
     rate_gate = PrincipalAuthenticationRateLimit()
     try:
-        rate_gate.require_allowed(
+        _measure("rate_limit_read", rate_gate.require_allowed,
             email=str(request.email),
             source_address=source_address,
             observed_at=observed_at,
@@ -1400,10 +1574,10 @@ async def login(request: AuthRequest, http_request: Request):
 
     try:
         auth_registry = get_auth_registry(None)
-        user = auth_registry.authenticate(request.email, request.password)
+        user = _measure("credential_lookup_verify", auth_registry.authenticate, request.email, request.password)
         if not user:
             try:
-                rate_gate.record_failure(
+                _measure("failure_bucket_write", rate_gate.record_failure,
                     email=str(request.email),
                     source_address=source_address,
                     observed_at=observed_at,
@@ -1430,7 +1604,7 @@ async def login(request: AuthRequest, http_request: Request):
             )
 
         try:
-            rate_gate.record_success(
+            _measure("success_bucket_reset", rate_gate.record_success,
                 email=str(request.email),
                 observed_at=observed_at,
             )
@@ -1444,8 +1618,8 @@ async def login(request: AuthRequest, http_request: Request):
                 detail="Authentication is temporarily unavailable.",
             ) from None
 
-        _require_discovered_tenant_binding(request.tenant_id, user)
-        existing_otp_secret = auth_registry.get_otp_secret(user.id)
+        _measure("tenant_binding", _require_discovered_tenant_binding, request.tenant_id, user)
+        existing_otp_secret = _measure("mfa_factor_read", auth_registry.get_otp_secret, user.id)
 
         # A durable secret with a missing enrollment flag is reconciliation, not
         # first-time setup. Never call get_otp_uri() in this branch: that would
@@ -1948,7 +2122,7 @@ async def logout():
 
 
 # ARTIFACT: auth_router.py
-# VERSION: v1.20.1-FOUNDER-DESIGNATION-BOOTSTRAP-CURRENTNESS
+# VERSION: v1.21.6-TENANT-DURABLE-WORKSPACE-EMAIL
 # AUTHORITY BOUNDARY: Authentication/recovery/contact-verification HTTP routing and bounded projections only; D21B11 serves only exact current logo/favicon bytes after workspace revalidation plus D21B10/D21B6/D21B5B proof, D21B7 workspace branding is a read-only D21B6 projection after current durable entitlement/profile/asset correlation, D24A names are descriptive durable rereads, workspace legalPermissions remain authorization-compositor presentation outputs, D19 practice fields remain descriptive, and the module manifest exposes only tenant product availability; none creates credential, membership, role, permission, route admission, Legal Practice, G68, asset-upload, legal-command, operating-model, billing, payment, execution, settlement, or financial authority.
 # TENANT POSTURE: workspace branding and D21B11 asset bytes are resolved only for the exact server-revalidated tenant under tenant-scoped D21B2B/D21B4B/D21B5B reads; recovery tenant remains lookup scope only and no caller tenant authority is created.
 # FAIL-CLOSED POSTURE: auth fails closed; D21B11 invalid/missing asset returns bounded absence while current-branding outage/corruption fails closed; workspace permission, durable-principal-profile, or configured-branding authority outage/inconsistency fails closed; lawful no-branding is explicit null, never legacy/browser fallback; D24A never infers person names from email/browser state; D19 never infers missing tenant profile values or operating-model authority; recovery initiation is enumeration-safe generic acceptance.

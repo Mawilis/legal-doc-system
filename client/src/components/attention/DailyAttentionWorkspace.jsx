@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Daily Attention Executive Triage Workspace
- * VERSION: v3.14.0-CRM-DIRECT-SAVED-DRAFT
+ * VERSION: v3.20.0-AUTHORIZED-PRIMARY-TASK-NAVIGATION
  * AUTHORITY: WILSY OS Core Governance; EOS source services own actions.
  * EPITOME: Replace passive zero tiles with an authenticated, dense, ranked,
  *          keyboard-navigable work queue, briefing, detail rail, calendar and
@@ -9,7 +9,32 @@
  * COLLABORATION / OWNERSHIP: WilsyDailyAttentionCentre owns current-session
  *          EOS reads/revalidation; attentionFeedClient validates every page;
  *          WilsyWorkDeadlineCalendar reuses the authorised due-work model.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v3.20.0-AUTHORIZED-PRIMARY-TASK-NAVIGATION shows independently verified Projects civil due dates in Attention rows instead of incorrectly claiming no deadline; exact source-key match only and no invented timestamp.
+ * CHANGELOG: v3.20.0-AUTHORIZED-PRIMARY-TASK-NAVIGATION makes task title the direct authorized task entry, retains a distinct Preview, and carries independently verified Projects locators without an additional My Work detour.
+ * CHANGELOG: v3.19.0-CANONICAL-SOURCE-TASK-OPEN routes explicit Open task controls to the single source-owned task destination; legacy in-panel detail remains a read-only inspection path.
+ * CHANGELOG: v3.18.1-BOUNDED-CALENDAR-REFRESH restores a working
+ *          source revalidation control inside focused calendar mode,
+ *          with no duplicate task API or widened authorization.
+ * CHANGELOG: v3.18.0-FOCUSED-CALENDAR-WORKSPACE gives the calendar
+ *          exclusive use of the bounded work area with a compact return
+ *          toolbar; hides list-only header, disclosures and footer in this
+ *          mode. Verified work scope and source action handoffs stay intact.
+ * CHANGELOG: v3.18.0-FOCUSED-CALENDAR-WORKSPACE removes
+ *          queue-only create, help, filtering and optional source
+ *          disclosure controls from focused task and briefing
+ *          subviews while preserving independently visible error state.
+ * CHANGELOG: v3.17.0-CONTEXTUAL-ATTENTION-HEADER exposes a
+ *          presentation-only navigation state to the owning panel,
+ *          allowing its header to reflect focused detail, briefing
+ *          or the full queue without changing any EOS data.
+ * CHANGELOG: v3.16.0-FOCUSED-ATTENTION-NAVIGATION gives selected
+ *          details and priority briefing full-width focus and native
+ *          Back to work navigation. No duplicate EOS commands or
+ *          inferred authorization. The queue remains preserved.
+ * CHANGELOG: v3.15.0-SHARED-WORK-BLUEPRINT-INBOX applies the
+ *          shared accessible task-row and contrast blueprint to the
+ *          authorized virtual inbox; source ownership and actions stay intact.
  * CHANGELOG: v3.14.0-CRM-DIRECT-SAVED-DRAFT adds an explicit
  *          Save Draft action for CRM source creation, with distinct
  *          same-intent idempotency keys and source-owned persisted status.
@@ -165,6 +190,7 @@
  *          keyboard navigation; unavailable source commands are never faked.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { WorkTaskBlueprintRow, workTaskBlueprint } from '../workspaces/WorkTaskBlueprint.jsx';
 import {
   AlertTriangle, ArrowRight, CheckCircle2, ChevronRight,
   CircleHelp, Clock3, ExternalLink, FilterX, RefreshCw, Search,
@@ -276,6 +302,13 @@ const SEVERITY = Object.freeze({
   NORMAL: { label: 'Normal', chip: 'border-sky-400/55 bg-sky-500/15 text-sky-100', rail: 'border-sky-400', row: 'border-l-sky-500', dot: 'bg-sky-400' },
   LOW: { label: 'Low', chip: 'border-slate-400/50 bg-slate-400/10 text-slate-200', rail: 'border-slate-400', row: 'border-l-slate-500', dot: 'bg-slate-400' },
 });
+const severityRowLabel = Object.freeze({
+  CRITICAL: 'border-rose-200 bg-rose-50 text-rose-800',
+  HIGH: 'border-orange-200 bg-orange-50 text-orange-800',
+  NORMAL: 'border-sky-200 bg-sky-50 text-sky-900',
+  LOW: 'border-slate-200 bg-slate-50 text-slate-700',
+  OVERDUE: 'border-red-200 bg-red-50 text-red-800',
+});
 const severityFor = (item) => item.isOverdue
   ? { label: 'Overdue', chip: 'border-red-400/70 bg-red-500/20 text-red-100', rail: 'border-red-400', row: 'border-l-red-500 bg-red-500/[0.06]', dot: 'bg-red-400' }
   : SEVERITY[item.priority] || SEVERITY.NORMAL;
@@ -299,6 +332,7 @@ const criteriaLabel = (criteria) => {
 export default function DailyAttentionWorkspace({
   feed, calendarItems, filter, setFilter, source, setSource, query, setQuery,
   onRefresh, onOpenWork, onOpenOperations, onOpenWorkforce,
+  onSurfaceViewChange = null,
   onLoadMore, loadingMore, pageError,
   authorisedActions = {}, onCompleteWork, completingId = null, completionError = '',
   getCompletionReceipt = () => null, completionReadbackReady = false,
@@ -354,7 +388,30 @@ export default function DailyAttentionWorkspace({
   }));
   const rows = useMemo(() => Array.isArray(calendarItems)
     ? calendarItems : page.map(toWorkItem), [calendarItems, page]);
+  // The separately verified My Work projection retains Projects civil dates.
+  // Match only exact source identities; an Attention page alone has no authority
+  // to invent a due_at instant for a date-only Projects deadline.
+  const verifiedCalendarByKey = useMemo(() => new Map(
+    (Array.isArray(calendarItems) ? calendarItems : [])
+      .filter((row) => row && typeof row.source_key === 'string')
+      .map((row) => [row.source_key, row]),
+  ), [calendarItems]);
+  const displayedDeadline = (item) => {
+    const source = verifiedCalendarByKey.get(item.id);
+    if (source?.source === 'PROJECTS' && /^\\d{4}-\\d{2}-\\d{2}$/.test(source.due_date || '')) {
+      return 'Due ' + source.due_date + ' (calendar date)';
+    }
+    return dueLabel(item.dueAt);
+  };
   const selected = page.find((item) => item.id === selectedId) || null;
+  useEffect(() => {
+    if (typeof onSurfaceViewChange === 'function') {
+      onSurfaceViewChange(selected ? 'DETAIL'
+        : mode === 'CREATE' ? 'CREATE'
+          : mode === 'CALENDAR' ? 'CALENDAR'
+            : showBriefing ? 'BRIEFING' : 'WORK');
+    }
+  }, [selected?.id, mode, showBriefing, onSurfaceViewChange]);
   const selectedCompletionReceipt = selected ? getCompletionReceipt(selected) : null;
   const sourceCoverage = feed.sources || [];
   const canCompleteItem = (item) => Boolean(item
@@ -501,7 +558,18 @@ export default function DailyAttentionWorkspace({
 
   const open = (item) => {
     if (!item) return;
-    onOpenWork?.(toWorkItem(item));
+    const work = toWorkItem(item);
+    const independentlyVerified = verifiedCalendarByKey.get(item.id);
+    // Attention pagination supplies a source key. Only the exact EOS My Work
+    // projection may additionally supply the Projects-owned project locator.
+    if (work.source === 'PROJECTS'
+      && independentlyVerified?.source === 'PROJECTS'
+      && independentlyVerified.work_item_id === work.work_item_id
+      && /^prj-[a-f0-9]{48}$/.test(independentlyVerified.project_id || '')) {
+      work.project_id = independentlyVerified.project_id;
+      work.due_date = independentlyVerified.due_date;
+    }
+    onOpenWork?.(work);
   };
 
   const prepareCompletion = (item, index) => {
@@ -530,12 +598,13 @@ export default function DailyAttentionWorkspace({
       || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || '')
       || target?.isContentEditable) return;
     if (event.key === 'Escape') {
-      if (showShortcuts || mode === 'CALENDAR' || selectedId) {
+      if (showShortcuts || mode === 'CALENDAR' || selectedId || showBriefing) {
         event.preventDefault();
         event.stopPropagation();
         if (showShortcuts) setShowShortcuts(false);
         else if (mode === 'CALENDAR') setMode('LIST');
-        else setSelectedId(null);
+        else if (selectedId) setSelectedId(null);
+        else setShowBriefing(false);
       }
       return;
     }
@@ -544,7 +613,7 @@ export default function DailyAttentionWorkspace({
       setShowShortcuts((value) => !value);
       return;
     }
-    if (event.key === '/') {
+    if (event.key === '/' && !selectedId && !showBriefing) {
       event.preventDefault();
       searchRef.current?.focus();
       return;
@@ -588,7 +657,25 @@ export default function DailyAttentionWorkspace({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden text-slate-100"
       data-attention-production-ui="true" data-attention-mode={mode} onKeyDown={handleKey}>
       <div className="shrink-0 border-b border-white/10 bg-[#14243d] px-3 py-2 sm:px-4">
-        {mode === 'CREATE' ? (
+        {mode === 'CALENDAR' ? (
+          <div className="flex min-h-10 min-w-0 items-center justify-between gap-3" aria-label="Calendar mode toolbar">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-white">Work calendar</h2>
+              <p className="truncate text-[10px] text-slate-400">Authorised deadlines · {rows.length} verified work items</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button type="button" onClick={onRefresh} aria-label="Refresh"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                <RefreshCw size={13}/> Refresh
+              </button>
+              <button type="button" onClick={() => setMode('LIST')}
+                aria-label="Close calendar and return to work list"
+                className="rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                Back to work
+              </button>
+            </div>
+          </div>
+        ) : mode === 'CREATE' ? (
           <div className="flex min-h-12 items-center justify-between gap-3" aria-label="Create mode toolbar">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">Create work in {label(chosenCreateSource)}</p>
@@ -599,13 +686,13 @@ export default function DailyAttentionWorkspace({
           <>
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
           <div className="flex min-w-0 items-baseline gap-2">
-            <h2 className="shrink-0 text-sm font-bold text-white">Daily Attention</h2>
+            <h2 className="shrink-0 text-sm font-bold text-white">{selected ? 'Work details' : showBriefing ? 'Priority briefing' : 'Daily Attention'}</h2>
             <span className="truncate text-[10px] text-slate-400">
               {sourceCoverage.length} admitted {sourceCoverage.length === 1 ? 'source' : 'sources'} · verified {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            {creatableSources.length > 0 && typeof onCreateWork === 'function' && (
+            {!selected && !showBriefing && creatableSources.length > 0 && typeof onCreateWork === 'function' && (
               <button type="button" data-attention-create-trigger="true"
                 ref={createTriggerRef}
                 disabled={creatingWork || workUpdating}
@@ -614,9 +701,9 @@ export default function DailyAttentionWorkspace({
                 Create work
               </button>
             )}
-            <button type="button" onClick={() => setShowShortcuts((v) => !v)}
+            {!selected && !showBriefing && <button type="button" onClick={() => setShowShortcuts((v) => !v)}
               aria-label="Daily attention keyboard shortcuts" aria-expanded={showShortcuts}
-              className="rounded-md border border-white/10 p-1.5 text-slate-300 hover:bg-white/10"><CircleHelp size={14}/></button>
+              className="rounded-md border border-white/10 p-1.5 text-slate-300 hover:bg-white/10"><CircleHelp size={14}/></button>}
             <button type="button" onClick={onRefresh} title={'Last synced: ' + feed.syncedAt}
               className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1.5 text-[11px] text-slate-300 hover:bg-white/10">
               <RefreshCw size={13}/>Refresh
@@ -650,7 +737,7 @@ export default function DailyAttentionWorkspace({
           Some source commands could not be verified. Verified commands remain usable.
           <button type="button" onClick={onRefresh} className="ml-2 underline">Retry command verification</button>
         </p>}
-        {showShortcuts && (
+        {showShortcuts && !selected && !showBriefing && (
           <div role="note" className="mt-1 rounded-lg border border-amber-300/20 bg-[#0a1628] p-2 text-[10px] leading-4 text-slate-300">
             <strong className="text-amber-100">Shortcuts:</strong> j/k select work · Enter/o open
             · / search · 1–4 filters · x select · e complete evidence when permitted
@@ -659,7 +746,7 @@ export default function DailyAttentionWorkspace({
             when their source-owned action APIs are certified.
           </div>
         )}
-        {mode === 'LIST' && <div className="mt-2 flex flex-wrap gap-2 text-[10px]" aria-label={resultsUpdating || resultsUnavailable
+        {mode === 'LIST' && !selected && !showBriefing && <div className="mt-2 flex flex-wrap gap-2 text-[10px]" aria-label={resultsUpdating || resultsUnavailable
           ? 'Last verified current-source workload' : 'Verified current-source workload'}>
           {[
             ['ALL', 'Active', feed.counts.active],
@@ -682,7 +769,7 @@ export default function DailyAttentionWorkspace({
           ))}
           {(resultsUpdating || resultsUnavailable) && <span className="self-center text-amber-100/80">Last verified</span>}
         </div>}
-        {mode === 'LIST' && <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Daily attention toolbar">
+        {mode === 'LIST' && !selected && !showBriefing && <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5" aria-label="Daily attention toolbar">
           <label className="flex min-w-[180px] flex-1 items-center gap-2 rounded-md border border-white/15 bg-[#0a1628] px-2.5">
             <Search size={14} className="shrink-0 text-slate-400"/>
             <input ref={searchRef} type="search" aria-label="Search authorised work"
@@ -726,19 +813,19 @@ export default function DailyAttentionWorkspace({
             {bulkSelectionMode ? 'Exit selection' : 'Select work'}
           </button>}
         </div>}
-        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px]">
+        {!selected && !showBriefing && <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px]">
           <button type="button" onClick={() => setShowSourceDetails((value) => !value)}
             aria-expanded={showSourceDetails} aria-controls="attention-source-evidence"
             className="inline-flex items-center gap-1.5 rounded-md text-slate-400 hover:text-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
             <ShieldCheck size={12}/> Source details
             <ChevronRight size={12} className={showSourceDetails ? 'rotate-90' : ''}/>
           </button>
-          {ranked.length > 0 && <button type="button" onClick={() => setShowBriefing((value) => !value)}
+          {ranked.length > 0 && !selected && <button type="button" onClick={() => { setSelectedId(null); setShowBriefing((value) => !value); }}
             aria-expanded={showBriefing} className="text-slate-400 hover:text-amber-100">
             {showBriefing ? 'Hide' : 'Show'} briefing
           </button>}
-        </div>
-        {showSourceDetails && (
+        </div>}
+        {showSourceDetails && !selected && !showBriefing && (
           <section id="attention-source-evidence" aria-label="Last verified attention source details"
             className="mt-2 rounded-lg border border-white/10 bg-[#0a1628] px-3 py-2 text-[11px] leading-5">
             <p className="font-semibold text-slate-200">Last verified source evidence for this session · {sourceCoverage.length} admitted · synced {new Date(feed.syncedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</p>
@@ -862,46 +949,22 @@ export default function DailyAttentionWorkspace({
           </form>
         </div>
       ) : mode === 'CALENDAR' ? (
-        <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
-          <WilsyWorkDeadlineCalendar items={rows} onOpenWork={onOpenWork}
-            onOpenWorkforce={onOpenWorkforce}/>
-          <button type="button" onClick={() => setMode('LIST')}
-            aria-label="Close calendar and return to work list"
-            className="mt-2 rounded-lg border border-amber-300/30 px-3 py-2 text-xs text-amber-100">
-            Return to work list
-          </button>
-        </div>
+        <section aria-label="Authorised work calendar" data-attention-calendar-workspace="true"
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5">
+          <div className="mx-auto w-full max-w-5xl">
+            <WilsyWorkDeadlineCalendar items={rows} onOpenWork={onOpenWork}
+              onOpenWorkforce={onOpenWorkforce}/>
+          </div>
+        </section>
       ) : (
-        <div data-attention-detail-layout={selected ? "split" : "list"}
-           className={selected
-             ? "relative grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,38fr)_minmax(0,62fr)]"
-             : "relative flex min-h-0 min-w-0 flex-1 overflow-hidden"}>
+        <div data-attention-detail-layout={selected ? 'detail' : showBriefing ? 'briefing' : 'list'}
+           className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
            <div data-attention-work-list="true"
-             className={"relative min-h-0 min-w-0 flex-col overflow-hidden " + (selected ? "hidden md:flex" : "flex flex-1")}>
+             className={'relative min-h-0 min-w-0 flex-col overflow-hidden '
+               + (selected || showBriefing ? 'hidden' : 'flex flex-1')}>
           <div className="relative min-h-0 flex-1 overflow-y-auto" ref={listRef}
             data-attention-scroll-container="true"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
-          {ranked.length > 0 && showBriefing && filter === 'ALL' && !query.trim() && source === 'ALL' && (
-            <section aria-label="Today's attention briefing" className="border-b border-white/10 bg-amber-300/[0.035] px-4 py-3">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-200">Start here</h3>
-                <button type="button" onClick={() => setShowBriefing(false)}
-                  className="text-[11px] text-slate-400 hover:text-white">Collapse briefing</button>
-              </div>
-              <div className="space-y-1">
-                {ranked.map((item, index) => (
-                  <button key={item.id} type="button" onClick={() => {
-                    setSelectedId(item.id); setSelectionIndex(page.findIndex((x) => x.id === item.id));
-                  }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-white/5">
-                    <span className="w-4 text-amber-300">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate font-medium">{item.title}</span>
-                    <span className="shrink-0 text-[10px] text-slate-400">{label(item.sourceModule)}</span>
-                    <ChevronRight size={13}/>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
           {!page.length && (resultsUpdating || resultsUnavailable) && (
             <section aria-label="Last verified attention results" className="px-6 py-8"
               data-attention-verified-results="true">
@@ -993,60 +1056,57 @@ export default function DailyAttentionWorkspace({
               <div ref={inboxRef} role="list" data-attention-inbox-window="true"
                 style={{height: page.length * ATTENTION_ROW_HEIGHT, position: 'relative'}}>
                 {visibleItems.map(({item, index}) => (
-                  <article key={item.id} role="listitem" data-attention-row
+                  <WorkTaskBlueprintRow key={item.id} data-attention-row selected={selectedId === item.id}
                     aria-setsize={page.length} aria-posinset={index + 1}
                     style={{position: 'absolute', top: index * ATTENTION_ROW_HEIGHT,
                       left: 0, right: 0, height: ATTENTION_ROW_HEIGHT}}
-                    className={'box-border flex items-center gap-2 border-b border-white/[0.07] border-l-[3px] px-3 py-0.5 transition-colors ' +
-                      severityFor(item).row + (selectedId === item.id
-                        ? ' ring-1 ring-inset ring-amber-300/60' : ' hover:bg-white/[0.06]')}>
+                    className="box-border flex items-center gap-2 !rounded-none !border-b !border-slate-200 !px-3 !py-0.5">
                     {bulkSelectionMode && <input type="checkbox" aria-label={'Select ' + item.title}
                       checked={checkedSet.has(item.id)}
                       onChange={(event) => setCheckedIds((before) => event.target.checked
                         ? [...before.filter((id) => id !== item.id), item.id]
                         : before.filter((id) => id !== item.id))}
-                      className="h-4 w-4 shrink-0 accent-amber-300"/>}
-                    <span className="hidden w-14 shrink-0 rounded-md border border-white/10 bg-white/[0.035] px-1.5 py-1 text-center text-[10px] font-semibold text-slate-300 sm:block">
+                      className="h-4 w-4 shrink-0 accent-blue-700"/>}
+                    <span className="hidden w-14 shrink-0 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-1 text-center text-[10px] font-semibold text-slate-700 sm:block">
                       {label(item.sourceModule)}
                     </span>
                     <span aria-label={'Severity ' + severityFor(item).label + '; priority ' + item.priority}
-                      className={'inline-flex w-[76px] shrink-0 items-center justify-center gap-1 rounded-md border px-1 py-1 text-[10px] font-bold ' + severityFor(item).chip}>
+                      className={'inline-flex w-[76px] shrink-0 items-center justify-center gap-1 rounded-md border px-1 py-1 text-[10px] font-bold ' + severityRowLabel[severityFor(item).label.toUpperCase()]}>
                       <span aria-hidden="true" className={'h-1.5 w-1.5 rounded-full ' + severityFor(item).dot}/>
                       {severityFor(item).label}
                     </span>
-                    <button type="button" aria-label={'Inspect ' + item.title}
-                      aria-pressed={selectedId === item.id}
-                      onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
-                      className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-                      <span className="block truncate text-xs font-semibold text-white">{item.title}</span>
+                    <button type="button" aria-label={'Open task ' + item.title}
+                      onClick={() => open(item)}
+                      className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">
+                      <span className="block truncate text-xs font-semibold text-slate-950">{item.title}</span>
                       <span className={'mt-0.5 block truncate text-[10px] leading-4 ' +
-                        (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}>
+                        (item.isOverdue ? 'text-rose-800' : 'text-slate-600')}>
                         <span>{label(item.sourceModule)} · {sourceStatus(item)}</span>{' · '}
                         <span>{item.summary || label(item.sourceModule)}</span>
                       </span>
                     </button>
                     <span className={'hidden w-[112px] shrink-0 truncate text-right text-[10px] ' +
                       (selected ? '2xl:block ' : 'sm:block ') +
-                      (item.isOverdue ? 'text-rose-200' : 'text-slate-400')}
-                      title={dueLabel(item.dueAt)}>
-                      {dueLabel(item.dueAt)}
+                      (item.isOverdue ? 'text-rose-800' : 'text-slate-600')}
+                      title={displayedDeadline(item)}>
+                      {displayedDeadline(item)}
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
                       {canCompleteItem(item) && <button type="button"
                         aria-label={'Complete ' + item.title}
                         onClick={() => prepareCompletion(item, index)}
                         disabled={Boolean(completingId) || workUpdating}
-                        className="rounded-md bg-amber-300 px-2 py-1.5 text-[10px] font-bold text-slate-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50">
+                        className={workTaskBlueprint.primary + ' !min-h-8 !px-2'}>
                         Complete
                       </button>}
-                      <button type="button" aria-label={'Open details for ' + item.title}
+                      <button type="button" aria-label={'Inspect ' + item.title}
                         aria-pressed={selectedId === item.id}
                         onClick={() => { setSelectedId(item.id); setSelectionIndex(index); }}
-                        className="rounded-md border border-white/20 px-2 py-1.5 text-[10px] font-semibold text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-                        Details
+                        className={workTaskBlueprint.secondary + ' !min-h-8 !px-2'}>
+                        Preview
                       </button>
                     </div>
-                  </article>
+                  </WorkTaskBlueprintRow>
                 ))}
               </div>
             </section>
@@ -1104,17 +1164,47 @@ export default function DailyAttentionWorkspace({
             </div>
           )}
           </div>
+          {showBriefing && !selected && (
+            <section aria-label="Today's attention briefing"
+              className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-[#182842] px-4 py-4">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                <button type="button" onClick={() => setShowBriefing(false)}
+                  className="inline-flex min-h-9 items-center gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold text-white hover:bg-white/10">
+                  ← Back to work
+                </button>
+                <span className="text-xs text-slate-300">Ranked verified work · {ranked.length} priorities</span>
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-white">Start here</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-300">Choose a priority to inspect its source-owned accountability, deadline and actions.</p>
+              <div className="mt-3 divide-y divide-white/10 rounded-lg border border-white/10">
+                {ranked.map((item, index) => (
+                  <button key={item.id} type="button"
+                    onClick={() => {
+                      setSelectedId(item.id);
+                      setSelectionIndex(page.findIndex((row) => row.id === item.id));
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                    <span className="w-6 shrink-0 font-semibold tabular-nums text-amber-300">{index + 1}</span>
+                    <span className="min-w-0 flex-1 truncate font-semibold">{item.title}</span>
+                    <span className="shrink-0 text-xs text-slate-300">{label(item.sourceModule)}</span>
+                    <ChevronRight size={15}/>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           {selected && (
             <aside aria-label="Attention detail rail"
-              className="relative h-full min-h-0 min-w-0 w-full overflow-y-auto overscroll-contain border-t border-amber-300/25 bg-[#182842] px-4 py-3 md:border-l md:border-t-0 md:px-5 md:py-4">
-          <div className="flex items-center justify-between gap-2">
+              className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-[#182842] px-4 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <button type="button" onClick={() => setSelectedId(null)}
+              aria-label="Close attention detail"
+              className="inline-flex min-h-9 items-center gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold text-white hover:bg-white/10">
+              ← Back to {showBriefing ? 'briefing' : 'work'}
+            </button>
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-200">
               Work detail · {label(selected.sourceModule)}
             </h3>
-            <button type="button" onClick={() => setSelectedId(null)}
-              aria-label="Close attention detail" className="rounded-lg p-1 text-slate-300 hover:bg-white/10">
-              <X size={16}/>
-            </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span className={'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-bold ' + severityFor(selected).chip}>
@@ -1130,7 +1220,7 @@ export default function DailyAttentionWorkspace({
           <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
             <div><dt className="text-slate-400">Reason prioritised</dt><dd>{selected.whyRanked}</dd></div>
             <div><dt className="text-slate-400">Priority score</dt><dd>{selected.urgencyScore}/100</dd></div>
-            <div><dt className="text-slate-400">Deadline</dt><dd>{dueLabel(selected.dueAt)}</dd></div>
+            <div><dt className="text-slate-400">Deadline</dt><dd>{displayedDeadline(selected)}</dd></div>
             <div><dt className="text-slate-400">Source status</dt><dd>{sourceStatus(selected)}</dd></div>
             <div><dt className="text-slate-400">SLA</dt><dd>{selected.slaBreachAt ? dueLabel(selected.slaBreachAt) : 'Not supplied by source'}</dd></div>
             <div><dt className="text-slate-400">Owner</dt>
@@ -1207,7 +1297,7 @@ export default function DailyAttentionWorkspace({
         </div>
       )}
       {mode === 'LIST' && completionNotice && <p role="status" className="shrink-0 border-t border-emerald-300/20 bg-[#12302d] px-4 py-2 text-xs text-emerald-100">{completionNotice}</p>}
-      {mode !== 'CREATE' && (
+      {mode !== 'CREATE' && mode !== 'CALENDAR' && (
       <footer className="shrink-0 border-t border-white/10 bg-[#14243d] px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
           <span>{page.length} loaded · {feed.filteredTotal} matching in last verified view · {feed.counts.active} active in verified sources</span>
@@ -1232,7 +1322,7 @@ export default function DailyAttentionWorkspace({
 }
 
 // ARTIFACT: client/src/components/attention/DailyAttentionWorkspace.jsx
-// VERSION: v3.14.0-CRM-DIRECT-SAVED-DRAFT
+// VERSION: v3.20.0-AUTHORIZED-PRIMARY-TASK-NAVIGATION
 // AUTHORITY BOUNDARY: EOS-attested rows; completion reuses source-owned commands.
  // TENANT POSTURE: Exact current-session authorised AttentionItem response.
  // FAIL-CLOSED POSTURE: Unrepresented modules never display verified-cleared.

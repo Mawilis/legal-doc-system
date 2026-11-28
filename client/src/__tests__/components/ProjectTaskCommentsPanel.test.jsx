@@ -1,12 +1,55 @@
 /**
  * TITLE: WILSY OS Task Discussion Verified Source Client Certificate
- * VERSION: v1.2.0-CONTRIBUTOR-EVIDENCE-COMPOSER-CERT
+ * VERSION: v1.13.3-STABLE-ADVANCED-FILTER-A11Y-CERT
  * AUTHORITY: Synthetic client contract evidence; Python EOS owns comments.
  * EPITOME: Certify exact task thread read, mention choice, publish, readback
  *          and foreign-tenant payload rejection without fabricated delivery.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectTaskCommentsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectTaskCommentsPanel; mocked api.js transport.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v1.11.0-THIRTY-MINUTE-CORRECTION-WINDOW-CERT checks structured correction fields and that author controls disappear after the server-owned 30-minute comment window, while preserving original source audit and stale-fingerprint denial.
+ * CHANGELOG: v1.13.3-STABLE-ADVANCED-FILTER-A11Y-CERT asserts that active filter status does not change the exact accessible control name.
+ * CHANGELOG: v1.13.2-COMPACT-GOVERNED-ACTIVITY-CERT verifies optional secondary filter disclosure and visibly audited correction affordance.
+ * CHANGELOG: v1.13.1-STABLE-FILTER-ACCESSIBLE-NAMES-CERT checks stable button names with counts 0 and 1 to prevent accessibility/search regressions.
+ * CHANGELOG: v1.13.0-ENTERPRISE-ACTIVITY-CONTROLS-CERT verifies count, actor text, Mine/date/order filters and clear operations without additional EOS calls.
+ * CHANGELOG: v1.12.0-CURRENT-PAGE-ACTIVITY-FILTER-CERT verifies read-only source-page activity filters and the compact timeline without additional EOS calls or comment mutations.
+ * CHANGELOG: v1.10.0-AUDITED-COMMENT-CORRECTION-CERT covers original-author comment correction with reason, append-only verified EOS write and refreshed source record, plus stale-fingerprint failure with no write.
+ * CHANGELOG: v1.9.0-FOCUS-FIRST-ACTIVITY-WORKSPACE-CERT proves
+ *          Write update makes the textarea the immediate focused task,
+ *          hides the long source history while composing, restores it with
+ *          the same source content when closed, and returns to verified
+ *          source readback only after EOS has accepted the command.
+ *          No draft loss on close or read authority changes.
+ * CHANGELOG: v1.8.0-ACTION-GROUP-GUTTERS-CERT proves the
+ *          visible action rows have 16px horizontal and 12px vertical
+ *          wrap gutters plus real divider padding at the activity heading,
+ *          availability controls and EOS-verified history; this preserves
+ *          compact button size and authenticated source semantics.
+ * CHANGELOG: v1.7.0-COMPACT-ACTIVITY-CONTROLS-CERT verifies that
+ *          the existing read, refresh and authoring actions share the
+ *          compact 36px Projects control class, preserve accessible names
+ *          and never enlarge source comment buttons as standalone cards.
+ * CHANGELOG: v1.6.1-VERIFIED-ACTIVITY-AUTHOR-LABEL-CERT
+ *          checks safe self-labeling and prevents raw actor principal IDs
+ *          appearing in visible activity metadata.
+ * CHANGELOG: v1.6.0-READABLE-IMMUTABLE-ACTIVITY-CERT proves a long
+ *          source-owned engineering update begins as a compact text-only
+ *          preview, expands to the complete unchanged safe Markdown, and
+ *          collapses again without any EOS write or new authority. Short
+ *          comments remain fully visible and source pages stay immutable.
+ * CHANGELOG: v1.5.0-STRICTMODE-ONE-ACTIVITY-FANOUT-CERT proves
+ *          React StrictMode discarded effects cannot issue duplicated
+ *          four-source discussion reads. Real changes still reverify EOS.
+ * CHANGELOG: v1.4.0-STABLE-TENANT-HEADER-REQUEST-CERT verifies
+ *          equivalent parent header objects do not restart the four
+ *          EOS activity sources, while a real header change does.
+ *          No mocked response becomes authorization or persisted truth.
+ * CHANGELOG: v1.3.1-ISOLATED-SOURCE-ALERT-CERT allows
+ *          multiple independent error alerts while asserting the precise
+ *          failed comment source, without erasing lifecycle evidence.
+ * CHANGELOG: v1.3.0-INDEPENDENT-ACTIVITY-RECOVERY-CERT verifies lifecycle evidence
+ *          remains visible when exact EOS comments return HTTP 503;
+ *          comment publishing remains blocked until the source recovers.
  * CHANGELOG: v1.2.0-CONTRIBUTOR-EVIDENCE-COMPOSER-CERT confirms that task evidence upload is
  *          available only after verified active contributor participation
  *          and uses the independently authorised task evidence service.
@@ -22,7 +65,7 @@
  * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -63,6 +106,283 @@ function mount(contributor = false) {
     tenantHeaders={{ 'X-Tenant-ID': tenantId }} onClose={() => {}}/>);
 }
 
+it('mounts one four-source discussion fanout under React StrictMode', async () => {
+  api.get.mockImplementation(async () => {
+    throw new Error('Synthetic source unavailable');
+  });
+  const props = {
+    tenantId, principalId, projectId, taskId, participants: [],
+    tenantHeaders: { 'X-Tenant-ID': tenantId }, onClose: () => {},
+  };
+  render(<React.StrictMode><ProjectTaskCommentsPanel {...props}/></React.StrictMode>);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(4));
+  expect(new Set(api.get.mock.calls.map(call => call[0])).size).toBe(4);
+});
+
+it('does not refetch four activity sources on equivalent parent rerenders', async () => {
+  api.get.mockImplementation(async () => {
+    throw new Error('Synthetic unavailable response');
+  });
+  const props = {
+    tenantId, principalId, projectId, taskId, participants: [],
+    tenantHeaders: { 'X-Tenant-ID': tenantId }, onClose: () => {},
+  };
+  const { rerender } = render(<ProjectTaskCommentsPanel {...props} />);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(4));
+
+  await act(async () => {
+    rerender(<ProjectTaskCommentsPanel {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId }} />);
+  });
+  expect(api.get).toHaveBeenCalledTimes(4);
+
+  await act(async () => {
+    rerender(<ProjectTaskCommentsPanel {...props}
+      tenantHeaders={{ 'X-Tenant-ID': tenantId, 'X-Test-Scope': 'changed' }} />);
+  });
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(8));
+});
+
+it('uses consistent compact OS actions without changing authorized commands', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  const refresh = await screen.findByRole('button', { name: 'Refresh' });
+  const compose = await screen.findByRole('button', { name: 'Write update' });
+  for (const button of [refresh, compose]) {
+    expect(button).toHaveClass('wp-button', '!min-h-9', '!px-3', '!text-xs');
+  }
+  expect(refresh.parentElement).toHaveClass('gap-x-4', 'gap-y-3');
+  const availability = screen.getByLabelText('Verified discussion availability');
+  expect(availability).toHaveClass('gap-x-4', 'gap-y-3', 'py-4');
+  const history = screen.getByLabelText('Verified task activity history');
+  expect(history).toHaveClass('pt-4');
+  expect(history.firstElementChild).toHaveClass('gap-3', 'pb-3');
+  fireEvent.click(compose);
+  expect(screen.getByRole('button', { name: 'Close editor' }))
+    .toHaveClass('!min-h-9', '!px-3', '!text-xs');
+  const input = screen.getByRole('textbox', { name: 'New task comment' });
+  expect(input).toHaveFocus();
+  expect(screen.getByRole('region', { name: 'Write a progress update' })).toBeVisible();
+  expect(screen.queryByLabelText('Verified task activity history')).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('filters only the verified activity page without refetching or changing immutable comments', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  const reads = api.get.mock.calls.length;
+  // Visible source-page counts must not mutate the accessible filter names.
+  expect(screen.getByRole('button', { name: 'All activity', exact: true })).toHaveTextContent('1');
+  expect(screen.getByRole('button', { name: 'Changes', exact: true })).toHaveTextContent('0');
+  fireEvent.click(screen.getByRole('button', { name: 'Changes', exact: true }));
+  expect(screen.getByRole('button', { name: 'Changes' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
+  expect(screen.getByText(/No matching verified records on the currently loaded pages/)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Updates' }));
+  expect(screen.getByText('Please verify this dependency.')).toBeVisible();
+  const search = screen.getByRole('searchbox', { name: 'Search verified activity on loaded pages' });
+  fireEvent.change(search, { target: { value: 'not present in source' } });
+  expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
+  fireEvent.change(search, { target: { value: 'verify this dependency' } });
+  expect(screen.getByText('Please verify this dependency.')).toBeVisible();
+  const initialReads = api.get.mock.calls.length;
+  expect(screen.getByRole('button', { name: 'Updates' })).toHaveTextContent('1');
+  expect(screen.getByRole('button', { name: 'All activity' })).toHaveTextContent('1');
+  expect(screen.getByRole('button', { name: 'More filters', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('button', { name: 'More filters', exact: true })).toHaveTextContent('Active');
+  fireEvent.click(screen.getByRole('button', { name: 'More filters' }));
+  expect(screen.getByRole('button', { name: 'Hide filters' })).toHaveAttribute('aria-expanded', 'true');
+  fireEvent.click(screen.getByRole('button', { name: 'Mine only' }));
+  expect(screen.getByRole('button', { name: 'Mine only' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByText('You posted a progress update')).toBeVisible();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Sort verified activity' }), {
+    target: { value: 'OLDEST' },
+  });
+  expect(screen.getByText(/matching · oldest first/)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+  expect(screen.getByRole('button', { name: 'Mine only' })).toHaveAttribute('aria-pressed', 'false');
+  expect(api.get).toHaveBeenCalledTimes(initialReads);
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('restores authorized history on editor close while retaining an unpublished draft', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Write update' }));
+  const input = screen.getByRole('textbox', { name: 'New task comment' });
+  expect(input).toHaveFocus();
+  fireEvent.change(input, { target: { value: 'Unpublished recovery note' } });
+  expect(screen.queryByText('Please verify this dependency.')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
+  expect(screen.getByText('Please verify this dependency.')).toBeVisible();
+  expect(screen.queryByRole('textbox', { name: 'New task comment' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Write update' }));
+  expect(screen.getByRole('textbox', { name: 'New task comment' })).toHaveValue('Unpublished recovery note');
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('presents long persisted engineering updates as expandable safe activity evidence', async () => {
+  const original = '**MW-T12 — Nonproduction Python EOS recovery**\n'
+    + Array.from({ length: 10 }, (_, index) => '- Verified source gate ' + index
+      + ': local EOS restart and authenticated readback retained').join('\n')
+    + '\n<iframe src="https://untrusted.example"></iframe>';
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1',
+      tenant_id: tenantId, principal_id: principalId,
+      project_id: projectId, task_id: taskId,
+      items: [{ ...source, body: original }],
+      limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Independent optional source not available');
+  });
+  mount();
+  expect(await screen.findByText('MW-T12 — Nonproduction Python EOS recovery')).toBeVisible();
+  expect(screen.getByText('You posted a progress update')).toBeVisible();
+  expect(screen.queryByText(principalId)).not.toBeInTheDocument();
+  expect(screen.getByRole('list', { name: 'Source-verified task activity' })).toBeVisible();
+  const expand = screen.getByRole('button', { name: 'Read full update' });
+  expect(expand).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByText(/Verified source gate 9/)).not.toBeInTheDocument();
+  fireEvent.click(expand);
+  expect(screen.getByText(/Verified source gate 9/)).toBeVisible();
+  expect(screen.getByText(/<iframe src=/)).toBeVisible();
+  expect(document.querySelector('iframe')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse update' }));
+  expect(screen.queryByText(/Verified source gate 9/)).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('does not hide ordinary source comments behind disclosure', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional evidence unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Read full update' })).not.toBeInTheDocument();
+});
+
+it('offers the original author a reasoned append-only correction with current EOS readback', async () => {
+  const original = { ...source, created_at: new Date().toISOString(),
+    body: '**MW-T11 acceptance** mistakenly written on MW-T09' };
+  const corrected = { ...source, comment_id: 'pcm-' + 'e'.repeat(48),
+    fingerprint: 'f'.repeat(128), body: '', created_at: '2026-11-26T18:30:00Z' };
+  let comments = [original];
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: comments, limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  api.post.mockImplementation(async (path, payload) => {
+    expect(path).toBe(route);
+    expect(payload.correction_of).toBe(original.comment_id);
+    expect(payload.correction_fingerprint).toBe(original.fingerprint);
+    expect(payload.correction_reason).toBe('Posted under MW-T09 instead of MW-T11');
+    expect(payload.body).toBe('Corrected activity attribution');
+    corrected.body = '**Correction to earlier project activity**\n'
+      + 'Original comment: ' + original.comment_id + '\n'
+      + '**Reason:** ' + payload.correction_reason + '\n'
+      + '**Corrected update:**\n' + payload.body;
+    comments = [corrected, original];
+    return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-RESULT/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      comment: corrected,
+    } };
+  });
+  mount();
+  expect(await screen.findByText(/mistakenly written on MW-T09/)).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Correct entry · audited' }));
+  expect(screen.getByText(/original stays in EOS/i)).toBeVisible();
+  const reason = screen.getByRole('textbox', { name: 'Reason for correction' });
+  fireEvent.change(reason, { target: { value: 'Posted under MW-T09 instead of MW-T11' } });
+  fireEvent.change(screen.getByRole('textbox', { name: 'New task comment' }), {
+    target: { value: 'Corrected activity attribution' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Publish correction to EOS' }));
+  await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(screen.getByText(/Corrected activity attribution/)).toBeVisible());
+  // Immutable original must remain on the refreshed EOS activity page.
+  expect(screen.getByText(/mistakenly written on MW-T09/)).toBeVisible();
+});
+
+it('hides correction actions after the 30-minute source window', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') return { data: {
+      schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+      principal_id: principalId, project_id: projectId, task_id: taskId,
+      items: [source], limit: 50, offset: 0, has_more: false, next_offset: null,
+    } };
+    throw new Error('Optional source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Correct entry · audited' })).not.toBeInTheDocument();
+  expect(screen.getByText(/Correction window closed/)).toBeVisible();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+it('refuses a stale or foreign original correction without issuing an EOS write', async () => {
+  let reads = 0;
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') {
+      reads += 1;
+      return { data: {
+        schema: 'WILSY-PROJECT-COMMENT-LIST/V1', tenant_id: tenantId,
+        principal_id: principalId, project_id: projectId, task_id: taskId,
+        items: reads === 1 ? [{ ...source, created_at: new Date().toISOString() }]
+          : [{ ...source, created_at: new Date().toISOString(), fingerprint: 'e'.repeat(128) }],
+        limit: 50, offset: 0, has_more: false, next_offset: null,
+      } };
+    }
+    throw new Error('Optional evidence unavailable');
+  });
+  mount();
+  expect(await screen.findByText('Please verify this dependency.')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Correct entry · audited' }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Reason for correction' }), {
+    target: { value: 'Wrong attribution in this task' },
+  });
+  fireEvent.change(screen.getByRole('textbox', { name: 'New task comment' }), {
+    target: { value: 'Corrected, verified source content' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Publish correction to EOS' }));
+  await waitFor(() => expect(screen.getByText(/original comment could not be independently reverified/i))
+    .toBeVisible());
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 it('publishes a comment and mention only after verified source list readback', async () => {
   let items = [];
   api.get.mockImplementation(async path => {
@@ -93,12 +413,14 @@ it('publishes a comment and mention only after verified source list readback', a
   const message = await screen.findByRole('textbox', { name: 'New task comment' });
   const mention = screen.getByRole('checkbox', { name: 'Verified Member' });
   fireEvent.click(mention);
+  expect(screen.getByText(/not a delivered notification/)).toBeVisible();
   fireEvent.change(message, { target: { value: 'Please verify this dependency.' } });
   fireEvent.click(screen.getByRole('button', { name: 'Publish to EOS' }));
   await waitFor(() => expect(screen.getByText('Please verify this dependency.')).toBeVisible());
   expect(api.post).toHaveBeenCalledTimes(1);
   expect(screen.getByText('Mentions: 1 source references')).toBeVisible();
-  expect(screen.getByText(/not a delivered notification/)).toBeVisible();
+  expect(screen.queryByRole('textbox', { name: 'New task comment' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Write update' })).toBeVisible();
 });
 
 it('offers contributor-only in-place evidence upload with no owner-route privilege fallback', async () => {
@@ -127,6 +449,35 @@ it('offers contributor-only in-place evidence upload with no owner-route privile
   expect(api.post).not.toHaveBeenCalled();
 });
 
+it('keeps source-verified task lifecycle visible when comment EOS is unavailable', async () => {
+  api.get.mockImplementation(async path => {
+    if (path === route + '?limit=50&offset=0') {
+      const failure = new Error('Comment transport unavailable');
+      failure.response = { status: 503 };
+      throw failure;
+    }
+    if (path === '/projects/' + projectId + '/tasks/' + taskId + '/events?limit=50&offset=0') {
+      return { data: {
+        schema: 'WILSY-PROJECT-TASK-EVENT-LIST/V1',
+        tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+        task_id: taskId, limit: 50, offset: 0,
+        has_more: false, next_offset: null,
+        items: [{ schema: 'wilsy.project.task.event.v1', tenant_id: tenantId,
+          project_id: projectId, task_id: taskId, event_type: 'PROJECT_TASK_TRANSITIONED',
+          revision: 2, status_after: 'BLOCKED', actor_principal_id: principalId,
+          occurred_at: '2026-11-23T18:00:00+00:00' }],
+      } };
+    }
+    throw new Error('Optional activity source unavailable');
+  });
+  mount();
+  expect(await screen.findByText('You changed this work')).toBeVisible();
+  expect(screen.getAllByRole('alert').some(node => node.textContent.includes('HTTP 503'))).toBe(true);
+  expect(screen.getByRole('button', { name: 'Retry comments' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Write update' })).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 it('fails closed on a foreign tenant thread and prevents publishing', async () => {
   api.get.mockResolvedValue({ data: {
     schema: 'WILSY-PROJECT-COMMENT-LIST/V1',
@@ -136,13 +487,13 @@ it('fails closed on a foreign tenant thread and prevents publishing', async () =
     has_more: false, next_offset: null,
   } });
   mount();
-  expect(await screen.findByRole('alert')).toHaveTextContent('could not be verified');
+  expect(await screen.findByRole('alert')).toHaveTextContent('did not satisfy the EOS scope');
   expect(screen.queryByRole('button', { name: 'Publish to EOS' })).not.toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
 });
 
 // ARTIFACT: ProjectTaskCommentsPanel.test.jsx
-// VERSION: v1.2.0-CONTRIBUTOR-EVIDENCE-COMPOSER-CERT
+// VERSION: v1.13.3-STABLE-ADVANCED-FILTER-A11Y-CERT
 // AUTHORITY BOUNDARY: mocked readback only, not a live authenticated journey
 // TENANT POSTURE: foreign source rejected without leaking comments
 // FAIL-CLOSED POSTURE: invalid source never displays or permits write

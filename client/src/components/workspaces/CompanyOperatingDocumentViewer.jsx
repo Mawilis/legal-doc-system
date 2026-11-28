@@ -1,13 +1,322 @@
 /**
  * TITLE: WILSY OS Mission and Strategy Document Experience
- * VERSION: v1.7.2-PROJECTS-DELIVERY-HANDOFF
+ * VERSION: v2.33.5-CURRENT-STRATEGY-LINK-SESSION
+ * CHANGELOG: v2.33.5-CURRENT-STRATEGY-LINK-SESSION removes a stale mounted-bearer override from Strategy project-link reads, delegating the current verified session token to shared api.js without changing tenant or server permission checks.
+ * CHANGELOG: v2.33.4-OWNER-STRATEGY-READ-REASON displays only the bounded server-authoritative Strategy denial reason for eligible Owner check and keeps permission and document states unchanged.
+ * CHANGELOG: v2.33.5-CURRENT-STRATEGY-LINK-SESSION uses the current authenticated HTTP authority check after a Strategy 403 to distinguish denied read from a later document-stage denial; source failures remain failures and IAM remains unchanged.
+ * CHANGELOG: v2.33.5-CURRENT-STRATEGY-LINK-SESSION identifies the 15-second EOS read timeout distinctly from an absent endpoint, without altering document state or authority.
+ * CHANGELOG: v2.33.1-M04-RETURN-PROGRESS retains the M04 document shell on a Strategy-origin return and explains the still-pending EOS publication and task verification, rather than showing an empty full-screen spinner or stale execution counts.
  * AUTHORITY: Python EOS owns content, publication, IAM and durable revision truth.
  * EPITOME: One accessible full-height document drawer for Mission and Strategy,
  *          including honest unpublished state and separately authorized review.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/CompanyOperatingDocumentViewer.jsx
  * COLLABORATION / OWNERSHIP: Headquarters opens the drawer; AuthContext supplies
  * current scope; companyOperatingDocumentsClient validates source contracts.
- * CERTIFICATION / UPDATE DATE: 2026-11-17
+ * CERTIFICATION / UPDATE DATE: 2026-11-25
+ * CHANGELOG: v2.33.0-RETURN-TO-GOVERNED-M04 resumes the existing M04 workspace after Strategy-originated Projects navigation once its authenticated task graph verifies; no source write.
+ * CHANGELOG: v2.32.9-SINGLE-OVERVIEW-RETURN reuses the M04 task navigation control
+ *            as the sole return from execution overview. Removes the
+ *            stacked third button; EOS reads and commands are unchanged.
+ * CHANGELOG: v2.32.8-FOCUSED-M04-LOCAL-TABS removes repeated context ahead of
+ *            the verified M04 inspector and switches task/overview in local
+ *            React state without routing or document-source reload. URL
+ *            refresh hints remain; EOS authorization is independently read.
+ * CHANGELOG: v2.32.7-TASK-FIRST-INSPECTOR gives verified task search the first
+ *            visible content in INSPECT mode. The last-update preview is
+ *            shown only in work focus; the compact overview action remains
+ *            accessible, and the same EOS source and Projects handoffs remain.
+ * CHANGELOG: v2.32.6-VERIFIED-READ-ADMISSION admits
+ *            immediate task GET from the freshly validated EOS project
+ *            list without waiting for React state to commit. No browser
+ *            snapshot is treated as task execution authority.
+ * CHANGELOG: v2.32.5-REFRESH-READY-EXECUTION repairs automatic
+ *            task loading from the verified list returned by EOS rather
+ *            than stale pre-render React state; URL navigation retains the
+ *            selected M04 task/evidence inspector across reload and back.
+ *            Auth, tenant, source readback and task commands remain EOS-owned.
+ * CHANGELOG: v2.32.4-RESTORED-FOUNDATION-READ automatically
+ *            revalidates the unique existing Foundation task page when
+ *            Strategy opens or remounts. No cached EOS truth, synthesized
+ *            link, mutation, privilege or execution status is restored.
+ * CHANGELOG: v2.32.3-M04-ACTION-CONSOLIDATION removes the second
+ *            redundant M04 verification command, distinguishes the task
+ *            focus tab from the real Projects handoff, and opens the evidence
+ *            inspector immediately when selected. Source reads, IAM, task
+ *            mutations and strategic outcome truth are unchanged.
+ * CHANGELOG: v2.32.2-SINGLE-MY-WORK-NAVIGATION removes
+ *            the orphaned bottom-of-Strategy 'Open current My Work'
+ *            button: the existing persistent document toolbar already
+ *            provides the same authorized My Work navigation action.
+ *            Preserves the single toolbar route, focus and source state.
+ * CHANGELOG: v2.32.1-VERIFIED-EXECUTION-REPLACES-PROJECT-PROMPT removes the
+ *            redundant Foundation verification prompt after the complete
+ *            current EOS Strategy task graph is source verified; the task
+ *            workspace replaces the initial project selection surface.
+ * CHANGELOG: v2.32.0-SINGLE-FOCUS-M04-EXECUTION makes
+ *            verified task continuation the default M04 execution surface;
+ *            operational metrics, work navigation and the existing
+ *            implementation programme become explicitly selectable
+ *            evidence rather than permanently stacked panels. No changes
+ *            to EOS source authority, project commands or tenant IAM.
+ * CHANGELOG: v2.31.4-UNIQUE-FOUNDATION-FOCUS requires exactly
+ *            one verified Foundation identity before showing its quick
+ *            work handoff; ambiguous matches retain full register readback.
+ * CHANGELOG: v2.31.3-FOUNDATION-ONLY-REGISTER-TOGGLE displays the
+ *            collapse/expand toggle only with the Foundation quick surface;
+ *            projects-only scopes retain their direct verified register.
+ * CHANGELOG: v2.31.2-SEARCH-FOCUS-SCOPE suppresses the
+ *            primary Foundation focus action during explicit registry search
+ *            so filtered results have one unambiguous actionable surface.
+ * CHANGELOG: v2.31.1-UNAMBIGUOUS-REGISTER-ACTION-LABEL disambiguates focused Foundation
+ *            task verification from the on-demand project-register command
+ *            for accessible role names and deterministic keyboard actions.
+ * CHANGELOG: v2.31.0-FOCUSED-FOUNDATION-EXECUTION-DISCLOSURE prioritizes verified
+ *            Foundation execution over a secondary all-project register.
+ *            Progressive disclosure retains EOS project search/read authority.
+ * CHANGELOG: v2.30.0-SOURCE-ACCOUNTABLE-WORK-CONTINUATION adds one source-assigned next-task
+ *            handoff based on current M04 graph, authorized principal,
+ *            completed dependencies, status and deterministic due ordering.
+ *            Uses existing Projects task navigation; no EOS write/score.
+ * CHANGELOG: v2.29.1-STRATEGY-REGISTER-ACTION-CONTRAST restores
+ *            approved primary and secondary button visibility in the
+ *            verified project register, with scoped stylesheet authority.
+ * CHANGELOG: v2.29.0-STRATEGY-DIRECT-WORK-EXECUTION replaces
+ *            passive project cards with an accessible live project register,
+ *            direct Work & milestones navigation and a source-verified task
+ *            resume command. Existing EOS graph, readback and IAM retained.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard accessibility.
+ * SECURITY / PRIVACY POSTURE: Plain React text only; no persisted draft, generated
+ * policy, inferred objectives, raw diagnostics or credentials in DOM/logs.
+ * TENANT BOUNDARY: Exact current tenant/principal/session and credential revision;
+ * scope changes abort reads and suppress late results, drafts and receipts.
+ * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
+ * reauthorize every command; acknowledgement alone is not verified publication.
+ * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
+ * CHANGELOG: v2.28.2-INSPECTOR-STICKY-HEADER-OFFSET
+ *            keeps focused inspection visible below the fixed document bar.
+ * CHANGELOG: v2.28.1-ACCESSIBLE-RECENT-UPDATE-RESUME
+ *            exposes source-backed recent-work continuation as a named region.
+ * CHANGELOG: v2.28.0-VERIFIED-RECENT-UPDATE-RESUME
+ *            offers cross-visit continuity from source-recorded last task
+ *            update by the signed-in principal, never inferred page views.
+ *            The current verified project snapshot remains authoritative.
+ * CHANGELOG: v2.27.1-FOCUSED-INSPECTOR-COMPATIBILITY
+ *            tolerates test/browser layouts without native scrollIntoView.
+ * CHANGELOG: v2.27.0-FOCUSED-STRATEGY-EXECUTION
+ *            collapses redundant execution summaries during task inspection,
+ *            focuses filtered work, and reduces the project list to the selected
+ *            project. This session's recent/frequent task links are derived
+ *            only from currently authorized EOS rows, never durable activity.
+ * CHANGELOG: v2.26.0-EXACT-SELECTED-TASK-HANDOFF
+ *            passes the exact verified task identity with the project handoff
+ *            so existing Projects can focus the selected task after an
+ *            independently authorized read; no authority is transferred.
+ * CHANGELOG: v2.25.0-PLAIN-LANGUAGE-TASK-HISTORY
+ *            translates task history and authority explanation into plain
+ *            work language while retaining source validation and no invented
+ *            completion, approval or payment assertion.
+ * CHANGELOG: v2.24.0-FOCUSED-LIFECYCLE-EVIDENCE-RESPONSE
+ *            gives verified task-event responses a distinct source-backed
+ *            result panel, explicit loaded state, accessible announcement and
+ *            focus handoff so users recognize where the evidence appeared.
+ *            Separates verification from task governance; no source writes.
+ * CHANGELOG: v2.23.0-EXECUTION-ACTION-HIERARCHY
+ *            gives verified M04 work rows a deliberate compact action rail:
+ *            icon-led evidence inspection and a prominent blue Manage task
+ *            command handoff. Accessible labels, keyboard focus, EOS boundaries
+ *            and existing action callbacks remain unchanged.
+ * CHANGELOG: v2.22.0-GOVERNED-TASK-REMEDIATION-HANDOFF
+ *            exposes source-derived accountability remediation for verified
+ *            M04 task rows and routes authorized users into existing exact-
+ *            project task commands; no new task mutation, IAM, outcome score,
+ *            deadline authority or project link is introduced.
+ * CHANGELOG: v2.21.0-ACTIONABLE-ACCOUNTABILITY-FILTERS
+ *            turns verified M04 accountability counts into accessible
+ *            source-safe work filters; activating any count opens the existing
+ *            bounded task/evidence inspector, never mutates an EOS record.
+ * CHANGELOG: v2.20.0-ACTIVE-MODES-FOCUSED-PROJECTS
+ *            highlights selected Strategy modes; keeps governance context
+ *            in an on-demand disclosure; filters tenant project display
+ *            locally while retaining exact EOS source and linkage evidence.
+ * CHANGELOG: v2.19.0-COMPACT-PUBLISHED-STRATEGY-HEADER
+ *            consolidates redundant publication, handoff and mode panels
+ *            into one accessible execution-first status/navigation surface.
+ *            Retains source-admitted private review and independent link
+ *            verification without inventing a relationship or outcome.
+ * CHANGELOG: v2.18.1-STRATEGY-MODE-ACTION-ROUTING
+ *            routes Current publication to focused document mode, and
+ *            Inspect Projects & Delivery back to execution when document is
+ *            open; no source commands or authority changes.
+ * CHANGELOG: v2.18.0-EXECUTION-FIRST-PUBLICATION-VIEW
+ *            defaults currently published Strategy to governed Execution mode;
+ *            mounts the full immutable publication only on request, retaining
+ *            source provenance, authority, history and current-link validation.
+ *            Contents navigation opens document mode before section scrolling;
+ *            nonpublished, private-review and Mission workflows are unchanged.
+ * CHANGELOG: v2.17.0-FOCUSED-EXECUTION-NAVIGATION
+ *            adds bounded searchable/paged M04 source-owned work inspection
+ *            and hides repeated legacy task and plan registers until requested.
+ *            Search and filters never change EOS truth, completeness, IAM or
+ *            task evidence; source verification remains over the full page.
+ * CHANGELOG: v2.16.0-ON-DEMAND-DOCUMENT-CONTENTS
+ *            defaults the lengthy Contents navigation to collapsed,
+ *            expands it on demand via an accessible toolbar toggle, and
+ *            gives document/execution the reclaimed width without altering
+ *            source reads, publishing, task authority or evidence.
+ * CHANGELOG: v2.15.2-M04-CANONICAL-PROJECT-STATUS
+ *            compares Strategy execution project status with Python EOS
+ *            ProjectStatus.ACTIVE.value ('active'), not IAM's 'ACTIVE'.
+ *            Keeps all link revision, task and tenant gates unchanged.
+ * CHANGELOG: v2.15.1-M04-EXECUTION-GATE-DIAGNOSTICS
+ *            reveals the exact independent M04 gate failing source
+ *            verification without relaxing currentness, IAM or evidence.
+ * CHANGELOG: v2.15.0-M04-PUBLISHED-EXECUTION-HANDOFF
+ *            retires repeated M03 approval gates and publication-stage
+ *            controls from already-published Strategy; retains independently
+ *            governed private revision review and gives the published view
+ *            one actionable handoff to existing Projects execution readback.
+ *            No publication, Strategy link, task or IAM writes are added.
+ * CHANGELOG: v2.14.1-M04-PUBLISHED-ACTION-GUARD
+ *            suppresses completed v1.1.0 preparation after EOS publication,
+ *            distinguishes private revision selection from publication truth,
+ *            and retains independent project-link and evidence checks.
+ * CHANGELOG: v2.14.0-M04-GOVERNANCE-SOURCE-CONSISTENCY
+ *            aligns source help text with already-ratified Founder
+ *            publication, current Strategy link and separate Projects IAM.
+ *            This revision makes no additional authority or task writes.
+ * CHANGELOG: v2.13.1-M04-APPROVAL-ID-CONTRACT
+ *            honors ProjectApprovalRegistry's canonical par- identifier.
+ * CHANGELOG: v2.13.0-M04-SEPARATE-EVIDENCE-SOURCE-READ
+ *            verifies DONE task activity together with independently
+ *            current project approval and attachment pages, distinguishing
+ *            source-audited status, business decisions and scanner clearance
+ *            from approved Strategy outcomes. Missing or paged source fails
+ *            closed, and no attachment byte/capability is exposed.
+ * CHANGELOG: v2.12.1-M04-EVIDENCE-CONTIGUITY checks
+ *            contiguous task revision-event chains, preventing an omitted
+ *            middle lifecycle transition from being described as complete;
+ *            recorded assignee ID does not claim live IAM eligibility.
+ * CHANGELOG: v2.12.0-M04-PRIORITIZED-EXECUTION-WORKSPACE
+ *            exposes source-owned M04 execution directly after the selected
+ *            project heading, above long task lists. No second project,
+ *            task workflow or outcome computation is introduced.
+ * CHANGELOG: v2.11.1-M04-CANONICAL-DATE-WIRE validates
+ *            EOS date-only ISO fields as digits, never literal escapes.
+ * CHANGELOG: v2.11.0-M04-GOVERNED-EXECUTION-EVIDENCE
+ *            derives a fail-closed operational work graph only after the
+ *            current published Pillar 1 link, full exact-project task
+ *            source, predecessor/owner/deadline integrity and current
+ *            revision are verified. Separate on-demand Projects event
+ *            readback exposes durable lifecycle evidence; neither DONE
+ *            nor an event is a certified strategic outcome. No new task
+ *            registry, approval authority or outcome percentage is created.
+ * CHANGELOG: v2.10.0-PUBLISHED-STRATEGY-CONFLICT-RECOVERY
+ *            reconciles a refused duplicate Strategy version against
+ *            independently verified, immutable EOS published history and
+ *            fingerprint before changing views. Unknown status stays
+ *            unknown; no command is replayed automatically.
+ * CHANGELOG: v2.9.1-FOUNDER-RATIFICATION-PRIMARY-ACTION
+ *            makes ratification available directly in the top command rail
+ *            for a verified submitted Founder revision and replaces the
+ *            irrelevant independent-approval label without new commands.
+ * CHANGELOG: v2.9.0-DIRECT-FOUNDER-RATIFICATION-WORKSPACE
+ *            transitions submitted Strategy directly into a focused
+ *            Founder ratification form, rather than scrolling past six
+ *            pillars and Projects. Returns to verified submitted view on
+ *            cancel; resets scroll and focuses date picker on entry. EOS
+ *            still owns all publication authority, command and readback.
+ * CHANGELOG: v2.8.1-FOCUSED-COMMAND-REJECTION focuses
+ *            the visible, sanitized rejection immediately after a failed
+ *            command, even when the author was scrolled to the Save control.
+ * CHANGELOG: v2.8.0-AUDITABLE-COMMAND-REJECTION separates
+ *            rejected source writes from failed document reads, preserves
+ *            unsaved author input, and displays whitelisted HTTP validation
+ *            field paths without leaking rejected content or declaring a
+ *            successful write. No IAM/document mutation behavior changes.
+ * CHANGELOG: v2.7.1-FOCUSED-AUTHOR-VIEWPORT restores the
+ *            modal scroll position and moves focus into the private editor
+ *            when prepared, preventing hidden steps after viewing project
+ *            details. No backend mutations or permission changes.
+ * CHANGELOG: v2.7.0-DIRECT-AUTHOR-WORKSPACE renders the private
+ *            draft editor immediately below the active command rail and
+ *            replaces the long publication/Projects read-only content while
+ *            editing. Closing restores the unchanged live source view. No
+ *            Strategy write, authorization or persistence semantics change.
+ * CHANGELOG: v2.6.1-FOUNDER-PILLAR-LINK-HANDOFF chooses the
+ *            separately source-admitted Founder Strategy link endpoint after
+ *            effective publication, preserving exact revisions, IAM Projects
+ *            read, idempotency and independent relationship readback.
+ * CHANGELOG: v2.6.0-FOUNDER-STRATEGY-COMMAND-STUDIO uses only
+ *            EOS-admitted durable Founder command actions for Strategy
+ *            creation, submission and explicit effective-date ratification.
+ *            Every write requires independent fingerprint readback.
+ * CHANGELOG: v2.5.0-M03-PUBLICATION-AUTHORITY-GATES exposes
+ *            source-verified current-session author/review actions, distinct
+ *            independent publisher verification, effective publication,
+ *            and existing Pillar 1 relationship status as governed gates.
+ *            No IAM grant or write is attempted by the readiness display.
+ * CHANGELOG: v2.4.0-M02-LIVE-EXECUTION-READBACK derives
+ *            lifecycle, dependency and past-due calendar counts only from a
+ *            complete validated live EOS project snapshot and all 18 unique
+ *            plan identities; captures client-observed successful-read time.
+ *            Incomplete coverage suppresses metrics, not just a badge.
+ * CHANGELOG: v2.3.0-STRATEGY-IMPLEMENTATION-EXECUTION-HANDOFF
+ *            shows each plan record's EOS lifecycle state independently of
+ *            persistence, and opens its existing project workspace for
+ *            source-authorized execution. No completion, IAM, strategy link,
+ *            document publication, or project/task creation is inferred.
+ * CHANGELOG: v2.2.3-HEADER-INSPECTION-COMPLIANCE
+ *            moves existing mandatory governance fields into the inspected
+ *            source header boundary; no runtime behavior or IAM change.
+ * CHANGELOG: v2.2.2-PROJECT-LIST-RETRY-STATUS-DIAGNOSTICS
+ *            distinguishes a timed-out Projects read from a source HTTP 503,
+ *            avoids falsely claiming the Strategy link schema is absent, and
+ *            preserves fail-closed unverified project-list presentation.
+ * CHANGELOG: v2.2.1-CLASSIFICATION-SCOPED-PUBLISH-ACCESSIBILITY
+ *            makes independent approval form labeling dynamic by current
+ *            source classification; Mission is never mislabeled Strategy.
+ * CHANGELOG: v2.2.0-GOVERNED-STRATEGY-PUBLICATION-HANDOFF exposes
+ *            source-state-specific draft, submit and distinct publisher
+ *            handoffs in the current Strategy drawer, with accessible
+ *            follow-through to existing EOS-authorized commands. No automatic
+ *            approval, IAM grant, fabricated publication or synthetic progress.
+ * CHANGELOG: v2.1.1-PUBLICATION-GATED-STRATEGY-LINK-RECOVERY identifies
+ *            EOS's exact unpublished-Strategy 409 separately from IAM and
+ *            transport failure, shows an authorized private-review handoff,
+ *            and blocks link commands before publication. A Founder-approved
+ *            source proposal is never substituted for published EOS truth.
+ * CHANGELOG: v2.1.0-SOURCE-GOVERNED-STRATEGY-PROJECT-LINK reads
+ *            separately governed Strategy/project link status through EOS,
+ *            validates exact tenant/principal/project/pillar, and offers a
+ *            deliberate source-authorized idempotent relationship command
+ *            only after 18 plan items are verified. A link is not a score
+ *            or Strategy publication and never implies financial authority.
+ * CHANGELOG: v2.0.1-PARTIAL-PLAN-ADMISSION-RECOVERY shows real
+ *            verified/remaining plan counts after a partial EOS admission;
+ *            offers an explicit remaining-only retry, and disables creation
+ *            after all 18 matching source-owned items are verified.
+ * CHANGELOG: v2.0.0-GOVERNED-STRATEGY-PLAN-ADMISSION distinguishes the
+ *            roadmap's six proposed milestones and twelve implementation
+ *            tasks from EOS-persisted work. Explicit source-authorized plan
+ *            admission checks the complete bounded project page, skips exact
+ *            existing plan records, uses stable per-item idempotency and
+ *            requires independent persisted readback after each create.
+ *            No assignees, deadlines, dependencies or progress are inferred.
+ * CHANGELOG: v1.9.0-STRATEGY-PROJECT-EXECUTION-UI presents each
+ *            independently verified project as a structured accessible row,
+ *            styles source-owned task results, and places creation behind a
+ *            deliberate expandable workflow; source IAM and counts are unchanged.
+ * CHANGELOG: v1.8.2-STRATEGY-RECOVERY-JSX-REPAIR closes the
+ *            conditional unavailable-state JSX expression correctly so
+ *            OXC, Vitest and production Vite compile the Strategy viewer.
+ * CHANGELOG: v1.8.1-TRANSIENT-PROJECTS-READ-RECOVERY retries one safe
+ *            source-owned project list GET after transient HTTP 503, retains
+ *            fail-closed results, and offers existing Projects workspace
+ *            navigation when the Strategy list cannot be verified.
+ * CHANGELOG: v1.8.0-EXACT-PROJECT-STRATEGY-READBACK adds read-only, exact-tenant
+ *            Projects task/milestone verification from Strategy. Scope, paging
+ *            and source status are validated; no objective linkage, progress
+ *            percentage, IAM or task mutation is inferred.
  * CHANGELOG: v1.7.2-PROJECTS-DELIVERY-HANDOFF links source-verified Strategy project rows
  *            to the existing authenticated EOS Projects delivery lifecycle.
  *            No strategic linkage, IAM grant, or ownership is inferred.
@@ -53,18 +362,11 @@
  * used by authenticated Headquarters; source lifecycle and scope are unchanged.
  * CHANGELOG: v1.0.0-SOURCE-OWNED-COMPANY-DOCUMENT-VIEWER adds contents, publication
  * evidence, history, source-gated draft/submit/publish and verified readback.
- * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; keyboard accessibility.
- * SECURITY / PRIVACY POSTURE: Plain React text only; no persisted draft, generated
- * policy, inferred objectives, raw diagnostics or credentials in DOM/logs.
- * TENANT BOUNDARY: Exact current tenant/principal/session and credential revision;
- * scope changes abort reads and suppress late results, drafts and receipts.
- * AUTHORITY BOUNDARY: UI actions never grant permission. Source endpoints
- * reauthorize every command; acknowledgement alone is not verified publication.
- * FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively.
  */
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, BookOpen, CheckCircle2, Clock3, FileText, History, Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/authContext.jsx';
 import api from '../../services/api.js';
 import { currentUnifiedMyWorkScope } from '../../services/unifiedMyWorkSync.js';
@@ -72,9 +374,9 @@ import { commandCompanyDocument, readCompanyDocumentHistory, readCompanyOperatin
 import styles from './CompanyOperatingDocumentViewer.module.css';
 import { WILSY_PLATFORM_LOGO_SRC } from '../os/wilsyDashboardChromeConfig.js';
 
-// Projects are a separate EOS authority; no Strategy-to-Project relationship
-// exists in the current Projects domain. A descriptive project summary cannot
-// be interpreted as a durable strategic linkage or a verified owner assignment.
+// Projects own task, deadline, evidence and assignment truth. Strategy owns the
+// independently read-back Pillar 1 relationship; project title and presence
+// never establish linkage, IAM capacity or outcome certification.
 const validProjectList = (value, tenantId, principalId) => Boolean(
   value?.schema === 'WILSY-PROJECT-LIST/V1'
   && value.tenant_id === tenantId && value.principal_id === principalId
@@ -87,6 +389,9 @@ const validProjectList = (value, tenantId, principalId) => Boolean(
 );
 const projectFailure = failure => {
   const status = failure?.response?.status;
+  if (!status && (failure?.code === 'ECONNABORTED' || failure?.code === 'ETIMEDOUT')) {
+    return 'Project list request timed out before an EOS response. No current project result verified; inspect the exact /api/projects request duration and Python EOS transaction failure code.';
+  }
   const detail = failure?.response?.data?.detail;
   // Only EOS's closed machine codes enter the UI; never arbitrary diagnostic
   // strings, database details, credentials or nested exception objects.
@@ -206,6 +511,31 @@ const FOUNDER_APPROVED_SOURCE = Object.freeze({
   },
 });
 const STRATEGY_PILLARS = FOUNDER_APPROVED_SOURCE.STRATEGY.sections.filter(section => section.section_id.startsWith('pillar-'));
+
+// Approved engineering register, not a source project task list. Only EOS can
+// persist these as real Work & Milestones; no planned item is counted as done.
+const FOUNDATION_PROJECT_NAME = 'WILSY OS — Unified Operating Platform Foundation';
+const FOUNDATION_EXECUTION_PLAN = Object.freeze([
+  { key: 'MW-M01', kind: 'MILESTONE', title: 'MW-M01 — Operating taxonomy and strategy alignment', description: 'Audited operating, platform build and unclassified audience taxonomy; existing seven tasks remain accessible; Founder default certified.' },
+  { key: 'MW-M02', kind: 'MILESTONE', title: 'MW-M02 — Governed work graph and multi-source accountability', description: 'Canonical source-owned work identities and reason edges for authorized work and independent project decisions; real Mongo and IAM evidence.' },
+  { key: 'MW-M03', kind: 'MILESTONE', title: 'MW-M03 — Role-aware work execution and approval decisions', description: 'Founder, HQ and tenant-capacity queues and genuine source-owned review decisions; source reauthorization and segregation of duties.' },
+  { key: 'MW-M04', kind: 'MILESTONE', title: 'MW-M04 — Ranked Founder operating workspace', description: 'Explainable priorities, deterministic pagination, diverse sources, operating/build split and desktop/mobile certification.' },
+  { key: 'MW-M05', kind: 'MILESTONE', title: 'MW-M05 — Audited workflow automation and Intelligence Dock parity', description: 'Source-authorized event rules with replay safeguards, independently authorized Dock suggestions, no inferred financial execution.' },
+  { key: 'MW-M06', kind: 'MILESTONE', title: 'MW-M06 — Production readiness and strategy outcome certification', description: 'Exact-head security, role/IAM, real Mongo, performance, accessibility, browser and rollback gates green; approved Strategy evidence readback.' },
+  { key: 'MW-T01', kind: 'TASK', title: 'MW-T01 — Inventory canonical My Work sources, capacities and IAM', description: 'MW-M01. Approve source/consumer/command matrix, existing authority and all current work identities; prohibit duplicate work ledgers.' },
+  { key: 'MW-T02', kind: 'TASK', title: 'MW-T02 — Define Operating, Platform Build and Unclassified work', description: 'MW-M01. Source-owned classification evidence, no title regex, no hidden unclassified or unauthorized work.' },
+  { key: 'MW-T03', kind: 'TASK', title: 'MW-T03 — Implement audited source-owned work classification', description: 'MW-M01. CAS/idempotency, exact tenant and owner authorization; preserve all seven current work records.' },
+  { key: 'MW-T04', kind: 'TASK', title: 'MW-T04 — Derive source-authorized work identities and accountability', description: 'MW-M02. Current IAM, source revisions and exact role edges; no graph-owned task or permission grants.' },
+  { key: 'MW-T05', kind: 'TASK', title: 'MW-T05 — Integrate independent project approvals in My Work', description: 'MW-M02. Approver-specific pending review, segregation of duties, decision readback and revoked-participation denial.' },
+  { key: 'MW-T06', kind: 'TASK', title: 'MW-T06 — Deliver Founder Operating, Platform and Waiting filters', description: 'MW-M03. Verified classification filters, work reasons, unclassified/denied/empty states, accessible presentation.' },
+  { key: 'MW-T07', kind: 'TASK', title: 'MW-T07 — Certify role capacity packs and tenant isolation', description: 'MW-M03. Independent Founder/HQ/customer queue tests, seat/entitlement checks and denied cross-tenant cases.' },
+  { key: 'MW-T08', kind: 'TASK', title: 'MW-T08 — Implement explainable ranking and source diversity', description: 'MW-M04. Stable EOS scoring/cursors, defensible urgency and 500+ work item regression.' },
+  { key: 'MW-T09', kind: 'TASK', title: 'MW-T09 — Wire source-owned task and decision commands', description: 'MW-M04. Create, edit, assign, complete, approve, reject through source IAM, CAS, idempotency and durable readback.' },
+  { key: 'MW-T10', kind: 'TASK', title: 'MW-T10 — Build governed event-driven workflow automation', description: 'MW-M05. Event replay, rule conflicts, current IAM, revocation, audits and no unintended external effects.' },
+  { key: 'MW-T11', kind: 'TASK', title: 'MW-T11 — Align Intelligence Dock with the authorized work graph', description: 'MW-M05. One source identity/ranking explanation, no invented execution/approval; independently confirmed handoff.' },
+  { key: 'MW-T12', kind: 'TASK', title: 'MW-T12 — Certify production readiness and rollback', description: 'MW-M06. Exact-head Python/JS, Mongo replica set, authenticated browser, role matrix, observability and SLO evidence.' },
+]);
+
 const founderApprovedProposal = classification => {
   const source = FOUNDER_APPROVED_SOURCE[classification];
   return { title: source.title, document_version: source.document_version,
@@ -244,6 +574,13 @@ const sourceError = failure => {
     message: 'The requested revision is not available to your current company capacity.',
     next: 'Open the current publication or refresh permitted revision history. This result does not establish that no approved publication exists.',
   };
+  if (!status && (failure?.code === 'ECONNABORTED' || failure?.code === 'ETIMEDOUT'
+    || /timeout/i.test(String(failure?.message || '')))) return {
+    ...evidence, code: 'COMPANY_DOCUMENT_READ_TIMEOUT', kind: 'UNAVAILABLE',
+    title: 'Document source timed out',
+    message: 'EOS did not return the verified company document within the 15-second request limit. No publication or project record has been changed.',
+    next: 'Check GET /api/company-operating-documents/STRATEGY in Network and the EOS source-read logs before retrying. Do not republish Strategy.',
+  };
   if (code === 'COMPANY_DOCUMENT_RESPONSE_INVALID') return {
     ...evidence, kind: 'INVALID_RESPONSE', title: 'Document response could not be verified',
     message: 'The source response did not match the requested company, principal or publication contract.',
@@ -258,6 +595,53 @@ const sourceError = failure => {
   };
 };
 
+const COMMAND_LABELS = Object.freeze({
+  CREATE_DRAFT: 'Save private draft', FOUNDER_CREATE_DRAFT: 'Save Founder Strategy draft',
+  SUBMIT: 'Submit private revision', FOUNDER_SUBMIT: 'Submit Founder Strategy',
+  PUBLISH: 'Publish approved revision', FOUNDER_RATIFY: 'Ratify Founder Strategy',
+});
+const ALLOWED_VALIDATION_FIELDS = new Set([
+  'expected_revision', 'title', 'document_version', 'sections',
+  'section_id', 'body', 'effective_from', 'approval_reference',
+  'Idempotency-Key',
+]);
+const commandFailure = (failure, action, acknowledged) => {
+  const base = sourceError(failure);
+  const status = base.status;
+  const detail = failure?.response?.data?.detail;
+  const fields = Array.isArray(detail) ? [...new Set(detail.flatMap(entry => {
+    if (!Array.isArray(entry?.loc)) return [];
+    const allowed = entry.loc.filter(part => typeof part === 'string'
+      && ALLOWED_VALIDATION_FIELDS.has(part));
+    return allowed.length ? [allowed[allowed.length - 1]] : [];
+  }))].slice(0, 5) : [];
+  if (!acknowledged && action === 'FOUNDER_CREATE_DRAFT'
+    && status === 409 && base.code === 'COMPANY_DOCUMENT_VERSION_ALREADY_PUBLISHED') {
+    return {
+      ...base, operation: COMMAND_LABELS[action],
+      kind: 'PUBLISHED_VERSION_CONFLICT',
+      title: 'Strategy version already published in EOS',
+      message: 'EOS refused another draft for a version already recorded as published. This is not a rejected content field. Earlier ratification may have succeeded.',
+      next: 'Verify the existing published revision and fingerprint. Do not create another draft or repeat ratification while source status is uncertain.',
+    };
+  }
+  return {
+    ...base, operation: COMMAND_LABELS[action] || 'Company-document command',
+    kind: acknowledged ? 'READBACK_UNVERIFIED' : 'COMMAND_REJECTED',
+    title: acknowledged ? 'Command recorded; current readback unverified'
+      : status === 422 ? 'EOS rejected the document command (HTTP 422)'
+        : 'EOS did not verify the document command',
+    message: acknowledged
+      ? 'EOS acknowledged the command, but the updated source was not independently verified. Do not retry with a new key before refreshing the source.'
+      : status === 422
+        ? (fields.length ? 'EOS rejected these request fields: ' + fields.join(', ') + '.'
+          : 'EOS rejected the request payload or command contract. The current document remains unverified.')
+        : 'This command was not confirmed by EOS. The private editor content is preserved.',
+    next: acknowledged ? 'Refresh the source to establish whether the revision exists.'
+      : 'Review the rejected fields. Keep the draft open and retry only after resolving the source validation error.',
+  };
+};
+
 /**
  * @description Open a current company document with contents and source-owned actions.
  * @collaboration Headquarters Mission/Strategy controls and canonical EOS document APIs.
@@ -268,7 +652,20 @@ const sourceError = failure => {
  * @param {{classification:'MISSION'|'STRATEGY',onClose:Function,onOpenWork:Function,onOpenProject?:Function}} props
  * @returns {JSX.Element} Accessible responsive source-backed document drawer.
  */
-export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject }) {
+export default function CompanyOperatingDocumentViewer({ classification, onClose, onOpenWork, onOpenProject, onOpenProjects }) {
+  const location = useLocation();
+  const selectedWorkView = classification === 'STRATEGY'
+    && new URLSearchParams(location.search).get('workView') === 'INSPECT' ? 'INSPECT' : 'WORK';
+  const selectWorkView = (nextView) => {
+    const params = new URLSearchParams(location.search);
+    if (classification === 'STRATEGY' && nextView === 'INSPECT') params.set('workView', 'INSPECT');
+    else params.delete('workView');
+    // Persist only a display hint. A Router navigation here remounts the EOS document.
+    window.history.replaceState(window.history.state, '',
+      location.pathname + (params.toString() ? '?' + params.toString() : '') + location.hash);
+    setM04FocusMode(nextView);
+    setExecutionInspectorOpen(nextView === 'INSPECT');
+  };
   const auth = useContext(AuthContext) || {};
   const baseScope = currentUnifiedMyWorkScope(auth, auth.user?.tenantId);
   const credential = useRef({ token: auth.token, revision: 0 });
@@ -281,18 +678,46 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('document');
+  const [contentsOpen, setContentsOpen] = useState(false);
+  const [strategyMode, setStrategyMode] = useState('EXECUTION');
+  const [projectSearch, setProjectSearch] = useState('');
+  const [pendingDocumentSection, setPendingDocumentSection] = useState(null);
+  const [executionSearch, setExecutionSearch] = useState('');
+  const [executionFilter, setExecutionFilter] = useState('ALL');
+  const [executionPage, setExecutionPage] = useState(0);
+  const [executionInspectorOpen, setExecutionInspectorOpen] = useState(selectedWorkView === 'INSPECT');
+  const [m04FocusMode, setM04FocusMode] = useState(selectedWorkView);
+  const [browseOtherProjects, setBrowseOtherProjects] = useState(false);
+  const [projectRegisterOpen, setProjectRegisterOpen] = useState(false);
+  const [sessionTaskVisits, setSessionTaskVisits] = useState([]);
+  useEffect(() => {
+    setM04FocusMode(selectedWorkView);
+    setExecutionInspectorOpen(selectedWorkView === 'INSPECT');
+  }, [selectedWorkView]);
+  const executionInspectorRef = useRef(null);
+  const executionSearchRef = useRef(null);
+  const focusWorkOnOpen = useRef(false);
   const [history, setHistory] = useState(null);
   const [query, setQuery] = useState({ review: false, revision: null });
   const queryRef = useRef(query);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [ratificationOpen, setRatificationOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [proposal, setProposal] = useState(emptyProposal);
   const [approvalReference, setApprovalReference] = useState('');
   const [effectiveFrom, setEffectiveFrom] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [commandIssue, setCommandIssue] = useState(null);
   const [projectState, setProjectState] = useState('IDLE');
   const [projectItems, setProjectItems] = useState([]);
+  const [delivery, setDelivery] = useState({ state: 'IDLE', projectId: null, page: null, error: '' });
+  const deliveryReadRef = useRef({ sequence: 0, controller: null });
+  const executionEvidenceReadRef = useRef({ sequence: 0, controller: null });
+  const evidenceResultRef = useRef(null);
+  const [executionEvidence, setExecutionEvidence] = useState({
+    state: 'IDLE', taskId: null, items: [], error: '',
+  });
   const [projectError, setProjectError] = useState('');
   const [projectPillar, setProjectPillar] = useState('pillar-one');
   const [projectName, setProjectName] = useState('');
@@ -304,12 +729,21 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   const [admissionStatus, setAdmissionStatus] = useState('');
   const projectReadRef = useRef({ sequence: 0, controller: null });
   const projectMutation = useRef(null);
+  const planMutation = useRef(null);
+  const [planState, setPlanState] = useState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
+  const [strategyLink, setStrategyLink] = useState({ state: 'IDLE', items: [], message: '' });
+  const strategyLinkReadRef = useRef({ sequence: 0, controller: null });
+  const strategyLinkWriteRef = useRef(null);
   const projectReplay = useRef({ intent: '', key: null });
   const readId = useRef(0);
   const readController = useRef(null);
   const commandLock = useRef(null);
   const retryKeys = useRef(new Map());
   const containerRef = useRef(null);
+  const scrollRef = useRef(null);
+  const editorRef = useRef(null);
+  const ratificationDateRef = useRef(null);
+  const commandIssueRef = useRef(null);
   const closeRef = useRef(null);
   const data = source?.scope === sessionKey && source?.classification === classification ? source.data : null;
   const currentHistory = history?.scope === sessionKey && history?.classification === classification ? history.data : null;
@@ -329,9 +763,25 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       setProjectState('DENIED'); return null;
     }
     try {
-      const reply = await api.get('/projects', { headers: {
-        'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token,
-      }, params: { limit: 100, offset: 0 }, signal: controller.signal });
+      // A transient EOS 503 may recover while the document remains mounted.
+      // Retry only this side-effect-free owner-authorized GET, once. Do not
+      // retry denials, invalid response shapes, or mutation commands.
+      let reply;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          reply = await api.get('/projects', { headers: {
+            'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token,
+          }, params: { limit: 100, offset: 0 }, signal: controller.signal });
+          break;
+        } catch (failure) {
+          if (attempt !== 0 || failure?.response?.status !== 503
+            || controller.signal.aborted || !active(key)
+            || request !== projectReadRef.current.sequence) throw failure;
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          if (controller.signal.aborted || !active(key)
+            || request !== projectReadRef.current.sequence) return null;
+        }
+      }
       if (!active(key) || request !== projectReadRef.current.sequence) return null;
       if (!validProjectList(reply.data, scope.tenantId, scope.principalId)) throw new Error('PROJECT_LIST_SCOPE_OR_SHAPE_INVALID');
       setProjectItems(reply.data.items); setProjectState('READY');
@@ -344,17 +794,606 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     }
   }, [classification, sessionKey, auth.token, scope.tenantId, scope.principalId]);
 
+  /**
+   * Source-owned Projects task readback for Strategy planning; never a durable
+   * strategy-objective relationship, task command, or completion assertion.
+   */
+  const loadDelivery = async (projectId, offset = 0, verifiedProjects = null) => {
+    const request = ++deliveryReadRef.current.sequence;
+    deliveryReadRef.current.controller?.abort();
+    const controller = new AbortController();
+    deliveryReadRef.current.controller = controller;
+    const key = sessionKey;
+    executionEvidenceReadRef.current.sequence += 1;
+    executionEvidenceReadRef.current.controller?.abort();
+    setExecutionEvidence({ state: 'IDLE', taskId: null, items: [], error: '' });
+    setDelivery({ state: 'LOADING', projectId, page: null, error: '' });
+    if (!key || classification !== 'STRATEGY' || (projectState !== 'READY' && !verifiedProjects)
+      || !/^prj-[a-f0-9]{48}$/.test(projectId) || !Number.isSafeInteger(offset) || offset < 0
+      || !(verifiedProjects || projectItems).some(item => item.project_id === projectId)) {
+      setDelivery({ state: 'DENIED', projectId: null, page: null, error: '' });
+      return;
+    }
+    try {
+      const { data: page } = await api.get('/projects/' + encodeURIComponent(projectId) + '/tasks', {
+        params: { limit: 50, offset },
+        headers: { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token },
+        signal: controller.signal,
+      });
+      if (!active(key) || request !== deliveryReadRef.current.sequence) return;
+      const validItems = Array.isArray(page?.items) && page.items.length <= 50
+        && new Set(page.items.map(item => item.task_id)).size === page.items.length
+        && page.items.every(item => item?.tenant_id === scope.tenantId
+          && item.project_id === projectId && /^ptk-[a-f0-9]{48}$/.test(item.task_id)
+          && ['TASK', 'MILESTONE'].includes(item.kind)
+          && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED'].includes(item.status)
+          && typeof item.title === 'string' && item.title.trim());
+      if (page?.schema !== 'WILSY-PROJECT-TASK-LIST/V1'
+        || page.tenant_id !== scope.tenantId || page.principal_id !== scope.principalId
+        || page.project_id !== projectId || page.offset !== offset || page.limit !== 50
+        || typeof page.has_more !== 'boolean' || !validItems
+        || (page.has_more
+          ? !Number.isSafeInteger(page.next_offset)
+            || page.next_offset !== offset + page.items.length || page.items.length === 0
+          : page.next_offset !== null)) throw new Error('STRATEGY_PROJECT_TASK_READBACK_INVALID');
+      setDelivery({ state: 'READY', projectId, page, verifiedAt: new Date().toISOString(), error: '' });
+      if ((verifiedProjects || projectItems).some(item => item.project_id === projectId && item.name === FOUNDATION_PROJECT_NAME)) void loadStrategyLinks();
+    } catch (failure) {
+      if (!active(key) || request !== deliveryReadRef.current.sequence) return;
+      if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
+      setDelivery({ state: failure?.response?.status === 401 || failure?.response?.status === 403
+        ? 'DENIED' : 'UNAVAILABLE', projectId, page: null,
+      error: 'EOS could not verify the project task page. No Strategy progress was inferred.' });
+    }
+  };
+
   useEffect(() => {
     projectReadRef.current.sequence += 1;
     projectReadRef.current.controller?.abort();
+    deliveryReadRef.current.sequence += 1;
+    deliveryReadRef.current.controller?.abort();
+    executionEvidenceReadRef.current.sequence += 1;
+    executionEvidenceReadRef.current.controller?.abort();
+    setExecutionEvidence({ state: 'IDLE', taskId: null, items: [], error: '' });
+    setDelivery({ state: 'IDLE', projectId: null, page: null, error: '' });
+    setBrowseOtherProjects(false);
+    setProjectRegisterOpen(false);
+    setSessionTaskVisits([]);
+    setExecutionSearch('');
+    setExecutionFilter('ALL');
+    setExecutionPage(0);
+    setExecutionInspectorOpen(selectedWorkView === 'INSPECT');
+    setM04FocusMode(selectedWorkView);
     projectMutation.current = null;
+    planMutation.current = null;
+    setPlanState({ state: 'IDLE', created: 0, skipped: 0, message: '' });
+    strategyLinkReadRef.current.sequence += 1;
+    strategyLinkReadRef.current.controller?.abort();
+    strategyLinkWriteRef.current = null;
+    setStrategyLink({ state: 'IDLE', items: [], message: '' });
     projectReplay.current = { intent: '', key: null };
     setProjectItems([]); setProjectState('IDLE'); setProjectError('');
     setProjectBusy(false); setProjectSuccess(''); setAdmissionBusy(false); setAdmissionStatus(''); setProjectName(''); setProjectDescription(''); setProjectEditSource(false);
     setProjectPillar('pillar-one');
-    if (classification === 'STRATEGY' && sessionKey) void loadProjects();
-    return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); projectMutation.current = null; };
+    if (classification === 'STRATEGY' && sessionKey) {
+      const readScope = sessionKey;
+      void loadProjects().then((items) => {
+        if (!active(readScope) || !Array.isArray(items)) return;
+        const foundations = items.filter(item =>
+          item.name === FOUNDATION_PROJECT_NAME && item.status === 'active');
+        if (foundations.length === 1) void loadDelivery(foundations[0].project_id, 0, items);
+      });
+    }
+    return () => { projectReadRef.current.sequence += 1; projectReadRef.current.controller?.abort(); deliveryReadRef.current.sequence += 1; deliveryReadRef.current.controller?.abort(); strategyLinkReadRef.current.sequence += 1; strategyLinkReadRef.current.controller?.abort(); strategyLinkWriteRef.current = null; projectMutation.current = null; };
   }, [classification, sessionKey, loadProjects]);
+
+  /**
+   * Create only missing reviewed plan records, through one audited EOS command
+   * per record and independent current task readback. No blind bulk insert:
+   * noncanonical source, extra pages, uncertain POST or stale session halts.
+   */
+  /**
+   * Independent EOS strategy/project source read, never an inferred linkage
+   * from navigation or matching project title.
+   */
+  const loadStrategyLinks = async () => {
+    const key = sessionKey;
+    const request = ++strategyLinkReadRef.current.sequence;
+    strategyLinkReadRef.current.controller?.abort();
+    const controller = new AbortController();
+    strategyLinkReadRef.current.controller = controller;
+    setStrategyLink({ state: 'LOADING', items: [], message: '' });
+    if (!key || classification !== 'STRATEGY' || !scope.tenantId || !scope.principalId) {
+      setStrategyLink({ state: 'DENIED', items: [], message: 'Current Strategy scope is unverified.' });
+      return;
+    }
+    try {
+      const { data: result } = await api.get('/company-operating-documents/STRATEGY/project-links', {
+        // Keep the link read on the same current api.js session as Strategy.
+        // A mounted viewer token can outlive a governed capacity transition.
+        headers: { 'X-Tenant-ID': scope.tenantId },
+        signal: controller.signal,
+      });
+      if (!active(key) || request !== strategyLinkReadRef.current.sequence) return;
+      if (result?.schema !== 'WILSY-STRATEGY-PROJECT-LINK-LIST/V1'
+        || result.tenant_id !== scope.tenantId || result.principal_id !== scope.principalId
+        || result.classification !== 'STRATEGY' || result.source_verified !== true
+        || result.strategy_progress !== null || !Number.isSafeInteger(result.strategy_revision)
+        || !Array.isArray(result.items) || result.items.length > 100
+        || result.items.some(item => !/^prj-[a-f0-9]{48}$/.test(item?.project_id)
+          || !/^pillar-(one|two|three|four|five|six)$/.test(item?.pillar_id)
+          || !['VERIFIED_CURRENT', 'SOURCE_CHANGED'].includes(item?.state))) {
+        throw new Error('STRATEGY_LINK_SOURCE_RESPONSE_INVALID');
+      }
+      setStrategyLink({ state: 'READY', items: result.items, message: '' });
+    } catch (failure) {
+      if (!active(key) || request !== strategyLinkReadRef.current.sequence) return;
+      if (failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
+      const reason = failure?.response?.data?.detail?.error;
+      if (failure?.response?.status === 409
+        && reason === 'STRATEGY_LINK_PUBLISHED_SOURCE_REQUIRED') {
+        setStrategyLink({ state: 'PUBLICATION_REQUIRED', items: [],
+          message: 'No currently effective EOS-published Strategy exists. Approved source content and project records are not publication evidence. An admitted Founder may submit and self-ratify Strategy; other principals require separately authorized author and independent publisher capacity before Pillar 1 linking.' });
+        return;
+      }
+      setStrategyLink({ state: 'UNAVAILABLE', items: [],
+        message: failure?.response?.status === 403
+          ? 'EOS did not admit current Strategy and Projects read permissions.'
+          : 'EOS could not verify the current Strategy project relationships. No link or progress is inferred.' });
+    }
+  };
+
+  /**
+   * Explicitly authorize and persist one linked publication/project snapshot;
+   * readback, not a successful POST alone, proves a current relationship.
+   */
+  const linkFoundationStrategy = async () => {
+    const key = sessionKey;
+    const project = projectItems.find(item => item.project_id === delivery.projectId
+      && item.name === FOUNDATION_PROJECT_NAME);
+    const published = classification === 'STRATEGY' && data?.state === 'PUBLISHED'
+      && query.review === false && Number.isSafeInteger(document?.revision)
+      && document?.sections?.some(section => section.section_id === 'pillar-one');
+    if (!key || !project || !published || delivery.state !== 'READY'
+      || foundationPlanRemaining !== 0 || delivery.page.has_more
+      || strategyLink.state !== 'READY' || strategyLinkWriteRef.current
+      || strategyLink.items.some(item => item.project_id === project.project_id
+        && item.pillar_id === 'pillar-one')) return;
+    const attempt = Symbol('strategy-project-link');
+    strategyLinkWriteRef.current = attempt;
+    setStrategyLink(prev => ({ ...prev, state: 'LINKING',
+      message: 'EOS is independently authorizing the Strategy and Projects sources…' }));
+    const headers = {
+      'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token,
+      'Idempotency-Key': 'strategy-pillar-one-foundation-v1-' + project.project_id,
+    };
+    try {
+      const linkEndpoint = actions.includes('FOUNDER_LINK_PROJECT')
+        ? '/company-operating-documents/STRATEGY/founder-project-links'
+        : '/company-operating-documents/STRATEGY/project-links';
+      const { data: receipt } = await api.post(linkEndpoint, {
+        pillar_id: 'pillar-one', project_id: project.project_id,
+        expected_strategy_revision: document.revision,
+        expected_project_revision: project.revision,
+      }, { headers });
+      if (!active(key) || strategyLinkWriteRef.current !== attempt) return;
+      if (receipt?.schema !== 'WILSY-STRATEGY-PROJECT-LINK-RESULT/V1'
+        || receipt.tenant_id !== scope.tenantId || receipt.principal_id !== scope.principalId
+        || receipt.project_id !== project.project_id || receipt.pillar_id !== 'pillar-one'
+        || receipt.strategy_revision !== document.revision
+        || receipt.project_revision !== project.revision
+        || receipt.relationship_state !== 'RECORDED_NOT_OUTCOME_CERTIFIED'
+        || receipt.strategy_progress !== null) {
+        throw new Error('STRATEGY_LINK_COMMAND_RECEIPT_UNVERIFIED');
+      }
+      await loadStrategyLinks();
+    } catch (failure) {
+      if (active(key) && strategyLinkWriteRef.current === attempt) {
+        setStrategyLink({ state: 'UNAVAILABLE', items: [],
+          message: failure?.response?.status === 403
+            ? 'EOS denied current Strategy author/Founder or Projects source authorization.'
+            : failure?.response?.status === 409
+              ? 'The published Strategy or project revision changed. Refresh both sources.'
+              : 'Link command or its readback could not be verified; refresh before any retry.' });
+      }
+    } finally {
+      if (strategyLinkWriteRef.current === attempt) strategyLinkWriteRef.current = null;
+    }
+  };
+
+  // M02 is a read-only projection, never Strategy outcome certification.
+  // Only the full exact-project response can attest the plan's full graph;
+  // a paged or missing predecessor snapshot cannot produce zero blockers.
+  const foundationExecution = (() => {
+    const page = delivery.page;
+    if (delivery.state !== 'READY' || !page || page.offset !== 0
+      || page.has_more || !delivery.verifiedAt
+      || !projectItems.some(project => project.project_id === delivery.projectId
+        && project.name === FOUNDATION_PROJECT_NAME)) return null;
+    const byId = new Map(page.items.map(item => [item.task_id, item]));
+    const plan = [];
+    for (const entry of FOUNDATION_EXECUTION_PLAN) {
+      const matches = page.items.filter(item => item.title === entry.title
+        && item.kind === entry.kind);
+      if (matches.length !== 1) return null;
+      plan.push(matches[0]);
+    }
+    const counts = { TODO: 0, IN_PROGRESS: 0, BLOCKED: 0, DONE: 0, CANCELLED: 0 };
+    let waiting = 0;
+    let unfinishedPredecessors = 0;
+    let pastDue = 0;
+    // This is a client-calendar comparison at the instant of successful
+    // readback, not an EOS-computed overdue flag or Strategy deadline.
+    const asOfDay = delivery.verifiedAt.slice(0, 10);
+    for (const task of plan) {
+      if (!Object.hasOwn(counts, task.status) || !Array.isArray(task.depends_on)
+        || task.depends_on.length > 25
+        || new Set(task.depends_on).size !== task.depends_on.length) return null;
+      counts[task.status] += 1;
+      const predecessors = task.depends_on.map(id => byId.get(id));
+      if (predecessors.some(item => !item)) return null;
+      const remaining = predecessors.filter(item => item.status !== 'DONE').length;
+      if (remaining) { waiting += 1; unfinishedPredecessors += remaining; }
+      if (!['DONE', 'CANCELLED'].includes(task.status) && task.due_date != null) {
+        if (typeof task.due_date !== 'string'
+          || !/^\d{4}-\d{2}-\d{2}$/.test(task.due_date)
+          || Number.isNaN(Date.parse(task.due_date + 'T00:00:00Z'))) return null;
+        if (task.due_date < asOfDay) pastDue += 1;
+      }
+    }
+    return { counts, waiting, unfinishedPredecessors, pastDue,
+      total: plan.length, verifiedAt: delivery.verifiedAt };
+  })();
+
+  // This diagnostic is not execution authority and cannot turn stale data into truth.
+  const m04GateMessage = (() => {
+    if (data?.state !== 'PUBLISHED') return 'Official Strategy publication was not verified.';
+    if (query.review) return 'Return to Current publication for execution verification.';
+    if (delivery.state !== 'READY' || !delivery.page) return 'Foundation project tasks were not verified.';
+    if (delivery.page.offset !== 0 || delivery.page.has_more) return 'The project work snapshot is incomplete.';
+    if (!foundationExecution) return 'The work source lacks the complete Foundation plan or valid predecessor graph.';
+    if (strategyLink.state === 'IDLE' || strategyLink.state === 'LOADING') return 'The independent Pillar 1 relationship read is still pending.';
+    if (strategyLink.state !== 'READY') return strategyLink.message || 'The independent Pillar 1 relationship source is not verified.';
+    const project = projectItems.find(item => item.project_id === delivery.projectId
+      && item.name === FOUNDATION_PROJECT_NAME);
+    if (!project) return 'Foundation project identity is not verified.';
+    const links = strategyLink.items.filter(item => item.project_id === project.project_id
+      && item.pillar_id === 'pillar-one');
+    if (links.length === 0) return 'EOS returned no Pillar 1 link for this project; project presence is not linkage.';
+    if (links.length !== 1) return 'Pillar 1 relationship evidence is ambiguous.';
+    if (links[0].state === 'SOURCE_CHANGED') return 'EOS reports SOURCE_CHANGED: the established Pillar 1 link does not match the current Strategy or project revision.';
+    if (links[0].state !== 'VERIFIED_CURRENT') return 'EOS has not certified the Pillar 1 relationship as current.';
+    if (links[0].source_project_revision !== project.revision
+      || links[0].source_strategy_revision !== document?.revision)
+      return 'Current Strategy or project revision differs from the relationship source revision.';
+    if (project.status !== 'active') return 'The Foundation project is not active.';
+    return 'One or more task ownership, deadline, status, fingerprint or dependency records did not pass validation.';
+  })();
+
+  // M04 is an exact-source execution *read* with independent Pillar 1 link
+  // currentness. Operational work counts and event evidence must NEVER
+  // become a strategic outcome percentage or an invented completion decision.
+  const m04Execution = (() => {
+    if (classification !== 'STRATEGY' || data?.state !== 'PUBLISHED'
+      || query.review || !foundationExecution || strategyLink.state !== 'READY'
+      || delivery.page.has_more || delivery.page.offset !== 0) return null;
+    const project = projectItems.find(item =>
+      item.project_id === delivery.projectId && item.name === FOUNDATION_PROJECT_NAME);
+    const links = strategyLink.items.filter(item => item.project_id === delivery.projectId
+      && item.pillar_id === 'pillar-one');
+    if (!project || links.length !== 1 || links[0].state !== 'VERIFIED_CURRENT'
+      || links[0].source_project_revision !== project.revision
+      || links[0].source_strategy_revision !== document?.revision
+      || project.status !== 'active' || !Array.isArray(delivery.page.items)) return null;
+    const tasks = delivery.page.items;
+    const byId = new Map(tasks.map(task => [task.task_id, task]));
+    if (tasks.length !== byId.size) return null;
+    let assigned = 0; let unassigned = 0; let waiting = 0;
+    let missingDueDate = 0; let unfinishedWithDue = 0;
+    const states = { TODO: 0, IN_PROGRESS: 0, BLOCKED: 0, DONE: 0, CANCELLED: 0 };
+    const asOfDay = delivery.verifiedAt.slice(0, 10);
+    const rows = [];
+    for (const task of tasks) {
+      if (task.tenant_id !== scope.tenantId || task.project_id !== project.project_id
+        || !Object.hasOwn(states, task.status)
+        || !Number.isSafeInteger(task.revision) || task.revision < 1
+        || typeof task.fingerprint !== 'string' || !/^[a-f0-9]{128}$/.test(task.fingerprint)
+        || !['TASK', 'MILESTONE'].includes(task.kind)
+        || (task.assignee_principal_id !== null && (typeof task.assignee_principal_id !== 'string'
+          || !task.assignee_principal_id.trim()))
+        || !Array.isArray(task.depends_on) || task.depends_on.length > 25
+        || new Set(task.depends_on).size !== task.depends_on.length
+        || task.depends_on.some(id => !byId.has(id) || id === task.task_id)
+        || (task.due_date !== null && (typeof task.due_date !== 'string'
+          || !/^\d{4}-\d{2}-\d{2}$/.test(task.due_date)
+          || Number.isNaN(Date.parse(task.due_date + 'T00:00:00Z'))))) return null;
+      states[task.status] += 1;
+      if (task.assignee_principal_id === null) unassigned += 1;
+      else assigned += 1;
+      const remaining = task.depends_on.filter(id => byId.get(id).status !== 'DONE').length;
+      if (remaining > 0) waiting += 1;
+      if (task.due_date === null) missingDueDate += 1;
+      else if (!['DONE', 'CANCELLED'].includes(task.status) && task.due_date < asOfDay)
+        unfinishedWithDue += 1;
+      rows.push({ task, remaining });
+    }
+    return { project, rows, states, assigned, unassigned, waiting, missingDueDate,
+      pastDueCalendar: unfinishedWithDue, observedAt: delivery.verifiedAt,
+      certifiedOutcome: null };
+  })();
+
+  // This view is a bounded client presentation of an already-complete verified
+  // task snapshot; filters do not affect the underlying M04 verification gate.
+  const executionMatches = m04Execution ? m04Execution.rows.filter(({ task, remaining }) => {
+    const search = executionSearch.trim().toLocaleLowerCase();
+    if (search && !task.title.toLocaleLowerCase().includes(search)) return false;
+    if (executionFilter === 'ASSIGNED') return task.assignee_principal_id !== null;
+    if (executionFilter === 'UNASSIGNED') return task.assignee_principal_id === null;
+    if (executionFilter === 'WAITING') return remaining > 0;
+    if (executionFilter === 'UNDATED') return task.due_date === null;
+    if (executionFilter === 'DUE') return task.due_date !== null
+      && !['DONE', 'CANCELLED'].includes(task.status)
+      && task.due_date < m04Execution.observedAt.slice(0, 10);
+    if (executionFilter === 'DONE') return task.status === 'DONE';
+    return true;
+  }) : [];
+  const focusExecutionWork = filter => {
+    selectWorkView('INSPECT');
+    setExecutionSearch('');
+    setExecutionFilter(filter);
+    setExecutionPage(0);
+    focusWorkOnOpen.current = true;
+    setExecutionInspectorOpen(true);
+  };
+  const recordTaskVisit = taskId => {
+    if (!m04Execution?.rows.some(row => row.task.task_id === taskId)) return;
+    setSessionTaskVisits(previous => {
+      const existing = previous.find(item => item.id === taskId);
+      return [{ id: taskId, count: (existing?.count || 0) + 1 },
+        ...previous.filter(item => item.id !== taskId)].slice(0, 8);
+    });
+  };
+  const resumeTask = task => {
+    selectWorkView('INSPECT');
+    setExecutionSearch(task.title);
+    setExecutionFilter('ALL');
+    setExecutionPage(0);
+    focusWorkOnOpen.current = true;
+    setExecutionInspectorOpen(true);
+  };
+  // Only source-assigned executable work, never unassigned or blocked work.
+  const nextAccountableTask = m04Execution?.rows
+    .filter(({ task, remaining }) => task.assignee_principal_id === scope.principalId
+      && ['TODO', 'IN_PROGRESS'].includes(task.status) && remaining === 0)
+    .map(({ task }) => task)
+    .sort((a, b) => {
+      const dueA = a.due_date || '9999-12-31';
+      const dueB = b.due_date || '9999-12-31';
+      if (dueA !== dueB) return dueA.localeCompare(dueB);
+      if (a.status !== b.status) return a.status === 'IN_PROGRESS' ? -1 : 1;
+      return a.task_id.localeCompare(b.task_id);
+    })[0] || null;
+  // Genuine cross-session continuation comes from the currently verified task
+  // snapshot. It reflects recorded changes by this principal, not page views.
+  const latestSourceWork = m04Execution?.rows
+    .filter(({ task }) => task.updated_by_principal_id === scope.principalId
+      && typeof task.updated_at === 'string' && Number.isFinite(Date.parse(task.updated_at)))
+    .sort((a, b) => Date.parse(b.task.updated_at) - Date.parse(a.task.updated_at))[0]?.task;
+  const accessibleVisits = sessionTaskVisits.flatMap(item => {
+    const found = m04Execution?.rows.find(row => row.task.task_id === item.id);
+    return found ? [{ ...item, task: found.task }] : [];
+  });
+  const mostVisited = [...accessibleVisits].sort((a, b) => b.count - a.count)
+    .filter(item => item.count > 1).slice(0, 2);
+  useEffect(() => {
+    if (!executionInspectorOpen || !focusWorkOnOpen.current) return;
+    focusWorkOnOpen.current = false;
+    executionInspectorRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    executionSearchRef.current?.focus({ preventScroll: true });
+  }, [executionInspectorOpen, executionFilter, executionSearch]);
+  const executionPageSize = 6;
+  const executionPageCount = Math.max(1, Math.ceil(executionMatches.length / executionPageSize));
+  const safeExecutionPage = Math.min(executionPage, executionPageCount - 1);
+  const visibleExecutionRows = executionMatches.slice(
+    safeExecutionPage * executionPageSize, (safeExecutionPage + 1) * executionPageSize);
+
+  /** Read immutable lifecycle evidence through the existing Projects owner IAM.
+   * No Strategy permission is used to grant task activity, and no write occurs.
+   */
+  const verifyExecutionEvidence = async taskId => {
+    const key = sessionKey;
+    if (!key || !m04Execution || !m04Execution.rows.some(row => row.task.task_id === taskId)
+      || !/^ptk-[a-f0-9]{48}$/.test(taskId)) return;
+    const sequence = ++executionEvidenceReadRef.current.sequence;
+    executionEvidenceReadRef.current.controller?.abort();
+    const controller = new AbortController();
+    executionEvidenceReadRef.current.controller = controller;
+    setExecutionEvidence({ state: 'LOADING', taskId, items: [], error: '' });
+    try {
+      const task = m04Execution.rows.find(row => row.task.task_id === taskId).task;
+      const baseUrl = '/projects/' + encodeURIComponent(m04Execution.project.project_id)
+        + '/tasks/' + encodeURIComponent(taskId);
+      const requestOptions = {
+        params: { limit: 100, offset: 0 },
+        headers: { 'X-Tenant-ID': scope.tenantId,
+          Authorization: 'Bearer ' + auth.token },
+        signal: controller.signal,
+      };
+      // DONE is a task lifecycle state, not independently approved work
+      // evidence. Read separate source registries without automatic approval.
+      const [eventReply, otherReplies] = await Promise.all([
+        api.get(baseUrl + '/events', requestOptions),
+        task.status === 'DONE'
+          ? Promise.all([
+            api.get(baseUrl + '/approvals', requestOptions),
+            api.get(baseUrl + '/attachments', requestOptions),
+          ]) : Promise.resolve(null),
+      ]);
+      if (!active(key) || sequence !== executionEvidenceReadRef.current.sequence) return;
+      const page = eventReply.data;
+      const valid = page?.schema === 'WILSY-PROJECT-TASK-EVENT-LIST/V1'
+        && page.tenant_id === scope.tenantId && page.principal_id === scope.principalId
+        && page.project_id === m04Execution.project.project_id && page.task_id === taskId
+        && page.limit === 100 && page.offset === 0 && Array.isArray(page.items)
+        && page.items.length <= 100 && typeof page.has_more === 'boolean'
+        && (page.has_more ? page.next_offset === page.items.length : page.next_offset === null)
+        && page.items.every((event, index) => event.tenant_id === scope.tenantId
+          && event.project_id === page.project_id && event.task_id === taskId
+          && event.schema === 'wilsy.project.task.event.v1'
+          && Number.isSafeInteger(event.revision) && event.revision >= 1
+          && event.revision === task.revision - index
+          && ['PROJECT_TASK_CREATED', 'PROJECT_TASK_REVISED', 'PROJECT_TASK_TRANSITIONED']
+            .includes(event.event_type)
+          && ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'CANCELLED']
+            .includes(event.status_after)
+          && typeof event.occurred_at === 'string');
+      if (!valid || page.has_more || page.items.length !== task.revision
+        || !page.items.length || page.items[0].revision !== task.revision
+        || page.items[0].status_after !== task.status
+        || page.items[page.items.length - 1].revision !== 1) {
+        throw new Error('M04_LIFECYCLE_EVIDENCE_UNVERIFIED');
+      }
+      const verifyPage = (payload, schema, predicate) => payload?.schema === schema
+        && payload.tenant_id === scope.tenantId && payload.principal_id === scope.principalId
+        && payload.project_id === m04Execution.project.project_id && payload.task_id === taskId
+        && payload.offset === 0 && payload.limit === 100 && payload.has_more === false
+        && payload.next_offset === null && Array.isArray(payload.items)
+        && payload.items.length <= 100 && payload.items.every(predicate);
+      let decisions = null;
+      let attachments = null;
+      if (otherReplies) {
+        const [approvalReply, attachmentReply] = otherReplies;
+        const approvalPage = approvalReply.data;
+        const attachmentPage = attachmentReply.data;
+        if (!verifyPage(approvalPage, 'WILSY-PROJECT-APPROVAL-LIST/V1', item =>
+          item?.tenant_id === scope.tenantId
+          && item.project_id === m04Execution.project.project_id && item.task_id === taskId
+          && /^par-[a-f0-9]{48}$/.test(item.approval_id || '')
+          && ['PENDING', 'APPROVED', 'REJECTED'].includes(item.status))
+          || new Set(approvalPage.items.map(item => item.approval_id)).size !== approvalPage.items.length
+          || !verifyPage(attachmentPage, 'WILSY-PROJECT-ATTACHMENT-LIST/V1', item =>
+            item?.tenant_id === scope.tenantId
+            && item.project_id === m04Execution.project.project_id && item.task_id === taskId
+            && /^pat-[a-f0-9]{48}$/.test(item.attachment_id || '')
+            && ['QUARANTINED', 'SCAN_CLEAN_VERIFIED'].includes(item.scan_clearance_status))
+          || new Set(attachmentPage.items.map(item => item.attachment_id)).size !== attachmentPage.items.length) {
+          throw new Error('M04_TASK_EVIDENCE_SOURCE_UNVERIFIED');
+        }
+        decisions = { total: approvalPage.items.length,
+          approved: approvalPage.items.filter(item => item.status === 'APPROVED').length };
+        attachments = { total: attachmentPage.items.length,
+          cleared: attachmentPage.items.filter(item =>
+            item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED').length };
+      }
+      setExecutionEvidence({ state: 'READY', taskId, items: page.items,
+        decisions, attachments, error: '' });
+    } catch (failure) {
+      if (!active(key) || sequence !== executionEvidenceReadRef.current.sequence
+        || failure?.name === 'CanceledError' || failure?.name === 'AbortError') return;
+      setExecutionEvidence({ state: failure?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE',
+        taskId, items: [], error: 'Projects could not independently verify the complete current task event chain. No completion evidence certified.' });
+    }
+  };
+
+  const verifiedFoundationPlanCount = delivery.state === 'READY' && delivery.page
+    ? FOUNDATION_EXECUTION_PLAN.filter(entry => delivery.page.items.some(item =>
+      item.title === entry.title && item.kind === entry.kind)).length
+    : 0;
+  const foundationPlanRemaining = FOUNDATION_EXECUTION_PLAN.length - verifiedFoundationPlanCount;
+
+  const admitFoundationPlan = async () => {
+    const projectId = delivery.projectId;
+    const project = projectItems.find(item => item.project_id === projectId);
+    const key = sessionKey;
+    if (!key || classification !== 'STRATEGY' || projectState !== 'READY'
+      || delivery.state !== 'READY' || !project || project.name !== FOUNDATION_PROJECT_NAME
+      || foundationPlanRemaining === 0 || delivery.page.has_more
+      || planMutation.current || typeof globalThis.crypto?.randomUUID !== 'function') return;
+    const nonce = Symbol('strategy-plan');
+    planMutation.current = nonce;
+    setPlanState({ state: 'RUNNING', created: 0, skipped: 0, message: 'Rechecking existing EOS tasks before any creation…' });
+    const headers = { 'X-Tenant-ID': scope.tenantId, Authorization: 'Bearer ' + auth.token };
+    let created = 0;
+    let skipped = 0;
+    try {
+      const getPage = async () => {
+        const { data: page } = await api.get('/projects/' + encodeURIComponent(projectId) + '/tasks', {
+          params: { limit: 100, offset: 0 }, headers,
+        });
+        if (!active(key) || planMutation.current !== nonce) throw new Error('PLAN_SCOPE_CHANGED');
+        if (page?.schema !== 'WILSY-PROJECT-TASK-LIST/V1'
+          || page.tenant_id !== scope.tenantId || page.principal_id !== scope.principalId
+          || page.project_id !== projectId || page.limit !== 100 || page.offset !== 0
+          || page.has_more !== false || page.next_offset !== null
+          || !Array.isArray(page.items) || page.items.length > 100
+          || new Set(page.items.map(item => item.task_id)).size !== page.items.length
+          || page.items.some(item => item?.tenant_id !== scope.tenantId
+            || item.project_id !== projectId
+            || !/^ptk-[a-f0-9]{48}$/.test(item.task_id)
+            || !['TASK', 'MILESTONE'].includes(item.kind)
+            || typeof item.title !== 'string')) {
+          throw new Error('PLAN_PROJECT_TASK_PAGE_UNVERIFIED');
+        }
+        return page.items;
+      };
+      let current = await getPage();
+      for (const entry of FOUNDATION_EXECUTION_PLAN) {
+        if (!active(key) || planMutation.current !== nonce) throw new Error('PLAN_SCOPE_CHANGED');
+        // Exact project-title identity is deterministic; never match by
+        // keyword, auto-edit existing tasks, or assume earlier plans are done.
+        const matches = current.filter(item => item.title === entry.title);
+        if (matches.length > 1 || (matches.length === 1 && matches[0].kind !== entry.kind))
+          throw new Error('PLAN_DUPLICATE_OR_KIND_CONFLICT');
+        if (matches.length === 1) {
+          skipped += 1;
+          setPlanState({ state: 'RUNNING', created, skipped, message: entry.key + ' already source-verified.' });
+          continue;
+        }
+        const body = {
+          kind: entry.kind, title: entry.title, description: entry.description,
+          assignee_principal_id: null, due_date: null, parent_task_id: null, depends_on: [],
+        };
+        // Scoped stable key supports safe server replay when a response was
+        // lost; do not use random keys that could double-create on retry.
+        const commandKey = 'strategy-foundation-v1-' + projectId + '-' + entry.key;
+        const { data: receipt } = await api.post('/projects/' + encodeURIComponent(projectId) + '/tasks',
+          body, { headers: { ...headers, 'Idempotency-Key': commandKey } });
+        if (!active(key) || planMutation.current !== nonce) throw new Error('PLAN_SCOPE_CHANGED');
+        if (receipt?.schema !== 'WILSY-PROJECT-TASK-RESULT/V1'
+          || receipt.tenant_id !== scope.tenantId || receipt.principal_id !== scope.principalId
+          || receipt.project_id !== projectId || receipt.task?.tenant_id !== scope.tenantId
+          || receipt.task?.project_id !== projectId || receipt.task?.kind !== entry.kind
+          || receipt.task?.title !== entry.title
+          || !/^ptk-[a-f0-9]{48}$/.test(receipt.task?.task_id || '')) {
+          throw new Error('PLAN_CREATE_RECEIPT_INVALID');
+        }
+        current = await getPage();
+        if (!current.some(item => item.task_id === receipt.task.task_id
+          && item.title === entry.title && item.kind === entry.kind)) {
+          throw new Error('PLAN_CREATE_READBACK_UNVERIFIED');
+        }
+        created += 1;
+        setPlanState({ state: 'RUNNING', created, skipped, message: entry.key + ' source-verified.' });
+      }
+      setPlanState({ state: 'COMPLETE', created, skipped,
+        message: created + ' created and independently verified; ' + skipped + ' previously present.' });
+      await loadDelivery(projectId, 0);
+    } catch (failure) {
+      if (active(key) && planMutation.current === nonce) {
+        const status = failure?.response?.status;
+        const bounded = status === 401 || status === 403 ? 'EOS denied task creation or readback.'
+          : status === 409 ? 'EOS reported a task conflict.'
+            : status === 503 ? 'EOS task source is unavailable.'
+              : 'One plan item could not be independently verified.';
+        setPlanState({ state: 'FAILED', created, skipped,
+          message: bounded + ' ' + created + ' created, ' + skipped
+            + ' already verified. Refresh the project before retrying; existing tasks are retained.' });
+        await loadDelivery(projectId, 0);
+      }
+    } finally {
+      if (planMutation.current === nonce) planMutation.current = null;
+    }
+  };
 
   /** Explicitly request the existing administrator-governed Founder admission. */
   const activateFounderProjects = async () => {
@@ -459,7 +1498,41 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (!active(key) || request !== readId.current) return;
       setSource({ scope: key, classification, data: result });
     } catch (failure) {
-      if (active(key) && request === readId.current && failure?.name !== 'AbortError' && failure?.name !== 'CanceledError') setError(sourceError(failure));
+      if (!active(key) || request !== readId.current || failure?.name === 'AbortError' || failure?.name === 'CanceledError') return;
+      const issue = sourceError(failure);
+      if (classification === 'STRATEGY' && issue.status === 403) {
+        try {
+          // Same authenticated api.js transport and verified tenant scope.
+          // A separate source check never changes publication or permissions.
+          const checked = await api.get('/company-operating-documents/STRATEGY/authority-check', {
+            headers: { 'X-Tenant-ID': scope.tenantId },
+            forceNetworkRetry: true,
+            signal: controller.signal,
+          });
+          const evidence = checked?.data;
+          const valid = evidence?.schema === 'WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1'
+            && evidence?.grant_issued === false
+            && evidence?.document_read_performed === false
+            && ['AUTHORIZED', 'DENIED'].includes(evidence?.document_read)
+            && ['AUTHORIZED', 'DENIED'].includes(evidence?.project_detail)
+            && ['AUTHORIZED', 'DENIED'].includes(evidence?.project_list);
+          if (valid) {
+            const stage = evidence.document_read === 'AUTHORIZED'
+              ? 'Strategy read is authorised in the current HTTP session; its document operation returned 403.'
+              : 'Strategy read was denied in the current HTTP session.';
+            const projects = evidence.project_list === 'AUTHORIZED'
+              ? ' Projects list is independently authorised.' : ' Projects list is also denied.';
+            const reason = typeof evidence.document_read_reason === 'string'
+              && /^(?:[A-Z][A-Z0-9_]{2,80})$/.test(evidence.document_read_reason)
+              && evidence.document_read_reason !== 'NOT_DISCLOSED'
+              ? ' EOS reason: ' + evidence.document_read_reason + '.' : '';
+            issue.next = stage + projects + reason + ' Optional editing and publishing roles remain separate. No access or publication state has been changed.';
+          }
+        } catch {
+          // Keep the original 403; never turn failed diagnostics into success.
+        }
+      }
+      if (active(key) && request === readId.current) setError(issue);
     } finally { if (active(key) && request === readId.current) setLoading(false); }
   }, [classification, sessionKey, auth.token]);
 
@@ -467,8 +1540,8 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     epoch.current = sessionKey;
     const fresh = { review: false, revision: null };
     queryRef.current = fresh; setQuery(fresh); setHistory(null); setTab('document');
-    setEditorOpen(false); setPreviewOpen(false); setProposal(emptyProposal()); setApprovalReference(''); setEffectiveFrom('');
-    setMessage(''); setBusy(false); retryKeys.current.clear(); commandLock.current = null;
+    setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false); setProposal(emptyProposal()); setApprovalReference(''); setEffectiveFrom('');
+    setMessage(''); setCommandIssue(null); setBusy(false); retryKeys.current.clear(); commandLock.current = null;
     void load(fresh);
     return () => { readId.current += 1; readController.current?.abort(); epoch.current = null; };
   }, [load]);
@@ -480,8 +1553,41 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
     return () => { window.document.body.style.overflow = formerOverflow; trigger?.focus?.(); };
   }, []);
 
+  useEffect(() => {
+    // After an explicit evidence read, move keyboard and visual focus to the
+    // bounded result for the selected task, not to unrelated work rows.
+    if (['READY', 'DENIED', 'UNAVAILABLE'].includes(executionEvidence.state)) {
+      evidenceResultRef.current?.focus();
+    }
+  }, [executionEvidence.state, executionEvidence.taskId]);
+
+  useEffect(() => {
+    if (!commandIssue) return;
+    // A rejected Save may occur after scrolling through every Strategy section.
+    // Bring the bounded EOS operation evidence into view without clearing work.
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    commandIssueRef.current?.focus({ preventScroll: true });
+  }, [commandIssue]);
+
+  useEffect(() => {
+    if (!editorOpen) return;
+    // The author workspace replaces the long source view. Always bring its
+    // first control into the visible dialog viewport, including after a
+    // return from a previously scrolled document or project readback.
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    editorRef.current?.focus({ preventScroll: true });
+  }, [editorOpen]);
+
+  useEffect(() => {
+    if (!ratificationOpen) return;
+    // A publication decision is a new operating context, not a scroll target
+    // at the bottom of six strategic pillars and the Projects workspace.
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    ratificationDateRef.current?.focus({ preventScroll: true });
+  }, [ratificationOpen]);
+
   const changeQuery = next => {
-    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setPreviewOpen(false); setHistory(null);
+    queryRef.current = next; setQuery(next); setTab('document'); setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false); setHistory(null); setCommandIssue(null);
     void load(next);
   };
   const openHistory = async () => {
@@ -503,7 +1609,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (typeof globalThis.crypto?.randomUUID !== 'function') { commandLock.current = null; setError(sourceError(null)); return; }
       retryKeys.current.set(intent, globalThis.crypto.randomUUID());
     }
-    setBusy(true); setMessage(''); setError(null);
+    setBusy(true); setMessage(''); setCommandIssue(null); setError(null);
     let acknowledged = false;
     try {
       const receipt = await commandCompanyDocument(classification, scope, action, payload, retryKeys.current.get(intent), { token: auth.token });
@@ -515,11 +1621,49 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       if (readback.document?.revision !== receipt.revision || readback.document?.fingerprint !== receipt.fingerprint) throw new Error('COMPANY_DOCUMENT_READBACK_UNVERIFIED');
       if (!active(key) || commandLock.current !== commandToken) return;
       readId.current += 1; queryRef.current = next; setQuery(next); setSource({ scope: key, classification, data: readback });
-      setEditorOpen(false); setPreviewOpen(false); setHistory(null); setTab('document'); retryKeys.current.delete(intent);
+      setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false); setHistory(null); setTab('document'); retryKeys.current.delete(intent);
+      setCommandIssue(null);
       setMessage('EOS confirmed the command and its durable document readback.');
     } catch (failure) {
       if (!active(key) || commandLock.current !== commandToken) return;
-      setError(acknowledged ? { ...sourceError(failure), kind: 'READBACK_UNVERIFIED', title: 'Command recorded; current readback unverified', message: 'No updated publication is claimed. Refresh the source to verify the recorded revision before another command.' } : sourceError(failure));
+      const issue = commandFailure(failure, action, acknowledged);
+      if (issue.kind === 'PUBLISHED_VERSION_CONFLICT') {
+        // Reconcile the immutable published-version conflict, never repeat a
+        // failed or timed-out command or assume a previous ratification succeeded.
+        try {
+          const history = await readCompanyDocumentHistory(classification, scope, {
+            token: auth.token, review: true,
+          });
+          const published = history.items.find(item =>
+            item.state === 'PUBLISHED' && item.document_version === payload.document_version);
+          if (!published) throw new Error('COMPANY_DOCUMENT_PUBLICATION_READBACK_UNVERIFIED');
+          const next = { review: true, revision: published.revision };
+          const verified = await readCompanyOperatingDocument(classification, scope, {
+            token: auth.token, ...next,
+          });
+          if (verified.document?.revision !== published.revision
+            || verified.document.fingerprint !== published.fingerprint
+            || verified.document.state !== 'PUBLISHED'
+            || verified.document.document_version !== payload.document_version) {
+            throw new Error('COMPANY_DOCUMENT_PUBLICATION_READBACK_UNVERIFIED');
+          }
+          if (!active(key) || commandLock.current !== commandToken) return;
+          readId.current += 1; readController.current?.abort();
+          queryRef.current = next; setQuery(next); setSource({ scope: key, classification, data: verified });
+          setEditorOpen(false); setRatificationOpen(false); setPreviewOpen(false);
+          setHistory(null); setTab('document'); retryKeys.current.delete(intent);
+          setCommandIssue(null);
+          setMessage('EOS independently verified existing published Strategy version '
+            + published.document_version + ', revision ' + published.revision
+            + '. This draft command created no new revision. Effectiveness must be verified separately.');
+          return;
+        } catch {
+          if (!active(key) || commandLock.current !== commandToken) return;
+          setCommandIssue(issue);
+          return;
+        }
+      }
+      setCommandIssue(issue);
     } finally { if (active(key) && commandLock.current === commandToken) { commandLock.current = null; setBusy(false); } }
   };
   const trapKeyboard = event => {
@@ -538,11 +1682,75 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
       setError({ kind: 'INVALID_DATE', code: 'COMPANY_DOCUMENT_EFFECTIVE_DATE_INVALID', status: null, title: 'A valid effective date is required', message: 'Choose when the independently approved document should become effective.', next: 'Refresh the source and enter a valid effective date before submitting approval.' });
       return;
     }
-    void perform('PUBLISH', { expected_revision: data?.current_revision ?? 0,
-      approval_reference: approvalReference, effective_from: effective.toISOString() });
+    if (classification === 'STRATEGY' && actions.includes('FOUNDER_RATIFY')) {
+      void perform('FOUNDER_RATIFY', {
+        expected_revision: data?.current_revision ?? 0, effective_from: effective.toISOString(),
+      });
+    } else {
+      void perform('PUBLISH', { expected_revision: data?.current_revision ?? 0,
+        approval_reference: approvalReference, effective_from: effective.toISOString() });
+    }
   };
   const expected = data?.current_revision ?? 0;
-  const draftPermitted = actions.includes('CREATE_DRAFT');
+  const founderDraftPermitted = classification === 'STRATEGY' && actions.includes('FOUNDER_CREATE_DRAFT');
+  const draftPermitted = actions.includes('CREATE_DRAFT') || founderDraftPermitted;
+  // A grant may allow new revisions, not repetition of completed v1.1.0.
+  const approvedSourceAlreadyPublished = classification === 'STRATEGY'
+    && data?.state === 'PUBLISHED';
+  const executionFirst = approvedSourceAlreadyPublished && !query.review && query.revision === null;
+  const focusedM04Inspector = Boolean(m04Execution && m04FocusMode === 'INSPECT');
+  const showPublicationBody = !executionFirst || strategyMode === 'DOCUMENT';
+  const showExecutionSurface = !executionFirst || strategyMode === 'EXECUTION';
+  // Returning from a Strategy-originated Projects task is a navigation
+  // continuation, not another publication or a new EOS authority. Wait for
+  // the independently verified M04 graph before moving the document viewport.
+  const resumedM04 = useRef(false);
+  useEffect(() => {
+    if (classification !== 'STRATEGY' || !m04Execution || !showExecutionSurface
+      || resumedM04.current || new URLSearchParams(location.search).get('resumeM04') !== '1') return;
+    const node = containerRef.current?.querySelector('[aria-label="M04 governed Strategy execution"]');
+    if (!node) return;
+    resumedM04.current = true;
+    node.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+    const params = new URLSearchParams(location.search);
+    params.delete('resumeM04');
+    window.history.replaceState(window.history.state, '',
+      location.pathname + (params.toString() ? '?' + params.toString() : '') + location.hash);
+  }, [classification, m04Execution, showExecutionSurface, location.search, location.pathname, location.hash]);
+  // Filtering is view-only; EOS project authority and linked source snapshots
+  // are validated against unfiltered projectItems, never rendered search rows.
+  const visibleStrategyProjects = projectItems.filter(item => item.name.toLocaleLowerCase()
+    .includes(projectSearch.trim().toLocaleLowerCase()));
+  const foundationCandidates = projectState === 'READY'
+    ? projectItems.filter(item => item.name === FOUNDATION_PROJECT_NAME) : [];
+  const foundationProject = foundationCandidates.length === 1 ? foundationCandidates[0] : null;
+  const registerVisible = projectRegisterOpen || projectSearch.trim().length > 0
+    || (projectState === 'READY' && !foundationProject);
+  const selectedStrategyProject = delivery.state === 'READY'
+    ? projectItems.find(item => item.project_id === delivery.projectId) : null;
+  const displayedStrategyProjects = projectSearch.trim() || browseOtherProjects || !selectedStrategyProject
+    ? visibleStrategyProjects : visibleStrategyProjects.filter(item => item.project_id === delivery.projectId);
+  // Document Contents cannot navigate to a section until the publication has
+  // mounted. This does not issue another source read or mutate publication.
+  useEffect(() => {
+    if (showPublicationBody && pendingDocumentSection) {
+      containerRef.current?.querySelector('[data-document-section="' + pendingDocumentSection + '"]')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setPendingDocumentSection(null);
+    }
+  }, [showPublicationBody, pendingDocumentSection]);
+  const strategyPublicationEffective = classification === 'STRATEGY'
+    && !query.review && data?.state === 'PUBLISHED'
+    && document?.state === 'PUBLISHED'
+    && Number.isSafeInteger(document.revision)
+    && typeof document.effective_from === 'string'
+    && Date.parse(document.effective_from) <= Date.parse(data.as_of);
+  const strategyPillarOneSource = strategyPublicationEffective
+    && document.sections?.some(section => section.section_id === 'pillar-one');
+  const strategyCurrentLink = strategyLink.state === 'READY'
+    && strategyLink.items.some(item => item.pillar_id === 'pillar-one'
+      && item.project_id === delivery.projectId && item.state === 'VERIFIED_CURRENT');
+
   const reviewPermitted = actions.includes('REVIEW_DRAFTS');
   const submittedDraft = document?.state === 'SUBMITTED';
   const authorDraft = document?.state === 'DRAFT';
@@ -578,11 +1786,32 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
   return createPortal(<div className={styles.backdrop} onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <section ref={containerRef} className={styles.viewer} role="dialog" aria-modal="true" aria-labelledby="company-document-title" data-company-document={classification} onKeyDown={trapKeyboard}>
       <header className={styles.header}><img src={WILSY_PLATFORM_LOGO_SRC} alt="WILSY OS logo"/><div><span>WILSY · COMPANY OPERATING DOCUMENTS</span><h1 id="company-document-title">{labelFor(classification)}</h1></div><button ref={closeRef} type="button" onClick={onClose} aria-label="Close company document"><X size={20}/></button></header>
-      <div className={styles.toolbar}><button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button></div>
-      <div className={styles.body}>
-        <aside className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => containerRef.current.querySelector('[data-document-section="' + section.section_id + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>
-        <div className={styles.scroll}>
+      <div className={styles.toolbar}><button type="button" onClick={() => { if (classification === 'STRATEGY') setStrategyMode('DOCUMENT'); changeQuery({ review: false, revision: null }); }} disabled={busy}><ArrowLeft size={14}/> Current publication</button><button type="button" onClick={() => changeQuery(queryRef.current)} disabled={loading || busy}><RefreshCw size={14} className={loading ? styles.spin : ''}/> Refresh source</button><button type="button" onClick={openHistory} disabled={busy || !sessionKey || !data || loading || Boolean(error)}><History size={14}/> Revision history</button><button type="button" onClick={onOpenWork}><ArrowUpRight size={14}/> My Work</button><button type="button" aria-controls="wilsy-document-contents" aria-expanded={contentsOpen} onClick={() => setContentsOpen(open => !open)}><BookOpen size={14}/>{contentsOpen ? 'Hide contents' : 'Show contents'}</button></div>
+      <div className={styles.body} style={contentsOpen ? undefined : { gridTemplateColumns: 'minmax(0,1fr)' }}>
+        {contentsOpen && <aside id="wilsy-document-contents" className={styles.contents} aria-label="Document contents"><p>CONTENTS</p>{data && !error && !loading && tab === 'document' && !editorOpen && !ratificationOpen ? (document?.sections || FOUNDER_APPROVED_SOURCE[classification].sections).map(section => <button type="button" key={section.section_id} onClick={() => {
+          if (executionFirst && !showPublicationBody) {
+            setPendingDocumentSection(section.section_id);
+            setStrategyMode('DOCUMENT');
+          } else {
+            containerRef.current?.querySelector('[data-document-section="' + section.section_id + '"]')
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }}>{section.title}</button>) : <span>Publication overview</span>}<div className={styles.sourceBoundary}><ShieldCheck size={18}/><strong>Source-owned publication</strong><p>Preparation and submission are distinct from independent approval.</p></div></aside>}
+        <div ref={scrollRef} className={styles.scroll}>
           {message && <p className={styles.success} role="status"><CheckCircle2 size={16}/>{message}</p>}
+          {commandIssue && <section ref={commandIssueRef} tabIndex={-1} className={styles.notice} role="alert"
+            aria-label="Company document command failure" data-document-state={commandIssue.kind}>
+            <ShieldCheck size={22} aria-hidden="true"/>
+            <h2>{commandIssue.title}</h2>
+            <p><strong>Operation:</strong> {commandIssue.operation}</p>
+            <p>{commandIssue.message}</p>
+            <p><strong>HTTP status:</strong> {commandIssue.status ?? 'No verified response'}</p>
+            <p><strong>EOS reference:</strong> {commandIssue.code}</p>
+            <p>{commandIssue.next}</p>
+            <button type="button" onClick={() => setCommandIssue(null)}>Continue editing</button>
+            {commandIssue.kind === 'READBACK_UNVERIFIED' && <button type="button"
+              onClick={() => changeQuery({ review: true, revision: null })}>Verify recorded revision</button>}
+          </section>}
           {error && <section className={styles.notice} role="alert" data-document-state={error.kind}>
             <ShieldCheck size={28} aria-hidden="true"/><h2>{error.title}</h2><p>{error.message}</p>
             <dl className={styles.sourceStatus} aria-label="Document source status">
@@ -593,126 +1822,74 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
             </dl>
             <h3>Next step</h3><p>{error.next}</p>
             <button type="button" onClick={() => changeQuery({ review: false, revision: null })} disabled={busy}>Retry source read</button>
-            <p className={styles.boundaryNote}>Company document access and publication are governed independently. Preparation requires author permission; publication requires a different authorized approver.</p>
+            <p className={styles.boundaryNote}>Company document access and publication are governed independently. The source-verified canonical Founder may ratify Strategy; other principals require separately authorized publication.</p>
           </section>}
-          {loading ? <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>
+          {loading ? (classification === 'STRATEGY' && new URLSearchParams(location.search).get('resumeM04') === '1'
+              ? <section role="status" aria-label="Returning to Strategy M04" className="mx-auto w-full max-w-5xl px-5 py-8 text-slate-100 sm:px-8">
+                  <p className="text-xs font-medium text-amber-200">Our Strategy / M04 · Governed execution</p>
+                  <h2 className="mt-3 text-xl font-semibold">Returning to your execution workspace</h2>
+                  <div className="mt-5 flex items-center gap-3 text-sm text-slate-300">
+                    <Loader2 className={styles.spin} size={19} aria-hidden="true"/>
+                    <span>Rechecking the authorized Strategy publication and Foundation work source…</span>
+                  </div>
+                  <p className="mt-3 max-w-2xl text-sm text-slate-400">
+                    Your previously selected task is unchanged. Current project, task and Strategy facts will appear only after EOS verifies them.
+                  </p>
+                </section>
+              : <div className={styles.loading} role="status"><Loader2 className={styles.spin} size={24}/> Loading the authorized document source…</div>)
             : error ? null : tab === 'history' ? <section className={styles.paper}><h2>Revision history</h2><p>Only revisions permitted for your current company capacity appear here.</p>{currentHistory?.items.length ? currentHistory.items.map(item => <button className={styles.revisionRow} key={item.revision} type="button" onClick={() => changeQuery({ review: query.review, revision: item.revision })}><FileText size={18}/><span><strong>Version {item.document_version} · revision {item.revision}</strong><small>{item.state} · {displayDate(item.recorded_at)}</small></span><ArrowUpRight size={15}/></button>) : !error && <p>No permitted revisions are available.</p>}</section>
               : data && <>
-                <nav className={styles.commandDeck} aria-label="Company document actions">
+                {!executionFirst && <nav className={styles.commandDeck} aria-label="Company document actions">
                   <div className={styles.commandStatus}>
-                    <strong>{editorOpen ? 'Private draft workspace'
+                    <strong>{ratificationOpen ? 'Founder ratification · private decision'
+                      : editorOpen ? 'Private draft workspace'
+                      : query.review ? 'Private source review'
                       : document?.state === 'PUBLISHED' ? 'Official publication'
                         : authorDraft ? 'Draft under review'
-                          : submittedDraft ? 'Awaiting independent approval'
+                          : submittedDraft ? (actions.includes('FOUNDER_RATIFY') ? 'Founder ratification available' : 'Awaiting independent approval')
                             : 'Founder-approved source · EOS publication pending'}</strong>
-                    <span>{editorOpen ? 'Unpublished · editing in your current session'
+                    <span>{ratificationOpen ? 'Submitted Strategy · publication not yet effective'
+                      : editorOpen ? 'Unpublished · editing in your current session'
                       : query.review ? 'Private authorised source view'
                         : 'Public source view · verified by EOS'}</span>
                   </div>
                   <div className={styles.commandButtons}>
-                    {draftPermitted && !editorOpen && <button type="button" disabled={busy}
+                    {ratificationOpen && <button type="button" disabled={busy}
+                      onClick={() => setRatificationOpen(false)}>
+                      <ArrowLeft size={16}/> Back to submitted Strategy
+                    </button>}
+                    {!ratificationOpen && draftPermitted && !editorOpen && !approvedSourceAlreadyPublished && <button type="button" disabled={busy}
                       onClick={() => { setProposal(founderApprovedProposal(classification)); setPreviewOpen(false); setEditorOpen(true); }}>
                       <FileText size={16}/> Prepare approved v1.1.0
                     </button>}
-                    {reviewPermitted && !query.review && <button type="button" disabled={busy}
+                    {!ratificationOpen && reviewPermitted && !query.review && <button type="button" disabled={busy}
                       onClick={() => changeQuery({ review: true, revision: null })}>
                       <BookOpen size={16}/> Review private source
                     </button>}
-                    {query.review && <button type="button" disabled={busy}
+                    {!ratificationOpen && query.review && <button type="button" disabled={busy}
                       onClick={() => changeQuery({ review: false, revision: null })}>
                       <ArrowLeft size={16}/> Published view
                     </button>}
-                    {actions.includes('SUBMIT') && <button type="button" disabled={busy}
-                      onClick={() => void perform('SUBMIT', { expected_revision: expected })}>
-                      <ArrowUpRight size={16}/> Submit for approval
+                    {!ratificationOpen && (actions.includes('SUBMIT') || actions.includes('FOUNDER_SUBMIT')) && <button type="button" disabled={busy}
+                      onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
+                      <ArrowUpRight size={16}/> {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit for approval'}
                     </button>}
+                    {!ratificationOpen && classification === 'STRATEGY' && query.review
+                      && document?.state === 'SUBMITTED' && actions.includes('FOUNDER_RATIFY')
+                      && <button type="button" disabled={busy}
+                        onClick={() => setRatificationOpen(true)}>
+                        <ShieldCheck size={16}/> Open Founder ratification
+                      </button>}
                   </div>
                   {!draftPermitted && !reviewPermitted && !actions.includes('SUBMIT')
-                    && !actions.includes('PUBLISH') && <p className={styles.permissionNotice}>
+                    && !actions.includes('PUBLISH') && !actions.includes('FOUNDER_RATIFY') && <p className={styles.permissionNotice}>
                       Your current EOS permission allows reading this Founder-approved source, not creating a revision or publishing it.
                       Draft and approval actions require separately verified company-document authority.
                     </p>}
-                </nav>
-                <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
-                {!document ? <article className={styles.paper} data-document-state="FOUNDER_APPROVED_EOS_PENDING">
-                  <div className={styles.documentIdentity}>
-                    <span>{classification} · FOUNDER-APPROVED SOURCE · VERSION {FOUNDER_APPROVED_SOURCE[classification].document_version}</span>
-                    <h2>{FOUNDER_APPROVED_SOURCE[classification].title}</h2>
-                    <p>WILSY (Pty) Ltd · Founder content approved · EOS publication pending</p>
-                    <p className={styles.boundaryNote}>This is the existing Founder-approved corporate document, not an EOS-published revision. Its wording comes from the supplied source PDF. Publication and independent publisher authority remain pending; no operational execution metrics are inferred.</p>
-                  </div>
-                  {FOUNDER_APPROVED_SOURCE[classification].sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p style={{ whiteSpace: 'pre-line' }}>{section.body}</p></section>)}
-                  <footer className={styles.fingerprint}><span>Founder-approved PDF source · SHA3-512 (not an EOS revision fingerprint)</span><code>{FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512}</code></footer>
-                </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
-                <section className={styles.execution} aria-label="Company operating execution">
-                  <h2>Business execution</h2>
-                  <p>No governed objective-to-project or pillar-to-project relationship is present in the current EOS schema. Project ownership and completion percentages are not inferred.</p>
-                  {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
-                    <div className={styles.editorHeading}><div>
-                      <span className={styles.eyebrow}>LIVE · PYTHON EOS PROJECTS</span>
-                      <h3>Projects &amp; delivery</h3>
-                      <p>Projects listed here belong to this tenant; they are not automatically linked to the six strategic pillars.</p>
-                    </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
-                      <RefreshCw size={15}/> Refresh projects</button></div>
-                    {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
-                    {projectState === 'READY' && <div role="status">{projectItems.length === 0
-                      ? 'No projects returned by EOS on the first page.'
-                      : projectItems.length + ' source-confirmed project(s) on the first page.'}</div>}
-                    {projectState === 'READY' && projectItems.length > 0 && <ul aria-label="EOS project list">
-                      {projectItems.map(item => <li key={item.project_id}>
-                        <strong>{item.name}</strong>{' · '}{item.status}{' · revision '}{item.revision}
-                        {typeof onOpenProject === 'function' && <button type="button"
-                          aria-label={'Open project delivery for ' + item.name}
-                          onClick={() => onOpenProject(item.project_id)}>
-                          Open project delivery <ArrowUpRight size={14}/>
-                        </button>}
-                      </li>)}
-                    </ul>}
-                    {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
-                      {projectError || 'Projects source has not been verified for this session.'}</p>}
-                    {projectState === 'DENIED' && <button type="button"
-                      disabled={admissionBusy} onClick={() => void activateFounderProjects()}>
-                      <ShieldCheck size={15}/> {admissionBusy ? 'Verifying Founder authority…' : 'Activate Founder Projects through EOS'}
-                    </button>}
-                    {admissionStatus && <p role="status">{admissionStatus}</p>}
-                    {projectError && projectState === 'READY' && <p role="alert">{projectError}</p>}
-                    {projectSuccess && <p role="status">{projectSuccess}</p>}
-                    {(projectState === 'READY' || projectState === 'UNAVAILABLE') && <form onSubmit={createStrategyProject} aria-label="Create governed EOS project">
-                      <h3>Create a project in EOS</h3>
-                      <p>Choose the strategic context for its description. This does not establish a formal strategy relationship or appoint an owner.</p>
-                      {projectState === 'UNAVAILABLE' && <p role="status">Your draft remains available to inspect and edit. Project creation is disabled until a fresh EOS Projects read succeeds. Use Refresh projects to reverify source availability.</p>}
-                      <label>Strategic pillar context<select value={projectPillar} disabled={projectBusy}
-                        onChange={event => { setProjectPillar(event.target.value); setProjectSuccess(''); }}>
-                        {STRATEGY_PILLARS.map(pillar => <option key={pillar.section_id} value={pillar.section_id}>{pillar.title}</option>)}
-                      </select></label>
-                      <label>Project name<input required maxLength={180} value={projectName} disabled={projectBusy}
-                        onChange={event => { setProjectName(event.target.value); setProjectSuccess(''); }}/></label>
-                      <div className={styles.projectDescriptionHeader}>
-                        <strong>Project description</strong>
-                        <button type="button" onClick={() => setProjectEditSource(value => !value)} disabled={projectBusy}>
-                          {projectEditSource ? 'View formatted description' : 'Edit description'}
-                        </button>
-                      </div>
-                      <p className={styles.projectDescriptionHint}>Formatted live preview of your draft. Headings, lists and emphasis are displayed as readable text; EOS stores the exact submitted description as source.</p>
-                      {!projectEditSource && <ProjectDescriptionPreview value={projectDescription}/>}
-                      {projectEditSource && <label>Editable description source
-                        <textarea maxLength={3700} rows={12} value={projectDescription} disabled={projectBusy}
-                          onChange={event => { setProjectDescription(event.target.value); setProjectSuccess(''); }}/>
-                      </label>}
-                      <div className={styles.projectDescriptionHeader}>
-                        <span>{projectDescription.length.toLocaleString()} / 3,700 characters</span>
-                        {!projectDescription.trim() && !projectEditSource && <button type="button" onClick={() => setProjectEditSource(true)}>Enter project description</button>}
-                      </div>
-                      <button type="submit" disabled={projectBusy || projectState !== 'READY' || !projectName.trim()}>
-                        {projectBusy ? 'Verifying EOS readback…' : 'Create project in EOS'}
-                      </button>
-                    </form>}
-                  </div>}
-                  <button type="button" onClick={onOpenWork}>Open current My Work <ArrowUpRight size={14}/></button>
-                </section>
-                {editorOpen && draftPermitted && <form className={styles.form}
+                </nav>}
+                {editorOpen && draftPermitted && <form ref={editorRef} tabIndex={-1} className={styles.form}
                   aria-label="Company private draft editor"
-                  onSubmit={event => { event.preventDefault(); if (proposalValid) void perform('CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
+                  onSubmit={event => { event.preventDefault(); if (proposalValid) void perform(founderDraftPermitted ? 'FOUNDER_CREATE_DRAFT' : 'CREATE_DRAFT', { ...proposal, expected_revision: expected }); }}>
                   <div className={styles.editorHeading}>
                     <div><span className={styles.eyebrow}>AUTHOR WORKSPACE · PRIVATE</span>
                       <h2>Prepare {classification === 'MISSION' ? 'Our Mission' : 'Our Strategy'}</h2>
@@ -772,7 +1949,733 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
                     </div>
                   </div>
                 </form>}
-                {actions.includes('PUBLISH') && <form className={styles.form} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
+                {ratificationOpen && classification === 'STRATEGY' && query.review
+                  && document?.state === 'SUBMITTED' && actions.includes('FOUNDER_RATIFY') && <form
+                  className={styles.form} aria-label="Founder Strategy self-ratification"
+                  onSubmit={publish}>
+                  <div className={styles.editorHeading}>
+                    <div><span className={styles.eyebrow}>FOUNDER DECISION · PRIVATE</span>
+                      <h2>Ratify and publish your Strategy</h2>
+                      <p>EOS will reverify your durable Founder designation, current membership and
+                        author authority within the publication transaction. Your decision is recorded
+                        as Founder self-ratification, not independent approval.</p>
+                    </div>
+                  </div>
+                  <p>Submitted revision {data.current_revision} · {document.title}</p>
+                  <label>Effective date and time<input ref={ratificationDateRef} required
+                    type="datetime-local" value={effectiveFrom}
+                    onChange={event => setEffectiveFrom(event.target.value)}/></label>
+                  <div className={styles.editorFooter}>
+                    <button type="submit" disabled={busy || !effectiveFrom}>
+                      {busy ? 'Verifying EOS ratification…' : 'Ratify and publish Strategy'}
+                    </button>
+                    <button type="button" disabled={busy}
+                      onClick={() => setRatificationOpen(false)}>Back to submitted Strategy</button>
+                  </div>
+                </form>}
+                {!editorOpen && !ratificationOpen && <>
+                {classification === 'STRATEGY' && !approvedSourceAlreadyPublished && <section aria-label="M03 Strategy governance gates"
+                  className="mb-4 rounded-xl border border-slate-500/60 bg-slate-950/30 p-4 text-slate-100">
+                  <h3 className="text-base font-semibold text-white">M03 · Publication and Pillar 1 governance</h3>
+                  <p className="mt-2 text-sm text-slate-200">
+                    Permissions are source-verified for this session and selected capacity only.
+                    A durable, source-verified Founder designation plus current exact-tenant owner/IAM evidence
+                    can admit Strategy self-ratification. All other personnel require distinct author and publisher
+                    authority; project ownership alone grants neither.
+                  </p>
+                  <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Strategy author and private-review authority</dt>
+                      <dd className="mt-1 text-sm text-white">{approvedSourceAlreadyPublished
+                         ? 'Published Strategy exists; prior v1.1.0 preparation is complete. New revisions need separate source authorization.'
+                         : founderDraftPermitted
+                         ? 'Verified Founder can prepare Strategy through durable source authority'
+                        : draftPermitted ? 'Draft creation admitted by current EOS action set'
+                        : actions.includes('SUBMIT')
+                          ? 'Source-authorized draft submission admitted'
+                          : reviewPermitted
+                            ? 'Private revision review admitted; draft creation not currently offered'
+                            : 'Current source offers read-only actions; author admission not established'}</dd>
+                    </div>
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Independent publisher authority</dt>
+                      <dd className="mt-1 text-sm text-white">{actions.includes('FOUNDER_RATIFY')
+                        ? 'Current Founder may self-ratify this submitted Strategy with audited EOS evidence'
+                        : actions.includes('PUBLISH')
+                        ? 'EOS admits publication for this submitted revision under the current independent principal'
+                        : 'No publication action admitted in this source view; independent publisher must be verified through EOS'}</dd>
+                    </div>
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Effective Strategy publication</dt>
+                      <dd className="mt-1 text-sm text-white">{strategyPublicationEffective
+                         ? 'Published and effective · revision ' + document.revision
+                         : query.review && approvedSourceAlreadyPublished
+                           ? 'Official publication exists; see Current publication for effective date and revision'
+                        : document?.state === 'SUBMITTED' ? 'Submitted · independent approval required'
+                          : document?.state === 'DRAFT' ? 'Private draft · submission required'
+                            : 'Not verified as published and effective'}</dd>
+                    </div>
+                    <div className="rounded-lg border border-slate-600/60 p-3">
+                      <dt className="text-xs font-semibold text-slate-300">Pillar 1 and Foundation relationship</dt>
+                      <dd className="mt-1 text-sm text-white">{strategyCurrentLink
+                        ? 'EOS link verified current · strategic outcomes not certified'
+                        : strategyLink.state === 'PUBLICATION_REQUIRED'
+                          ? 'Not linkable · effective EOS Strategy publication required'
+                          : strategyLink.state === 'READY'
+                            ? strategyPillarOneSource
+                              ? 'Publication verified; no current Pillar 1 link read back'
+                              : 'No current Pillar 1 relationship verified'
+                            : 'Current link readback not verified'}</dd>
+                    </div>
+                  </dl>
+                  <p className="mt-3 text-xs text-slate-300">
+                    Sequence: authorized draft → submission → independent publisher approval
+                    (or source-verified Founder Strategy ratification) → effective published revision
+                    → authorized project link → independent EOS link readback.
+                    Execution metrics from M02 are not certified strategic outcomes.
+                  </p>
+                </section>}
+                {classification === 'STRATEGY' && !approvedSourceAlreadyPublished && <section className={styles.commandDeck}
+                   aria-label="Governed Strategy publication lifecycle">
+                  <div className={styles.commandStatus}>
+                    <strong>Strategy publication · source-owned execution</strong>
+                    <span>{!document ? (query.review && approvedSourceAlreadyPublished
+                        ? 'Official publication exists · no private revision selected'
+                        : query.review ? 'No private revision selected' : 'Official publication not yet established')
+                      : document.state === 'DRAFT' ? 'Stage 1 of 3 · Author draft'
+                         : document.state === 'SUBMITTED' ? (actions.includes('FOUNDER_RATIFY')
+                          ? 'Stage 2 of 3 · Founder ratification available' : 'Stage 2 of 3 · Await independent publisher')
+                          : Date.parse(document.effective_from) > Date.parse(data.as_of)
+                            ? 'Stage 3 of 3 · Published, awaiting effective date'
+                            : 'Stage 3 of 3 · Published and effective'}</span>
+                  </div>
+                  <div className={styles.commandButtons}>
+                    {!query.review && reviewPermitted && <button type="button" disabled={busy}
+                      onClick={() => changeQuery({ review: true, revision: null })}>
+                      Review authorized publication state
+                    </button>}
+                    {query.review && !document && draftPermitted && !approvedSourceAlreadyPublished && !editorOpen
+                      && <button type="button" disabled={busy}
+                        onClick={() => { setProposal(founderApprovedProposal('STRATEGY')); setPreviewOpen(false); setEditorOpen(true); }}>
+                        Prepare Strategy draft
+                      </button>}
+                    {query.review && document?.state === 'DRAFT' && (actions.includes('SUBMIT') || actions.includes('FOUNDER_SUBMIT'))
+                      && <button type="button" disabled={busy}
+                        onClick={() => void perform(actions.includes('FOUNDER_SUBMIT') ? 'FOUNDER_SUBMIT' : 'SUBMIT', { expected_revision: expected })}>
+                        {actions.includes('FOUNDER_SUBMIT') ? 'Submit Founder Strategy' : 'Submit Strategy for independent approval'}
+                      </button>}
+                    {query.review && document?.state === 'SUBMITTED' && actions.includes('PUBLISH')
+                      && <button type="button" disabled={busy}
+                        onClick={() => containerRef.current.querySelector('[aria-label="Independent Strategy publication approval"]')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                        Open independent approval form
+                      </button>}
+                  </div>
+                  {query.review && document?.state === 'DRAFT' && !actions.includes('SUBMIT') && !actions.includes('FOUNDER_SUBMIT')
+                    && <p className={styles.permissionNotice}>Only the draft's source-authorized author can submit this revision.</p>}
+                  {query.review && document?.state === 'SUBMITTED' && !actions.includes('PUBLISH') && !actions.includes('FOUNDER_RATIFY')
+                    && <p className={styles.permissionNotice}>Independent publication is required unless EOS verifies the canonical Founder's durable Strategy self-ratification authority for this submission.</p>}
+                  {!query.review && !document && !reviewPermitted
+                    && <p className={styles.permissionNotice}>Your current capacity can read the approved source but cannot inspect private revision states or create a publication. Current Strategy author/publisher authority must be established separately in tenant IAM.</p>}
+                  {document?.state === 'PUBLISHED' && Date.parse(document.effective_from) <= Date.parse(data.as_of)
+                    && <p className={styles.permissionNotice}>The official Strategy is published and effective. The Pillar 1 / Foundation relationship and source-owned execution require independent verification in Projects &amp; Delivery; publication does not certify outcomes.</p>}
+                </section>}
+                {classification === 'STRATEGY' && approvedSourceAlreadyPublished && !query.review && !executionFirst && <section
+                  aria-label="Published Strategy execution handoff" className={styles.commandDeck}>
+                  <div className={styles.commandStatus}>
+                    <strong>Published Strategy · execution</strong>
+                    <span>Publication is complete. Pillar 1 delivery requires current EOS project and relationship evidence.</span>
+                  </div>
+                  <div className={styles.commandButtons}>
+                    <button type="button" onClick={() => {
+                      if (executionFirst && strategyMode === 'DOCUMENT') setStrategyMode('EXECUTION');
+                      else containerRef.current?.querySelector('[aria-label="Company operating execution"]')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}>
+                      <ArrowUpRight size={16}/> Inspect Projects &amp; Delivery
+                    </button>
+                  </div>
+                  <p className={styles.permissionNotice}>{strategyCurrentLink
+                    ? 'Pillar 1 / Foundation project link verified current; strategic outcomes remain uncertified.'
+                    : 'Pillar 1 / Foundation relationship not yet verified in this view. Inspect the existing project and independently verify its current source link.'}</p>
+                </section>}
+                {executionFirst && <nav aria-label="Strategy workspace mode" className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-500/60 bg-slate-950/30 p-3">
+                  <button type="button" aria-pressed={strategyMode === 'EXECUTION'}
+                    className={strategyMode === 'EXECUTION'
+                      ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-2 ring-sky-300/60'
+                      : 'min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm text-slate-200 hover:border-sky-400 hover:bg-slate-800'}
+                    onClick={() => setStrategyMode('EXECUTION')}>Execution workspace</button>
+                  <button type="button" aria-pressed={strategyMode === 'DOCUMENT'}
+                    className={strategyMode === 'DOCUMENT'
+                      ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white shadow-sm ring-2 ring-sky-300/60'
+                      : 'min-h-10 rounded-lg border border-slate-500 px-4 py-2 text-sm text-slate-200 hover:border-sky-400 hover:bg-slate-800'}
+                    onClick={() => setStrategyMode('DOCUMENT')}>View full document</button>
+                  {reviewPermitted && <button type="button" disabled={busy}
+                    className="min-h-10 rounded-lg border border-slate-500 px-3 py-2 text-sm"
+                    onClick={() => changeQuery({ review: true, revision: null })}>Review private source</button>}
+                  <span className="text-xs text-slate-300">Published Strategy · revision {document?.revision}
+                    {' · '}Effective {displayDate(document?.effective_from)}
+                    {' · '}{strategyCurrentLink ? 'Pillar 1 link verified' : 'Pillar 1 link awaits independent readback'}
+                  </span>
+                </nav>}
+                {showPublicationBody && <>
+                <div className={styles.publication}><span className={styles.state} data-state={data.state}>{data.state === 'NOT_YET_PUBLISHED' ? 'NOT YET PUBLISHED' : data.state}</span>{query.review && <span>Authorized private review</span>}{document?.state === 'PUBLISHED' && Date.parse(document.effective_from) > Date.parse(data.as_of) && <span>Scheduled · not yet effective</span>}{query.revision && <span>Historical revision {query.revision}</span>}</div>
+                {!document ? <article className={styles.paper} data-document-state="FOUNDER_APPROVED_EOS_PENDING">
+                  <div className={styles.documentIdentity}>
+                    <span>{classification} · FOUNDER-APPROVED SOURCE · VERSION {FOUNDER_APPROVED_SOURCE[classification].document_version}</span>
+                    <h2>{FOUNDER_APPROVED_SOURCE[classification].title}</h2>
+                    <p>WILSY (Pty) Ltd · Founder content approved · EOS publication pending</p>
+                    <p className={styles.boundaryNote}>This is the existing Founder-approved corporate document, not an EOS-published revision. Its wording comes from the supplied source PDF. EOS publication remains pending; authorized Founder ratification or independent publication is required. No operational execution metrics are inferred.</p>
+                  </div>
+                  {FOUNDER_APPROVED_SOURCE[classification].sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p style={{ whiteSpace: 'pre-line' }}>{section.body}</p></section>)}
+                  <footer className={styles.fingerprint}><span>Founder-approved PDF source · SHA3-512 (not an EOS revision fingerprint)</span><code>{FOUNDER_APPROVED_SOURCE[classification].pdf_sha3_512}</code></footer>
+                </article> : <article className={styles.paper}><div className={styles.documentIdentity}><span>{classification} · SOURCE VERSION {document.document_version}</span><h2>{document.title}</h2><dl><div><dt>Prepared by</dt><dd>{document.author_principal_id}</dd></div><div><dt>Effective date</dt><dd>{displayDate(document.effective_from)}</dd></div>{document.approved_by_principal_id && <div><dt>Approved / published by</dt><dd>{document.approved_by_principal_id}</dd></div>}{document.approval_reference && <div><dt>Approval reference</dt><dd>{document.approval_reference}</dd></div>}</dl></div>{document.sections.map(section => <section className={styles.documentSection} data-document-section={section.section_id} key={section.section_id}><h3>{section.title}</h3><p>{section.body}</p></section>)}<footer className={styles.fingerprint}><span>Source evidence · SHA3-512</span><code>{document.fingerprint}</code></footer></article>}
+                </>}
+                {showExecutionSurface && <section className={styles.execution} aria-label="Company operating execution">
+                  {!focusedM04Inspector && <h2>Business execution</h2>}
+                  {!focusedM04Inspector && (classification === 'STRATEGY' ? <details className="mb-4 rounded-lg border border-slate-600/60 bg-slate-900/40 px-4 py-3">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-200">How Strategy links to projects</summary>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-300">Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred. Tenant projects are not automatically linked to strategic pillars.</p>
+                  </details> : <p>Pillar-to-project relationships require an effective EOS-published Strategy and explicit source-owned linking. Current Founder self-ratification or independent publisher approval must be verified by EOS. Neither project ownership nor strategic completion percentages are inferred.</p>)}
+                  {classification === 'STRATEGY' && <div className={styles.form} aria-label="Live EOS Projects execution">
+                    {!focusedM04Inspector && <div className={styles.editorHeading}><div>
+                      <span className={styles.eyebrow}>LIVE · PYTHON EOS PROJECTS</span>
+                      <h3>Projects &amp; delivery</h3>
+                      <p>Current tenant projects · verified through Python EOS</p>
+                    </div><button type="button" disabled={projectBusy || projectState === 'LOADING'} onClick={() => void loadProjects()}>
+                      <RefreshCw size={15}/> Refresh projects</button></div>}
+                    {projectState === 'LOADING' && <p role="status">Loading authorized projects…</p>}
+                    {projectState === 'READY' && foundationProject && !projectSearch.trim()
+                      && !(m04Execution && delivery.projectId === foundationProject.project_id) && <section
+                      aria-label="Foundation Strategy execution focus"
+                      className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-400/50 bg-slate-900/70 px-4 py-3 text-slate-100">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-sky-200">Pillar 1 · Existing Foundation project</p>
+                        <p className="mt-1 text-sm font-semibold text-white">{foundationProject.name}</p>
+                        <p className="mt-1 text-xs text-slate-300">EOS project {foundationProject.status.replaceAll('_', ' ')} · revision {foundationProject.revision}.
+                          {' '}Task execution requires its own current source read.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" disabled={delivery.state === 'LOADING'}
+                          aria-label={'Verify task execution for ' + foundationProject.name}
+                          onClick={() => { setProjectRegisterOpen(false); setBrowseOtherProjects(false);
+                            setProjectSearch(''); void loadDelivery(foundationProject.project_id, 0); }}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-600">
+                          <RefreshCw size={15}/> {delivery.state === 'READY' && delivery.projectId === foundationProject.project_id
+                            ? 'Reverify Foundation work' : 'Verify Foundation work'}
+                        </button>
+                        {typeof onOpenProject === 'function' && <button type="button"
+                          onClick={() => onOpenProject(foundationProject.project_id)}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-400 bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                          Open Work &amp; milestones <ArrowUpRight size={14}/>
+                        </button>}
+                      </div>
+                    </section>}
+                    {!focusedM04Inspector && projectState === 'READY' && foundationProject && projectItems.length > 0 && <button type="button"
+                      aria-expanded={registerVisible}
+                      aria-controls="strategy-project-source-register"
+                      onClick={() => { setProjectRegisterOpen(current => !current); setProjectSearch('');
+                        setBrowseOtherProjects(true); }}
+                      className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-500 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                      {registerVisible ? 'Hide project register' : 'Browse all ' + projectItems.length + ' projects'}
+                    </button>}
+                    <div id="strategy-project-source-register" hidden={!registerVisible}>
+                    {selectedStrategyProject && !projectSearch.trim() && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/50 p-2.5">
+                      <span className="text-sm text-slate-200">Working in <strong className="text-white">{selectedStrategyProject.name}</strong></span>
+                      <button type="button" aria-expanded={browseOtherProjects} className="rounded-md border border-slate-500 bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
+                        onClick={() => setBrowseOtherProjects(open => !open)}>{browseOtherProjects ? 'Show selected project' : 'Browse other projects'}</button>
+                    </div>}
+                    {projectState === 'READY' && (!selectedStrategyProject || browseOtherProjects || projectSearch.trim()) && projectItems.length > 0 && <label className="mb-3 flex flex-col gap-1 text-sm text-slate-200">Find a project
+                      <input type="search" value={projectSearch} onChange={event => setProjectSearch(event.target.value)}
+                        placeholder="Search projects by name…" className="min-h-11 w-full rounded-lg border border-slate-500 bg-slate-950 px-3 text-sm text-white placeholder:text-slate-400"/>
+                    </label>}
+                    {projectState === 'READY' && <div className={styles.projectListSummary} role="status">
+                      <span>{projectItems.length === 0 ? 'No projects returned by EOS on this page.' : projectSearch.trim() ? visibleStrategyProjects.length + ' matching · ' + projectItems.length + ' source-verified projects' : projectItems.length + ' verified projects on this page'}</span>
+                      <span className={styles.sourceVerified}>Source verified · EOS</span>
+                    </div>}
+                    {projectState === 'READY' && projectItems.length > 0 && visibleStrategyProjects.length === 0 && <p role="status" className="text-sm text-slate-300">No verified projects match this search. The source project list is unchanged.</p>}
+                    {projectState === 'READY' && displayedStrategyProjects.length > 0 && <div className={styles.strategyWorkRegister + " overflow-x-auto rounded-xl border border-[#cbd8ea] bg-white text-[#182f51]"}>
+                      <table className="w-full min-w-[620px] border-collapse text-left text-sm" aria-label="Verified EOS project register">
+                        <thead className="bg-[#eef3fa] text-xs font-semibold text-[#344c70]">
+                          <tr><th scope="col" className="px-4 py-3">Project</th><th scope="col" className="px-4 py-3">Source state</th><th scope="col" className="px-4 py-3">Revision</th><th scope="col" className="px-4 py-3 text-right">Work actions</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#dce5f1]">
+                          {displayedStrategyProjects.map(item => <tr key={item.project_id} className={delivery.projectId === item.project_id ? 'bg-[#eef5ff]' : 'bg-white hover:bg-[#f8faff]'}>
+                            <th scope="row" className="max-w-[440px] px-4 py-3 font-semibold text-[#172e52]">{item.name}</th>
+                            <td className="px-4 py-3"><span className="inline-flex rounded-md border border-[#b9d0e8] bg-[#f4f8fc] px-2 py-1 text-xs font-semibold text-[#254266]">{item.status.replaceAll('_', ' ')}</span></td>
+                            <td className="px-4 py-3 text-[#526787]">{item.revision}</td>
+                            <td className="px-4 py-3"><div className="flex flex-wrap justify-end gap-2">
+                              <button type="button" disabled={delivery.state === 'LOADING'}
+                                aria-label={'Verify register task execution for ' + item.name}
+                                aria-pressed={delivery.state === 'READY' && delivery.projectId === item.project_id}
+                                onClick={() => void loadDelivery(item.project_id)}
+                                data-register-action="VERIFY"
+                                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#bdcde2] bg-white px-3 py-2 text-xs font-semibold text-[#17365e] hover:bg-[#eaf2fc]">
+                                <RefreshCw size={14}/> Verify work
+                              </button>
+                              {typeof onOpenProject === 'function' && <button type="button"
+                                aria-label={'Open Work and milestones for ' + item.name}
+                                onClick={() => onOpenProject(item.project_id)}
+                                data-register-action="OPEN_WORK"
+                                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#1655cf] bg-[#1456cc] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0f45a8]">
+                                Work &amp; milestones <ArrowUpRight size={14}/>
+                              </button>}
+                            </div></td>
+                          </tr>)}
+                        </tbody>
+                      </table>
+                    </div>}
+                    </div>
+                    {delivery.state === 'LOADING' && <p role="status">Verifying project tasks…</p>}
+                    {(delivery.state === 'DENIED' || delivery.state === 'UNAVAILABLE') && <p role="alert">{delivery.error || 'Current project task read denied by EOS.'}</p>}
+                    {delivery.state === 'READY' && delivery.page && <section className={styles.strategyDelivery} aria-label="Verified project execution" style={focusedM04Inspector ? { marginTop: 0, padding: '10px 12px' } : undefined}>
+                      {!focusedM04Inspector && <div className={styles.strategyDeliveryHeader}>
+                        <div>
+                          <span className={styles.eyebrow}>EOS · VERIFIED SOURCE RECORDS</span>
+                          <h3>Source-verified project execution</h3>
+                          <p>{projectItems.find(item => item.project_id === delivery.projectId)?.name} · {delivery.page.items.length} items on this verified page</p>
+                        </div>
+                        <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.offset)}>
+                          <RefreshCw size={15}/> Refresh execution
+                        </button>
+                      </div>}
+                      {!focusedM04Inspector && <p className={styles.strategyDeliveryNote}>Lifecycle records only. No strategic pillar linkage or Strategy completion percentage is inferred.</p>}
+                      <section aria-label="M04 governed Strategy execution"
+                        className="rounded-xl border border-slate-500/60 bg-slate-950/40 p-3 text-slate-100" style={focusedM04Inspector ? { marginTop: 0 } : { marginTop: 12 }}>
+                        {!focusedM04Inspector && <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div><h4 className="text-base font-semibold text-white">M04 · Governed Strategy execution</h4>
+                            <p className="mt-1 text-sm text-slate-200">Source-owned accountability, due dates,
+                              dependencies and immutable task lifecycle evidence. No outcomes are inferred from task counts.</p>
+                          </div>
+
+                        </div>}
+                        {m04Execution && <nav aria-label="M04 execution focus" className="mt-3 flex flex-wrap items-center gap-2">
+                          <button type="button" aria-pressed={m04FocusMode === 'WORK'}
+                            onClick={() => selectWorkView('WORK')}
+                            className={m04FocusMode === 'WORK'
+                              ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
+                              : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
+                            Next assigned task
+                          </button>
+                          <button type="button" aria-pressed={m04FocusMode === 'INSPECT' && executionInspectorOpen}
+                            onClick={() => {
+                              if (m04FocusMode === 'INSPECT' && !executionInspectorOpen) {
+                                setExecutionInspectorOpen(true);
+                              } else {
+                                focusWorkOnOpen.current = true;
+                                selectWorkView('INSPECT');
+                              }
+                            }}
+                            className={m04FocusMode === 'INSPECT' && executionInspectorOpen
+                              ? 'min-h-10 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2 text-sm font-semibold text-white'
+                              : 'min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800'}>
+                            {m04FocusMode === 'INSPECT' && !executionInspectorOpen ? 'Back to tasks' : 'Browse tasks & evidence'}
+                          </button>
+                        </nav>}
+                        {m04Execution ? <>
+                          {m04FocusMode === 'WORK' && nextAccountableTask && typeof onOpenProject === 'function' && <div role="region"
+                            aria-label="Continue accountable Strategy work"
+                            className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-400/50 bg-slate-900/60 px-3 py-3">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-sky-200">Your next source-assigned task</p>
+                              <p className="text-sm font-semibold text-white">{nextAccountableTask.title}</p>
+                              <p className="mt-1 text-xs text-slate-300">Assigned to your current principal · predecessors complete
+                                {nextAccountableTask.due_date ? ' · due ' + nextAccountableTask.due_date : ' · no source deadline'}
+                              </p>
+                            </div>
+                            <button type="button"
+                              aria-label={'Continue accountable task ' + nextAccountableTask.title}
+                              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-3 py-2 text-sm font-bold text-white hover:bg-sky-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                              onClick={() => {
+                                recordTaskVisit(nextAccountableTask.task_id);
+                                onOpenProject(m04Execution.project.project_id, { taskId: nextAccountableTask.task_id });
+                              }}>Open task in Projects <ArrowUpRight size={15}/></button>
+                          </div>}
+                          {m04FocusMode === 'WORK' && latestSourceWork && latestSourceWork.task_id !== nextAccountableTask?.task_id && <div role="region" className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/40 px-3 py-2.5" aria-label="Continue your last updated task">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-slate-300">Your last recorded task update</p>
+                              <p className="max-w-xl truncate text-sm font-semibold text-white">{latestSourceWork.title}</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button type="button" className="rounded-md border border-sky-400/70 bg-sky-950/70 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                                onClick={() => resumeTask(latestSourceWork)}>Inspect evidence</button>
+                              {typeof onOpenProject === 'function' && <button type="button"
+                                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-3 py-2 text-sm font-bold text-white hover:bg-sky-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                                onClick={() => {
+                                  recordTaskVisit(latestSourceWork.task_id);
+                                  onOpenProject(m04Execution.project.project_id, { taskId: latestSourceWork.task_id });
+                                }}>
+                                Continue in Work &amp; milestones <ArrowUpRight size={15}/>
+                              </button>}
+                            </div>
+                          </div>}
+                          {!focusedM04Inspector && <p className="mt-3 text-sm" role="status">Pillar 1 relationship verified against
+                            Strategy revision {document.revision} and Foundation project revision {m04Execution.project.revision}.
+                            {' '}Complete authorized task snapshot: {m04Execution.rows.length} work records.</p>}
+                          {m04FocusMode === 'INSPECT' && executionInspectorOpen && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600/70 bg-slate-900/60 p-2.5">
+                            <span className="text-sm text-slate-200">{m04Execution.rows.length} verified tasks · {executionMatches.length} matching current view</span>
+                            <button type="button" data-m04-overview="true" onClick={() => setExecutionInspectorOpen(false)}
+                              className="rounded-md border border-slate-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">Show execution overview</button>
+                          </div>}
+                          {m04FocusMode === 'INSPECT' && !executionInspectorOpen && <>
+                          <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+                            {[
+                              ['Assigned in task source', m04Execution.assigned, 'ASSIGNED'],
+                              ['Unassigned work', m04Execution.unassigned, 'UNASSIGNED'],
+                              ['Waiting on predecessors', m04Execution.waiting, 'WAITING'],
+                              ['Without due dates', m04Execution.missingDueDate, 'UNDATED'],
+                              ['Past calendar due date', m04Execution.pastDueCalendar, 'DUE'],
+                              ['Done · task lifecycle only', m04Execution.states.DONE, 'DONE'],
+                            ].map(([label, value, filter]) => <div key={label}
+                              className="rounded-lg border border-slate-600/70 p-1">
+                              <dt><button type="button" aria-label={'Inspect ' + label.toLowerCase()}
+                                onClick={() => focusExecutionWork(filter)}
+                                className="w-full rounded-lg px-2 py-2 text-left text-slate-100 hover:bg-sky-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300">
+                                <span className="block text-xs text-slate-300">{label}</span>
+                                <span className="mt-1 block text-xl font-semibold">{value}</span>
+                                <span className="block text-xs text-sky-300">Inspect work</span>
+                              </button></dt>
+                            </div>)}
+                          </dl>
+                          <p className="mt-3 text-sm font-semibold">Certified strategic outcome:
+                            {' '}Not established — no authorized outcome evidence or outcome score exists in this source.
+                          </p>
+                          <p className="mt-1 text-xs text-slate-300">Snapshot observed: {m04Execution.observedAt}.
+                            Due-date comparisons use a UTC calendar date, not a server-certified overdue decision.
+                            Task DONE and audit history are not strategic outcome certification.</p>
+                          </>}
+                          {m04FocusMode === 'INSPECT' && <details ref={executionInspectorRef} open={executionInspectorOpen} className="mt-4 scroll-mt-44 rounded-lg border border-slate-600/70 p-3">
+                            <summary className="cursor-pointer font-semibold" onClick={event => {
+                              event.preventDefault();
+                              setExecutionInspectorOpen(open => !open);
+                            }}>Inspect accountable work and lifecycle evidence · {m04Execution.rows.length} records</summary>
+                            <div className="mt-3 flex flex-wrap items-end gap-3" aria-label="M04 work navigator">
+                              <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs text-slate-200">Find work by title
+                                <input ref={executionSearchRef} type="search" value={executionSearch} placeholder="Search verified tasks…"
+                                  onChange={event => { setExecutionSearch(event.target.value); setExecutionPage(0); }}
+                                  className="min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-3 text-sm text-white" />
+                              </label>
+                              <label className="flex flex-col gap-1 text-xs text-slate-200">Show work
+                                <select value={executionFilter}
+                                  onChange={event => { setExecutionFilter(event.target.value); setExecutionPage(0); }}
+                                  className="min-h-10 rounded-lg border border-slate-500 bg-slate-900 px-3 text-sm text-white">
+                                  <option value="ALL">All verified work</option>
+                                  <option value="ASSIGNED">Assigned work</option>
+                                  <option value="UNASSIGNED">Unassigned</option>
+                                  <option value="WAITING">Waiting on dependencies</option>
+                                  <option value="UNDATED">Without due dates</option>
+                                  <option value="DUE">Past due date</option>
+                                  <option value="DONE">Done in task source</option>
+                                </select>
+                              </label>
+                              <span className="text-xs text-slate-300" role="status">
+                                {executionMatches.length} matching · page {safeExecutionPage + 1} of {executionPageCount}
+                              </span>
+                            </div>
+                            {accessibleVisits.length > 0 && <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-600/70 bg-slate-900/50 p-2.5" aria-label="Current session task shortcuts">
+                              <span className="text-xs font-semibold text-slate-300">Recently inspected this session</span>
+                              {accessibleVisits.slice(0, 2).map(item => <button key={item.id} type="button"
+                                title={item.task.title} onClick={() => resumeTask(item.task)}
+                                className="max-w-60 truncate rounded-md border border-slate-500 bg-slate-800 px-3 py-1.5 text-xs text-white hover:bg-slate-700">{item.task.title}</button>)}
+                              {mostVisited.length > 0 && <span className="text-xs text-slate-400">Most reopened this session: {mostVisited[0].task.title}</span>}
+                            </div>}
+                            {executionMatches.length === 0 && <p className="mt-3 text-sm text-slate-300">No verified work matches this view. The source work snapshot is unchanged.</p>}
+                            <ul className="mt-3 divide-y divide-slate-700/70">
+                              {visibleExecutionRows.map(({ task, remaining }) => <li key={task.task_id}
+                                className="py-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div><strong className="text-sm">{task.title}</strong>
+                                    <p className="mt-1 text-xs text-slate-300">
+                                      {task.kind} · {task.status.replaceAll('_', ' ')} · revision {task.revision}
+                                      {' · '}{task.assignee_principal_id ? 'Assignment recorded in EOS' : 'Unassigned'}
+                                      {' · '}{task.due_date ? 'Due ' + task.due_date : 'No due date'}
+                                      {' · '}{remaining ? remaining + ' incomplete predecessor(s)' : 'Dependencies clear'}
+                                    </p>
+                                  </div>
+                                  <div role="group" aria-label={'Actions for ' + task.title}
+                                    className="flex max-w-full flex-wrap items-center gap-2 sm:justify-end">
+                                    <button type="button"
+                                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-500/90 bg-slate-800/90 px-3.5 py-2.5 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:border-sky-300 hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+                                      aria-expanded={executionEvidence.taskId === task.task_id && executionEvidence.state !== 'IDLE'}
+                                      aria-controls={'m04-evidence-' + task.task_id}
+                                      onClick={() => { recordTaskVisit(task.task_id); void verifyExecutionEvidence(task.task_id); }}>
+                                      <FileText size={16} aria-hidden="true"/> Inspect lifecycle evidence
+                                    </button>
+                                    {typeof onOpenProject === 'function' && !['DONE', 'CANCELLED'].includes(task.status)
+                                      && <button type="button"
+                                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-sky-300 bg-sky-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-600 active:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+                                        aria-label={'Manage ' + task.title + ' in Projects'}
+                                        onClick={() => { recordTaskVisit(task.task_id); onOpenProject(m04Execution.project.project_id, { taskId: task.task_id }); }}>
+                                        Manage task <ArrowUpRight size={16} aria-hidden="true"/>
+                                      </button>}
+                                  </div>
+                                </div>
+                                {(!task.assignee_principal_id || !task.due_date || remaining > 0)
+                                  && !['DONE', 'CANCELLED'].includes(task.status) && <p className="mt-1 text-xs text-slate-300">
+                                    Needs attention: {[
+                                      !task.assignee_principal_id ? 'assign an eligible project contributor' : null,
+                                      !task.due_date ? 'set an authorized due date' : null,
+                                      remaining > 0 ? 'resolve ' + remaining + ' source-owned predecessor(s)' : null,
+                                    ].filter(Boolean).join(' · ')}.
+                                    {' '}Use the existing Projects task actions; EOS verifies every change.
+                                  </p>}
+                                {executionEvidence.taskId === task.task_id && <section
+                                  id={'m04-evidence-' + task.task_id}
+                                  ref={evidenceResultRef}
+                                  tabIndex={-1}
+                                  aria-label={'Lifecycle evidence result for ' + task.title}
+                                  className={styles.m04EvidenceResult}
+                                  data-evidence-state={executionEvidence.state}
+                                  role={['UNAVAILABLE', 'DENIED'].includes(executionEvidence.state) ? 'alert' : 'status'}>
+                                  <div className={styles.m04EvidenceHeading}>
+                                    {executionEvidence.state === 'READY' ? <CheckCircle2 size={20} aria-hidden="true"/>
+                                      : <FileText size={20} aria-hidden="true"/>}
+                                    <div>
+                                      <strong>{executionEvidence.state === 'READY' ? 'Task history checked'
+                                        : executionEvidence.state === 'LOADING' ? 'Checking task history…'
+                                          : 'Task history could not be loaded'}</strong>
+                                      <span>{task.title}</span>
+                                    </div>
+                                  </div>
+                                  {executionEvidence.state === 'LOADING' && <p>Checking the saved task history…</p>}
+                                  {executionEvidence.state === 'READY' && <>
+                                    <p className={styles.m04EvidenceResultDetail}>
+                                      {executionEvidence.items.length} recorded {executionEvidence.items.length === 1 ? 'change' : 'changes'}.
+                                      {' '}Latest: {{ PROJECT_TASK_CREATED: 'Task created', PROJECT_TASK_REVISED: 'Task details updated', PROJECT_TASK_TRANSITIONED: 'Task status changed' }[executionEvidence.items[0].event_type]}
+                                      {' · '}{{ TODO: 'To do', IN_PROGRESS: 'In progress', BLOCKED: 'Blocked', DONE: 'Done', CANCELLED: 'Cancelled' }[executionEvidence.items[0].status_after]}
+                                      {' · '}{new Date(executionEvidence.items[0].occurred_at).toLocaleString()}. 
+                                    </p>
+                                    {task.status === 'DONE' && executionEvidence.decisions
+                                      && executionEvidence.attachments && <p className={styles.m04EvidenceResultDetail}>
+                                        Approvals: {executionEvidence.decisions.approved} approved
+                                        {' of '}{executionEvidence.decisions.total} recorded.
+                                        {' '}Files checked: {executionEvidence.attachments.cleared}
+                                        {' of '}{executionEvidence.attachments.total}.
+                                      </p>}
+                                    <details className={styles.m04EvidenceBoundary}>
+                                      <summary>What does this check confirm?</summary>
+                                      <p>This confirms the recorded history of this task. It does not mean the work is complete, independently approved or paid. Any approvals and files must be checked separately.</p>
+                                    </details>
+                                  </>}
+                                  {['UNAVAILABLE', 'DENIED'].includes(executionEvidence.state)
+                                    && <p>{executionEvidence.error}</p>}
+                                </section>}
+                              </li>)}
+                            </ul>
+                            {executionMatches.length > executionPageSize && <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                              <button type="button" disabled={safeExecutionPage === 0}
+                                onClick={() => setExecutionPage(page => Math.max(0, page - 1))}
+                                className="rounded-lg border border-slate-500 px-3 py-2 text-sm">Previous work</button>
+                              <button type="button" disabled={safeExecutionPage >= executionPageCount - 1}
+                                onClick={() => setExecutionPage(page => Math.min(executionPageCount - 1, page + 1))}
+                                className="rounded-lg border border-slate-500 px-3 py-2 text-sm">Next work</button>
+                            </div>}
+                          </details>}
+                          {m04FocusMode === 'INSPECT' && typeof onOpenProject === 'function' && <button type="button"
+                            className="mt-3 rounded-lg border border-slate-500 px-3 py-2 text-sm"
+                            onClick={() => onOpenProject(m04Execution.project.project_id)}>
+                            Open source-owned task commands <ArrowUpRight size={14} aria-hidden="true"/>
+                          </button>}
+                        </> : <p role="status" className="mt-3 text-sm">
+                          M04 execution unavailable until the currently effective published Strategy,
+                          exact current Pillar 1 link, unchanged Foundation project revision, complete task
+                          snapshot and dependencies are all independently verified. No work or outcome score inferred.{' '}Reason: {m04GateMessage}
+                         </p>}
+                      </section>
+
+
+                      {delivery.page.items.length === 0 ? <p role="status">EOS verified no tasks on this page.</p>
+                        : <details className="mt-4 rounded-lg border border-slate-600/60 p-3">
+                          <summary className="cursor-pointer font-semibold">Source task register · {delivery.page.items.length} records (additional detail)</summary>
+                          <ul className={styles.strategyTaskList}>{delivery.page.items.map(item =>
+                          <li key={item.task_id}>
+                            <div><strong>{item.title}</strong><span>{item.kind === 'MILESTONE' ? 'Milestone' : 'Task'}{item.due_date ? ' · Due ' + item.due_date : ''}</span></div>
+                            <span className={styles.projectStatus} data-status={item.status}>{item.status.replaceAll('_', ' ')}</span>
+                          </li>)}</ul></details>}
+                      {(delivery.page.offset > 0 || delivery.page.has_more) && <div className={styles.strategyPagination}>
+                        {delivery.page.offset > 0 && <button type="button" onClick={() => void loadDelivery(delivery.projectId, Math.max(0, delivery.page.offset - 50))}>Previous page</button>}
+                        <span>Page {Math.floor(delivery.page.offset / 50) + 1}</span>
+                        {delivery.page.has_more && <button type="button" onClick={() => void loadDelivery(delivery.projectId, delivery.page.next_offset)}>Next page</button>}
+                      </div>}
+                    </section>}
+                    {delivery.state === 'READY' && projectItems.some(item => item.project_id === delivery.projectId
+                      && item.name === FOUNDATION_PROJECT_NAME) && <details
+                        className="mt-3 rounded-xl border border-slate-600/60 bg-slate-900/30 p-3"
+                        open={!m04Execution || m04FocusMode === 'INSPECT'}>
+                      <summary className="cursor-pointer text-sm font-semibold text-slate-100">
+                        Implementation programme and source evidence · {verifiedFoundationPlanCount} of 18 verified
+                      </summary>
+                      <section className={styles.strategyPlan}
+                        aria-label="Planned My Work overhaul programme">
+                      <div className={styles.strategyPlanHeader}>
+                        <div>
+                          <span className={styles.eyebrow}>EOS-SOURCE VERIFIED · IMPLEMENTATION REGISTER</span>
+                          <h3>My Work implementation programme</h3>
+                          <p role="status">{verifiedFoundationPlanCount} of 18 planned records persisted in EOS.
+                            {' '}{foundationPlanRemaining} still awaiting creation. This is not Strategy completion evidence.</p>
+                        </div>
+                        <button type="button" onClick={() => void admitFoundationPlan()}
+                          disabled={planState.state === 'RUNNING' || delivery.page.has_more || foundationPlanRemaining === 0}>
+                          {planState.state === 'RUNNING' ? 'Saving verified work…'
+                            : foundationPlanRemaining === 0 ? 'All 18 verified in EOS'
+                              : verifiedFoundationPlanCount > 0
+                                ? 'Create remaining ' + foundationPlanRemaining + ' in EOS'
+                                : 'Create missing in EOS'}
+                        </button>
+                      </div>
+                      {delivery.page.has_more && <p role="alert">Verify the full project task list before admitting the plan.</p>}
+                      {typeof onOpenProject === 'function' && <button type="button"
+                        className="mt-3 min-h-10 rounded-lg border border-amber-300/60 bg-slate-900 px-4 text-sm font-semibold text-amber-100 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                        onClick={() => onOpenProject(delivery.projectId)}>
+                        Open existing project execution <ArrowUpRight size={15} aria-hidden="true"/>
+                      </button>}
+                      <p className="mt-3 text-xs text-slate-300">
+                        Each record below shows current EOS lifecycle state. Persisted means the work exists, not that it is Done, approved, linked to a strategic pillar or published.
+                      </p>
+                      {foundationExecution ? <section aria-label="M02 live execution readback"
+                        className="mt-4 rounded-xl border border-slate-500/50 bg-slate-950/40 p-4 text-slate-100">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-base font-semibold text-white">Live implementation execution · M02</h4>
+                          <span className="text-xs text-slate-200">Successful Projects read observed: {foundationExecution.verifiedAt.replace('T', ' ').slice(0, 19)} UTC</span>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-200">All {foundationExecution.total} programme records uniquely matched in the complete, authorized EOS project snapshot. These are task lifecycle counts, not strategic outcome certification.</p>
+                        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+                          {[
+                            ['To do', foundationExecution.counts.TODO],
+                            ['In progress', foundationExecution.counts.IN_PROGRESS],
+                            ['Done', foundationExecution.counts.DONE],
+                            ['Blocked', foundationExecution.counts.BLOCKED],
+                            ['Cancelled', foundationExecution.counts.CANCELLED],
+                          ].map(([label, count]) => <div key={label} className="rounded-lg border border-slate-600/70 bg-slate-900 p-3">
+                            <dt className="text-xs font-medium text-slate-300">{label}</dt>
+                            <dd className="mt-1 text-xl font-bold text-white">{count}</dd>
+                          </div>)}
+                        </dl>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
+                            <strong>{foundationExecution.waiting}</strong> programme records waiting on <strong>{foundationExecution.unfinishedPredecessors}</strong> unfinished predecessor relationships
+                          </p>
+                          <p className="rounded-lg border border-slate-600/70 p-3 text-sm text-slate-100">
+                            <strong>{foundationExecution.pastDue}</strong> unfinished records with calendar due dates before the observed UTC read date
+                          </p>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-300">Refresh execution to verify current EOS state. The timestamp is client-observed after a successful read, not a server transaction timestamp. No pillar link, publication, approval or completion is inferred.</p>
+                      </section> : <p role="status" className="mt-3 rounded-lg border border-slate-500/60 p-3 text-sm text-slate-200">
+                        M02 execution summary unavailable: full, unique 18-record programme coverage and predecessor readback have not both been verified. No counts are inferred.
+                      </p>}
+
+                      <details className="mt-4 rounded-lg border border-slate-600/60 p-3">
+                        <summary className="cursor-pointer font-semibold">Browse all 18 planned milestones and tasks</summary>
+                      <div className={styles.strategyPlanGroups}>
+                        {['MILESTONE', 'TASK'].map(kind => <div key={kind}>
+                          <h4>{kind === 'MILESTONE' ? 'Milestones · 6' : 'Implementation tasks · 12'}</h4>
+                          <ul>{FOUNDATION_EXECUTION_PLAN.filter(entry => entry.kind === kind).map(entry => {
+                            const matches = delivery.page.items.filter(item => item.title === entry.title);
+                            const verified = matches.length === 1 && matches[0].kind === entry.kind;
+                            return <li key={entry.key}>
+                              <span>
+                                {entry.title}
+                                {verified && <small className="mt-1 block font-medium text-slate-300">
+                                  Current EOS status: {matches[0].status.replaceAll('_', ' ')}
+                                </small>}
+                              </span>
+                              <span className={verified ? styles.planPersisted : styles.planProposed}>
+                                {verified ? 'Persisted in EOS' : 'Planned'}
+                              </span>
+                            </li>;
+                          })}</ul>
+                        </div>)}
+                      </div>
+                      </details>
+                      {planState.state !== 'IDLE' && <p role="status" aria-live="polite">
+                        {planState.message} {planState.state === 'RUNNING' ? planState.created + ' created so far.' : ''}
+                      </p>}
+                      <div className={styles.strategyLinkPanel} aria-label="Governed Strategy project relationship">
+                        <div>
+                          <h4>Strategic Pillar 1 · Project relationship</h4>
+                          {strategyLink.state === 'LOADING' && <p role="status">Verifying current Strategy project link…</p>}
+                          {strategyLink.state === 'UNAVAILABLE' && <p role="alert">{strategyLink.message}</p>}
+                          {strategyLink.state === 'PUBLICATION_REQUIRED' && <p role="status">{strategyLink.message}</p>}
+                          {strategyLink.state === 'PUBLICATION_REQUIRED' && reviewPermitted && !query.review
+                            && <button type="button" onClick={() => changeQuery({ review: true, revision: null })}>
+                              Review private Strategy publication workflow
+                            </button>}
+                          {strategyLink.state === 'LINKING' && <p role="status">{strategyLink.message}</p>}
+                          {strategyLink.state === 'READY' && (() => {
+                            const item = strategyLink.items.find(row => row.pillar_id === 'pillar-one'
+                              && row.project_id === delivery.projectId);
+                            return item ? <p role="status">{item.state === 'VERIFIED_CURRENT'
+                              ? 'Linked in EOS · current Strategy and project snapshots verified. No outcome score certified.'
+                              : 'Linked record found; Strategy publication or project source changed. Reverification required.'}</p>
+                              : <p role="status">No governed relationship recorded for this project and pillar.</p>;
+                          })()}
+                        </div>
+                        {strategyLink.state === 'READY'
+                          && !strategyLink.items.some(item => item.project_id === delivery.projectId
+                            && item.pillar_id === 'pillar-one')
+                          && <button type="button" onClick={() => void linkFoundationStrategy()}
+                            disabled={foundationPlanRemaining !== 0 || data?.state !== 'PUBLISHED'
+                              || query.review || !document?.sections?.some(s => s.section_id === 'pillar-one')}>
+                            Link verified Foundation project to Pillar 1
+                          </button>}
+                        <p>This binds approved source identities only. Strategic outcome attainment, independent publication,
+                          task completion and financial authorization remain separate EOS authorities.</p>
+                      </div>
+                      <p className={styles.strategyDeliveryNote}>Creation requires current EOS project:update authority. No assignee,
+                        deadline, task completion, approval, financial authorization or strategy linkage is inferred.</p>
+                    </section></details>}
+                    {projectState !== 'READY' && projectState !== 'LOADING' && <p role="status">
+                      {projectError || 'Projects source has not been verified for this session.'}</p>}
+                    {projectState === 'UNAVAILABLE' && typeof onOpenProjects === 'function' && <button
+                      type="button" onClick={onOpenProjects}>Open existing Projects workspace</button>}
+                    {projectState === 'UNAVAILABLE' && <p role="status">
+                      Your existing project has not been changed. A transient read was retried once.
+                      Check the Python EOS Projects transaction failure code if the source remains unavailable.
+                    </p>}
+                    {projectState === 'DENIED' && <button type="button"
+                      disabled={admissionBusy} onClick={() => void activateFounderProjects()}>
+                      <ShieldCheck size={15}/> {admissionBusy ? 'Verifying Founder authority…' : 'Activate Founder Projects through EOS'}
+                    </button>}
+                    {admissionStatus && <p role="status">{admissionStatus}</p>}
+                    {projectError && projectState === 'READY' && <p role="alert">{projectError}</p>}
+                    {projectSuccess && <p role="status">{projectSuccess}</p>}
+                    {(projectState === 'READY' || projectState === 'UNAVAILABLE') && <details className={styles.strategyCreateDisclosure}>
+                      <summary><span><strong>Create another project</strong><small>Separate governed EOS project · does not link to a strategic pillar</small></span></summary>
+                      <form className={styles.strategyCreateForm} onSubmit={createStrategyProject} aria-label="Create governed EOS project">
+                      <h3>Create a project in EOS</h3>
+                      <p>Choose the strategic context for its description. This does not establish a formal strategy relationship or appoint an owner.</p>
+                      {projectState === 'UNAVAILABLE' && <p role="status">Your draft remains available to inspect and edit. Project creation is disabled until a fresh EOS Projects read succeeds. Use Refresh projects to reverify source availability.</p>}
+                      <label>Strategic pillar context<select value={projectPillar} disabled={projectBusy}
+                        onChange={event => { setProjectPillar(event.target.value); setProjectSuccess(''); }}>
+                        {STRATEGY_PILLARS.map(pillar => <option key={pillar.section_id} value={pillar.section_id}>{pillar.title}</option>)}
+                      </select></label>
+                      <label>Project name<input required maxLength={180} value={projectName} disabled={projectBusy}
+                        onChange={event => { setProjectName(event.target.value); setProjectSuccess(''); }}/></label>
+                      <div className={styles.projectDescriptionHeader}>
+                        <strong>Project description</strong>
+                        <button type="button" onClick={() => setProjectEditSource(value => !value)} disabled={projectBusy}>
+                          {projectEditSource ? 'View formatted description' : 'Edit description'}
+                        </button>
+                      </div>
+                      <p className={styles.projectDescriptionHint}>Formatted live preview of your draft. Headings, lists and emphasis are displayed as readable text; EOS stores the exact submitted description as source.</p>
+                      {!projectEditSource && <ProjectDescriptionPreview value={projectDescription}/>}
+                      {projectEditSource && <label>Editable description source
+                        <textarea maxLength={3700} rows={12} value={projectDescription} disabled={projectBusy}
+                          onChange={event => { setProjectDescription(event.target.value); setProjectSuccess(''); }}/>
+                      </label>}
+                      <div className={styles.projectDescriptionHeader}>
+                        <span>{projectDescription.length.toLocaleString()} / 3,700 characters</span>
+                        {!projectDescription.trim() && !projectEditSource && <button type="button" onClick={() => setProjectEditSource(true)}>Enter project description</button>}
+                      </div>
+                      <button type="submit" disabled={projectBusy || projectState !== 'READY' || !projectName.trim()}>
+                        {projectBusy ? 'Verifying EOS readback…' : 'Create project in EOS'}
+                      </button>
+                      </form>
+                    </details>}
+                  </div>}
+                </section>}
+                {actions.includes('PUBLISH') && <form className={styles.form} aria-label={`Independent ${classification === 'MISSION' ? 'Mission' : 'Strategy'} publication approval`} onSubmit={publish}><h2>Independent approval and publication</h2><p>Your current source permission and a different author are verified again by EOS.</p><label>Approval reference<input required maxLength={500} value={approvalReference} onChange={event => setApprovalReference(event.target.value)}/></label><label>Effective date and time<input required type="datetime-local" value={effectiveFrom} onChange={event => setEffectiveFrom(event.target.value)}/></label><button type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Approve and publish'}</button></form>}
+                </>}
               </>}
         </div>
       </div>
@@ -782,7 +2685,7 @@ export default function CompanyOperatingDocumentViewer({ classification, onClose
 }
 
 // ARTIFACT: CompanyOperatingDocumentViewer.jsx
-// VERSION: v1.7.2-PROJECTS-DELIVERY-HANDOFF
+// VERSION: v2.33.5-CURRENT-STRATEGY-LINK-SESSION
 // AUTHORITY BOUNDARY: Source-backed content and command presentation only.
 // TENANT POSTURE: Exact session/credential scope; transient state discarded on change.
 // FAIL-CLOSED POSTURE: No official content or success without source/readback proof.

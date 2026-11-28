@@ -1,12 +1,15 @@
 /**
  * TITLE: WILSY OS Project Participant Command UI Certificate
- * VERSION: v1.3.0-FAULT-ISOLATED-PROJECT-PEOPLE-CERT
+ * VERSION: v1.4.0-DUPLICATE-PARTICIPANT-GRANT-DENIAL
  * AUTHORITY: Synthetic client contract tests; EOS alone owns IAM and grants.
  * EPITOME: Verify source choices, explicit role grant/revoke, fresh state
  *          readback and denial of invented members or session-scoped outcomes.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/ProjectParticipantsPanel.test.jsx
  * COLLABORATION / OWNERSHIP: ProjectParticipantsPanel; vi mocks api.js only.
  * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CHANGELOG: v1.4.0-DUPLICATE-PARTICIPANT-GRANT-DENIAL verifies existing project contributor
+ *          is absent from add choices, duplicate POST is blocked and the
+ *          current source-owned participation remains available to inspect.
  * CHANGELOG: v1.3.0-FAULT-ISOLATED-PROJECT-PEOPLE-CERT verifies current participant listing remains readable after independent eligible-directory 403, distinguishes actual HTTP 403 from network loss, and prevents any grant or revocation without both verified current EOS sources.
  * CHANGELOG: v1.2.0-ACTIVE-PARTICIPATION-LABEL-CERT scopes contributor label checks to the active participant list rather than the adjacent role picker.
  * CHANGELOG: v1.1.0-HUMAN-ONLY-PARTICIPANT-CERT ensures audit-only
@@ -108,6 +111,34 @@ it('grants and revokes only verified selectable tenant participants', async () =
   expect(api.post).toHaveBeenCalledTimes(2);
 });
 
+it('does not offer or re-admit a contributor already in the verified project roster', async () => {
+  api.get.mockImplementation(async path => {
+    if (path.includes('/participant-options?')) return { data: {
+      schema: 'WILSY-PROJECT-PARTICIPANT-OPTIONS/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      limit: 50, offset: 0, items: [{ principal_id: target,
+        first_name: 'Verified', last_name: 'Contributor' }],
+      has_more: false, next_offset: null,
+    } };
+    if (path.includes('/participants?')) return { data: {
+      schema: 'WILSY-PROJECT-PARTICIPANT-LIST/V1',
+      tenant_id: tenantId, principal_id: principalId, project_id: projectId,
+      limit: 50, offset: 0, items: [record],
+      has_more: false, next_offset: null,
+    } };
+    throw new Error('Unexpected source ' + path);
+  });
+  render(<ProjectParticipantsPanel tenantId={tenantId} principalId={principalId}
+    projectId={projectId} initialSelectedPrincipal={target}
+    tenantHeaders={{ 'X-Tenant-ID': tenantId }}/>);
+  expect(await screen.findByText(/All currently verified eligible members on this page already participate/)).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Add participant' })).toBeDisabled();
+  expect(screen.queryByRole('option', { name: 'Verified Contributor' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Revoke participation' })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Add participant' }));
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 it('does not expose unverified candidate options or a grant button', async () => {
   api.get.mockImplementation(async path => ({
     data: path.includes('participant-options')
@@ -179,7 +210,7 @@ it('does not treat denied participant-list authority as an empty project roster'
 });
 
 // ARTIFACT: ProjectParticipantsPanel.test.jsx
-// VERSION: v1.3.0-FAULT-ISOLATED-PROJECT-PEOPLE-CERT
+// VERSION: v1.4.0-DUPLICATE-PARTICIPANT-GRANT-DENIAL
 // AUTHORITY BOUNDARY: mocked EOS client only, no real assignments
 // TENANT POSTURE: foreign tenant options discarded
 // FAIL-CLOSED POSTURE: no grant without valid source choice and exact readback

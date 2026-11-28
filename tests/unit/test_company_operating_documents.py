@@ -1,11 +1,28 @@
 """TITLE: WILSY OS Company Document Lifecycle and HTTP Certificate.
-VERSION: v1.3.0-ENTERPRISE-ADMIN-READ-CERT
+VERSION: v1.6.0-FOUNDER-OWNER-CAPACITY-ISOLATION-CERT
 AUTHORITY: Repository-owned isolated regression evidence, not runtime admission.
 EPITOME: Verify independent publication, private drafts, exact scope, immutable
 lineage, command replay and honest empty/publication HTTP contracts.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_company_operating_documents.py
 COLLABORATION / OWNERSHIP: Company domain, registry, router and canonical IAM metadata.
-CERTIFICATION / UPDATE DATE: 2026-11-15
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.6.0-FOUNDER-OWNER-CAPACITY-ISOLATION-CERT certifies HR capacities cannot inherit Founder Strategy commands or private review from a concurrently assigned Owner designation; existing Owner lifecycle and project-link replay remain covered.
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT verifies exact canonical read-denial outcomes only for the synthetic current Owner with independently authorized Projects read.
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT maintains non-disclosing bounded reason for non-owner or synthetic capacity while the existing read-admission contracts stay unchanged.
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT independently verifies the read/Projects and optional author/publisher HTTP results for one authenticated selected Owner session with no grants or source reads.
+CHANGELOG: v1.5.5-OWNER-READ-REASON-BRANCH-CERT
+tests source-bound Founder Pillar 1 link replay and revoked-proof denial.
+CHANGELOG: v1.5.1-FOUNDER-HTTP-SUBMISSION-RATIFICATION-CERT
+tests current Founder HTTP lifecycle across draft, submission, immutable
+ratification, replay, publication readback and revoked capability.
+CHANGELOG: v1.5.0-FOUNDER-SELF-RATIFICATION-AUTHORITY-CERT
+tests exact Founder source admission, self-ratification immutable lineage,
+idempotent replay, mission/ordinary publisher denials, and revoked proof.
+CHANGELOG: v1.4.0-EXACT-STRATEGY-PROJECT-LINK-HTTP-CERT tests
+that independently admitted Strategy author and project read scopes bind
+current independently published strategy pillar and exact active project
+revisions in a majority source transaction, deny mismatched currentness and
+foreign actor scopes, and require explicit relationship indexes.
 CHANGELOG: v1.3.0-ENTERPRISE-ADMIN-READ-CERT asserts the exact existing
 ENTERPRISE_ADMIN read grant while preserving dedicated-reader access and every
 author, publish, review, session, foreign-tenant and source-lifecycle denial.
@@ -54,8 +71,13 @@ class Cursor:
         self.rows = list(rows)
     def __iter__(self):
         return iter(self.rows)
-    def sort(self, field, order):
-        return Cursor(sorted(self.rows, key=lambda row: row[field], reverse=order < 0))
+    def sort(self, field, order=None):
+        """Support both existing single-index and newer compound-source ordering."""
+        if isinstance(field, list) and order is None:
+            return Cursor(sorted(self.rows, key=lambda row: tuple(
+                row[coordinate] if direction > 0 else row[coordinate]
+                for coordinate, direction in field)))
+        return Cursor(sorted(self.rows, key=lambda row: row[field], reverse=order is not None and order < 0))
     def limit(self, limit):
         return Cursor(self.rows[:limit])
     def max_time_ms(self, _limit):
@@ -137,6 +159,58 @@ def test_self_publication_is_denied_even_with_both_permissions(registry):
     assert len(registry.revisions.rows) == 2
 
 
+def test_founder_strategy_source_owned_ratification_and_revocation(registry, monkeypatch):
+    """Only current durable Founder authority admits a separate Strategy command."""
+    import tools.eos.saas.company_operating_document_registry as registry_module
+    from tools.eos.saas.domain.company_operating_document import FOUNDER_RATIFICATION_REFERENCE
+    source = {"active": False}
+    calls = []
+    def founder_evidence(*, principal_id, tenant_id, database, session):
+        calls.append((principal_id, tenant_id, session))
+        return {"state": "ACTIVE"} if source["active"] and principal_id == "founder" else None
+    monkeypatch.setattr(registry_module, "read_founder_designation", founder_evidence)
+    def founder(action, expected, actor="founder", payload=None, key=None):
+        return registry.command(
+            TENANT, Class.STRATEGY, actor_id=actor, action=action,
+            payload=deepcopy(PAYLOAD) if payload is None and action == "FOUNDER_CREATE_DRAFT" else payload or {},
+            expected_revision=expected, idempotency_key=key or "founder-" + action,
+            now=NOW, session=SESSION,
+        )
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
+        founder("FOUNDER_CREATE_DRAFT", 0)
+    assert not registry.revisions.rows and not registry.commands.rows
+    source["active"] = True
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
+        founder("FOUNDER_CREATE_DRAFT", 0, actor="other")
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_STRATEGY_ONLY"):
+        registry.command(TENANT, Class.MISSION, actor_id="founder",
+            action="FOUNDER_CREATE_DRAFT", payload=PAYLOAD,
+            expected_revision=0, idempotency_key="mission-excluded", now=NOW, session=SESSION)
+    draft = founder("FOUNDER_CREATE_DRAFT", 0)
+    assert draft.state is State.DRAFT
+    submitted = founder("FOUNDER_SUBMIT", 1)
+    assert submitted.state is State.SUBMITTED
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_RATIFICATION_INVALID"):
+        founder("PUBLISH", 2, payload={"approval_reference": FOUNDER_RATIFICATION_REFERENCE,
+                                      "effective_from": instant(NOW)}, key="spoofed-normal")
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
+        founder("FOUNDER_RATIFY", 2, actor="other", payload={"effective_from": instant(NOW)},
+                key="foreign-ratify")
+    source["active"] = False
+    with pytest.raises(CompanyDocumentError, match="FOUNDER_AUTHORITY_DENIED"):
+        founder("FOUNDER_RATIFY", 2, payload={"effective_from": instant(NOW)})
+    assert len(registry.revisions.rows) == 2
+    source["active"] = True
+    published = founder("FOUNDER_RATIFY", 2, payload={"effective_from": instant(NOW)})
+    assert published.state is State.PUBLISHED
+    assert published.approved_by_principal_id == published.author_principal_id == "founder"
+    assert published.approval_reference == FOUNDER_RATIFICATION_REFERENCE
+    assert registry.history(TENANT, Class.STRATEGY, session=SESSION) == (draft, submitted, published)
+    assert founder("FOUNDER_RATIFY", 2, payload={"effective_from": instant(NOW)}) == published
+    assert len(registry.revisions.rows) == len(registry.commands.rows) == 3
+    assert all(tenant == TENANT and session is SESSION for _, tenant, session in calls)
+
+
 def test_exact_replay_and_divergent_key(registry):
     """One intent replays its original immutable record even after lifecycle advances."""
     first = command(registry, key="same-key")
@@ -204,7 +278,8 @@ def http_client(monkeypatch, registry, privileged=False):
     """Test HTTP projections only; production IAM remains exercised by real browser."""
     app = FastAPI(); app.include_router(http.router, prefix="/api")
     app.dependency_overrides[http._require_current_company_session] = lambda: None
-    actor = SimpleNamespace(tenant_id=TENANT, identity=SimpleNamespace(identity_id="author"))
+    actor = SimpleNamespace(tenant_id=TENANT, identity=SimpleNamespace(identity_id="author"),
+                            decision=SimpleNamespace(business_role="tenant_owner"))
     app.dependency_overrides[http._READ] = lambda: actor
     app.dependency_overrides[http._MAY_AUTHOR] = lambda: actor if privileged else None
     app.dependency_overrides[http._MAY_PUBLISH] = lambda: None
@@ -234,6 +309,174 @@ def test_http_current_approved_and_privileged_review(monkeypatch, registry):
     review = client.get("/api/company-operating-documents/MISSION?review=true").json()
     assert review["state"] == "DRAFT" and "SUBMIT" in review["available_actions"]
     assert "sections" not in client.get("/api/company-operating-documents/MISSION/revisions").json()["items"][0]
+
+
+
+def test_founder_strategy_http_lifecycle_without_author_or_publisher_grant(monkeypatch, registry):
+    """Founder read admission is separate; durable source verifies every command."""
+    import tools.eos.saas.company_operating_document_registry as registry_module
+    state = {"active": True}
+    def evidence(*, principal_id, tenant_id, database, session):
+        return {"state": "ACTIVE"} if state["active"] and principal_id == "author" and tenant_id == TENANT else None
+    monkeypatch.setattr(registry_module, "read_founder_designation", evidence)
+    monkeypatch.setattr(http, "read_founder_designation", evidence)
+    monkeypatch.setattr(http.kernel_db, "get_database", lambda: registry.database)
+    client = http_client(monkeypatch, registry, privileged=False)
+    prefix = "/api/company-operating-documents/STRATEGY"
+    initial = client.get(prefix)
+    assert initial.status_code == 200
+    assert "FOUNDER_CREATE_DRAFT" in initial.json()["available_actions"]
+    assert "CREATE_DRAFT" not in initial.json()["available_actions"]
+    proposal = {**deepcopy(PAYLOAD), "expected_revision": 0}
+    draft = client.post(prefix + "/founder-drafts", json=proposal,
+                        headers={"Idempotency-Key": "founder-http-draft"})
+    assert draft.status_code == 201, draft.text
+    assert draft.json()["document"]["state"] == "DRAFT"
+    review = client.get(prefix + "?review=true")
+    assert review.status_code == 200
+    assert "FOUNDER_SUBMIT" in review.json()["available_actions"]
+    submitted = client.post(prefix + "/founder-submit", json={"expected_revision": 1},
+                            headers={"Idempotency-Key": "founder-http-submit"})
+    assert submitted.status_code == 200, submitted.text
+    assert submitted.json()["document"]["state"] == "SUBMITTED"
+    permitted = client.get(prefix + "?review=true")
+    assert permitted.status_code == 200
+    assert "FOUNDER_RATIFY" in permitted.json()["available_actions"]
+    effective = instant(datetime.now(timezone.utc) - timedelta(minutes=1))
+    ratify_payload = {"expected_revision": 2, "effective_from": effective}
+    result = client.post(prefix + "/founder-ratify", json=ratify_payload,
+                         headers={"Idempotency-Key": "founder-http-ratify"})
+    assert result.status_code == 200, result.text
+    assert result.json()["document"]["state"] == "PUBLISHED"
+    assert result.json()["document"]["approval_reference"] == (
+        "WILSY-INSTITUTIONAL-FOUNDER-SELF-RATIFICATION-20261123"
+    )
+    assert client.post(prefix + "/founder-ratify", json=ratify_payload,
+                       headers={"Idempotency-Key": "founder-http-ratify"}).json() == result.json()
+    official = client.get(prefix)
+    assert official.status_code == 200
+    assert official.json()["document"]["fingerprint"] == result.json()["document"]["fingerprint"]
+    assert len(registry.revisions.rows) == len(registry.commands.rows) == 3
+    state["active"] = False
+    revoked = client.get(prefix)
+    assert revoked.status_code == 200
+    assert "FOUNDER_CREATE_DRAFT" not in revoked.json()["available_actions"]
+    assert "FOUNDER_RATIFY" not in revoked.json()["available_actions"]
+
+
+def test_strategy_project_link_http_requires_exact_independent_source_and_stable_readback(monkeypatch, registry):
+    """Company Strategy relationships require BOTH company and project permission."""
+    from tools.eos.saas.strategy_project_relationship_registry import (
+        LINK_COLLECTION, EVENT_COLLECTION, StrategyProjectRelationshipRegistry,
+    )
+    from tools.eos.saas.domain.project import ProjectStatus
+
+    now = datetime.now(timezone.utc)
+    project_id = "prj-" + "a" * 48
+    proposal = {"title": "Approved synthetic strategy", "document_version": "1.0.0",
+                "sections": [{"section_id": "pillar-one", "title": "One OS", "body": "Synthetic source objective."}]}
+    draft = registry.command(TENANT, Class.STRATEGY, actor_id="author",
+        action="CREATE_DRAFT", payload=proposal, expected_revision=0,
+        idempotency_key="strategy-draft", now=now, session=SESSION)
+    submitted = registry.command(TENANT, Class.STRATEGY, actor_id="author",
+        action="SUBMIT", payload={}, expected_revision=draft.revision,
+        idempotency_key="strategy-submit", now=now, session=SESSION)
+    publication = registry.command(TENANT, Class.STRATEGY, actor_id="publisher",
+        action="PUBLISH", payload={"approval_reference": "independent-proof",
+                                "effective_from": instant(now - timedelta(days=1))},
+        expected_revision=submitted.revision, idempotency_key="strategy-publish",
+        now=now, session=SESSION)
+    database = {LINK_COLLECTION: Collection(), EVENT_COLLECTION: Collection()}
+    source = StrategyProjectRelationshipRegistry(database)
+    source.ensure_indexes()
+    actor = SimpleNamespace(tenant_id=TENANT, identity=SimpleNamespace(identity_id="author"),
+                            decision=SimpleNamespace(business_role="tenant_owner"))
+    project = SimpleNamespace(project_id=project_id, name="Existing operating foundation",
+                              revision=6, status=ProjectStatus.ACTIVE)
+    monkeypatch.setattr(http.kernel_db, "get_database", lambda: database)
+    monkeypatch.setattr(http, "_project_source",
+                        lambda db, tenant, identity, session: project)
+    monkeypatch.setattr(http, "_transaction",
+                        lambda context, callback, **kw: callback(registry, SESSION))
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http._READ] = lambda: actor
+    app.dependency_overrides[http._AUTHOR] = lambda: actor
+    app.dependency_overrides[http._PROJECT_READ] = lambda: actor
+    client = TestClient(app)
+    endpoint = "/api/company-operating-documents/STRATEGY/project-links"
+    empty = client.get(endpoint)
+    assert empty.status_code == 200 and empty.json()["items"] == []
+    assert empty.json()["strategy_progress"] is None
+
+    payload = {"pillar_id": "pillar-one", "project_id": project_id,
+               "expected_strategy_revision": publication.revision,
+               "expected_project_revision": project.revision}
+    first = client.post(endpoint, json=payload, headers={"Idempotency-Key": "strategy-first"})
+    assert first.status_code == 201, first.text
+    assert first.json()["relationship_state"] == "RECORDED_NOT_OUTCOME_CERTIFIED"
+    assert first.json()["strategy_progress"] is None
+    assert client.post(endpoint, json=payload, headers={"Idempotency-Key": "strategy-first"}).json() == first.json()
+    assert len(database[LINK_COLLECTION].rows) == len(database[EVENT_COLLECTION].rows) == 1
+
+    # Founder source admission reuses the existing immutable project link.
+    monkeypatch.setattr(http, "read_founder_designation",
+                        lambda **kwargs: {"state": "ACTIVE"})
+    founder_link = client.post(
+        "/api/company-operating-documents/STRATEGY/founder-project-links",
+        json=payload, headers={"Idempotency-Key": "strategy-first"},
+    )
+    assert founder_link.status_code == 201, founder_link.text
+    assert founder_link.json() == first.json()
+    assert len(database[LINK_COLLECTION].rows) == len(database[EVENT_COLLECTION].rows) == 1
+    monkeypatch.setattr(http, "read_founder_designation", lambda **kwargs: None)
+    denied_founder = client.post(
+        "/api/company-operating-documents/STRATEGY/founder-project-links",
+        json=payload, headers={"Idempotency-Key": "founder-source-revoked"},
+    )
+    assert denied_founder.status_code == 403
+    assert len(database[LINK_COLLECTION].rows) == len(database[EVENT_COLLECTION].rows) == 1
+
+    linked = client.get(endpoint)
+    assert linked.status_code == 200
+    assert linked.json()["items"][0]["pillar_id"] == "pillar-one"
+    assert linked.json()["items"][0]["project_id"] == project_id
+    assert linked.json()["items"][0]["state"] == "VERIFIED_CURRENT"
+    assert linked.json()["strategy_progress"] is None
+
+    invalid = client.post(endpoint, json={**payload, "expected_project_revision": 5},
+                          headers={"Idempotency-Key": "different"})
+    assert invalid.status_code == 409
+    assert len(database[LINK_COLLECTION].rows) == 1
+    app.dependency_overrides[http._PROJECT_READ] = lambda: SimpleNamespace(
+        tenant_id="OTHER", identity=SimpleNamespace(identity_id="author"))
+    assert client.get(endpoint).status_code == 403
+    assert client.post(endpoint, json=payload, headers={"Idempotency-Key": "foreign"}).status_code == 403
+
+
+def test_strategy_link_http_denies_unprovisioned_indexes(monkeypatch, registry):
+    """Link writes never self-provision unique indexes in business requests."""
+    from tools.eos.saas.strategy_project_relationship_registry import LINK_COLLECTION, EVENT_COLLECTION
+
+    database = {LINK_COLLECTION: Collection(), EVENT_COLLECTION: Collection()}
+    monkeypatch.setattr(http.kernel_db, "get_database", lambda: database)
+    actor = SimpleNamespace(tenant_id=TENANT, identity=SimpleNamespace(identity_id="author"),
+                            decision=SimpleNamespace(business_role="tenant_owner"))
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http._READ] = lambda: actor
+    app.dependency_overrides[http._AUTHOR] = lambda: actor
+    app.dependency_overrides[http._PROJECT_READ] = lambda: actor
+    client = TestClient(app)
+    result = client.post("/api/company-operating-documents/STRATEGY/project-links",
+        headers={"Idempotency-Key": "strict-index"},
+        json={"pillar_id": "pillar-one", "project_id": "prj-" + "a" * 48,
+              "expected_strategy_revision": 3, "expected_project_revision": 6})
+    assert result.status_code == 503
+    assert result.json()["detail"]["error"] == "STRATEGY_LINK_INDEX_UNAVAILABLE"
+    assert database[LINK_COLLECTION].indexes == {} and database[EVENT_COLLECTION].indexes == {}
 
 
 def test_enterprise_admin_read_is_explicit_and_all_other_document_authority_remains_dedicated():
@@ -322,6 +565,110 @@ def test_enterprise_admin_company_document_read_is_canonical_tenant_fenced():
     assert decision.reason is TenantAuthorizationReason.PERMISSION_NAMESPACE_MISMATCH
 
 
+@pytest.mark.parametrize("document_allowed,author_allowed,publisher_allowed", [
+    (True, False, False),
+    (False, False, False),
+    (True, True, True),
+])
+def test_strategy_live_http_authority_check_separates_required_and_optional(
+    document_allowed, author_allowed, publisher_allowed,
+):
+    """One verified session reports independent decisions, never grants access."""
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http.get_current_identity] = lambda: SimpleNamespace(
+        principal_scope="GLOBAL", roles=("tenant_owner",),
+    )
+    app.dependency_overrides[http._STRATEGY_READ_CHECK] = lambda: object() if document_allowed else None
+    app.dependency_overrides[http._PROJECT_DETAIL_CHECK] = lambda: object()
+    app.dependency_overrides[http._PROJECT_LIST_CHECK] = lambda: object()
+    app.dependency_overrides[http._MAY_AUTHOR] = lambda: object() if author_allowed else None
+    app.dependency_overrides[http._MAY_PUBLISH] = lambda: object() if publisher_allowed else None
+    response = TestClient(app).get(
+        "/api/company-operating-documents/STRATEGY/authority-check",
+    )
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {
+        "schema": "WILSY-STRATEGY-HTTP-AUTHORITY-CHECK/V1",
+        "document_read_reason": "NOT_DISCLOSED",
+        "selected_capacity": "tenant_owner",
+        "session_scope": "GLOBAL",
+        "document_read": "AUTHORIZED" if document_allowed else "DENIED",
+        "project_detail": "AUTHORIZED",
+        "project_list": "AUTHORIZED",
+        "document_author": "AUTHORIZED" if author_allowed else "DENIED",
+        "document_publish": "AUTHORIZED" if publisher_allowed else "DENIED",
+        "grant_issued": False,
+        "document_read_performed": False,
+    }
+
+
+@pytest.mark.parametrize("denial_reason", [
+    "PERMISSION_NOT_GRANTED",
+    "ROLE_ASSIGNMENT_INACTIVE",
+    "BUSINESS_ROLE_INELIGIBLE",
+])
+def test_owner_strategy_http_denial_reason_is_from_canonical_composer(
+    monkeypatch, denial_reason,
+):
+    """Current owner with Projects read receives only bounded exact IAM reason."""
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http.get_current_identity] = lambda: SimpleNamespace(
+        principal_scope="GLOBAL", tenant_id=TENANT,
+        identity_id="synthetic-founder", roles=("tenant_owner",),
+    )
+    app.dependency_overrides[http._STRATEGY_READ_CHECK] = lambda: None
+    app.dependency_overrides[http._PROJECT_DETAIL_CHECK] = lambda: object()
+    app.dependency_overrides[http._PROJECT_LIST_CHECK] = lambda: object()
+    app.dependency_overrides[http._MAY_AUTHOR] = lambda: None
+    app.dependency_overrides[http._MAY_PUBLISH] = lambda: None
+    monkeypatch.setattr(http, "get_role_assignment_repository", lambda: object())
+    monkeypatch.setattr(http, "get_principal_authority_repository", lambda: object())
+    monkeypatch.setattr(http, "get_tenant_membership_repository", lambda: object())
+    def decide(**kwargs):
+        assert kwargs["principal_id"] == "synthetic-founder"
+        assert kwargs["tenant_id"] == TENANT
+        assert kwargs["selected_business_role"] == "tenant_owner"
+        assert kwargs["operation"] == "company_operating_document_read"
+        return SimpleNamespace(
+            authorized=False, reason=SimpleNamespace(value=denial_reason),
+        )
+    monkeypatch.setattr(http, "authorize_tenant_operation", decide)
+    response = TestClient(app).get(
+        "/api/company-operating-documents/STRATEGY/authority-check",
+    )
+    assert response.status_code == 200
+    assert response.json()["document_read"] == "DENIED"
+    assert response.json()["document_read_reason"] == denial_reason
+    assert response.json()["grant_issued"] is False
+
+
+def test_strategy_authority_check_preserves_source_unavailability() -> None:
+    """An unavailable required IAM read remains HTTP 503 without document evidence."""
+    app = FastAPI()
+    app.include_router(http.router, prefix="/api")
+    app.dependency_overrides[http._require_current_company_session] = lambda: None
+    app.dependency_overrides[http.get_current_identity] = lambda: SimpleNamespace(
+        principal_scope="GLOBAL", roles=("tenant_owner",),
+    )
+    def fail_closed():
+        raise http.HTTPException(status_code=503, detail="Authority unavailable.")
+    app.dependency_overrides[http._STRATEGY_READ_CHECK] = fail_closed
+    app.dependency_overrides[http._PROJECT_DETAIL_CHECK] = lambda: object()
+    app.dependency_overrides[http._PROJECT_LIST_CHECK] = lambda: object()
+    app.dependency_overrides[http._MAY_AUTHOR] = lambda: None
+    app.dependency_overrides[http._MAY_PUBLISH] = lambda: None
+    response = TestClient(app).get(
+        "/api/company-operating-documents/STRATEGY/authority-check",
+    )
+    assert response.status_code == 503
+    assert "document_read" not in response.text
+
+
 @pytest.mark.parametrize("reference,current,status,code", [
     (None, True, 401, "SESSION_REQUIRED"),
     ("synthetic-reference", False, 401, "SESSION_STALE"),
@@ -355,8 +702,35 @@ def test_global_company_session_is_already_validated_by_canonical_authentication
     monkeypatch.setattr(http, "AuthRegistry", wrong_owner)
     assert http._require_current_company_session(http.SovereignIdentity(principal_scope="GLOBAL", tenant_id=TENANT, identity_id="reader", session_reference=None, auth_method="JWT", status=PrincipalStatus.ACTIVE, username=None, email=None)) is None
 
+@pytest.mark.parametrize("capacity", ["tenant_hr_director", "tenant_hr_manager"])
+def test_founder_designation_does_not_grant_hr_capacity_strategy_commands(monkeypatch, registry, capacity):
+    """Even a designated Founder must select Owner before private lifecycle use."""
+    client = http_client(monkeypatch, registry)
+    context = SimpleNamespace(tenant_id=TENANT,
+        identity=SimpleNamespace(identity_id="author"),
+        decision=SimpleNamespace(business_role=capacity))
+    assert isinstance(client.app, FastAPI)
+    client.app.dependency_overrides[http._READ] = lambda: context
+    monkeypatch.setattr(http, "read_founder_designation", lambda **_: {"state": "ACTIVE"})
+    prefix = "/api/company-operating-documents/STRATEGY"
+    initial = client.get(prefix)
+    assert initial.status_code == 200
+    assert not any(action.startswith("FOUNDER_") for action in initial.json()["available_actions"])
+    assert client.get(prefix + "?review=true").status_code == 403
+    assert client.get(prefix + "/revisions?review=true").status_code == 403
+    for path, payload in (
+        ("/founder-drafts", {**deepcopy(PAYLOAD), "expected_revision": 0}),
+        ("/founder-submit", {"expected_revision": 1}),
+        ("/founder-ratify", {"expected_revision": 2, "effective_from": instant(NOW)}),
+    ):
+        denied = client.post(prefix + path, json=payload, headers={"Idempotency-Key": "hr-denied"})
+        assert denied.status_code == 403
+        assert denied.json()["detail"]["error"] == "COMPANY_DOCUMENT_FOUNDER_OWNER_CAPACITY_REQUIRED"
+    assert not registry.commands.rows and not registry.revisions.rows
+
+
 # ARTIFACT: test_company_operating_documents.py
-# VERSION: v1.3.0-ENTERPRISE-ADMIN-READ-CERT
+# VERSION: v1.6.0-FOUNDER-OWNER-CAPACITY-ISOLATION-CERT
 # AUTHORITY BOUNDARY: Isolated contract regression only; no production admission.
 # TENANT POSTURE: Exact canonical fixture scope and foreign negative assertions.
 # FAIL-CLOSED POSTURE: Incomplete source, lineage or authorization cannot pass.

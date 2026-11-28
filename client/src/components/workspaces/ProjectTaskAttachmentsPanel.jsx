@@ -1,13 +1,47 @@
 /**
  * TITLE: WILSY OS Governed Project Task Quarantine Attachments Panel
- * VERSION: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS
+ * VERSION: v1.12.0-STABLE-ATTACHMENT-READ-SCOPE
  * AUTHORITY: Python EOS task-scoped attachment and participant IAM services.
  * EPITOME: Source-backed task attachments, bounded PDF/image upload and visible
  *          quarantine state, without unsafe preview or download links.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectTaskAttachmentsPanel.jsx
  * COLLABORATION / OWNERSHIP: Shared owner and Contributor task workspaces.
  *          API and Python EOS own authentication, bytes, storage and audit.
- * CERTIFICATION / UPDATE DATE: 2026-11-18
+ * CERTIFICATION / UPDATE DATE: 2026-11-23
+ * CHANGELOG: v1.12.0-STABLE-ATTACHMENT-READ-SCOPE
+ *          stabilizes equivalent tenantHeaders across parent rerenders
+ *          and defers mount GETs past StrictMode's discarded setup;
+ *          real tenant changes and explicit refresh always reverify EOS.
+ *          No upload, clearance, IAM, or timeout semantics changed.
+ * CHANGELOG: v1.11.4-FILE-PICKER-READABLE-CONTRAST makes the
+ *          single keyboard-operable Browse files control use an explicit
+ *          high-contrast foreground/background, protecting against
+ *          project-global button rules and retaining native input hiding.
+ *          No upload, IAM, quota, quarantine or readback behavior changes.
+ * CHANGELOG: v1.11.3-HIDDEN-FILE-INPUT-WIDTH-CERT
+ *          truly hides the programmatically activated native chooser.
+ *          The global file-input width rule previously overrode sr-only,
+ *          causing horizontal overflow in 1440px and 390px browser runs.
+ *          Browse remains a real native file selection with no duplicate UI.
+ * CHANGELOG: v1.11.2-AUTHORITY-UNAVAILABLE-DIAGNOSTICS
+ *          keeps the contributor preflight visible but disabled when
+ *          source read fails, instead of hiding all guidance; the
+ *          server still independently requires exact task IAM.
+ * CHANGELOG: v1.11.1-SINGLE-FOCUSED-EXIT lets the invoking
+ *          task workspace own the single Back control, while standalone
+ *          attachment consumers retain an explicit close action.
+ * CHANGELOG: v1.11.0-ACCESSIBLE-AUTOUPLOAD-DROPZONE replaces
+ *          the visible native file chooser and redundant selection step
+ *          with keyboard-browse and scoped file drag/drop. User selection
+ *          starts one existing EOS multipart command; authenticated source
+ *          readback alone confirms attachment presence. Live transfer
+ *          percentage never claims scan clearance, and uncertain commands
+ *          retain their original idempotency identity.
+ * CHANGELOG: v1.10.0-UPLOAD-FIRST-ATTACHMENT-WORKSPACE prioritizes
+ *          the existing guarded file picker, visible chosen-file feedback,
+ *          and EOS-verified prior attachment list. It condenses repeated
+ *          authority warnings into a disclosure, keeps rejected-access
+ *          remediation available, and preserves readback/idempotency rules.
  * CHANGELOG: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS validates the accepted upload by one independent full exact-tenant/task paginated manifest GET without unmounting the selected file input. On uncertain readback, the original File and idempotency key remain available for explicit reconciliation; no silent duplicate upload.
  * CHANGELOG: v1.8.0-QUARANTINE-UPLOAD-RECEIPT-DIAGNOSTICS separates rejected multipart commands, unconfigured S3/KMS transport and uncertain provider execution from accepted EOS upload receipts followed by readback mismatch. Maintains the same durable idempotency key and prevents silent replay or claimed completion without exact manifest confirmation.
  * CHANGELOG: v1.7.0-EXPLICIT-FOUNDER-CONTRIBUTOR-IAM-ACTIVATION makes the already-contributing canonical WILSY Founder able to explicitly request narrow contributor attachment IAM activation using an independently governed EOS command, then verifies the role admission response and rechecks original contributor GET. No automatic grant, client permission inference, replay of uploads, or fallback for paying tenants.
@@ -67,12 +101,17 @@ function valid(record, tenantId, projectId, taskId) {
 export default function ProjectTaskAttachmentsPanel({
   tenantId, principalId, projectId, taskId, tenantHeaders,
   participantMode = false, ownerReadMode = false, onClose, onManageContributors = null,
+  showClose = true,
 }) {
   const [state, setState] = useState('LOADING');
   const [items, setItems] = useState([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [file, setFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploadPhase, setUploadPhase] = useState('IDLE');
+  const fileInputRef = useRef(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [uploadReadState, setUploadReadState] = useState('UNVERIFIED');
@@ -91,7 +130,18 @@ export default function ProjectTaskAttachmentsPanel({
   const readRoot = ownerReadMode ? ownerRoot
     : (participantMode ? contributorRoot : ownerRoot);
   const uploadReadVerified = participantMode && uploadReadState === 'VERIFIED';
-  const headers = tenantHeaders || {};
+  // A parent may recreate an equivalent header object on rerender.
+  // The source read must restart only on an actual selector change.
+  const headersRef = useRef(null);
+  const incomingHeaders = tenantHeaders && typeof tenantHeaders === 'object'
+    ? tenantHeaders : {};
+  const existingHeaders = headersRef.current;
+  const headerKeys = Object.keys(incomingHeaders);
+  if (!existingHeaders || headerKeys.length !== Object.keys(existingHeaders).length
+      || headerKeys.some(key => existingHeaders[key] !== incomingHeaders[key])) {
+    headersRef.current = { ...incomingHeaders };
+  }
+  const headers = headersRef.current;
 
   const load = useCallback(async (nextOffset = 0) => {
     const request = ++generation.current;
@@ -172,7 +222,7 @@ export default function ProjectTaskAttachmentsPanel({
                     : 'EOS could not reach or verify the task attachment manifest. No upload or download is confirmed.');
       return false;
     }
-  }, [scope, readRoot, contributorRoot, ownerReadMode, participantMode, tenantId, principalId, projectId, taskId, tenantHeaders]);
+  }, [scope, readRoot, contributorRoot, ownerReadMode, participantMode, tenantId, principalId, projectId, taskId, headers]);
 
   useEffect(() => {
     generation.current += 1;
@@ -180,8 +230,11 @@ export default function ProjectTaskAttachmentsPanel({
     setItems([]);
     setOffset(0);
     uploadOrigin.current = { fingerprint: '', key: '' };
-    void load(0);
-    return () => { generation.current += 1; };
+    // Discarded React StrictMode mount must not start a second costly
+    // authenticated EOS read. Real scope changes still issue fresh reads.
+    let active = true;
+    queueMicrotask(() => { if (active) void load(0); });
+    return () => { active = false; generation.current += 1; };
   }, [scope, load]);
 
   const verifyScan = async item => {
@@ -391,15 +444,17 @@ export default function ProjectTaskAttachmentsPanel({
     return 'The attachment upload transport or EOS receipt could not be verified. The original command key is retained; reconcile the task manifest before retrying.';
   };
 
-  const upload = async event => {
-    event.preventDefault();
-    if (!uploadReadVerified || busy || state !== 'READY' || !file) return;
-    if (!SAFE.has(file.type) || file.size <= 0 || file.size > LIMIT) {
-      setError('Choose a PDF, PNG or JPEG up to 20 MiB.');
+  const upload = async selectedFile => {
+    if (!uploadReadVerified || busy || state !== 'READY' || !selectedFile) return;
+    setFile(selectedFile);
+    if (!SAFE.has(selectedFile.type) || selectedFile.size <= 0 || selectedFile.size > LIMIT) {
+      setError(selectedFile.size > LIMIT
+        ? 'Each file must be 20 MiB or smaller.' : 'Only non-empty PDF, PNG and JPEG files are supported.');
+      setUploadPhase('INVALID');
       return;
     }
     const fingerprint = JSON.stringify([
-      file.name, file.size, file.lastModified, file.type,
+      selectedFile.name, selectedFile.size, selectedFile.lastModified, selectedFile.type,
     ]);
     if (uploadOrigin.current.fingerprint !== fingerprint) {
       if (typeof globalThis.crypto?.randomUUID !== 'function') {
@@ -413,10 +468,12 @@ export default function ProjectTaskAttachmentsPanel({
     const active = scope;
     setBusy(true);
     setError('');
+    setUploadProgress(0);
+    setUploadPhase('UPLOADING');
     let stage = 'UPLOAD';
     try {
       const form = new FormData();
-      form.append('file', file, file.name);
+      form.append('file', selectedFile, selectedFile.name);
       const { data } = await api.post(contributorRoot + '/attachments', form, {
         headers: {
           ...headers,
@@ -425,8 +482,13 @@ export default function ProjectTaskAttachmentsPanel({
           'Idempotency-Key': uploadOrigin.current.key,
         },
         timeout: 120000,
+        onUploadProgress: progress => {
+          if (current.current !== active || !progress.total || progress.total <= 0) return;
+          setUploadProgress(Math.min(99, Math.floor(100 * progress.loaded / progress.total)));
+        },
       });
       if (current.current !== active) return;
+      setUploadPhase('VERIFYING');
       stage = 'RECEIPT';
       if (
         data?.schema !== 'WILSY-PROJECT-ATTACHMENT-RESULT/V1'
@@ -465,126 +527,223 @@ export default function ProjectTaskAttachmentsPanel({
       setOffset(0);
       setHasMore(verification.has_more);
       setFile(null);
+      setUploadProgress(100);
+      setUploadPhase('CONFIRMED');
       uploadOrigin.current = { fingerprint: '', key: '' };
     } catch (failure) {
       if (current.current !== active) return;
       setError(formatUploadFailure(failure, stage));
+      setUploadPhase('UNVERIFIED');
     } finally {
       if (current.current === active) setBusy(false);
     }
   };
 
   return <section aria-label="Task attachments"
-    className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
-    <header className="flex items-center justify-between gap-2">
-      <h4 className="flex items-center gap-2 font-semibold text-slate-900">
-        <FileLock2 size={16}/> Task attachments
-      </h4>
-      <div className="flex gap-2">
-        <button type="button" className="wp-button" disabled={busy}
-          onClick={() => void load(offset)}><RefreshCw size={14}/> Refresh</button>
-        <button type="button" className="wp-button" disabled={busy}
-          onClick={onClose} aria-label="Close task attachments"><X size={14}/></button>
+    className="mt-3 space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+      <div className="min-w-0">
+        <h4 className="flex items-center gap-2 text-base font-semibold text-slate-950">
+          <FileLock2 size={18}/> Files &amp; evidence
+        </h4>
+        <p className="mt-1 text-xs text-slate-600">
+          Files belong to the selected task. EOS verifies access and upload clearance independently.
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+          onClick={() => void load(offset)}><RefreshCw size={14}/> Refresh files</button>
+        {showClose && <button type="button" className="wp-button !min-h-9 !px-3 !text-xs" disabled={busy}
+          onClick={onClose} aria-label="Close task attachments"><X size={14}/> Close</button>}
       </div>
     </header>
-    <p className="mt-2 text-xs text-amber-900">
-      Newly uploaded files remain quarantined until independent GuardDuty verification.
-      Only files whose EOS clearance is recorded may be downloaded or linked as review evidence.
-      Scan clearance does not prove document authenticity, legal validity or electronic signature.
-    </p>
-    <div aria-label="Attachment upload authority" className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
-      <p className="text-sm font-semibold text-slate-900">Add an attachment</p>
-      <p className="mt-1 text-xs text-slate-700">
-        {uploadReadVerified
-          ? 'Contributor attachment read is verified. Select a PDF, PNG or JPEG below; EOS still independently authorizes the contributor upload command.'
-          : state !== 'READY'
-            ? 'File selection is unavailable until the authenticated attachment source is verified. Refresh after fixing the error below.'
-            : participantMode && uploadReadState === 'DENIED'
-              ? 'You are already a verified contributor on this project. EOS separately denied the contributor attachment endpoint (HTTP 403). Re-adding yourself in People will not fix the missing or inactive project:participant:read authorization. Upload also requires project:participant:contribute in an authorized contributor operating capacity. No file has been submitted.'
-              : participantMode
-                ? 'You are already a verified project contributor, but the separate authenticated contributor attachment source is not verified. Check the current operating capacity and project:participant:read authority; project participation alone cannot authorize uploads.'
-                : 'Owner access can read attachment manifests but cannot upload. Current project contributor admission and project:participant:contribute are required.'}
+    {state === 'LOADING' && <p role="status" className="text-sm text-slate-700">
+      Verifying task files with EOS…
+    </p>}
+    {(state === 'DENIED' || state === 'UNAVAILABLE') &&
+      <p role="alert" className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">{error}</p>}
+    {state === 'READY' && uploadReadVerified && <section
+      aria-label="Add a task file" className="rounded-lg border border-slate-200 bg-white">
+      <div className="px-3 pt-3 sm:px-4">
+        <h5 className="text-sm font-bold text-slate-950">Add evidence</h5>
+        <p className="mt-1 text-xs text-slate-600">
+          PDF, PNG or JPEG · maximum 20 MiB per file · private until verified
+        </p>
+      </div>
+      <input ref={fileInputRef} type="file" tabIndex={-1}
+        aria-label="Project attachment file" hidden style={{ display: 'none' }}
+        disabled={busy}
+        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+        onChange={event => {
+          const chosen = event.currentTarget.files?.[0];
+          event.currentTarget.value = '';
+          if (chosen) void upload(chosen);
+        }}/>
+      <div className={'m-3 rounded-lg border-2 border-dashed transition-colors sm:m-4 '
+        + (dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50')}
+        onDragEnter={event => {
+          if (!event.dataTransfer?.types?.includes('Files')) return;
+          event.preventDefault();
+          setDragActive(true);
+        }}
+        onDragOver={event => {
+          if (!event.dataTransfer?.types?.includes('Files')) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = busy ? 'none' : 'copy';
+          setDragActive(true);
+        }}
+        onDragLeave={event => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setDragActive(false);
+        }}
+        onDrop={event => {
+          if (!event.dataTransfer?.files?.length) return;
+          event.preventDefault();
+          setDragActive(false);
+          if (busy) return;
+          if (event.dataTransfer.files.length !== 1) {
+            setError('Select one file at a time. Each upload requires its own verified EOS receipt.');
+            return;
+          }
+          void upload(event.dataTransfer.files[0]);
+        }}>
+        <div className="flex flex-col items-center gap-2 px-4 py-5 text-center">
+          <UploadCloud size={22} className="text-slate-600" aria-hidden="true"/>
+          <p className="text-sm font-semibold text-slate-900">
+            {dragActive ? 'Release to attach this file' : 'Drop a file here'}
+          </p>
+          <button type="button" disabled={busy}
+            className="inline-flex min-h-11 items-center rounded-md border border-slate-900 bg-slate-900 px-4 text-sm font-semibold !text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+            style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff', backgroundColor: '#0f172a' }}
+            onClick={() => fileInputRef.current?.click()}>
+            Browse files
+          </button>
+          <p className="text-xs text-slate-600">Selecting or dropping a file starts the upload.</p>
+        </div>
+      </div>
+      {uploadPhase === 'UPLOADING' && <div className="px-4 pb-4" role="status">
+        <div className="flex items-center justify-between gap-2 text-xs text-slate-700">
+          <span className="min-w-0 truncate">{file?.name || 'Uploading file…'}</span>
+          <span>{uploadProgress === null ? 'Uploading…' : uploadProgress + '%'}</span>
+        </div>
+        <div role="progressbar" aria-label="File transfer progress"
+          aria-valuemin={0} aria-valuemax={100}
+          aria-valuenow={uploadProgress === null ? undefined : uploadProgress}
+          className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-full bg-blue-700 transition-[width]"
+            style={{ width: (uploadProgress || 0) + '%' }}/>
+        </div>
+      </div>}
+      {uploadPhase === 'VERIFYING' && <p role="status" className="px-4 pb-4 text-sm text-slate-700">
+        Transfer finished. Checking the exact task file record with EOS…
+      </p>}
+      {uploadPhase === 'CONFIRMED' && <p role="status" className="px-4 pb-4 text-sm text-emerald-800">
+        File recorded in the task list. Security clearance is still checked separately.
+      </p>}
+      {uploadPhase === 'UNVERIFIED' && file && <p role="status"
+        className="px-4 pb-4 text-xs text-rose-800">
+        Upload is not verified. Refresh the file list to reconcile before attempting the same command again.
+      </p>}
+    </section>}
+    {state !== 'LOADING' && !uploadReadVerified && <section aria-label="Attachment upload authority"
+      className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <h5 className="text-sm font-semibold text-slate-900">Upload not available</h5>
+      <p className="mt-1 text-sm text-slate-700">
+        {participantMode
+          ? 'Contributor attachment access has not been independently verified for this session.'
+          : 'The current capacity can inspect verified files but cannot upload as a contributor.'}
       </p>
-      {!participantMode && !uploadReadVerified && typeof onManageContributors === 'function' &&
-        <button type="button" className="wp-button mt-3"
+      {!participantMode && typeof onManageContributors === 'function' &&
+        <button type="button" className="wp-button mt-3 !min-h-9 !text-xs"
           disabled={checkingPeople || busy || state !== 'READY'}
           onClick={() => { void navigateToPeople(); }}>
-          {checkingPeople ? 'Verifying project People…' : 'Check People access before contributor management'}
+          {checkingPeople ? 'Verifying People access…' : 'Check contributor access'}
         </button>}
-      {peoplePreflight && <p role="alert" className="mt-2 text-sm text-rose-800">{peoplePreflight}</p>}
-      {!uploadReadVerified && participantMode && tenantId === 'WILSYTENANT-4CD2FZ4O'
-        && <button type="button" className="wp-button mt-3"
+      {peoplePreflight && <p role="alert" className="mt-2 text-xs text-rose-800">{peoplePreflight}</p>}
+      {participantMode && tenantId === 'WILSYTENANT-4CD2FZ4O' &&
+        <button type="button" className="wp-button mt-3 !min-h-9 !text-xs"
           disabled={activatingContributorIAM || busy || state !== 'READY'}
           onClick={() => { void activateContributorIAM(); }}>
           {activatingContributorIAM ? 'Verifying contributor IAM…' : 'Activate my contributor attachment access'}
         </button>}
-      {contributorIAMMessage && <p role="status" className="mt-2 text-sm text-slate-800">{contributorIAMMessage}</p>}
-      {!uploadReadVerified && participantMode && <p role="status" className="mt-2 text-xs font-medium text-slate-800">
-        Project participation: verified Contributor. Attachment contributor authority: {uploadReadState === 'DENIED' ? 'denied by EOS (HTTP 403)' : 'not verified'}.
-        A tenant IAM administrator must verify the separate contributor role assignment and selected operating capacity. This screen cannot create that grant.
-      </p>}
-      {!uploadReadVerified && !participantMode && <p className="mt-2 text-xs text-slate-700">
-        Project participation and upload IAM are separate. Even an authorized contributor assignment will not grant project:participant:read or project:participant:contribute.
-      </p>}
-    </div>
-    {state === 'LOADING' && <p role="status" className="mt-3 text-sm text-slate-700">
-      Verifying file manifests with EOS…
-    </p>}
-    {(state === 'DENIED' || state === 'UNAVAILABLE') &&
-      <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
-    {state === 'READY' && <>
-      <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-        {items.map(item => <li key={item.attachment_id} className="p-3 text-sm">
-          <p className="break-words font-semibold text-slate-900">{item.filename}</p>
-          <p className="mt-1 text-xs text-slate-600">
-            {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
-              ? 'GuardDuty scan verified clean · not an electronic signature'
-              : 'Quarantined · malware scan clearance unavailable'}
-            {' · '}{item.media_type} · {item.size_bytes.toLocaleString()} bytes
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {uploadReadVerified && item.scan_clearance_status === 'QUARANTINED' &&
-              <button type="button" disabled={busy} className="wp-button"
-                onClick={() => void verifyScan(item)}>Check malware scan result</button>}
-            {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED' &&
-              <button type="button" disabled={busy} className="wp-button"
-                onClick={() => void download(item)}>Download verified file</button>}
-          </div>
-          <p className="mt-1 break-all text-xs text-slate-600">
-            SHA3-512 {item.content_sha3_512}
-          </p>
-        </li>)}
-        {!items.length && <li className="p-4 text-sm text-slate-600">
-          EOS verified no file manifests on this task page.
-        </li>}
-      </ul>
-      {(offset > 0 || hasMore) && <nav aria-label="Task attachment pages" className="mt-3 flex gap-2">
-        <button type="button" className="wp-button" disabled={busy || offset === 0}
+      {contributorIAMMessage && <p role="status" className="mt-2 text-xs text-slate-800">{contributorIAMMessage}</p>}
+      <details className="mt-3 text-xs text-slate-700">
+        <summary className="cursor-pointer font-semibold text-slate-800">
+          Why is upload unavailable?
+        </summary>
+        <p className="mt-2 leading-relaxed">
+          Project participation and attachment IAM are separate. The contributor endpoint requires
+          project:participant:read and project:participant:contribute in an authorized operating
+          capacity. Current verification: {uploadReadState === 'DENIED' ? 'denied (HTTP 403)' : uploadReadState.toLowerCase()}.
+          A tenant IAM administrator must verify the separate role assignment and capacity;
+          this screen never grants access automatically.
+        </p>
+      </details>
+    </section>}
+    {state === 'READY' && <section aria-label="Previously attached files">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h5 className="text-sm font-bold text-slate-950">Attached files</h5>
+        <span className="text-xs font-medium text-slate-600">
+          {items.length} verified on this page{hasMore ? ' · more available' : ''}
+        </span>
+      </div>
+      {items.length === 0
+        ? <div className="mt-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
+          <FileLock2 size={21} className="mx-auto text-slate-400"/>
+          <p className="mt-2 text-sm font-semibold text-slate-800">No files attached yet</p>
+          <p className="mt-1 text-xs text-slate-600">EOS verified no attachment manifests on this page.</p>
+        </div>
+        : <ul className="mt-2 divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
+          {items.map(item => <li key={item.attachment_id}
+            className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 text-sm">
+            <div className="min-w-0 flex-1">
+              <p className="break-words font-semibold text-slate-900">{item.filename}</p>
+              <p className="mt-1 text-xs text-slate-600">
+                {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED'
+                  ? 'Scan verified clean' : 'Quarantined · clearance pending'}
+                {' · '}{item.media_type} · {(item.size_bytes / 1048576).toFixed(2)} MiB
+              </p>
+              <details className="mt-1 text-xs text-slate-600">
+                <summary className="cursor-pointer font-medium text-slate-700">File integrity</summary>
+                <p className="mt-1 break-all">SHA3-512 {item.content_sha3_512}</p>
+              </details>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {uploadReadVerified && item.scan_clearance_status === 'QUARANTINED' &&
+                <button type="button" disabled={busy} className="wp-button !min-h-9 !text-xs"
+                  onClick={() => void verifyScan(item)}>Check scan</button>}
+              {item.scan_clearance_status === 'SCAN_CLEAN_VERIFIED' &&
+                <button type="button" disabled={busy} className="wp-button !min-h-9 !text-xs"
+                  onClick={() => void download(item)}>Download</button>}
+            </div>
+          </li>)}
+        </ul>}
+      {(offset > 0 || hasMore) && <nav aria-label="Task attachment pages"
+        className="mt-3 flex items-center gap-2">
+        <button type="button" className="wp-button !min-h-9 !text-xs"
+          disabled={busy || offset === 0}
           onClick={() => void load(Math.max(0, offset - 50))}>Previous</button>
-        <button type="button" className="wp-button" disabled={busy || !hasMore}
+        <button type="button" className="wp-button !min-h-9 !text-xs"
+          disabled={busy || !hasMore}
           onClick={() => void load(offset + 50)}>Next</button>
       </nav>}
-      {uploadReadVerified && <form className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-white p-3"
-        onSubmit={upload}>
-        <label className="block text-sm font-semibold text-slate-800">Submit a file to quarantine
-          <input type="file" aria-label="Project attachment file"
-            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-            onChange={event => setFile(event.target.files?.[0] || null)}
-            className="mt-2 block w-full text-sm text-slate-800"/>
-        </label>
-        <p className="text-xs text-slate-600">PDF, PNG or JPEG · maximum 20 MiB. No preview or public download.</p>
-        <button type="submit" className="wp-button wp-button-primary"
-          disabled={busy || !file || !SAFE.has(file.type) || file.size <= 0 || file.size > LIMIT}>
-          <UploadCloud size={15}/> Submit to EOS quarantine
-        </button>
-      </form>}
-      {error && <p role="alert" className="mt-3 text-sm text-rose-700">{error}</p>}
-    </>}
+    </section>}
+    {state === 'READY' && error && <p role="alert"
+      className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">{error}</p>}
+    <details className="border-t border-slate-200 pt-3 text-xs text-slate-700">
+      <summary className="cursor-pointer font-semibold text-slate-700">
+        File security &amp; evidence rules
+      </summary>
+      <p className="mt-2 leading-relaxed">
+        Uploaded files remain private and quarantined until independent GuardDuty verification.
+        Only EOS-cleared files may be downloaded or linked as review evidence.
+        Malware clearance does not establish document authenticity, legal validity or electronic signature.
+      </p>
+    </details>
   </section>;
 }
 
 // ARTIFACT: ProjectTaskAttachmentsPanel.jsx
-// VERSION: v1.9.0-UPLOAD-READBACK-SELECTED-FILE-CURRENTNESS
+// VERSION: v1.12.0-STABLE-ATTACHMENT-READ-SCOPE
 // AUTHORITY BOUNDARY: untrusted file never grants evidence approval or read
 // TENANT POSTURE: exact EOS source tenant/principal/project/task response
 // FAIL-CLOSED POSTURE: no scan, provider, download or approval invented

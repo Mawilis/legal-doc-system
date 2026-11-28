@@ -1,14 +1,18 @@
 """WILSY OS canonical access-token issuance and verification certificate.
 
 TITLE: Canonical Access-Token Contract Certificate
-VERSION: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT
+VERSION: v1.6.1-EXPLICIT-FOUNDER-ABSENCE-WIRE-CERT
 AUTHORITY: Deterministic token interoperability evidence only.
 EPITOME: Proves MFA/login issuance and EOS protected-route verification share
          one cryptographic owner, one secret authority, and one claim contract.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_canonical_access_token_contract.py
 COLLABORATION / OWNERSHIP: Exercises AuthRegistry, jwt_provider,
                            get_current_identity, and workspace-bootstrap transport.
-CERTIFICATION / UPDATE DATE: 2026-11-11
+CERTIFICATION / UPDATE DATE: 2026-11-24
+CHANGELOG: v1.6.1-EXPLICIT-FOUNDER-ABSENCE-WIRE-CERT requires the
+explicit institutionalDesignation null in the synthetic non-Founder bootstrap
+wire response. The source-owned Founder read is still separately tested.
+CHANGELOG: v1.6.0-ISOLATED-FOUNDER-ABSENCE-WORKSPACE-CERT makes the legacy synthetic principal's lawful no-Founder-designation state explicit in its isolated workspace dependency harness; real Founder authority and evidence remain unchanged, and dedicated Founder tests verify persisted proof independently.
 CHANGELOG: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT supplies the required discovered tenant to MFA verification and canonical workspace_id to synthetic workspace projections, preserving server-owned authentication and workspace contracts.
            v1.4.0-D21B7-TENANT-BRANDING-WORKSPACE-HTTP-PROJECTION-CERT reconciles workspace-bootstrap transport with D21B7 by requiring an explicit server-owned workspace.branding field, using null as authoritative lawful no-branding in legacy authority fixtures, and preventing the compatibility certificate from invoking live branding persistence. D21B7's dedicated certificate separately proves configured-branding transport, transaction retry and bounded outage semantics.
            v1.3.0-D24A-DURABLE-PRINCIPAL-NAME-PROJECTION-CERT certifies exact durable AuthRegistry firstName/lastName projection after workspace authority revalidation, excludes forged transport identity text, proves malformed optional names are omitted rather than inferred, and proves durable principal outage/mismatch fail closed without adding role, permission, entitlement, legal-command, billing, payment, execution, or settlement authority.
@@ -344,6 +348,14 @@ def _override_workspace_dependencies(
         "_workspace_branding_projection",
         lambda _tenant_id: None,
     )
+    # Synthetic principal is deliberately not the persisted Founder. Its
+    # expected response has no designation; never query a developer's live
+    # institutional MongoDB from this isolated token-contract certificate.
+    monkeypatch.setattr(
+        auth_router,
+        "read_founder_designation",
+        lambda *, principal_id, tenant_id: None,
+    )
     return registry
 
 
@@ -667,6 +679,7 @@ def test_workspace_bootstrap_http_uses_server_projection_not_jwt_authority(
             "email": "principal@example.com",
             "firstName": "Canonical",
             "lastName": "Principal",
+            "institutionalDesignation": None,
         },
         "workspace": {
             "tenantId": TENANT,
@@ -913,6 +926,76 @@ def test_workspace_bootstrap_projects_exact_authorized_legal_permissions(
     assert "*" not in json.dumps(payload["workspace"]["legalPermissions"])
 
 
+def test_global_workspace_email_reads_canonical_principal_credential(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+    from tools.eos.auth.workspace_bootstrap_projection import (
+        WorkspaceBootstrapProjectionError,
+    )
+
+    projection = SimpleNamespace(
+        principal_id=PRINCIPAL, email=None,
+    )
+    global_identity = SimpleNamespace(
+        principal_scope="GLOBAL", email="forged-display@example.invalid",
+    )
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        lambda principal_id: SimpleNamespace(
+            principal_id=principal_id, normalized_email="canonical@example.test",
+        ),
+    )
+    assert auth_router._workspace_durable_account_email(
+        global_identity, projection,
+    ) == "canonical@example.test"
+    assert auth_router._workspace_durable_account_email(
+        SimpleNamespace(principal_scope="TENANT"), projection,
+    ) is None
+
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal",
+        lambda principal_id: SimpleNamespace(
+            principal_id="OTHER-PRINCIPAL", normalized_email="forged@example.test",
+        ),
+    )
+    with pytest.raises(
+        WorkspaceBootstrapProjectionError,
+        match="WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_INVALID",
+    ):
+        auth_router._workspace_durable_account_email(
+            global_identity, projection,
+        )
+
+
+def test_global_workspace_email_source_outage_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tools.eos.auth.principal_credential_repository import (
+        PrincipalCredentialRepository,
+    )
+    from tools.eos.auth.workspace_bootstrap_projection import (
+        WorkspaceBootstrapProjectionError,
+    )
+
+    def unavailable(_principal_id):
+        raise RuntimeError("synthetic credential outage")
+
+    monkeypatch.setattr(
+        PrincipalCredentialRepository, "get_by_principal", unavailable,
+    )
+    with pytest.raises(
+        WorkspaceBootstrapProjectionError,
+        match="WORKSPACE_BOOTSTRAP_PRINCIPAL_EMAIL_UNAVAILABLE",
+    ):
+        auth_router._workspace_durable_account_email(
+            SimpleNamespace(principal_scope="GLOBAL"),
+            SimpleNamespace(principal_id=PRINCIPAL, email=None),
+        )
+
+
 def test_workspace_principal_profile_is_exact_optional_and_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1045,7 +1128,7 @@ def test_workspace_bootstrap_permission_authority_outage_is_bounded_503(
 
 
 # ARTIFACT: test_canonical_access_token_contract.py
-# VERSION: v1.5.0-D21B7-WORKSPACE-CONTRACT-CERT
+# VERSION: v1.6.1-EXPLICIT-FOUNDER-ABSENCE-WIRE-CERT
 # AUTHORITY BOUNDARY: deterministic token interoperability plus bounded server-owned workspace Legal permission, D21B7 branding presence/absence transport, durable descriptive principal-name, and canonical tenant practice-profile projection evidence only
 # TENANT POSTURE: exact tenant claim is preserved; durable membership remains downstream
 # FAIL-CLOSED POSTURE: missing configuration, malformed claims, expiry, signatures, inactive principals, workspace authority drift, permission/profile/branding-authority outage or mismatch, malformed optional name text, or attempts to infer names/plan/subscription/operating-model/branding authority deny or remain excluded

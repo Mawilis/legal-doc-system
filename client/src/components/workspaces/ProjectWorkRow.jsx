@@ -1,13 +1,53 @@
 /**
  * TITLE: WILSY OS Governed Project Work Row
- * VERSION: v1.7.0-TRUE-COMPACT-WORK-ROW
+ * VERSION: v1.16.1-SOURCE-STATUS-BADGE-PAINT
  * AUTHORITY: Validated source-backed presentation only; Python EOS owns business state.
  * EPITOME: A single row with selection, verified status, due date, assignee,
  *          provisional status and contextual actions supplied by its caller.
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/workspaces/ProjectWorkRow.jsx
  * COLLABORATION / OWNERSHIP: ProjectTasksPanel supplies exact-project tasks,
  *          command authorization, idempotency and source readback; row is reusable.
- * CERTIFICATION / UPDATE DATE: 2026-11-19
+ * CERTIFICATION / UPDATE DATE: 2026-11-27
+ * CHANGELOG: v1.16.0-ROW-STATUS-ACCENT-PARITY adds an EOS-state-coloured left row rail so Projects visibly conveys the shared palette even when the task table is dense, without replacing selected focus.
+ * CHANGELOG: v1.16.1-SOURCE-STATUS-BADGE-PAINT makes badge fill, border and white text explicit from the shared EOS status tone, preventing missing dynamic Tailwind candidates from producing white-on-white chips.
+ * CHANGELOG: v1.15.0-SHARED-SEMANTIC-STATUS-COLOURS renders verified and explicitly pending statuses with the canonical enterprise work colour mapping, while retaining text labels and readback.
+ * CHANGELOG: v1.14.1-VERIFIED-COMPLETION-ACTOR-NAME resolves the actual completion event actor from current verified project participant names rather than assuming the current assignee performed completion.
+ * CHANGELOG: v1.14.0-IMMUTABLE-COMPLETION-PROVENANCE displays exact-source completion instant and actor identity without inventing an actor name; only an independently proven matching assignee name may be displayed.
+ * CHANGELOG: v1.13.0-SHARED-WORK-BLUEPRINT-ROW centralizes
+ *          selected task focus and titles with the same accessible
+ *          task blueprint used by Calendar, My Work and Daily Attention.
+ * CHANGELOG: v1.12.1-DENY-BY-DEFAULT-OVERFLOW
+ *          preserves read-only title inspection but withholds menu
+ *          entry actions when a reusable row caller has not supplied
+ *          any verified action capability, retaining source-admitted
+ *          details and failing closed on implicit menu grants.
+ * CHANGELOG: v1.12.0-VERIFIED-HIERARCHY-INDENT displays
+ *          a restrained first-level indentation only when the parent
+ *          task appears in the same authorized source page. Milestones
+ *          remain separately typed records; no membership is inferred.
+ * CHANGELOG: v1.11.1-GOVERNED-MENU-HANDOFF delegates
+ *          detail and create-subtask entry to the caller's governed
+ *          work inspector and source-owned task-create command.
+ * CHANGELOG: v1.11.0-SINGLE-PRIMARY-WORK-ROW removes
+ *          duplicated Open/Clear row toolbars, makes the verified task
+ *          title itself the detail entry, and always places one EOS-gated
+ *          primary action plus existing secondary overflow at row end.
+ *          Selection remains quiet and never changes business status.
+ * CHANGELOG: v1.10.0-MULTI-SELECT-ROW-COMMANDS makes
+ *          every selected row locally actionable even when many are
+ *          selected; each task retains its separately authorized, audited
+ *          EOS command. Avoids duplicate task-open controls and keeps
+ *          the complete existing action menu available next to its work.
+ * CHANGELOG: v1.9.0-INLINE-SELECTION-COMMANDS shows the
+ *          existing capability-gated lifecycle and full action menu next to
+ *          one selected task, without separate command authority. Multi-
+ *          selection remains a parent-owned review operation. Selected rows
+ *          use a subtle neutral highlight instead of saturated blue.
+ * CHANGELOG: v1.8.0-CONTEXTUAL-WORK-INSPECTOR replaces the nested
+ *          browser disclosure with a bounded description preview and
+ *          explicit View task control leading to the existing governed
+ *          project task inspector. Exact EOS authority, commands, context
+ *          and source-verified state stay with ProjectTasksPanel.
  * CHANGELOG: v1.7.0-TRUE-COMPACT-WORK-ROW hides secondary
  *          disclosures in compact mode and bounds table cell padding
  *          to preserve a useful dense Work Row.
@@ -43,6 +83,8 @@
 import React from 'react';
 import { Waypoints, ClipboardList, UserRound } from 'lucide-react';
 import ProjectWorkRowActions from './ProjectWorkRowActions.jsx';
+import { workTaskBlueprint } from './WorkTaskBlueprint.jsx';
+import { workStatusClasses, workStatusAccentClass, workStatusTone } from '../../theme/workStatus.js';
 
 const NO_ACTION_CAPABILITIES = Object.freeze({
   canStart: false, canComplete: false, canBlock: false, canCancel: false,
@@ -79,12 +121,31 @@ const duePhrase = (dueDate, todayISO) => {
  * @param {object} props Data, actions and availability supplied by an authorized caller.
  */
 export default function ProjectWorkRow({
-  item, selected = false, density = 'comfortable', busy = false,
+  item, selected = false, depth = 0, density = 'comfortable', busy = false,
   priority = null,
   pendingStatus = null, todayISO, assigneeName,
-  onToggleSelect, onOpen, onAssign, onEdit, onTransition, onComplete,
+  onToggleSelect, onOpen, onCreateSubtask, onAssign, onEdit, onTransition, onComplete,
   onAttachments, onApprovals, onActivity, capabilities = NO_ACTION_CAPABILITIES,
 }) {
+  const rowCommands = <ProjectWorkRowActions item={item} busy={busy} dense
+    {...(capabilities || NO_ACTION_CAPABILITIES)}
+    onTransition={onTransition} onComplete={onComplete}
+    onEdit={onEdit} onAssign={onAssign}
+    onOpen={Object.values(capabilities || NO_ACTION_CAPABILITIES).some(value => value === true)
+      ? onOpen : undefined} onCreateSubtask={onCreateSubtask}
+    onAttachments={onAttachments} onApprovals={onApprovals}
+    onActivity={onActivity}/>;
+  // Stable source-status presentation: dynamic utility tokens may not be discovered
+  // by Tailwind's component-only source scan; explicitly paint the verified badge.
+  const badgeTone = workStatusTone(pendingStatus !== null ? pendingStatus : item.status);
+  const badgeBackground = {
+    neutral: '#475569',
+    active: '#1d4ed8',
+    success: '#047857',
+    caution: '#92400e',
+    blocked: '#b91c1c',
+  }[badgeTone];
+  const badgeStyle = { backgroundColor: badgeBackground, borderColor: badgeBackground, color: '#ffffff' };
   const displayName = item.assignee_principal_id && typeof assigneeName === 'function'
     ? assigneeName(item.assignee_principal_id) : null;
   const hasNamedContributor = typeof displayName === 'string' && displayName.trim().length > 0
@@ -130,8 +191,8 @@ export default function ProjectWorkRow({
                 }
               }}
               aria-selected={selected}
-              className={'cursor-pointer align-middle hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
-                + (selected ? 'bg-blue-50 ' : 'bg-white ')
+              className={'cursor-pointer align-middle border-l-[3px] hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 '
+                + (selected ? 'border-l-blue-700 bg-slate-50 ' : workStatusAccentClass(item.status) + ' bg-white ')
                 + (density === 'compact' ? 'h-11' : 'h-14')}>
               <td className={density === 'compact' ? 'p-1.5' : 'p-2'}>
                 <input type="checkbox" aria-label={'Select ' + item.title}
@@ -139,33 +200,40 @@ export default function ProjectWorkRow({
                   onChange={event => onToggleSelect(item.task_id, event.target.checked)}/>
               </td>
               <td className={density === 'compact' ? 'p-2' : 'p-3'}>
-                <div className="flex items-center gap-2 font-semibold text-slate-900">
+                <div className={'flex items-center gap-2 font-semibold text-slate-900 '
+                  + (depth === 1 ? 'pl-4 border-l-2 border-slate-200' : '')}>
                   {item.kind === 'MILESTONE' ? <Waypoints size={15}/> : <ClipboardList size={15}/>}
                   {['critical', 'high'].includes(priority) && <span
                     aria-label={priority === 'critical' ? 'Critical priority' : 'High priority'}
                     title={priority === 'critical' ? 'Critical priority' : 'High priority'}
                     className={'inline-block h-2 w-2 shrink-0 rounded-full '
                       + (priority === 'critical' ? 'bg-rose-700' : 'bg-amber-600')}/>}
-                  <span className={'block min-w-0 truncate '
-                    + (['DONE', 'CANCELLED'].includes(item.status)
-                      ? 'text-slate-500 line-through' : '')}
-                    title={item.title}>{item.title}</span>
+                  <button type="button" title={item.title}
+                    className={workTaskBlueprint.title
+                      + (['DONE', 'CANCELLED'].includes(item.status) ? ' text-slate-500 line-through' : '')}
+                    onClick={event => onOpen(item, event.currentTarget)}>{item.title}</button>
                 </div>
                 <div className={density === 'compact' ? 'hidden' : 'mt-1 text-xs text-slate-600'}>
                   {item.kind === 'MILESTONE' ? 'Milestone' : item.parent_task_id ? 'Subtask' : 'Task'}
                   {item.depends_on.length > 0 ? ' · ' + item.depends_on.length + ' dependencies' : ''}
                 </div>
-                {density !== 'compact' && item.description && <details className="mt-1 text-xs text-slate-700">
-                  <summary className="cursor-pointer font-medium text-blue-800">Details</summary>
-                  <p className="mt-2 whitespace-pre-wrap break-words">{item.description}</p>
-                </details>}
+                {item.status === 'DONE' && typeof item.completed_at === 'string'
+                  && typeof item.completed_by_principal_id === 'string'
+                  && <p className="mt-1 text-xs text-slate-600" data-completion-evidence>
+                    Completed {new Intl.DateTimeFormat('en-ZA', {
+                      day: 'numeric', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Johannesburg',
+                    }).format(new Date(item.completed_at))}
+                    {' · By ' + (typeof assigneeName === 'function'
+                      ? assigneeName(item.completed_by_principal_id) : 'verified EOS actor')}
+                  </p>}
+                {density !== 'compact' && item.description && <p
+                  className="mt-1 max-w-[44rem] truncate text-xs text-slate-600"
+                  title={item.description}>{item.description}</p>}
               </td>
               <td className={(density === 'compact' ? 'px-2 py-1' : 'p-3') + ' text-slate-800'}>
-                <span className={'inline-flex rounded-md px-2 py-1 text-xs font-semibold '
-                  + ({ TODO: 'bg-slate-100 text-slate-800', IN_PROGRESS: 'bg-blue-50 text-blue-800',
-                    BLOCKED: 'bg-amber-100 text-amber-900', DONE: 'bg-emerald-50 text-emerald-800',
-                    CANCELLED: 'bg-slate-100 text-slate-600' })[pendingStatus !== null
-                    ? pendingStatus : item.status]}>
+                <span className={workStatusClasses(pendingStatus !== null
+                  ? pendingStatus : item.status)} style={badgeStyle}>
                   {statusLabel(pendingStatus !== null ? pendingStatus : item.status)}
                   {pendingStatus !== null ? ' · pending' : ''}
                 </span>
@@ -202,19 +270,12 @@ export default function ProjectWorkRow({
                 </span>
               </td>
               <td className={density === 'compact' ? 'px-2 py-1' : 'p-3'}>
-                <ProjectWorkRowActions item={item} busy={busy} dense={density === 'compact'} {...(capabilities || NO_ACTION_CAPABILITIES)}
-                  onTransition={onTransition}
-                  onComplete={onComplete}
-                  onEdit={onEdit}
-                  onAssign={onAssign}
-                  onAttachments={onAttachments}
-                  onApprovals={onApprovals}
-                  onActivity={onActivity}/>
+                {rowCommands}
               </td></tr>;
 }
 
 // ARTIFACT: ProjectWorkRow.jsx
-// VERSION: v1.7.0-TRUE-COMPACT-WORK-ROW
+// VERSION: v1.16.1-SOURCE-STATUS-BADGE-PAINT
 // AUTHORITY BOUNDARY: EOS mutations, permissions and evidence owned by caller
 // TENANT POSTURE: no browser-derived tenant or project scope
 // FAIL-CLOSED POSTURE: provisional UI never establishes command commit

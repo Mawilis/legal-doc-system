@@ -1,6 +1,16 @@
 """WILSY OS EOS Runtime Database Ownership Certificate.
 TITLE: Python Runtime Database Ownership
-VERSION: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT
+VERSION: v1.4.8-MWT12-EXACT-RECOVERY-OPERATOR-CLASSIFICATION
+CHANGELOG: v1.4.8-MWT12-EXACT-RECOVERY-OPERATOR-CLASSIFICATION classifies two separately authenticated
+MW-T12 CLI-only recovery utilities as non-runtime constructors only with
+explicit entrypoint, ephemeral localhost Mongo and synthetic Atlas TLS/read
+bounds. New unclassified Mongo clients still fail the runtime ownership test.
+CHANGELOG: v1.4.7-MWT12-LOOPBACK-OPERATOR-CLASSIFICATION records the
+single local MW-T12 synthetic-replica recovery operator as non-runtime only
+when its explicit CLI main guard, loopback binding, process ownership and
+production denial remain present. The two-client runtime exclusivity assertion
+is unchanged.
+CHANGELOG: v1.4.6-EXACT-INDEX-OPERATOR-CLASSIFICATION classifies three explicitly guarded index-provisioning CLI tools separately from runtime Mongo clients and asserts their main guards.
 CHANGELOG: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT certifies the
  existing _main() guarded operator entrypoint rather than incorrectly
  requiring an unimplemented main() function; classification remains strict.
@@ -16,7 +26,7 @@ AUTHORITY: Wilsy OS Core Governance
 EPITOME: Proves Kernel-owned persistence and physical Node backend retirement.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tests/unit/test_eos_runtime_database_consumer_inventory.py
 COLLABORATION / OWNERSHIP: Kernel DB, registry and runtime certification owners.
-CERTIFICATION / UPDATE DATE: 2026-11-17
+CERTIFICATION / UPDATE DATE: 2026-11-24
 CHANGELOG: v1.1.0-PHYSICAL-NODE-RETIREMENT replaces obsolete retained-file assertions with required absence; database ownership assertions remain intact.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 SECURITY / PRIVACY POSTURE: Repository blob inspection only; no live records or credentials are read.
@@ -65,6 +75,12 @@ OPERATOR_ONLY_CONNECTIONS = {
     "tools/eos/legal_operations/service/legal_evidence_provider_readonly_reconciliation_audit_provisioner.py",
     "tools/eos/mongodb/read_only_index_verifier.py",
     "tools/eos/auth/founder_development_admission.py",
+    "tools/eos/ops/provision_atlas_company_document_indexes.py",
+    "tools/eos/ops/provision_atlas_strategy_project_link_indexes.py",
+    "tools/eos/ops/provision_local_strategy_project_link_indexes.py",
+    "tools/eos/ops/mw_t12_local_eos_recovery.py",
+    "tools/eos/ops/mw_t12_image_rollback_rehearsal.py",
+    "tools/eos/ops/mw_t12_runtime_readiness.py",
 }
 LEGACY_MIGRATION_HISTORY = (
     "server/scripts/finalize-migration.js",
@@ -151,6 +167,109 @@ def test_runtime_mongo_client_construction_is_confined_to_kernel_and_isolated_au
             runtime_calls.add(relative)
 
     assert runtime_calls == {CANONICAL_CONNECTOR, ISOLATED_AUDIT_SINK}
+    # Explicit index-provisioning operators are not long-running EOS consumers.
+    # Keep this narrow: assert each approved exception remains CLI guarded.
+    for relative in (
+        "tools/eos/ops/provision_atlas_company_document_indexes.py",
+        "tools/eos/ops/provision_atlas_strategy_project_link_indexes.py",
+        "tools/eos/ops/provision_local_strategy_project_link_indexes.py",
+    ):
+        tree = ast.parse((ROOT / relative).read_text(encoding="utf-8"), filename=relative)
+        main_functions = [node for node in tree.body
+                          if isinstance(node, ast.FunctionDef) and node.name == "main"]
+        assert len(main_functions) == 1, relative
+        guards = [node for node in tree.body if isinstance(node, ast.If)
+                  and isinstance(node.test, ast.Compare)
+                  and isinstance(node.test.left, ast.Name)
+                  and node.test.left.id == "__name__"
+                  and len(node.test.comparators) == 1
+                  and isinstance(node.test.comparators[0], ast.Constant)
+                  and node.test.comparators[0].value == "__main__"]
+        assert len(guards) == 1, relative
+        assert any(isinstance(node, ast.Call)
+                   and isinstance(node.func, ast.Name)
+                   and node.func.id == "main"
+                   for node in ast.walk(guards[0])), relative
+    # MW-T12 owns an ephemeral loopback mongod solely as an explicit CLI
+    # browser-certification operator; it never runs as an EOS service.
+    # Do not permit arbitrary clients through this narrow exception.
+    recovery_path = ROOT / "tools/eos/ops/mw_t12_local_eos_recovery.py"
+    recovery_tree = ast.parse(recovery_path.read_text(encoding="utf-8"))
+    recovery_source = recovery_path.read_text(encoding="utf-8")
+    recovery_functions = {
+        node.name: node for node in recovery_tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    assert {"main", "_guard", "_wait_primary", "_stop_owned", "run"} <= recovery_functions.keys()
+    recovery_guards = [
+        node for node in recovery_tree.body
+        if isinstance(node, ast.If)
+        and isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Name)
+        and node.test.left.id == "__name__"
+        and len(node.test.comparators) == 1
+        and isinstance(node.test.comparators[0], ast.Constant)
+        and node.test.comparators[0].value == "__main__"
+    ]
+    assert len(recovery_guards) == 1
+    assert any(
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+        and node.func.id == "main"
+        for node in ast.walk(recovery_guards[0])
+    )
+    assert _constructs_mongo_client(recovery_functions["_wait_primary"])
+    assert all(
+        not _constructs_mongo_client(node)
+        for name, node in recovery_functions.items() if name != "_wait_primary"
+    )
+    assert 'connect_uri = f"mongodb://127.0.0.1:{port}/?directConnection=true"' in recovery_source
+    assert '"--bind_ip", "127.0.0.1"' in recovery_source
+    assert '"PRODUCTION_ENVIRONMENT_FORBIDDEN"' in recovery_source
+    assert 'for key in ("ENV", "WILSY_ENV")' in recovery_source
+    assert 'group.add_argument("--run", action="store_true")' in recovery_source
+    assert 'group.add_argument("--check", action="store_true")' in recovery_source
+    assert 'process = subprocess.Popen(' in recovery_source
+    assert '_stop_owned(process)' in recovery_source
+
+    # These two MW-T12 tools are explicit operator-only processes, never
+    # authoritative runtime MongoDB consumers. Their admission is narrow:
+    # future additional constructors elsewhere still break the set assertion.
+    for relative, required_symbols in (
+        ("tools/eos/ops/mw_t12_image_rollback_rehearsal.py",
+         ("def main(", "def _wait_mongo(", "def _local_database_uri(",
+          'f"mongodb://127.0.0.1:', "--rehearse",
+          "client.close()", "IMAGE_MONGO_PRIMARY_UNVERIFIED")),
+        ("tools/eos/ops/mw_t12_runtime_readiness.py",
+         ("def main(", "def verify_scoped_test_database(",
+          'TEST_ATLAS_HOST = "legal-doc-test.xmlpwmq.mongodb.net"',
+          "SYNTHETIC_DB", "tlsAllowInvalidCertificates=False",
+          "tlsAllowInvalidHostnames=False", "--verify-scoped-database",
+          "ATLAS_ECS_ROLLBACK_CERTIFIED=FALSE")),
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=relative)
+        functions = {node.name for node in tree.body
+                     if isinstance(node, ast.FunctionDef)}
+        assert "main" in functions, relative
+        guards = [
+            node for node in tree.body
+            if isinstance(node, ast.If)
+            and isinstance(node.test, ast.Compare)
+            and isinstance(node.test.left, ast.Name)
+            and node.test.left.id == "__name__"
+            and len(node.test.comparators) == 1
+            and isinstance(node.test.comparators[0], ast.Constant)
+            and node.test.comparators[0].value == "__main__"
+        ]
+        assert len(guards) == 1, relative
+        assert any(isinstance(node, ast.Call)
+                   and isinstance(node.func, ast.Name)
+                   and node.func.id == "main"
+                   for node in ast.walk(guards[0])), relative
+        assert _constructs_mongo_client(tree), relative
+        for symbol in required_symbols:
+            assert symbol in source, (relative, symbol)
+
     founder_cli = (ROOT / "tools/eos/auth/founder_development_admission.py").read_text(encoding="utf-8")
     assert 'if __name__ == "__main__":' in founder_cli
     assert "def _main()" in founder_cli
@@ -266,7 +385,7 @@ def test_legacy_node_backend_is_not_a_supported_runtime_entrypoint():
     )
 
 # ARTIFACT: EOS Runtime Database Ownership Certificate
-# VERSION: v1.4.5-EXACT-FOUNDER-OPERATOR-ENTRYPOINT
+# VERSION: v1.4.8-MWT12-EXACT-RECOVERY-OPERATOR-CLASSIFICATION
 # AUTHORITY BOUNDARY: Offline repository ownership evidence.
 # TENANT POSTURE: No data access or mutation.
 # FAIL-CLOSED POSTURE: Duplicate persistence or Node runtime fails.

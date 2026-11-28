@@ -1,5 +1,5 @@
 """TITLE: WILSY OS Invitation Creation Authority.
-VERSION: v1.0.0-WILSY-F1C2B-A2-R2
+VERSION: v1.1.0-FOUNDER-SELF-BOUND-HR-DIRECTOR-INVITE
 AUTHORITY: Ordinary tenant-scoped invitation issuance.
 EPITOME: Durable, explicitly delegated, digest-only invitation creation.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/invitation_creation.py
@@ -9,8 +9,9 @@ TENANT BOUNDARY: Every read and write is bound to the requested tenant.
 AUTHORITY BOUNDARY: Invitation creation only; no admission or membership mutation.
 FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 TRANSACTION BOUNDARY: Caller-owned Mongo transaction.
-CERTIFICATION / UPDATE DATE: 2026-09-06
-CHANGELOG: v1.0.0 establishes A2 ordinary invitation creation authority.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.1.0-FOUNDER-SELF-BOUND-HR-DIRECTOR-INVITE requires exact ACTIVE Founder designation, canonical tenant and self-recipient for the temporary HR Director invitation, preserving source invitation transactions and all independent decisions.
+           v1.0.0 establishes A2 ordinary invitation creation authority.
 COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2.
 """
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ from tools.eos.auth.invitation import InvitationAuthority, InvitationStatus
 from tools.eos.auth.invitation_repository import InvitationRepository
 from tools.eos.saas.tenancy.tenant_registry import TenantRegistry
 from tools.eos.kernel.db import get_client
+from tools.eos.auth.workspace_bootstrap_projection import WILSY_COMPANY_TENANT_ID
 from pymongo.collection import Collection
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +79,25 @@ class InvitationCreationComposition:
         assignments = RoleAssignmentRepository.list_assignments(identity.identity_id, tenant_id, collection=self.role_collection, session=session)
         if not any(evaluate_authorization_role_grant(a, tenant_id, authorization_role_id).allowed for a in assignments if a.status is RoleAssignmentStatus.ACTIVE):
             raise InvitationCreationError("GRANT_NOT_PERMITTED")
+        # Transitional Founder bootstrap is the ONLY HR Director invitation
+        # authorized here. Future employee HR Director assignment requires its
+        # own verified employment/admission governance, never this shortcut.
+        if authorization_role_id == "HR_DIRECTOR":
+            if tenant_id != WILSY_COMPANY_TENANT_ID or recipient_principal_id != identity.identity_id:
+                raise InvitationCreationError("FOUNDER_HR_DIRECTOR_SCOPE_DENIED")
+            database = getattr(self.tenant_collection, "database", None)
+            if database is None or getattr(database, "client", None) is not self.client:
+                raise InvitationCreationError("FOUNDER_HR_DIRECTOR_SOURCE_UNAVAILABLE")
+            founder_rows = list(database["institutional_principal_designations"].find(
+                {"tenant_id": tenant_id, "designation": "Founder"},
+                {"_id": 0, "principal_id": 1, "state": 1, "business_role": 1, "grants_permissions": 1},
+                session=session,
+            ).limit(2))
+            if (len(founder_rows) != 1 or founder_rows[0].get("principal_id") != identity.identity_id
+                or founder_rows[0].get("state") != "ACTIVE"
+                or founder_rows[0].get("business_role") != "tenant_owner"
+                or founder_rows[0].get("grants_permissions") is not False):
+                raise InvitationCreationError("FOUNDER_HR_DIRECTOR_DESIGNATION_DENIED")
         recipient = PrincipalAuthorityRepository.get(recipient_principal_id, collection=self.principal_collection, session=session)
         if recipient.status is not PrincipalStatus.ACTIVE:
             raise InvitationCreationError("RECIPIENT_PRINCIPAL_NOT_ACTIVE")
@@ -105,7 +126,7 @@ def create_invitation(*, identity: SovereignIdentity, tenant_id: str, recipient_
 
 __all__ = ["InvitationCreationComposition", "InvitationCreationError", "InvitationCreationResult", "create_invitation"]
 # ARTIFACT: invitation_creation.py
-# VERSION: v1.0.0-WILSY-F1C2B-A2-R2
+# VERSION: v1.1.0-FOUNDER-SELF-BOUND-HR-DIRECTOR-INVITE
 # AUTHORITY BOUNDARY: ordinary invitation issuance only
 # TENANT POSTURE: explicit tenant-bound reads and persistence
 # FAIL-CLOSED POSTURE: missing, inactive, unauthorized, and persistence failures deny

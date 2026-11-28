@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Sovereign Dashboard Controller
- * VERSION: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY
+ * VERSION: v19.5.1-FOUNDER-FLOATING-NAV-DEDUPLICATION
  * AUTHORITY: Authenticated client dashboard routing and presentation composition.
  * EPITOME: Resolves authenticated WILSY company owners into the EOS-selected
  *          Headquarters workspace while preserving customer tenant routing.
@@ -18,7 +18,26 @@
  *                            TenantContext owns selected tenant projection;
  *                            Python EOS owns authorization and Legal Operations
  *                            truth; dashboard components own presentation only.
- * CERTIFICATION / UPDATE DATE: 2026-11-15
+ * CERTIFICATION / UPDATE DATE: 2026-11-24
+ * CHANGELOG: v19.5.1-FOUNDER-FLOATING-NAV-DEDUPLICATION suppresses the duplicate fixed My Work navigation control only for canonical Founder employer workspaces now served by the profile switcher; other tenant navigation remains unchanged, and EOS/IAM are untouched.
+ * CHANGELOG: v19.5.0-SINGLE-LIVE-MODULE-MANIFEST-READ defers the
+ *            initial independently authorized module-manifest GET by one
+ *            microtask, so development effect replay does not send and discard
+ *            an extra server-side authority and entitlement transaction.
+ *            Cleanup prevents stale tenant/session results from being
+ *            published. Each real mount/scope change still revalidates with
+ *            Python EOS; no persistence, cache, permission or timeout change.
+ * CHANGELOG: v19.4.0-SINGLE-LIVE-KERNEL-PROBE schedules the initial
+ *            kernel health probe after React's effect replay turn so the
+ *            discarded development mount cannot issue an unnecessary GET.
+ *            The existing periodic probe and honest degraded state remain.
+ * CHANGELOG: v19.3.1-PROBE-SCOPED-HEALTH-MESSAGE describes
+ *            transient /api/kernel read failures as health-probe status,
+ *            not a proved outage of independently verified EOS services.
+ *            Existing degraded state remains visible; no authority altered.
+ * CHANGELOG: v19.3.0-PLAIN-LANGUAGE-SERVICE-STATUS uses clear
+ *            human-facing connection status instead of raw kernel codes or
+ *            latency telemetry; no change to session or source authority.
  * CHANGELOG: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY handles either event-listener order, focusing the exact mounted Headquarters work input when available and opening the controller fallback otherwise. Authority and route decisions are unchanged.
  * CHANGELOG: v19.2.2-HEADQUARTERS-SEARCH-FOCUS-RECOVERY focuses the mounted Headquarters authorized-work search before consuming global search; if that target is absent, the controller opens its own command search. Authority and route decisions are unchanged.
  * CHANGELOG: v19.2.1-OFFICIAL-BRAND-HEADER-ALIGNMENT aligns the existing
@@ -882,14 +901,20 @@ const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspa
       return () => { current = false; };
     }
     setModuleManifest({ status: 'loading', tenantId: moduleManifestTenantId, modules: [] });
-    api.get('/auth/module-manifest')
-      .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
-      .then((modules) => {
-        if (current) setModuleManifest({ status: 'ready', tenantId: moduleManifestTenantId, modules });
-      })
-      .catch(() => {
-        if (current) setModuleManifest({ status: 'unavailable', modules: [] });
-      });
+    // StrictMode replays the effect and its cleanup before the microtask turn.
+    // Avoid sending a second authenticated, source-transactional read that
+    // would be discarded. Real scope changes still perform a fresh EOS read.
+    queueMicrotask(() => {
+      if (!current) return;
+      api.get('/auth/module-manifest')
+        .then(({ data }) => validateWilsyModuleManifest(data, moduleManifestTenantId))
+        .then((modules) => {
+          if (current) setModuleManifest({ status: 'ready', tenantId: moduleManifestTenantId, modules });
+        })
+        .catch(() => {
+          if (current) setModuleManifest({ status: 'unavailable', tenantId: moduleManifestTenantId, modules: [] });
+        });
+    });
     return () => { current = false; };
   }, [user?.id, user?.email, moduleManifestTenantId]);
 
@@ -1019,7 +1044,9 @@ const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspa
       }
     };
 
-    runProbe();
+    // React StrictMode cleans up the first effect in the same JS turn.
+    // Do not send two independent kernel probes just to discard the first.
+    queueMicrotask(() => { if (!cancelled) void runProbe(); });
     probeRef.current = setInterval(runProbe, KERNEL_PROBE_INTERVAL_MS);
 
     return () => {
@@ -1432,12 +1459,12 @@ const SovereignDashboardController = ({ user: propUser, onLogout, initialWorkspa
           }}
         >
           <ShieldAlert size={14} />
-          <span>Kernel {kernelHealth.status}</span>
-          {kernelHealth.latencyMs > 0 && <span>· {kernelHealth.latencyMs}ms</span>}
+          <span>{kernelHealth.status === 'UNREACHABLE' ? 'Kernel health probe unavailable' : 'Kernel health check needs attention'}</span>
         </div>
       )}
 
-      {!systemServicesWorkspace && dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS && (
+      {!systemServicesWorkspace && dashboardKey !== DASHBOARD_KEYS.HEADQUARTERS
+        && !isWilsyPlatformTenant(user?.tenantId) && (
       <button
         type="button"
         onClick={() => navigate('/my-work')}
@@ -1483,7 +1510,7 @@ export default SovereignDashboardController;
 
 /**
  * ARTIFACT: SovereignDashboardController.jsx
- * VERSION: v19.2.3-HEADQUARTERS-SEARCH-FOCUS-RELIABILITY
+ * VERSION: v19.5.1-FOUNDER-FLOATING-NAV-DEDUPLICATION
  * AUTHORITY BOUNDARY: authenticated client dashboard routing and presentation composition only
  * TENANT POSTURE: EOS workspace projection selects Headquarters only for the canonical WILSY company tenant; APIs independently enforce tenant IAM
  * FAIL-CLOSED POSTURE: unknown workspaces do not manufacture access or cross-role fallback

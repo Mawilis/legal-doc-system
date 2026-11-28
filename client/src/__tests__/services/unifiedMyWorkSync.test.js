@@ -1,6 +1,6 @@
 /**
  * TITLE: WILSY OS Current-Session My Work Coordination Certification
- * VERSION: v1.1.0-BOUNDED-503-RECOVERY-CERT
+ * VERSION: v1.2.0-STRICTMODE-SESSION-READ-HANDOFF-CERT
  * AUTHORITY: WILSY OS Core Governance; only EOS authorizes business activity.
  * EPITOME: Proves scoped shared reads, actual EOS response verification,
  *          current session safety, source-confirmed invalidation and cleanup.
@@ -8,6 +8,10 @@
  * COLLABORATION / OWNERSHIP: unifiedMyWorkSync, AuthProvider session scope,
  *                            unifiedMyWorkProjection and source-owned commands.
  * CERTIFICATION / UPDATE DATE: 2026-11-09
+ * CHANGELOG: v1.2.0-STRICTMODE-SESSION-READ-HANDOFF-CERT proves same-turn
+ *            unsubscribe/resubscribe preserves exactly one in-flight
+ *            source read while a real final unmount aborts it; explicit
+ *            source/session invalidation remains synchronous.
  * CHANGELOG: v1.1.0-BOUNDED-503-RECOVERY-CERT verifies that source 503
  *            failures reject consistently without reflooding the EOS route;
  *            explicit source invalidation permits a newly authorized retry.
@@ -134,6 +138,41 @@ describe('one EOS source-owned My Work read for current authenticated scope', ()
     unsubscribe();
   });
 
+  it('preserves an in-flight GET across same-turn effect cleanup and reattach', async () => {
+    const key = scope();
+    const pending = deferred();
+    api.get.mockReturnValue(pending.promise);
+    const stopFirst = subscribeUnifiedMyWork(key, () => {});
+    const first = readUnifiedMyWork(key, expected());
+    const signal = api.get.mock.calls[0][1].signal;
+    stopFirst();
+    const stopSecond = subscribeUnifiedMyWork(key, () => {});
+    const second = readUnifiedMyWork(key, expected());
+    await Promise.resolve();
+    expect(signal.aborted).toBe(false);
+    expect(api.get).toHaveBeenCalledTimes(1);
+    pending.resolve(response());
+    const values = await Promise.all([first, second]);
+    expect(values[0]).toBe(values[1]);
+    stopSecond();
+    await Promise.resolve();
+    releaseUnifiedMyWork(key);
+  });
+
+  it('aborts the pending source read after a real last-subscriber unmount', async () => {
+    const key = scope();
+    const pending = deferred();
+    api.get.mockReturnValue(pending.promise);
+    const stop = subscribeUnifiedMyWork(key, () => {});
+    const read = readUnifiedMyWork(key, expected());
+    const signal = api.get.mock.calls[0][1].signal;
+    stop();
+    await Promise.resolve();
+    expect(signal.aborted).toBe(true);
+    pending.resolve(response());
+    await expect(read).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
   it('never shares tenant, principal or revised-capacity data across scopes', async () => {
     const first = scope();
     const foreign = scope({ tenantId: 'FOREIGN-TENANT' });
@@ -257,7 +296,7 @@ describe('one EOS source-owned My Work read for current authenticated scope', ()
 
 /*
  * ARTIFACT: unifiedMyWorkSync.test.js
- * VERSION: v1.1.0-BOUNDED-503-RECOVERY-CERT
+ * VERSION: v1.2.0-STRICTMODE-SESSION-READ-HANDOFF-CERT
  * AUTHORITY BOUNDARY: Synthetic client read-coordination certificate only.
  * TENANT POSTURE: Explicit principal, tenant and session revision isolation.
  * FAIL-CLOSED POSTURE: Unknown, stale or invalidated work is never accepted.

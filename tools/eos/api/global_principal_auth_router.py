@@ -1,7 +1,26 @@
-"""HTTP transport for the tenant-neutral global-principal login journey.
-
-Global routes are additive. Legacy tenant-bound endpoints remain mounted and
-unchanged while global session currentness is migrated and certified.
+"""
+TITLE: WILSY OS Global Principal Authentication HTTP Router
+VERSION: v1.1.1-GOVERNED-BLOCKING-GLOBAL-LOGIN-ISOLATION
+AUTHORITY: WILSY OS Global Principal IAM and source-owned session services.
+EPITOME: Secure tenant-neutral credential, membership, operating capacity and
+MFA session admission via existing EOS authorities.
+ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/api/global_principal_auth_router.py
+COLLABORATION / OWNERSHIP: Global Principal authentication; Python EOS FastAPI.
+CERTIFICATION / UPDATE DATE: 2026-11-27
+CHANGELOG: v1.1.1-GOVERNED-BLOCKING-GLOBAL-LOGIN-ISOLATION supplies the complete
+sovereign forensic header and footer required by AGENTS.md, with no behavior changes.
+v1.1.0-BLOCKING-GLOBAL-LOGIN-WORKER-ISOLATION offloads synchronous global
+credential, rate-limit and MongoDB membership admission to a bounded Starlette
+worker thread without changing identity, session, MFA or failure authority.
+Global routes are additive. Legacy tenant-bound endpoints remain mounted.
+COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2; ISO 27001.
+SECURITY / PRIVACY POSTURE: No credentials or personal data in log messages;
+password and MFA verification, rate limits, and denial remain source owned.
+TENANT BOUNDARY: Tenant-specific memberships and capacity selections require
+exact server-verified scope; no aliases or owner fallback.
+AUTHORITY BOUNDARY: This router cannot create tenant grants or bypass
+MFA, membership verification or currentness.
+FINANCIAL AUTHORITY BOUNDARY: Kennel EOS exclusively owns financial execution.
 """
 from __future__ import annotations
 
@@ -191,6 +210,16 @@ def _membership_payload(page: Any) -> list[dict[str, Any]]:
 
 @router.post("/login")
 async def global_login(payload: GlobalCredentialRequest, request: Request) -> dict[str, Any]:
+    """Offload blocking global credential and membership admission from ASGI.
+
+    This does not parallelize, retry, bypass rate limits, reuse challenges or
+    issue a session without the existing independently verified MFA flow.
+    """
+    from starlette.concurrency import run_in_threadpool
+    return await run_in_threadpool(_global_login_sync, payload, request)
+
+
+def _global_login_sync(payload: GlobalCredentialRequest, request: Request) -> dict[str, Any]:
     """Verify tenant-neutral credentials and issue a one-time membership selector."""
     _require_ready(request, "global_principal_auth_indexes_ready")
     _require_ready(request, "global_principal_mfa_factor_indexes_ready")
@@ -862,3 +891,11 @@ async def migrate_legacy_global_mfa_factor(
 
 
 __all__ = ["router"]
+
+# ARTIFACT: tools/eos/api/global_principal_auth_router.py
+# VERSION: v1.1.1-GOVERNED-BLOCKING-GLOBAL-LOGIN-ISOLATION
+# AUTHORITY BOUNDARY: Global Principal authentication, membership and MFA admission only.
+# TENANT POSTURE: Exact current verified membership/capacity, no platform root fallback.
+# FAIL-CLOSED POSTURE: Credential, MFA and source unavailability cannot promote a session.
+# FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+# END OF WILSY OS SOVEREIGN ARTIFACT
