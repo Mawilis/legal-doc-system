@@ -5159,7 +5159,13 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                           onChange={event => setOrganizationForm(prev => ({...prev,name:event.target.value}))}/>
                       </label>
                       <div className={styles.organizationCodeField}>
-                        <label htmlFor="wilsy-organization-record-code">Unique code</label>
+                        <div className={styles.organizationCodeLabelRow}>
+                          <label htmlFor="wilsy-organization-record-code">Unique code</label>
+                          <details className={styles.organizationCodeHelp}>
+                            <summary aria-label="Why does a department need a unique code?" title="About this code">?</summary>
+                            <p>Codes identify records in EOS. You can edit this suggestion; EOS checks availability when you save the draft.</p>
+                          </details>
+                        </div>
                         <div className={styles.organizationCodeInput}>
                           <input id="wilsy-organization-record-code" required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
                             value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
@@ -5169,7 +5175,6 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                             if (slug) setOrganizationForm(prev => ({...prev,record_id:(organizationKind === 'departments' ? 'DEP-' : 'POS-') + slug}));
                           }} disabled={!organizationForm.name.trim()}>Suggest code</button>
                         </div>
-                        <small>Editable suggestion, not a reserved code. EOS verifies uniqueness when saved.</small>
                       </div>
                       {organizationKind === 'positions' && <>
                         <label>
