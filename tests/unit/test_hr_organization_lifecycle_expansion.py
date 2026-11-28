@@ -163,7 +163,7 @@ def test_business_context_does_not_infer_entity_or_activity_from_empty_authority
     assert answer["status"] == "UNCONFIGURED"
     assert answer["activity_ids"] == []
     assert answer["operating_entities"] == []
-    assert answer["entity_status"] == "VERIFIED_ENTITY_SOURCE_NOT_CONNECTED"
+    assert answer["entity_status"] == "ENTITY_SOURCE_NOT_CONNECTED"
     assert answer["external_business_classification_verified"] is False
     assert current.queries[0] == {"tenant_id": "TENANT-SYNTHETIC-A"}
 
