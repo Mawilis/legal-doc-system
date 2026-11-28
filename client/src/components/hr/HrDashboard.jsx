@@ -5087,26 +5087,72 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                       </div>
                     </section>;
                   })()}
-                  {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
-                    style={{display:'grid',gap:11,padding:'17px',borderTop:'1px solid #dce6f1',background:'#fff'}} aria-label="Organization draft form">
-                    <strong style={{color:'#142f50',fontSize:15}}>New {organizationKind === 'departments' ? 'department' : 'position'} draft</strong>
-                    {[
-                      {key:'record_id',label:'Unique code',required:true},
-                      {key:'name',label:'Name',required:true},
-                      ...(organizationKind === 'positions' ? [{key:'department_id',label:'Approved department code',required:true},{key:'capacity',label:'Planned capacity',required:true}] : []),
-                      {key:'parent_id',label:'Parent code (optional)',required:false},
-                      {key:'effective_from',label:'Effective from (YYYY-MM-DD)',required:true},
-                    ].map(field => <label key={field.key} style={{display:'grid',gap:5,fontSize:12,fontWeight:650,color:'#304e6e'}}>
-                      {field.label}
-                      <input required={field.required} maxLength={field.key==='name'?180:120}
-                        value={organizationForm[field.key]} onChange={event => setOrganizationForm(prev => ({...prev,[field.key]:event.target.value}))}
-                        style={{border:'1px solid #9bb1cd',borderRadius:7,color:'#142f50',background:'#fff',padding:'10px 12px',fontSize:13}}/>
-                    </label>)}
-                    <div style={{display:'flex',gap:9,alignItems:'center',flexWrap:'wrap'}}>
-                      <button type="submit" disabled={organizationCommandState.status==='PENDING'}
-                        style={{background:'#173c70',color:'#fff',borderRadius:8,padding:'10px 14px',fontWeight:700}}>Save draft</button>
-                      <button type="button" onClick={() => setOrganizationFormOpen(false)}
-                        style={{border:'1px solid #aabbd0',borderRadius:8,padding:'10px 14px',color:'#173c70'}}>Cancel</button>
+                  {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form
+                    className={styles.organizationDraftForm}
+                    onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
+                    aria-label="Organization draft form">
+                    <div className={styles.organizationDraftHeading}>
+                      <div>
+                        <strong>New {organizationKind === 'departments' ? 'department' : 'position'} draft</strong>
+                        <p>Save a proposal first. Submitting and independent approval are separate EOS actions.</p>
+                      </div>
+                      <span>Draft · not approved</span>
+                    </div>
+                    <div className={styles.organizationDraftGrid}>
+                      <label>
+                        <span>Name *</span>
+                        <input required maxLength={180} value={organizationForm.name}
+                          placeholder={organizationKind === 'departments' ? 'Enter your department name' : 'Enter the position title'}
+                          onChange={event => setOrganizationForm(prev => ({...prev,name:event.target.value}))}/>
+                      </label>
+                      <label>
+                        <span>Unique code *</span>
+                        <input required maxLength={120} pattern="[A-Za-z0-9][A-Za-z0-9_.:-]*"
+                          value={organizationForm.record_id} placeholder={organizationKind === 'departments' ? 'e.g. DEP-OPERATIONS' : 'e.g. POS-OPERATIONS-LEAD'}
+                          onChange={event => setOrganizationForm(prev => ({...prev,record_id:event.target.value}))}/>
+                        <small>Permanent source identifier. Choose a code that is unique in this employer.</small>
+                      </label>
+                      {organizationKind === 'positions' && <>
+                        <label>
+                          <span>Approved department code *</span>
+                          <select required value={organizationForm.department_id}
+                            onChange={event => setOrganizationForm(prev => ({...prev,department_id:event.target.value}))}>
+                            <option value="">Select an approved department</option>
+                            {workforceStructure.items.filter(unit => unit.kind === 'DEPARTMENT' && unit.status === 'APPROVED').map(unit =>
+                              <option key={unit.record_id} value={unit.record_id}>{unit.name} · {unit.record_id}</option>)}
+                          </select>
+                          {!workforceStructure.items.some(unit => unit.kind === 'DEPARTMENT' && unit.status === 'APPROVED') &&
+                            <small role="status">Approve a department before creating a position. No unapproved records are offered.</small>}
+                        </label>
+                        <label>
+                          <span>Planned capacity *</span>
+                          <input type="number" required min="1" max="500" step="1" value={organizationForm.capacity}
+                            onChange={event => setOrganizationForm(prev => ({...prev,capacity:event.target.value}))}/>
+                        </label>
+                      </>}
+                      <label>
+                        <span>Parent code (optional)</span>
+                        <select value={organizationForm.parent_id}
+                          onChange={event => setOrganizationForm(prev => ({...prev,parent_id:event.target.value}))}>
+                          <option value="">Top level · no parent</option>
+                          {workforceStructure.items.filter(unit =>
+                            unit.status === 'APPROVED' &&
+                            unit.kind === (organizationKind === 'departments' ? 'DEPARTMENT' : 'POSITION') &&
+                            unit.record_id !== organizationForm.record_id
+                          ).map(unit => <option key={unit.record_id} value={unit.record_id}>{unit.name} · {unit.record_id}</option>)}
+                        </select>
+                        <small>Only approved, same-tenant {organizationKind === 'departments' ? 'departments' : 'positions'} from EOS are selectable.</small>
+                      </label>
+                      <label>
+                        <span>Effective from (YYYY-MM-DD) *</span>
+                        <input type="date" required value={organizationForm.effective_from}
+                          onChange={event => setOrganizationForm(prev => ({...prev,effective_from:event.target.value}))}/>
+                      </label>
+                    </div>
+                    <div className={styles.organizationDraftActions}>
+                      <button type="submit" disabled={organizationCommandState.status === 'PENDING' ||
+                        (organizationKind === 'positions' && !workforceStructure.items.some(unit => unit.kind === 'DEPARTMENT' && unit.status === 'APPROVED'))}>Save draft</button>
+                      <button type="button" onClick={() => setOrganizationFormOpen(false)}>Cancel</button>
                     </div>
                   </form>}
                   {!!organizationCommandState.message && <p role="status" style={{fontSize:12,color:organizationCommandState.status==='VERIFIED'?'#194c3d':'#7a302d',padding:'10px 17px'}}>
