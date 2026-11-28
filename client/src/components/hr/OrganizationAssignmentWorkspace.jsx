@@ -43,6 +43,8 @@ export default function OrganizationAssignmentWorkspace({tenantId,scopeKey,struc
   const [busy,setBusy] = useState(false);
   const [notice,setNotice] = useState('');
   const [history,setHistory] = useState(null);
+  const [planning,setPlanning] = useState({status:'PENDING',data:null});
+  const [planningPage,setPlanningPage] = useState(0);
   const counter = useRef(0), scope = useRef(scopeKey), keys = useRef(new Map());
   scope.current = scopeKey;
   const positions = (structure?.items || []).filter(p => p.kind === 'POSITION' && p.status === 'APPROVED');
@@ -68,7 +70,8 @@ export default function OrganizationAssignmentWorkspace({tenantId,scopeKey,struc
     keys.current.clear();
     setState(empty);setDirectory(directoryEmpty);
     setEditing(false);setNotice('');setForm(blank);setPage(0);setFilter('');
-    setHistory(null);setReviewReasons({});
+    setHistory(null);setReviewReasons({});setPlanningPage(0);
+    setPlanning({status:'PENDING',data:null});
     void reload();
     return ()=>{counter.current+=1;};
   },[reload]);
@@ -98,6 +101,34 @@ export default function OrganizationAssignmentWorkspace({tenantId,scopeKey,struc
       });
     return ()=>{cancelled=true;};
   },[scopeKey,tenantId,state.status,filter,page,headers]);
+
+  useEffect(()=>{
+    if(!scopeKey||!tenantId||state.status!=='VERIFIED')return undefined;
+    let cancelled=false;
+    setPlanning({status:'PENDING',data:null});
+    void api.get(ROOT+'/planning',{headers:headers(),params:{limit:50,offset:planningPage*50}})
+      .then(reply=>{
+        if(cancelled||scope.current!==scopeKey)return;
+        const data=reply?.data;
+        const verified=data?.schema==='WILSY-HR-POSITION-UTILIZATION/V1' &&
+          data?.source==='EOS_APPROVED_POSITION_ASSIGNMENT_GRAPH' &&
+          data?.tenant_id===tenantId &&
+          data?.legacy_employee_fields_synchronized===false &&
+          data?.funded_headcount_verified===false &&
+          Number.isSafeInteger(data.total) && data.total>=0 &&
+          data.offset===planningPage*50 &&
+          Array.isArray(data.items) && data.items.length<=50 &&
+          data.items.every(item=>typeof item.position_id==='string' &&
+            Number.isSafeInteger(item.approved_capacity) &&
+            Number.isSafeInteger(item.governed_assignments) &&
+            item.unfilled_graph_slots===item.approved_capacity-item.governed_assignments);
+        setPlanning(verified?{status:'VERIFIED',data}:{status:'UNAVAILABLE',data:null});
+      }).catch(error=>{
+        if(cancelled||scope.current!==scopeKey)return;
+        setPlanning({status:error?.response?.status===403?'DENIED':'UNAVAILABLE',data:null});
+      });
+    return ()=>{cancelled=true;};
+  },[scopeKey,tenantId,state.status,planningPage,headers]);
 
   const send=async(path,payload)=>{
     if(busy||state.status!=='VERIFIED')return;
@@ -178,6 +209,28 @@ export default function OrganizationAssignmentWorkspace({tenantId,scopeKey,struc
         Legacy employee department labels and verified operating-entity links are not yet synchronized.
         This graph does not change admission, payroll or business-role access.
       </p>
+      <div className={styles.planning} aria-label="Approved position utilization">
+        <strong>Approved position utilization</strong>
+        {planning.status==='PENDING'&&<p role="status">Verifying governed position capacity…</p>}
+        {planning.status==='DENIED'&&<p role="status">Position utilization denied by EOS.</p>}
+        {planning.status==='UNAVAILABLE'&&<p role="status">Utilization source unavailable; no vacancy or zero count inferred.</p>}
+        {planning.status==='VERIFIED'&&<>
+          <div className={styles.pageControls}>
+            <span>{planning.data.total} approved position records · page {planningPage+1}</span>
+            <button type="button" disabled={planningPage===0}
+              onClick={()=>setPlanningPage(p=>Math.max(0,p-1))}>Previous positions</button>
+            <button type="button" disabled={!planning.data.has_more}
+              onClick={()=>setPlanningPage(p=>p+1)}>Next positions</button>
+          </div>
+          {planning.data.items.map(pos=><div className={styles.position} key={pos.position_id}>
+            <span><strong>{pos.name}</strong> · {pos.department_id}</span>
+            <span>{pos.governed_assignments}/{pos.approved_capacity} graph assignments
+              {' · '}{pos.unfilled_graph_slots} unfilled slots
+              {!pos.position_currently_effective?' · future-effective':''}</span>
+          </div>)}
+          <small>Graph slots are not funded requisitions or reconciled employee headcount.</small>
+        </>}
+      </div>
       {editing&&<form className={styles.form} aria-label="Governed assignment form" onSubmit={event=>{
         event.preventDefault();
         if(!form.employee_id||!form.position_id||!form.effective_from||form.reason.trim().length<5)return;
