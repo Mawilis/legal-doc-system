@@ -27,7 +27,7 @@ const response = (tenant,status='APPROVED') => ({data:{
   tenant_id:tenant, status,
   activity_ids:status==='APPROVED' ? ['legal','technology'] : [],
   revision:status==='APPROVED'?2:0, proposals:[],
-  operating_entities:[],entity_status:'VERIFIED_ENTITY_SOURCE_NOT_CONNECTED',
+  operating_entities:[],entity_status:'ENTITY_SOURCE_NOT_CONNECTED',
   external_business_classification_verified:false,
 }});
 
