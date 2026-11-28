@@ -45,22 +45,26 @@ _ALLOWED = frozenset({
 
 
 class ActivityContextDraft(BaseModel):
+    """Strictly bounded tenant-declared business activity proposal; not external classification evidence."""
     model_config = ConfigDict(extra="forbid")
     activity_ids: list[str] = Field(min_length=1, max_length=8)
     reason: str = Field(min_length=5, max_length=1000)
 
 
 class ContextRevision(BaseModel):
+    """Required revision precondition for maker submission."""
     model_config = ConfigDict(extra="forbid")
     expected_revision: int = Field(ge=1, strict=True)
 
 
 class ContextDecision(ContextRevision):
+    """Reasoned decision requiring independent EOS organization checker authority."""
     decision: Literal["APPROVE", "REJECT"]
     reason: str = Field(min_length=5, max_length=2000)
 
 
 def _col(db: Any, name: str):
+    """Return majority-consistent collection; caller must enforce exact tenant scope."""
     return db.get_collection(
         name, read_concern=ReadConcern("majority"),
         write_concern=WriteConcern(w="majority", j=True),
@@ -68,10 +72,12 @@ def _col(db: Any, name: str):
 
 
 def _now():
+    """Return ISO UTC audit time; no entity or business authority inferred."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def _pub(row: dict, *, actor: str | None = None):
+    """Project proposal without exposing other principal identities."""
     data = {key: row.get(key) for key in (
         "proposal_id", "status", "activity_ids", "reason",
         "decision_reason", "revision", "base_revision",
@@ -84,6 +90,7 @@ def _pub(row: dict, *, actor: str | None = None):
 
 
 def _transact(callback):
+    """Own majority transaction with proposal, current profile and command evidence."""
     client, db = get_client(), get_database()
     if client is None or db is None:
         raise HTTPException(503, "BUSINESS_CONTEXT_DATABASE_UNAVAILABLE")
@@ -110,6 +117,7 @@ def _transact(callback):
 
 
 def _command(callback, tenant, actor, key, command, payload):
+    """Replay actor-scoped identical commands and reject mismatched idempotency fingerprints."""
     fingerprint = org._org_fingerprint(
         tenant=tenant, actor=actor, key=key, command=command, payload=payload,
     )
@@ -133,6 +141,7 @@ def _command(callback, tenant, actor, key, command, payload):
 def read_business_activity_context(
     auth: TenantAuthorizationContext = Depends(org._ORG_READ),
 ):
+    """Read only approved own-tenant activity profile and pending proposal projections; no external entity claims."""
     db = get_database()
     if db is None:
         raise HTTPException(503, "BUSINESS_CONTEXT_DATABASE_UNAVAILABLE")
@@ -169,6 +178,7 @@ def draft_business_activity_context(
     key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
     auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
 ):
+    """Create an unapproved activity draft under separate organization-create permission."""
     activities = body.activity_ids
     if (len(set(activities)) != len(activities)
             or any(item not in _ALLOWED for item in activities)):
@@ -196,6 +206,7 @@ def submit_business_activity_context(
     key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
     auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
 ):
+    """Allow maker-only proposal submission with revision compare-and-set."""
     tenant, actor = auth.tenant_id, auth.identity.identity_id
     def apply(proposals, current, tx):
         row = proposals.find_one({"tenant_id": tenant, "proposal_id": proposal_id}, session=tx)
@@ -224,6 +235,7 @@ def decide_business_activity_context(
     key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
     auth: TenantAuthorizationContext = Depends(org._ORG_DECIDE),
 ):
+    """Require independent checker; publish approved own-tenant profile atomically."""
     tenant, actor = auth.tenant_id, auth.identity.identity_id
     def apply(proposals, current, tx):
         row = proposals.find_one({"tenant_id": tenant, "proposal_id": proposal_id}, session=tx)
