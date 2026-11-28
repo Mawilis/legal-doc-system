@@ -331,6 +331,17 @@ def test_governed_assignment_move_with_approval_and_persistent_versions(mongo):
     ]
     assert versions["legacy_employee_fields_synchronized"] is False
     assert db[assignment._ASSIGNMENTS].count_documents({"tenant_id": tenant}) == 1
+    plan = assignment.read_position_utilization(
+        limit=50, offset=0, organization=checker, workforce=checker,
+    )
+    assert plan["source"] == "EOS_APPROVED_POSITION_ASSIGNMENT_GRAPH"
+    assert plan["total"] == 2
+    utilization = {row["position_id"]: row for row in plan["items"]}
+    assert utilization["POS-TWO"]["governed_assignments"] == 1
+    assert utilization["POS-TWO"]["unfilled_graph_slots"] == 0
+    assert utilization["POS-ONE"]["governed_assignments"] == 0
+    assert plan["funded_headcount_verified"] is False
+
     assert db[assignment._ASSIGNMENTS].count_documents(
         {"tenant_id": foreign.tenant_id}) == 0
     read = assignment.list_assignments(organization=checker, workforce=checker)
