@@ -1,0 +1,404 @@
+"""Source-owned organization change governance, version history and impact evidence.
+
+No IAM, employee, staffing or financial authority is created. Proposal creation
+and decisions reuse independent existing hr:organization permissions.
+"""
+from __future__ import annotations
+
+from datetime import date, datetime, timezone
+from typing import Any, Literal
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from pydantic import BaseModel, ConfigDict, Field
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
+from pymongo.read_concern import ReadConcern
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
+
+from . import hr_workforce_directory_router as org
+from .tenant_authorization_http import TenantAuthorizationContext
+from tools.eos.kernel.db import get_client, get_database
+
+router = APIRouter(prefix="/api/hr/workforce/structure", tags=["hr-organization-lifecycle"])
+_CHANGES = "hr_organization_change_proposals"
+_VERSIONS = "hr_organization_versions"
+_CHANGE_EVENTS = "hr_organization_change_events"
+_LIMIT = 200
+
+
+class ChangeDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    change_type: Literal["AMEND", "RETIRE"]
+    name: str | None = Field(default=None, min_length=2, max_length=180)
+    parent_id: str | None = Field(default=None, min_length=1, max_length=120)
+    effective_from: date
+    reason: str = Field(min_length=5, max_length=2000)
+
+
+class ChangeDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    expected_revision: int = Field(ge=1, strict=True)
+    decision: Literal["APPROVE", "REJECT"]
+    reason: str = Field(min_length=5, max_length=2000)
+
+
+class ExpectedRevision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_revision: int = Field(ge=1, strict=True)
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _coll(db: Any, name: str):
+    return db.get_collection(
+        name, read_concern=ReadConcern("majority"),
+        write_concern=WriteConcern(w="majority", j=True),
+    )
+
+
+def _transaction(callback):
+    client, db = get_client(), get_database()
+    if client is None or db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    try:
+        records = org._org_collection(db, org._ORG_COLLECTION)
+        changes = _coll(db, _CHANGES)
+        versions = _coll(db, _VERSIONS)
+        events = _coll(db, _CHANGE_EVENTS)
+        changes.create_index([("tenant_id", 1), ("change_id", 1)], unique=True)
+        versions.create_index([("tenant_id", 1), ("record_id", 1), ("revision", 1)], unique=True)
+        events.create_index([("tenant_id", 1), ("actor_id", 1), ("key", 1)], unique=True)
+        with client.start_session() as session:
+            return session.with_transaction(
+                lambda tx: callback(records, changes, versions, events, tx),
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern(w="majority", j=True),
+                read_preference=ReadPreference.PRIMARY,
+            )
+    except HTTPException:
+        raise
+    except DuplicateKeyError as error:
+        raise HTTPException(409, "ORGANIZATION_CONCURRENT_CONFLICT") from error
+    except Exception as error:
+        raise HTTPException(503, "ORGANIZATION_CHANGE_TRANSACTION_UNAVAILABLE") from error
+
+
+def _record(records, tenant: str, record_id: str, tx):
+    row = records.find_one({"tenant_id": tenant, "kind": "DEPARTMENT",
+                            "record_id": record_id}, session=tx)
+    if row is None:
+        raise HTTPException(404, "ORGANIZATION_NOT_FOUND")
+    return row
+
+
+def _impact(records, tenant: str, record_id: str, tx=None):
+    cursor = records.find({
+        "tenant_id": tenant, "status": "APPROVED",
+        "$or": [{"parent_id": record_id, "kind": "DEPARTMENT"},
+                {"department_id": record_id, "kind": "POSITION"}],
+    }, {"_id": 0, "kind": 1, "record_id": 1, "name": 1}).limit(_LIMIT + 1)
+    if tx is not None:
+        cursor = records.find({
+            "tenant_id": tenant, "status": "APPROVED",
+            "$or": [{"parent_id": record_id, "kind": "DEPARTMENT"},
+                    {"department_id": record_id, "kind": "POSITION"}],
+        }, {"_id": 0, "kind": 1, "record_id": 1, "name": 1}, session=tx).limit(_LIMIT + 1)
+    rows = list(cursor)
+    if len(rows) > _LIMIT:
+        raise HTTPException(503, "ORGANIZATION_IMPACT_BOUND_EXCEEDED")
+    return {
+        "schema": "WILSY-HR-ORGANIZATION-IMPACT/V1",
+        "dependent_departments": [r["record_id"] for r in rows if r["kind"] == "DEPARTMENT"],
+        "dependent_positions": [r["record_id"] for r in rows if r["kind"] == "POSITION"],
+        "retirement_blocked": bool(rows),
+    }
+
+
+def _safe_change(row):
+    return {k: row.get(k) for k in (
+        "change_id", "record_id", "change_type", "status", "revision",
+        "effective_from", "name", "parent_id", "reason", "decision_reason",
+    )}
+
+
+def _event(events, tenant, actor, key, action, change, tx):
+    events.insert_one({
+        "tenant_id": tenant, "actor_id": actor, "key": key,
+        "action": action, "change_id": change["change_id"],
+        "record_id": change["record_id"], "occurred_at": _now(),
+        "revision": change["revision"],
+    }, session=tx)
+
+
+@router.get("/departments/{record_id}/impact")
+def read_department_impact(
+    record_id: str,
+    auth: TenantAuthorizationContext = Depends(org._ORG_READ),
+):
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    records = org._org_collection(db, org._ORG_COLLECTION)
+    if records.find_one({"tenant_id": auth.tenant_id, "kind": "DEPARTMENT",
+                         "record_id": record_id}, {"_id": 1}) is None:
+        raise HTTPException(404, "ORGANIZATION_NOT_FOUND")
+    return {"tenant_id": auth.tenant_id, "record_id": record_id,
+            **_impact(records, auth.tenant_id, record_id)}
+
+
+@router.get("/departments/{record_id}/history")
+def read_department_history(
+    record_id: str, auth: TenantAuthorizationContext = Depends(org._ORG_READ),
+):
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    records = org._org_collection(db, org._ORG_COLLECTION)
+    if records.find_one({"tenant_id": auth.tenant_id, "kind": "DEPARTMENT",
+                         "record_id": record_id}, {"_id": 1}) is None:
+        raise HTTPException(404, "ORGANIZATION_NOT_FOUND")
+    rows = list(_coll(db, _VERSIONS).find(
+        {"tenant_id": auth.tenant_id, "record_id": record_id},
+        {"_id": 0, "revision": 1, "name": 1, "parent_id": 1,
+         "effective_from": 1, "status": 1, "recorded_at": 1},
+    ).sort("revision", 1).limit(_LIMIT + 1))
+    if len(rows) > _LIMIT:
+        raise HTTPException(503, "ORGANIZATION_HISTORY_BOUND_EXCEEDED")
+    return {"schema": "WILSY-HR-ORGANIZATION-HISTORY/V1", "tenant_id": auth.tenant_id,
+            "record_id": record_id, "items": rows, "count": len(rows)}
+
+
+@router.post("/departments/{record_id}/changes", status_code=201)
+def propose_department_change(
+    record_id: str, body: ChangeDraft,
+    key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
+    auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
+):
+    if body.change_type == "AMEND" and body.name is None and body.parent_id is None:
+        raise HTTPException(422, "ORGANIZATION_CHANGE_FIELDS_REQUIRED")
+    tenant, actor = auth.tenant_id, auth.identity.identity_id
+    payload = body.model_dump(mode="json")
+    fingerprint = org._org_fingerprint(tenant=tenant, actor=actor, key=key,
+                                     command="CHANGE_DRAFT", payload={"record_id": record_id, **payload})
+    def apply(records, changes, versions, events, tx):
+        prior = changes.find_one({"tenant_id": tenant, "actor_id": actor,
+                                  "idempotency_key": key}, session=tx)
+        if prior is not None:
+            if prior.get("fingerprint") != fingerprint:
+                raise HTTPException(409, "ORGANIZATION_IDEMPOTENCY_CONFLICT")
+            return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
+                    "tenant_id": tenant, "change": _safe_change(prior)}
+        current = _record(records, tenant, record_id, tx)
+        if current["status"] != "APPROVED":
+            raise HTTPException(409, "ORGANIZATION_APPROVED_RECORD_REQUIRED")
+        change = {
+            **payload, "tenant_id": tenant, "record_id": record_id,
+            "change_id": uuid4().hex, "status": "DRAFT", "revision": 1,
+            "base_revision": current["revision"], "created_by": actor,
+            "submitted_by": None, "decided_by": None,
+            "idempotency_key": key, "fingerprint": fingerprint,
+            "created_at": _now(),
+        }
+        changes.insert_one(change, session=tx)
+        _event(events, tenant, actor, key, "CHANGE_DRAFT", change, tx)
+        return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
+                "tenant_id": tenant, "change": _safe_change(change)}
+    return _transaction(apply)
+
+
+@router.post("/departments/{record_id}/changes/{change_id}/submit")
+def submit_department_change(
+    record_id: str, change_id: str, body: ExpectedRevision,
+    key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
+    auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
+):
+    tenant, actor = auth.tenant_id, auth.identity.identity_id
+    def apply(records, changes, versions, events, tx):
+        change = changes.find_one({"tenant_id": tenant, "record_id": record_id,
+                                   "change_id": change_id}, session=tx)
+        if change is None:
+            raise HTTPException(404, "ORGANIZATION_CHANGE_NOT_FOUND")
+        if change["created_by"] != actor:
+            raise HTTPException(403, "ORGANIZATION_MAKER_REQUIRED")
+        if change["status"] != "DRAFT" or change["revision"] != body.expected_revision:
+            raise HTTPException(409, "ORGANIZATION_REVISION_CONFLICT")
+        updated = changes.find_one_and_update({
+            "tenant_id": tenant, "change_id": change_id,
+            "status": "DRAFT", "revision": body.expected_revision,
+        }, {"$set": {"status": "SUBMITTED", "submitted_by": actor,
+                     "submitted_at": _now()}, "$inc": {"revision": 1}},
+            return_document=ReturnDocument.AFTER, session=tx)
+        if updated is None:
+            raise HTTPException(409, "ORGANIZATION_REVISION_CONFLICT")
+        _event(events, tenant, actor, key, "CHANGE_SUBMIT", updated, tx)
+        return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
+                "tenant_id": tenant, "change": _safe_change(updated)}
+    return _transaction(apply)
+
+
+@router.post("/departments/{record_id}/changes/{change_id}/decision")
+def decide_department_change(
+    record_id: str, change_id: str, body: ChangeDecision,
+    key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
+    auth: TenantAuthorizationContext = Depends(org._ORG_DECIDE),
+):
+    tenant, actor = auth.tenant_id, auth.identity.identity_id
+    def apply(records, changes, versions, events, tx):
+        change = changes.find_one({"tenant_id": tenant, "record_id": record_id,
+                                   "change_id": change_id}, session=tx)
+        if change is None:
+            raise HTTPException(404, "ORGANIZATION_CHANGE_NOT_FOUND")
+        if actor in (change["created_by"], change.get("submitted_by")):
+            raise HTTPException(403, "ORGANIZATION_MAKER_CANNOT_APPROVE")
+        if change["status"] != "SUBMITTED" or change["revision"] != body.expected_revision:
+            raise HTTPException(409, "ORGANIZATION_REVISION_CONFLICT")
+        current = _record(records, tenant, record_id, tx)
+        if current["status"] != "APPROVED" or current["revision"] != change["base_revision"]:
+            raise HTTPException(409, "ORGANIZATION_SOURCE_CHANGED")
+        if body.decision == "APPROVE":
+            if change["change_type"] == "RETIRE" and _impact(records, tenant, record_id, tx)["retirement_blocked"]:
+                raise HTTPException(409, "ORGANIZATION_RETIREMENT_HAS_DEPENDENCIES")
+            if change.get("parent_id"):
+                if change["parent_id"] == record_id:
+                    raise HTTPException(422, "ORGANIZATION_SELF_REFERENCE")
+                ancestor = change["parent_id"]
+                for _ in range(64):
+                    row = records.find_one({
+                        "tenant_id": tenant, "kind": "DEPARTMENT",
+                        "record_id": ancestor, "status": "APPROVED",
+                    }, session=tx)
+                    if row is None:
+                        raise HTTPException(409, "ORGANIZATION_PARENT_NOT_APPROVED")
+                    ancestor = row.get("parent_id")
+                    if ancestor == record_id:
+                        raise HTTPException(409, "ORGANIZATION_PARENT_CYCLE")
+                    if not ancestor:
+                        break
+                else:
+                    raise HTTPException(409, "ORGANIZATION_HIERARCHY_DEPTH_EXCEEDED")
+        scheduled = body.decision == "APPROVE" and change["effective_from"] > date.today().isoformat()
+        decision_status = ("APPROVED_SCHEDULED" if scheduled else "APPROVED") if body.decision == "APPROVE" else "REJECTED"
+        if body.decision == "APPROVE" and not scheduled:
+            _apply_change(records, versions, current, change, tenant, tx)
+        updated = changes.find_one_and_update({
+            "tenant_id": tenant, "change_id": change_id,
+            "status": "SUBMITTED", "revision": body.expected_revision,
+        }, {"$set": {"status": decision_status, "decided_by": actor,
+                     "decision_reason": body.reason, "decided_at": _now()},
+            "$inc": {"revision": 1}},
+            return_document=ReturnDocument.AFTER, session=tx)
+        if updated is None:
+            raise HTTPException(409, "ORGANIZATION_REVISION_CONFLICT")
+        _event(events, tenant, actor, key, "CHANGE_DECIDE_" + body.decision, updated, tx)
+        return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
+                "tenant_id": tenant, "change": _safe_change(updated)}
+    return _transaction(apply)
+
+
+def _apply_change(records, versions, current, change, tenant, tx):
+    snapshot = {k: current.get(k) for k in ("name", "parent_id", "effective_from", "status")}
+    if change["change_type"] == "AMEND":
+        fields = {"name": change.get("name") or current["name"],
+                  "parent_id": change.get("parent_id") if change.get("parent_id") is not None
+                    else current.get("parent_id"),
+                  "effective_from": change["effective_from"]}
+    else:
+        fields = {"status": "RETIRED", "effective_from": change["effective_from"]}
+    next_revision = current["revision"] + 1
+    versions.update_one({"tenant_id": tenant, "record_id": current["record_id"],
+                         "revision": current["revision"]},
+                        {"$setOnInsert": {"tenant_id": tenant, "record_id": current["record_id"],
+                          "revision": current["revision"], **snapshot, "recorded_at": _now()}},
+                        upsert=True, session=tx)
+    updated = records.find_one_and_update({
+        "tenant_id": tenant, "kind": "DEPARTMENT",
+        "record_id": current["record_id"], "revision": current["revision"],
+        "status": "APPROVED",
+    }, {"$set": fields, "$inc": {"revision": 1}},
+        return_document=ReturnDocument.AFTER, session=tx)
+    if updated is None:
+        raise HTTPException(409, "ORGANIZATION_SOURCE_CHANGED")
+    versions.insert_one({
+        "tenant_id": tenant, "record_id": current["record_id"],
+        "revision": next_revision, "name": updated["name"],
+        "parent_id": updated.get("parent_id"), "status": updated["status"],
+        "effective_from": updated["effective_from"], "recorded_at": _now(),
+    }, session=tx)
+
+
+@router.post("/departments/{record_id}/changes/{change_id}/activate")
+def activate_due_department_change(
+    record_id: str, change_id: str,
+    key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
+    auth: TenantAuthorizationContext = Depends(org._ORG_DECIDE),
+):
+    """Explicit guarded activation for approved future-dated changes; no early mutations."""
+    tenant, actor = auth.tenant_id, auth.identity.identity_id
+    def apply(records, changes, versions, events, tx):
+        change = changes.find_one({"tenant_id": tenant, "record_id": record_id,
+                                   "change_id": change_id}, session=tx)
+        if change is None:
+            raise HTTPException(404, "ORGANIZATION_CHANGE_NOT_FOUND")
+        if actor in (change["created_by"], change.get("submitted_by")):
+            raise HTTPException(403, "ORGANIZATION_MAKER_CANNOT_APPROVE")
+        if change["status"] != "APPROVED_SCHEDULED":
+            raise HTTPException(409, "ORGANIZATION_CHANGE_NOT_SCHEDULED")
+        if change["effective_from"] > date.today().isoformat():
+            raise HTTPException(409, "ORGANIZATION_EFFECTIVE_DATE_NOT_DUE")
+        current = _record(records, tenant, record_id, tx)
+        if current["revision"] != change["base_revision"] or current["status"] != "APPROVED":
+            raise HTTPException(409, "ORGANIZATION_SOURCE_CHANGED")
+        if change["change_type"] == "RETIRE" and _impact(records, tenant, record_id, tx)["retirement_blocked"]:
+            raise HTTPException(409, "ORGANIZATION_RETIREMENT_HAS_DEPENDENCIES")
+        _apply_change(records, versions, current, change, tenant, tx)
+        updated = changes.find_one_and_update({
+            "tenant_id": tenant, "change_id": change_id, "status": "APPROVED_SCHEDULED",
+        }, {"$set": {"status": "ACTIVATED", "activated_at": _now()},
+            "$inc": {"revision": 1}},
+            return_document=ReturnDocument.AFTER, session=tx)
+        if updated is None:
+            raise HTTPException(409, "ORGANIZATION_SOURCE_CHANGED")
+        _event(events, tenant, actor, key, "CHANGE_ACTIVATE", updated, tx)
+        return {"schema": "WILSY-HR-ORGANIZATION-CHANGE/V1",
+                "tenant_id": tenant, "change": _safe_change(updated)}
+    return _transaction(apply)
+
+
+@router.get("/productivity")
+def read_organization_productivity(
+    auth: TenantAuthorizationContext = Depends(org._ORG_READ),
+):
+    """Source event timing, not inferred business outcomes or client-reported accuracy."""
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    rows = list(_coll(db, _CHANGE_EVENTS).find(
+        {"tenant_id": auth.tenant_id},
+        {"_id": 0, "change_id": 1, "action": 1, "occurred_at": 1},
+    ).sort("occurred_at", -1).limit(_LIMIT + 1))
+    if len(rows) > _LIMIT:
+        raise HTTPException(503, "ORGANIZATION_PRODUCTIVITY_BOUND_EXCEEDED")
+    drafts = {r["change_id"]: r["occurred_at"] for r in rows if r["action"] == "CHANGE_DRAFT"}
+    elapsed = []
+    for item in rows:
+        if item["action"] == "CHANGE_DECIDE_APPROVE" and item["change_id"] in drafts:
+            seconds = (datetime.fromisoformat(item["occurred_at"])
+                       - datetime.fromisoformat(drafts[item["change_id"]])).total_seconds()
+            if seconds >= 0:
+                elapsed.append(seconds)
+    return {
+        "schema": "WILSY-HR-ORGANIZATION-PRODUCTIVITY/V1",
+        "tenant_id": auth.tenant_id, "source": "EOS_ORGANIZATION_CHANGE_EVENTS",
+        "bounded_events": len(rows),
+        "change_drafts": sum(r["action"] == "CHANGE_DRAFT" for r in rows),
+        "approved_changes": sum(r["action"] == "CHANGE_DECIDE_APPROVE" for r in rows),
+        "rejected_changes": sum(r["action"] == "CHANGE_DECIDE_REJECT" for r in rows),
+        "mean_draft_to_decision_seconds": round(sum(elapsed) / len(elapsed), 2) if elapsed else None,
+        "measured_decision_sample": len(elapsed),
+        "client_completion_time": None, "manual_field_count": None,
+        "validation_failure_rate": None, "accessibility_certified": False,
+    }
