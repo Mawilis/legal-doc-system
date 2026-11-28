@@ -43,6 +43,7 @@ on:
       - "client/src/components/hr/OrganizationAssignmentWorkspace.jsx"
       - "client/src/components/hr/OrganizationAssignmentWorkspace.module.css"
       - "client/src/__tests__/components/hrOrganizationAssignmentWorkspace.test.jsx"
+      - "client/src/__tests__/components/hrOrganizationCodePattern.test.js"
       - "client/src/__tests__/components/PeopleOverviewRuntime.test.jsx"
       - "tools/eos/api/employee_router.py"
       - "tools/eos/saas/employee/employee_registry.py"
@@ -155,6 +156,7 @@ jobs:
             src/__tests__/components/hrBusinessActivityContext.test.jsx \
             src/__tests__/components/hrOrganizationLifecycleWorkspace.test.jsx \
             src/__tests__/components/hrOrganizationAssignmentWorkspace.test.jsx \
+            src/__tests__/components/hrOrganizationCodePattern.test.js \
             src/__tests__/components/hrDashboardReadState.test.jsx \
             src/__tests__/components/hrDashboardAuthorityBoundary.test.js
       - name: Build authenticated client
