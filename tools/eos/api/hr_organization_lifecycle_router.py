@@ -25,6 +25,7 @@ router = APIRouter(prefix="/api/hr/workforce/structure", tags=["hr-organization-
 _CHANGES = "hr_organization_change_proposals"
 _VERSIONS = "hr_organization_versions"
 _CHANGE_EVENTS = "hr_organization_change_events"
+_OBSERVATIONS = "hr_organization_productivity_observations"
 _LIMIT = 200
 
 
@@ -35,6 +36,19 @@ class ChangeDraft(BaseModel):
     parent_id: str | None = Field(default=None, min_length=1, max_length=120)
     effective_from: date
     reason: str = Field(min_length=5, max_length=2000)
+
+
+class ProductivityObservation(BaseModel):
+    """Bounded, identifier-free client experience evidence; not an audit result."""
+    model_config = ConfigDict(extra="forbid")
+    session_id: str = Field(min_length=12, max_length=100,
+                            pattern=r"^[A-Za-z0-9_-]+$")
+    event: Literal[
+        "FORM_OPENED", "CATALOG_SELECTED", "MANUAL_FIELD_EDITED",
+        "VALIDATION_FAILED", "DRAFT_VERIFIED",
+    ]
+    count: int = Field(default=1, ge=1, le=20, strict=True)
+    elapsed_ms: int | None = Field(default=None, ge=0, le=3600000, strict=True)
 
 
 class ChangeDecision(BaseModel):
@@ -426,6 +440,50 @@ def activate_due_department_change(
         operation="CHANGE_ACTIVATE", payload={"record_id": record_id, "change_id": change_id})
 
 
+@router.post("/productivity/observations", status_code=201)
+def report_organization_experience(
+    body: ProductivityObservation,
+    key: str = Header(min_length=12, max_length=128, alias="Idempotency-Key"),
+    auth: TenantAuthorizationContext = Depends(org._ORG_CREATE),
+):
+    """Record opt-in product usage counts only; never collect values or identities."""
+    db = get_database()
+    if db is None:
+        raise HTTPException(503, "ORGANIZATION_DATABASE_UNAVAILABLE")
+    tenant, actor = auth.tenant_id, auth.identity.identity_id
+    fingerprint = org._org_fingerprint(
+        tenant=tenant, actor=actor, key=key, command="UX_OBSERVATION",
+        payload=body.model_dump(),
+    )
+    try:
+        observations = _coll(db, _OBSERVATIONS)
+        observations.create_index([("tenant_id", 1), ("actor_id", 1), ("key", 1)],
+                                  unique=True)
+        previous = observations.find_one(
+            {"tenant_id": tenant, "actor_id": actor, "key": key},
+        )
+        if previous is not None:
+            if previous.get("fingerprint") != fingerprint:
+                raise HTTPException(409, "ORGANIZATION_PRODUCTIVITY_CONFLICT")
+            return {"schema": "WILSY-HR-ORGANIZATION-OBSERVATION/V1",
+                    "tenant_id": tenant, "accepted": True}
+        observations.insert_one({
+            "tenant_id": tenant, "actor_id": actor, "key": key,
+            "fingerprint": fingerprint, "session_id": body.session_id,
+            "event": body.event, "count": body.count,
+            "elapsed_ms": body.elapsed_ms, "recorded_at": _now(),
+            "source": "CLIENT_REPORTED",
+        })
+        return {"schema": "WILSY-HR-ORGANIZATION-OBSERVATION/V1",
+                "tenant_id": tenant, "accepted": True}
+    except HTTPException:
+        raise
+    except DuplicateKeyError as error:
+        raise HTTPException(409, "ORGANIZATION_PRODUCTIVITY_CONFLICT") from error
+    except Exception as error:
+        raise HTTPException(503, "ORGANIZATION_PRODUCTIVITY_UNAVAILABLE") from error
+
+
 @router.get("/productivity")
 def read_organization_productivity(
     auth: TenantAuthorizationContext = Depends(org._ORG_READ),
@@ -448,7 +506,28 @@ def read_organization_productivity(
                        - datetime.fromisoformat(drafts[item["change_id"]])).total_seconds()
             if seconds >= 0:
                 elapsed.append(seconds)
+    observations = list(_coll(db, _OBSERVATIONS).find(
+        {"tenant_id": auth.tenant_id},
+        {"_id": 0, "event": 1, "count": 1, "elapsed_ms": 1},
+    ).limit(_LIMIT + 1))
+    if len(observations) > _LIMIT:
+        raise HTTPException(503, "ORGANIZATION_PRODUCTIVITY_BOUND_EXCEEDED")
+    observed = {event: sum(row["count"] for row in observations
+                           if row["event"] == event) for event in (
+        "FORM_OPENED", "CATALOG_SELECTED", "MANUAL_FIELD_EDITED",
+        "VALIDATION_FAILED", "DRAFT_VERIFIED",
+    )}
+    observed_times = [row["elapsed_ms"] for row in observations
+                      if row["event"] == "DRAFT_VERIFIED" and
+                      row.get("elapsed_ms") is not None]
     return {
+        "client_report_source": "CLIENT_REPORTED",
+        "client_observation_sample": len(observations),
+        "client_observed": observed,
+        "client_mean_form_to_verified_seconds": (
+            round(sum(observed_times) / len(observed_times) / 1000, 2)
+            if observed_times else None
+        ),
         "schema": "WILSY-HR-ORGANIZATION-PRODUCTIVITY/V1",
         "tenant_id": auth.tenant_id, "source": "EOS_ORGANIZATION_CHANGE_EVENTS",
         "bounded_events": len(rows),
