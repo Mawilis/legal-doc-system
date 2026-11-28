@@ -25,6 +25,7 @@ from fastapi.testclient import TestClient
 from tools.eos.api import hr_organization_lifecycle_router as lifecycle
 from tools.eos.api import hr_organization_business_context_router as business
 from tools.eos.api import hr_workforce_directory_router as org
+from tools.eos.api import hr_organization_assignment_router as assignment
 
 
 def _identity(tenant="TENANT-SYNTHETIC-A", actor="HR-MAKER"):
@@ -389,6 +390,67 @@ def test_staffing_reconciliation_denies_cross_tenant_before_database(monkeypatch
         )
     assert denied.value.status_code == 403
     assert denied.value.detail == "ORGANIZATION_STAFFING_SCOPE_MISMATCH"
+
+
+
+def test_assignment_authority_denies_before_employee_and_organization_sources(monkeypatch):
+    """No maker or checker privilege can be inferred from organization read."""
+    app = FastAPI()
+    app.include_router(assignment.router)
+    app.dependency_overrides[org._ORG_READ] = lambda: _identity()
+    app.dependency_overrides[org._ORG_DECIDE] = _denied
+    app.dependency_overrides[assignment._MAKER] = _denied
+    monkeypatch.setattr(assignment, "get_database",
+                        lambda: (_ for _ in ()).throw(AssertionError("No database read")))
+    monkeypatch.setattr(assignment, "get_client",
+                        lambda: (_ for _ in ()).throw(AssertionError("No Mongo session")))
+    client = TestClient(app)
+    assert client.get("/api/hr/workforce/assignments").status_code == 403
+    assert client.post(
+        "/api/hr/workforce/assignments/proposals",
+        json={"employee_id": "EMP-A", "position_id": "POS-A",
+              "effective_from": "2026-11-28",
+              "reason": "Synthetic employee placement request"},
+        headers={"Idempotency-Key": "hr03-denial-assign-00001"},
+    ).status_code == 403
+    assert client.post(
+        "/api/hr/workforce/assignments/proposals/PROP-A/decision",
+        json={"expected_revision": 2, "decision": "APPROVE",
+              "reason": "Independently evaluated placement request"},
+        headers={"Idempotency-Key": "hr03-denial-decide-00001"},
+    ).status_code == 403
+
+
+def test_assignment_dual_authority_cannot_combine_different_tenants(monkeypatch):
+    """Two valid but incompatible capacities must not form one write authority."""
+    monkeypatch.setattr(assignment, "_command",
+                        lambda *args, **kwargs: (_ for _ in ()).throw(
+                            AssertionError("Cross-tenant request reached command")))
+    with pytest.raises(HTTPException) as denied:
+        assignment.propose_assignment(
+            assignment.AssignmentDraft(
+                employee_id="EMP-A", position_id="POS-A",
+                effective_from=date(2026, 11, 28),
+                reason="Verify cross tenant scope protections",
+            ),
+            key="hr03-dual-scope-denial",
+            organization=_identity("TENANT-SYNTHETIC-A"),
+            workforce=_identity("TENANT-SYNTHETIC-B"),
+        )
+    assert denied.value.status_code == 403
+    assert denied.value.detail == "HR_ASSIGNMENT_SCOPE_MISMATCH"
+
+
+def test_assignment_history_scope_denied_before_mongo(monkeypatch):
+    """Never expose assignments to mismatched tenant or principal identity."""
+    monkeypatch.setattr(assignment, "get_database",
+                        lambda: (_ for _ in ()).throw(AssertionError("No database read")))
+    with pytest.raises(HTTPException) as denied:
+        assignment.read_assignment_history(
+            "EMP-A", organization=_identity("TENANT-SYNTHETIC-A", "ACTOR-A"),
+            workforce=_identity("TENANT-SYNTHETIC-A", "ACTOR-B"),
+        )
+    assert denied.value.status_code == 403
 
 
 # ARTIFACT: tests/unit/test_hr_organization_lifecycle_expansion.py
