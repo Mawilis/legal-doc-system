@@ -5,7 +5,7 @@ TENANT BOUNDARY: Exact tenant scope, membership and entitlements remain server-g
 AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
 FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
 TITLE: WILSY OS Tenant Business Authority Policy Canon.
-VERSION: v1.69.0-ORGANIZATION-ROLE-ELIGIBILITY
+VERSION: v1.69.1-ORGANIZATION-READ-ELIGIBILITY
 AUTHORITY: Canonical business eligibility facts only; this module does not authorize.
 EPITOME: Defines bounded tenant-role eligibility and field boundaries, including
 own-tenant WILSY AI usage-capacity and billing-intelligence evidence read eligibility, explicit HR headcount initiation/decision separation and WILSY platform-employer
@@ -18,12 +18,13 @@ exact Partner/Attorney-only firm-decision operation eligibility.
 ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/tools/eos/auth/tenant_authority_policy.py
 COLLABORATION / OWNERSHIP: Wilson Khanyezi / Wilsy Core Engineering.
 CERTIFICATION / UPDATE DATE: 2026-11-17
-CHANGELOG: v1.69.0-ORGANIZATION-ROLE-ELIGIBILITY binds exact own-tenant and canonical platform-employer organization operations to the existing HR management capacities; current principal, active role and independent checker remain mandatory.
-CHANGELOG: v1.69.0-ORGANIZATION-ROLE-ELIGIBILITY permits own-tenant project-scoped
+CHANGELOG: v1.69.1-ORGANIZATION-READ-ELIGIBILITY separates HR Manager/Director organization-register read from ordinary employee-directory access; exact company fencing and current authorization remain mandatory.
+CHANGELOG: v1.69.1-ORGANIZATION-READ-ELIGIBILITY binds exact own-tenant and canonical platform-employer organization operations to the existing HR management capacities; current principal, active role and independent checker remain mandatory.
+CHANGELOG: v1.69.1-ORGANIZATION-READ-ELIGIBILITY permits own-tenant project-scoped
 read/contribution eligibility for current business capacities while requiring
 separate participant IAM roles and exact project records; no founder fallback.
 CHANGELOG:
-    2026-11-17 v1.69.0-ORGANIZATION-ROLE-ELIGIBILITY defines distinct
+    2026-11-17 v1.69.1-ORGANIZATION-READ-ELIGIBILITY defines distinct
     crm_work_item_update own-tenant business eligibility for owner/admin/manager;
     auditor, specialist and financial execution remain denied. Separate active
     role possession, tenant membership, and CRM entitlement still apply.
@@ -250,7 +251,7 @@ from types import MappingProxyType
 from typing import Final, FrozenSet
 from tools.eos.auth.hr_business_role_catalog import ALL_HR_BUSINESS_ROLES
 
-VERSION = "v1.69.0-ORGANIZATION-ROLE-ELIGIBILITY"
+VERSION = "v1.69.1-ORGANIZATION-READ-ELIGIBILITY"
 class SystemAuthorityClassification(StrEnum):
     SYSTEM_REQUIRED = "SYSTEM_REQUIRED"
     SYSTEM_NOT_INHERENTLY_REQUIRED = "SYSTEM_NOT_INHERENTLY_REQUIRED"
@@ -1299,16 +1300,18 @@ _headcount_eligibility["tenant_hr_director"] = MappingProxyType(_headcount_direc
 ELIGIBILITY = MappingProxyType(_headcount_eligibility)
 
 # Organization proposal authority is not inherited from headcount approval.
-_ORGANIZATION_OPERATIONS = ("hr_organization_create", "hr_organization_decide")
+_ORGANIZATION_OPERATIONS = ("hr_organization_read", "hr_organization_create", "hr_organization_decide")
 OPERATIONS = frozenset((*OPERATIONS, *_ORGANIZATION_OPERATIONS))
 BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
     **BUSINESS_ROLE_OPERATION_PERMISSIONS,
+    "hr_organization_read": "hr:organization:read",
     "hr_organization_create": "hr:organization:create",
     "hr_organization_decide": "hr:organization:decide",
 })
 _organization_eligibility = dict(ELIGIBILITY)
 for _role in ("tenant_hr_manager", "tenant_hr_director"):
     _eligible = dict(_organization_eligibility[_role])
+    _eligible["hr_organization_read"] = ELIGIBLE
     _eligible["hr_organization_create"] = ELIGIBLE
     if _role == "tenant_hr_director":
         _eligible["hr_organization_decide"] = ELIGIBLE
@@ -1324,6 +1327,7 @@ PLATFORM_EMPLOYER_OPERATIONS = (
     "platform_employer_headcount_requisition_read",
     "platform_employer_headcount_requisition_create",
     "platform_employer_headcount_requisition_decide",
+    "platform_employer_organization_read",
     "platform_employer_organization_create",
     "platform_employer_organization_decide",
     "platform_employer_hiring_candidate_read",
@@ -1346,6 +1350,7 @@ BUSINESS_ROLE_OPERATION_PERMISSIONS = MappingProxyType({
     "platform_employer_headcount_requisition_read": "platform_employer:headcount_requisition:read",
     "platform_employer_headcount_requisition_create": "platform_employer:headcount_requisition:create",
     "platform_employer_headcount_requisition_decide": "platform_employer:headcount_requisition:decide",
+    "platform_employer_organization_read": "platform_employer:organization:read",
     "platform_employer_organization_create": "platform_employer:organization:create",
     "platform_employer_organization_decide": "platform_employer:organization:decide",
     "platform_employer_hiring_candidate_read": "platform_employer:hiring_candidate:read",
@@ -1368,6 +1373,7 @@ _pfe_role_operations = {
         "platform_employer_employee_directory_read",
         "platform_employer_headcount_requisition_read",
         "platform_employer_headcount_requisition_create",
+        "platform_employer_organization_read",
         "platform_employer_organization_create",
         "platform_employer_hiring_candidate_read",
         "platform_employer_hiring_candidate_create",
@@ -1383,6 +1389,7 @@ _pfe_role_operations = {
         "platform_employer_employee_directory_read",
         "platform_employer_headcount_requisition_read",
         "platform_employer_headcount_requisition_decide",
+        "platform_employer_organization_read",
         "platform_employer_organization_create",
         "platform_employer_organization_decide",
         "platform_employer_hiring_candidate_read",
@@ -1460,7 +1467,7 @@ ELIGIBILITY = MappingProxyType({
 })
 
 # ARTIFACT: tools/eos/auth/tenant_authority_policy.py
-# VERSION: v1.69.0-ORGANIZATION-ROLE-ELIGIBILITY
+# VERSION: v1.69.1-ORGANIZATION-READ-ELIGIBILITY
 # AUTHORITY BOUNDARY: business eligibility facts and exact operation mappings only; no authorization or mutation
 # TENANT POSTURE: platform-employer eligibility is usable only inside the canonical WILSY company tenant; active membership and assigned permission remain mandatory
 # FAIL-CLOSED POSTURE: unknown roles and operations deny; Projects eligibility is tenant_owner only and still requires separately assigned Projects role and active product entitlement
