@@ -6,7 +6,7 @@
  * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/__tests__/components/hrOrganizationAssignmentWorkspace.test.jsx
  * COLLABORATION / OWNERSHIP: WILSY OS HR engineering.
  * CERTIFICATION / UPDATE DATE: 2026-11-28
- * CHANGELOG: v1.0.0 verifies source denial, employee select and checker presentation.
+ * CHANGELOG: v1.0.0-M03-HR03-ASSIGNMENT-CLIENT-CERT verifies source denial, employee selection, approval separation and foreign-tenant refusal.
  * COMPLIANCE: POPIA section 19; GDPR Article 32; WCAG 2.2 semantic testing.
  * SECURITY / PRIVACY POSTURE: Synthetic employer and employee records only.
  * TENANT BOUNDARY: Exact authenticated tenant, no fallback.
