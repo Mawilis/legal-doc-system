@@ -1,6 +1,17 @@
-/* WILSY OS — governed departmental change workspace.
- * No client-side grants: EOS authorizes every own-tenant read/command.
- * Source readback is mandatory after every command acknowledgement.
+/**
+ * TITLE: WILSY OS Department Lifecycle Workspace
+ * VERSION: v1.0.0-M03-HR03-CHANGE-CLIENT
+ * AUTHORITY: WILSY OS Core Governance
+ * EPITOME: Read and execute authorized department changes, history and impact with exact-tenant readback; no browser authorization.
+ * ABSOLUTE CANONICAL PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/hr/OrganizationLifecycleWorkspace.jsx
+ * COLLABORATION / OWNERSHIP: WILSY OS HR Organization / Python EOS engineering
+ * CERTIFICATION / UPDATE DATE: 2026-11-28
+ * CHANGELOG: v1.0.0-M03-HR03-CHANGE-CLIENT adds governed source, consumer and evidence contracts without expanding IAM grants.
+ * COMPLIANCE: POPIA section 19; GDPR Article 32; SOC 2 CC7.2 technical controls.
+ * SECURITY / PRIVACY POSTURE: Bounded readback and event labels; no personnel/financial secrets, no fabricated external entity verification.
+ * TENANT BOUNDARY: Exact authenticated EOS tenant; no root or Owner fallback.
+ * AUTHORITY BOUNDARY: EOS source grants are separately required; maker and checker cannot be the same principal.
+ * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS exclusively.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
@@ -309,3 +320,13 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
     {notice && <p role="status" className={styles.notice}>{notice}</p>}
   </section>;
 }
+
+/**
+ * ARTIFACT: client/src/components/hr/OrganizationLifecycleWorkspace.jsx
+ * VERSION: v1.0.0-M03-HR03-CHANGE-CLIENT
+ * AUTHORITY BOUNDARY: Presentation/projection only; Python EOS owns authorizations and decisions.
+ * TENANT POSTURE: Exact authorized tenant only; no cross-tenant records, Owner or root fallback.
+ * FAIL-CLOSED POSTURE: Missing or contradictory evidence is denied/unavailable, never approved.
+ * FINANCIAL EXECUTION AUTHORITY: Kennel EOS exclusively.
+ * END OF WILSY OS SOVEREIGN ARTIFACT
+ */
