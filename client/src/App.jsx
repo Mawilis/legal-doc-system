@@ -772,6 +772,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
       {location.pathname !== '/headquarters' && !(isOwnerCapacity && ['/', '/dashboard'].includes(location.pathname)) && (
         <WilsySystemFooter
           surface={isHrCapacity ? 'People · Hire to Exit' : isOwnerCapacity ? 'Headquarters · Enterprise operations' : 'WILSY OS · Authorized workspace'}
+          className={isHrCapacity ? 'sticky bottom-0 z-30' : ''}
           employerName={showTenantContext ? organisationName : ''}
           employerReference={showTenantContext ? currentTenantReference : ''}
         />
