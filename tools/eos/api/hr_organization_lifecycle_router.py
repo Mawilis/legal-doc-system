@@ -163,7 +163,13 @@ def _impact(records, tenant: str, record_id: str, tx=None):
         "schema": "WILSY-HR-ORGANIZATION-IMPACT/V1",
         "dependent_departments": [r["record_id"] for r in rows if r["kind"] == "DEPARTMENT"],
         "dependent_positions": [r["record_id"] for r in rows if r["kind"] == "POSITION"],
-        "retirement_blocked": bool(rows),
+        # Current workforce employee assignments are not yet established as
+        # canonical department-ID references. No "zero employees" inference.
+        "staffing_dependency_status": "NOT_CERTIFIED",
+        "retirement_blocker_reasons": (
+            ["APPROVED_DEPENDENT_STRUCTURE"] if rows else []
+        ) + ["EMPLOYEE_ASSIGNMENT_LINKAGE_NOT_CERTIFIED"],
+        "retirement_blocked": True,
     }
 
 
