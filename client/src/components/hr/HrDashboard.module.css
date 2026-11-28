@@ -2199,3 +2199,29 @@
 @media (max-width: 700px) {
   .peopleSurface .organizationDraftGrid { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+.peopleSurface .organizationCodeInput {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+}
+.peopleSurface .organizationCodeInput input {
+  flex: 1 1 190px;
+  min-width: 0;
+}
+.peopleSurface .organizationCodeInput button {
+  min-height: 44px;
+  padding: 9px 13px;
+  background: #edf3fb !important;
+  color: #173c70 !important;
+  border: 1px solid #9ab2cf !important;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 750;
+}
+.peopleSurface .organizationCodeInput button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
