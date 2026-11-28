@@ -134,6 +134,7 @@ import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import FounderHeadcountStart, { HeadcountDraftSubmit, HeadcountIndependentDecision } from './FounderHeadcountStart';
 import styles from './HrDashboard.module.css';
 import { ORGANIZATION_BUSINESS_MODELS, getDepartmentSuggestions } from './organizationDepartmentCatalog.js';
+import OrganizationLifecycleWorkspace from './OrganizationLifecycleWorkspace.jsx';
 import { workStatusClasses } from '../../theme/workStatus.js';
 
 const DEFAULT_PAGE = Object.freeze({ offset: 0, limit: 12 });
@@ -3094,7 +3095,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
           && Number.isSafeInteger(data?.count)
           && Array.isArray(items) && items.length === data.count && items.length <= 200
           && items.every(item => ['DEPARTMENT','POSITION'].includes(item?.kind)
-            && ['DRAFT','SUBMITTED','APPROVED','REJECTED'].includes(item?.status)
+            && ['DRAFT','SUBMITTED','APPROVED','REJECTED','RETIRED'].includes(item?.status)
             && typeof item?.record_id === 'string' && typeof item?.name === 'string'
             && Number.isSafeInteger(item?.revision) && item.revision >= 1);
         if (!valid) { setWorkforceStructureFailureCode('INVALID_SOURCE_ENVELOPE'); setWorkforceStructureStatus('UNAVAILABLE'); return; }
@@ -5222,6 +5223,9 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   {!!organizationCommandState.message && <p role="status" style={{fontSize:12,color:organizationCommandState.status==='VERIFIED'?'#194c3d':'#7a302d',padding:'10px 17px'}}>
                     {organizationCommandState.message}
                   </p>}
+                  {workforceStructureStatus === 'VERIFIED' && workforceStructure && <OrganizationLifecycleWorkspace
+                    tenantId={tenantId} scopeKey={tenantScopeKey} structure={workforceStructure}
+                    onUpdated={() => setWorkforceOrganizationRefresh(value => value + 1)}/>}
                 </section>
 
               <section aria-label="Observed workforce and headcount planning" style={{marginTop:14,border:'1px solid #dbe5f0',borderRadius:10,overflow:'hidden'}}>
