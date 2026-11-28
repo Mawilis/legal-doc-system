@@ -3,7 +3,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated HR Workspace Projection
- * VERSION: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE
+ * VERSION: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON
  * AUTHORITY: Wilsy OS Core Governance
  * EPITOME: Presents the authenticated HR workspace while Python EOS retains all
  *          employee, hiring, authorization, persistence, evidence and payroll truth.
@@ -11,24 +11,25 @@
  * COLLABORATION / OWNERSHIP: React workspace; AuthContext and TenantContext provide
  *                            server-projected principal and exact active tenant.
  * CERTIFICATION / UPDATE DATE: 2026-11-27
- * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE introduces the separate source-verified organization register, an authorized draft/submit/checker UI and independently validated readback, current tenant isolation, retained command idempotency and denied/unknown outcomes. No client-side permission grant or admission is inferred.
- * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
- * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
- * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
- * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
- * CHANGELOG: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces canned approval reasons with checker-authored evidence, suppresses own-proposal review using a session-relative maker flag, and preserves EOS checker authority and durable readback.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON introduces the separate source-verified organization register, an authorized draft/submit/checker UI and independently validated readback, current tenant isolation, retained command idempotency and denied/unknown outcomes. No client-side permission grant or admission is inferred.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces duplicate Organization empty-state actions and invisible count labels with an accessible, exact-source organizational planning workspace: observed departments, source-verified headcount requisitions, bounded approved-on-page counts and one governed action. No approved org structure or employee admission is inferred.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces the observed-organization database-empty message with actionable role-planning guidance; existing EOS organization data, approvals and deliberate nonavailability of department creation remain unchanged.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON retains existing authorized candidate intake regardless of partial headcount pagination; both entry points submit to Python EOS, which independently rejects absent or unapproved requisitions. Distinct labels preserve accessible command selection and established tests.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON gates both candidate intake entry points on an independently verified approved requisition and withholds stale candidate results during source revalidation; candidate admission remains server-governed.
+ * CHANGELOG: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON replaces the generic Hiring ledger with current EOS-backed pipeline actions and verified-source states, makes Workforce zero-data useful, limits new-employer navigation to core functions with accessible expansion, and removes pale-gold operational headings. Admissions, IAM, approved requisitions and candidate evidence remain source-governed.
 CHANGELOG:
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
- *   v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON connects observed organization to separately governed headcount requisitions for both empty and occupied workforces; no position approval or admission authority is inferred.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON adds a source-verified organization view to Workforce, distinguishes observed employee distribution from approved position hierarchy, validates exact tenant and aggregate invariants, and links departments to existing server-side directory search without granting IAM or admission commands.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON withholds stale workforce page rows and previews during query revalidation, and displays an explicit query-refresh status until EOS confirms the new page.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON debounces the Workforce directory query by 300ms, resets page/selection on committed searches, and synchronizes global People search with the local field without changing exact tenant authority or source-controlled pagination.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON resolves selected workforce detail through the new exact-tenant Python EOS directory endpoint, validates schema/source/tenant/employee identity, projects only safe fields, cancels stale reads, and fails closed on session invalidation.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON builds a source-verified Workforce directory with bounded query, paging, safe person preview, accurate empty/unavailable/denied states and existing headcount navigation. Retains Python EOS authority and suppresses the legacy gold-on-white generic table for Workforce.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON introduces quieter sentence-case operational copy, a unified source-readiness list, a compact connected-metrics strip and restrained first-use actions. All EOS reads, tenant scope, maker/checker and nonblocking admission remain unchanged.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON admits only the authenticated exact-scope shell immediately while five independent EOS sources verify; pending, denied, unavailable and 401-invalidated source states remain fail-closed. Full-page loading no longer depends on the slowest source.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON makes empty work actionable through existing authorized People sources, repairs source labels, distinguishes filtered empty from source unavailable, discloses browser-verified timestamps, and collapses governance detail. No synthetic metrics or new authority.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON presents actionable source-verified lifecycle indicators, a filterable People work queue and per-source readiness, without synthetic metrics, IAM shortcuts, or new execution authority.
+ *   v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON exposes the active EOS-projected session capacity and an explicit secure reauthentication route for Founder HR capacity selection. It also exposes HTTP status in HR source failures instead of Axios generic ERR_BAD_REQUEST; no IAM or data admission changes.
  *   v2.13.3-INDEPENDENT-HEADCOUNT-DECISION-ENTRY routes submitted requisitions to the actual separately authorized EOS headcount decision rather than leaving an inert pending label; domain maker/checker enforcement unchanged.
  *   v2.13.2-SOURCE-OWNED-FIRST-HIRE-PROGRESSION exposes submitted headcount as pending independent review and gives approved requisitions a direct path to the existing candidate intake; no synthetic hiring approval.
  *   v2.13.1-FIRST-HR-REQUEST-REVIEW-LOOP enables source-verified draft headcount submission via the existing EOS revision/CAS command; independent decision remains a separate authenticated actor.
@@ -2400,6 +2401,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
   const [workforceStructure, setWorkforceStructure] = useState(null);
   const [workforceStructureStatus, setWorkforceStructureStatus] = useState('IDLE');
   const [organizationFormOpen, setOrganizationFormOpen] = useState(false);
+  const [organizationReviewId, setOrganizationReviewId] = useState(null);
+  const [organizationDecisionReason, setOrganizationDecisionReason] = useState('');
   const [organizationKind, setOrganizationKind] = useState('departments');
   const [organizationForm, setOrganizationForm] = useState({record_id:'',name:'',parent_id:'',department_id:'',effective_from:'',capacity:'1'});
   const [organizationCommandState, setOrganizationCommandState] = useState({status:'IDLE', message:''});
@@ -2493,6 +2496,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     setWorkforceStructure(null);
     setWorkforceStructureStatus('IDLE');
     setOrganizationFormOpen(false);
+    setOrganizationReviewId(null);
+    setOrganizationDecisionReason('');
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
@@ -2529,6 +2534,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     setWorkforceStructure(null);
     setWorkforceStructureStatus('IDLE');
     setOrganizationFormOpen(false);
+    setOrganizationReviewId(null);
+    setOrganizationDecisionReason('');
     setOrganizationCommandState({status:'IDLE',message:''});
     setWorkforceOrganization(null);
     setWorkforceOrganizationState('IDLE');
@@ -3119,13 +3126,18 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
     } : action === 'submit' ? {expected_revision:item.revision} : {
       expected_revision:item.revision,
       decision:action === 'approve' ? 'APPROVE' : 'REJECT',
-      reason: 'Independently reviewed organizational proposal',
+      reason: organizationDecisionReason.trim(),
     };
     if (action === 'create' && (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,119}$/.test(recordId)
       || payload.name.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(payload.effective_from)
       || (kind === 'positions' && (!payload.department_id || !Number.isInteger(payload.capacity)
         || payload.capacity < 1 || payload.capacity > 500)))) {
       setOrganizationCommandState({status:'INVALID',message:'Enter a valid identifier, name, effective date and approved department for a position.'});
+      return;
+    }
+    if (['approve','reject'].includes(action) && (item?.current_principal_is_maker
+      || organizationDecisionReason.trim().length < 5 || organizationDecisionReason.trim().length > 2000)) {
+      setOrganizationCommandState({status:'INVALID',message:'Independent review requires a different maker and your own explanation (5–2000 characters).'});
       return;
     }
     const path = '/hr/workforce/structure/' + kind
@@ -3162,6 +3174,8 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
       setWorkforceStructure(read);
       setWorkforceStructureStatus('VERIFIED');
       setOrganizationFormOpen(false);
+      setOrganizationReviewId(null);
+      setOrganizationDecisionReason('');
       setOrganizationCommandState({status:'VERIFIED',message:saved.kind + ' ' + recordId + ' · ' + saved.status + ' · revision ' + saved.revision + ' verified after readback.'});
     } catch (error) {
       if (tenantScopeKeyRef.current !== scope) return;
@@ -5086,12 +5100,36 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                             <div style={{display:'flex',gap:7}}>
                               {item.status === 'DRAFT' && <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => runOrganizationCommand('submit',item)}
                                 style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Submit for approval</button>}
-                              {item.status === 'SUBMITTED' && <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => runOrganizationCommand('approve',item)}
-                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Approve as checker</button>}
+                              {item.status === 'SUBMITTED' && !item.current_principal_is_maker && <button type="button"
+                                disabled={organizationCommandState.status === 'PENDING'}
+                                onClick={() => {setOrganizationReviewId(item.kind+':'+item.record_id);setOrganizationDecisionReason('');setOrganizationCommandState({status:'IDLE',message:''});}}
+                                style={{border:'1px solid #aabbd0',borderRadius:8,padding:'8px 12px',background:'#fff',color:'#173c70',fontWeight:700}}>Review decision</button>}
+                              {item.status === 'SUBMITTED' && item.current_principal_is_maker && <span style={{fontSize:12,color:'#526781'}}>Awaiting independent checker</span>
                             </div>
                           </div>)}
                         </div>}
                   </div>}
+                  {workforceStructureStatus === 'VERIFIED' && organizationReviewId && (() => {
+                    const entry = workforceStructure.items.find(item => item.kind+':'+item.record_id === organizationReviewId);
+                    if (!entry || entry.status !== 'SUBMITTED' || entry.current_principal_is_maker) return null;
+                    return <section aria-label="Organization independent review" style={{padding:'15px 17px',borderTop:'1px solid #dce6f1',display:'grid',gap:11}}>
+                      <strong style={{color:'#142f50',fontSize:14}}>Review {entry.name}</strong>
+                      <label style={{display:'grid',gap:5,fontSize:12,color:'#304e6e',fontWeight:650}}>
+                        Your decision reason
+                        <textarea rows={3} minLength={5} maxLength={2000} required value={organizationDecisionReason}
+                          onChange={event => setOrganizationDecisionReason(event.target.value)}
+                          style={{padding:'10px 12px',border:'1px solid #aabbd0',borderRadius:8,color:'#142f50',background:'#fff',fontSize:13}}/>
+                      </label>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:9}}>
+                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('approve',entry)}
+                          style={{padding:'9px 13px',borderRadius:8,background:'#173c70',color:'#fff',fontWeight:700}}>Approve proposal</button>
+                        <button type="button" disabled={organizationCommandState.status === 'PENDING'} onClick={() => void runOrganizationCommand('reject',entry)}
+                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70',fontWeight:700}}>Reject proposal</button>
+                        <button type="button" onClick={() => {setOrganizationReviewId(null);setOrganizationDecisionReason('');}}
+                          style={{padding:'9px 13px',borderRadius:8,border:'1px solid #aabbd0',color:'#173c70'}}>Cancel</button>
+                      </div>
+                    </section>;
+                  })()}
                   {workforceStructureStatus === 'VERIFIED' && organizationFormOpen && <form onSubmit={event => {event.preventDefault();void runOrganizationCommand('create');}}
                     style={{display:'grid',gap:11,padding:'17px',borderTop:'1px solid #dce6f1',background:'#fff'}} aria-label="Organization draft form">
                     <strong style={{color:'#142f50',fontSize:15}}>New {organizationKind === 'departments' ? 'department' : 'position'} draft</strong>
@@ -5781,7 +5819,7 @@ export default HrDashboard;
 
 /**
  * ARTIFACT: client/src/components/hr/HrDashboard.jsx
- * VERSION: v2.22.0-WORKFORCE-GOVERNED-STRUCTURE-WORKSPACE
+ * VERSION: v2.22.1-EXPLICIT-ORGANIZATION-CHECKER-REASON
  * AUTHORITY BOUNDARY: Browser projection only; Python EOS owns authentication, authorization and HR business truth.
  * TENANT POSTURE: Exact authenticated tenant, principal and session generation; no fallback tenant aliases.
  * FAIL-CLOSED POSTURE: Missing or mismatched scope withholds HR views and commands; stale async responses are discarded.
