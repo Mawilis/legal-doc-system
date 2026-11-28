@@ -5,7 +5,7 @@
  * AUTHORITY BOUNDARY: No new IAM, admission, session or business execution authority is created.
  * FINANCIAL AUTHORITY BOUNDARY: No financial execution; Kennel EOS remains exclusive.
  * TITLE: WILSY OS Authenticated Daily Attention Calendar Browser Certificate
- * VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
+ * VERSION: v3.14.1-VERIFIED-ACCOUNT-AND-MENU-ACTIONS-CERT
  * AUTHORITY: Repository-governed disposable browser fixture only.
  * EPITOME: Verify real EOS work creation, replay, tenant denial, calendar
  * navigation, window bounds, dismissal and persisted source-owned completion.
@@ -13,6 +13,7 @@
  * COLLABORATION / OWNERSHIP: browser_cert_fixture.py, run-browser-cert.mjs,
  * App.jsx, WilsyDailyAttentionCentre, WilsyWorkDeadlineCalendar and My Work.
  * CERTIFICATION / UPDATE DATE: 2026-11-26.
+ * CHANGELOG: v3.14.1-VERIFIED-ACCOUNT-AND-MENU-ACTIONS-CERT asserts EOS verified operating capacity, excludes credential email and tests functional profile/security items without relaxing IAM or daily work journeys.
  * CHANGELOG: v3.14.0-NONFOUNDER-SCOPE-CERT adds a real browser
  *          Partner session and owner-only CRM denial with independently
  *          verified per-principal work isolation in the existing tenant.
@@ -1099,7 +1100,7 @@ for (const viewport of [{width: 1440, height: 1000}, {width: 390, height: 844}])
 }
 
 // ARTIFACT: daily-attention-calendar.browser.spec.js
-// VERSION: v3.14.0-NONFOUNDER-SCOPE-CERT
+// VERSION: v3.14.1-VERIFIED-ACCOUNT-AND-MENU-ACTIONS-CERT
 // AUTHORITY BOUNDARY: Synthetic authenticated browser and source-command evidence only.
 // TENANT POSTURE: Existing approved fixture actor in a disposable loopback database.
 // FAIL-CLOSED POSTURE: Missing source, replay conflict, wrong scope or browser error fails.
