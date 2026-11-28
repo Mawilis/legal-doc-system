@@ -114,7 +114,7 @@ describe('governed department change workspace',()=>{
     const chooser=await screen.findByLabelText('Inspect a department');
     fireEvent.change(chooser,{target:{value:'DEP-OPS'}});
     expect(await screen.findByText(/Revision 3 · Operations · APPROVED/)).toBeInTheDocument();
-    expect(await screen.findByText(/Retirement is blocked/)).toBeInTheDocument();
+    expect(await screen.findByText(/Retirement blocked: verified structure dependencies or unverified employee assignment links/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('As of date'),{
       target:{value:'2026-11-01'},
     });
