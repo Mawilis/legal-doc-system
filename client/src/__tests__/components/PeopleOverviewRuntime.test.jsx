@@ -350,6 +350,10 @@ describe('production People Overview source contracts', () => {
     fireEvent.click(await screen.findByRole('button',{name:'Workforce',exact:true}));
     fireEvent.click(screen.getByRole('button',{name:'Organization',exact:true}));
     fireEvent.click(await screen.findByRole('button',{name:'Create department'}));
+    expect(screen.getByRole('heading',{name:'New department draft',level:2})).toBeInTheDocument();
+    expect(screen.queryByRole('heading',{name:'Governed structure'})).not.toBeInTheDocument();
+    expect(screen.queryByText(/No department or position proposals yet/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'Back to organization'})).toBeInTheDocument();
     const form = screen.getByRole('form',{name:'Organization draft form'});
     fireEvent.change(within(form).getByLabelText('Unique code'),{target:{value:'DEP-OPS'}});
     fireEvent.change(within(form).getByLabelText('Name'),{target:{value:'Operations'}});
