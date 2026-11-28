@@ -250,7 +250,9 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
         {selection && impact && history && <>
           <p><strong>Impact:</strong> {impact.dependent_positions.length} approved positions and
             {' '}{impact.dependent_departments.length} child departments.
-            {impact.retirement_blocked ? ' Retirement is blocked.' : ' No direct retirement blockers found.'}
+            {impact.retirement_blocked
+              ? ' Retirement blocked: verified structure dependencies or unverified employee assignment links.'
+              : ' No retirement blockers found.'}
           </p>
           <div className={styles.history}>
             <strong>Effective-version history · {history.count} recorded revisions</strong>
@@ -318,7 +320,7 @@ export default function OrganizationLifecycleWorkspace({tenantId, scopeKey, stru
         {impact && <div className={styles.impact} role="status">
           <strong>Verified impact</strong>
           <span>{impact.dependent_positions.length} approved positions · {impact.dependent_departments.length} child departments</span>
-          {impact.retirement_blocked && <span>Retirement blocked until dependencies are resolved.</span>}
+          {impact.retirement_blocked && <span>Retirement blocked: approved dependents or employee-assignment linkage are not yet cleared.</span>}
           <span>{history?.count ?? 'Unverified'} historical versions</span>
         </div>}
         <button type="submit" disabled={pending || !impact || !history ||
