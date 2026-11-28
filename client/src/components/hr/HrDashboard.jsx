@@ -3104,7 +3104,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
           invalidateHrSessionScope(scope, hrReadErrorCode(error));
           return;
         }
-        setWorkforceStructureFailureCode(error?.response?.status === 403 ? 'PERMISSION_DENIED' : error?.response?.status === 404 ? 'ROUTE_NOT_FOUND' : error?.response?.status === 503 ? 'SOURCE_UNAVAILABLE_503' : error?.response?.status ? 'HTTP_' + error.response.status : 'TRANSPORT_UNAVAILABLE');
+        setWorkforceStructureFailureCode(error?.response?.status === 403 ? 'PERMISSION_DENIED' : error?.response?.status === 404 ? 'HTTP_404_REGISTRY_NOT_FOUND' : error?.response?.status === 503 ? 'SOURCE_UNAVAILABLE_503' : error?.response?.status ? 'HTTP_' + error.response.status : 'TRANSPORT_UNAVAILABLE');
         setWorkforceStructureStatus(error?.response?.status === 403 ? 'DENIED' : 'UNAVAILABLE');
       });
     return () => { workforceStructureSequenceRef.current += 1; };
@@ -5041,7 +5041,7 @@ const HrDashboard = ({ onReturnToHeadquarters } = {}) => {
                   </div>
                   {workforceStructureStatus === 'PENDING' && <p role="status" style={{padding:17,color:'#4b607a'}}>Checking the approved structure register…</p>}
                   {workforceStructureStatus === 'DENIED' && <p role="alert" style={{padding:17,color:'#4b607a'}}>Access to the organization register is denied for this capacity.</p>}
-                  {workforceStructureStatus === 'UNAVAILABLE' && <div role="status" style={{padding:17,display:'grid',gap:8,color:'#4b607a'}}><p>The organization register could not be verified. No approved structure is displayed.</p><p style={{fontSize:12}}>Source: /api/hr/workforce/structure · {workforceStructureFailureCode || 'UNVERIFIED'}. Check the running Python EOS route and authorized source before creating records.</p><button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)} style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'8px 12px',color:'#173c70'}}>Retry registry read</button></div>}
+                  {workforceStructureStatus === 'UNAVAILABLE' && <div role="status" style={{padding:17,display:'grid',gap:8,color:'#4b607a'}}><p>The organization register could not be verified. No approved structure is displayed.</p><p style={{fontSize:12}}>Source: /api/hr/workforce/structure · {workforceStructureFailureCode || 'UNVERIFIED'}. Verify the authenticated response in Network. The runtime returned this status; do not infer an empty register or bypass authorization.</p><button type="button" onClick={() => setWorkforceOrganizationRefresh(n => n + 1)} style={{justifySelf:'start',border:'1px solid #aabdd3',borderRadius:8,padding:'8px 12px',color:'#173c70'}}>Retry registry read</button></div>}
                   {workforceStructureStatus === 'VERIFIED' && workforceStructure && <div style={{padding:'15px 17px'}}>
                     {workforceStructure.items.length === 0
                       ? <p style={{fontSize:13,color:'#526781'}}>No department or position proposals yet. Create a draft to begin the governed approval process.</p>
