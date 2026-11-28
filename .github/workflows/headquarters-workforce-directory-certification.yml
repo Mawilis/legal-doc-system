@@ -30,6 +30,7 @@ on:
       - "tools/eos/api/hr_organization_lifecycle_router.py"
       - "tools/eos/api/hr_organization_business_context_router.py"
       - "tests/unit/test_hr_organization_lifecycle_expansion.py"
+      - "tests/unit/test_hr03_organization_accessibility_contract.py"
       - "tests/integration/test_hr_organization_governance_real_mongo.py"
       - "client/src/components/hr/HrDashboard.jsx"
       - "client/src/components/hr/OrganizationLifecycleWorkspace.jsx"
@@ -104,6 +105,7 @@ jobs:
             tools/eos/api/hr_organization_lifecycle_router.py \
             tools/eos/api/hr_organization_business_context_router.py \
             tests/unit/test_hr_organization_lifecycle_expansion.py \
+            tests/unit/test_hr03_organization_accessibility_contract.py \
             tests/integration/test_hr_organization_governance_real_mongo.py \
             tools/eos/api/employee_router.py \
             tools/eos/saas/employee/employee_registry.py \
@@ -120,6 +122,7 @@ jobs:
           python -m pytest -q \
             tests/unit/test_hr_workforce_directory_router.py \
             tests/unit/test_hr_organization_lifecycle_expansion.py \
+            tests/unit/test_hr03_organization_accessibility_contract.py \
             tests/integration/test_hr_organization_governance_real_mongo.py \
             tests/unit/test_hr_workforce_directory_authority.py \
             tests/unit/test_m03_hr01_employee_scope.py \
