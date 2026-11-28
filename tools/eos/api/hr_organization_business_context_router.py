@@ -158,7 +158,7 @@ def read_business_activity_context(
         "revision": current["revision"] if current else 0,
         "proposals": [_pub(row, actor=auth.identity.identity_id) for row in rows],
         "operating_entities": [],
-        "entity_status": "VERIFIED_ENTITY_SOURCE_NOT_CONNECTED",
+        "entity_status": "ENTITY_SOURCE_NOT_CONNECTED",
         "external_business_classification_verified": False,
     }
 
