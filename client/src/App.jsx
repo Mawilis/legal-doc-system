@@ -293,9 +293,8 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
     ? [exactChromeText(sessionUser.firstName), exactChromeText(sessionUser.lastName)].filter(Boolean).join(' ')
     : '';
   const accountEmail = safeAccountEmail(sessionUser?.workspaceEmail);
-  // The authenticated compatibility field may originate from the credential
-  // candidate: useful for the operator, but not independently EOS-verified.
-  const signInEmail = sessionUser?.systemServicesWorkspace ? '' : safeAccountEmail(sessionUser?.email);
+  // Login-credential email is not EOS-verified account identity. Never render
+  // it as profile, account-menu, recovery or SYSTEM identity evidence.
   const verifiedTenantId = activeTenant?.tenantId
     || activeTenant?.tenant_id || activeTenant?.id || null;
   const tenantIdentity = sessionUser?.tenantId
@@ -636,7 +635,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/40 bg-[#263b5a] text-base font-bold text-amber-100" aria-hidden="true">{initials || <UserRound size={19}/>}</span>
                   <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-semibold text-white">{displayName || 'Name not provided by EOS'}</p>
-                  {(accountEmail || signInEmail) && <div className="mt-1 min-w-0"><p className="break-all text-xs text-slate-100">{accountEmail || signInEmail}</p><p className="mt-0.5 text-[10px] text-slate-300">{accountEmail ? 'Account email' : 'Sign-in email'}</p></div>}
+                  {accountEmail && <div className="mt-1 min-w-0"><p className="break-all text-xs text-slate-100">{accountEmail}</p><p className="mt-0.5 text-[10px] text-slate-300">Verified account email</p></div>}
                   {organisationName && <p className="mt-2 text-xs text-amber-200">{organisationName}</p>}
                   {institutionalTitle && <p className="mt-1 text-xs font-semibold text-emerald-200">Institutional designation: {institutionalTitle}</p>}
                   {selectedCapacityLabel && <p className="mt-1 text-xs text-slate-200">Operating as: {selectedCapacityLabel}</p>}
@@ -709,7 +708,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                         <p className="mb-2 text-sm font-semibold text-white">Verified profile</p>
                         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
                           <dt className="text-slate-300">Name</dt><dd className="break-words">{displayName || 'Not provided by EOS'}</dd>
-                          <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || signInEmail || 'Not supplied'}{!accountEmail && signInEmail && <span className="block text-amber-200">Sign-in email, not independently verified by EOS</span>}</dd>
+                          <dt className="text-slate-300">Email</dt><dd className="break-all">{accountEmail || 'Not verified by EOS'}</dd>
                           <dt className="text-slate-300">Employer</dt><dd>{organisationName || 'Not verified'}</dd>
                           <dt className="text-slate-300">Tenant</dt><dd className="break-all">{currentTenantReference || 'Not verified'}</dd>
                         </dl>
@@ -719,7 +718,7 @@ export const AuthenticatedGlobalChrome = ({ user, onLogout, children, workspaceR
                         <p className="mt-2 text-emerald-200">Current EOS workspace session authenticated.</p>
                         <p className="mt-2">Sign out revokes the current session through the existing provider flow. Other device sessions and MFA methods require independent EOS evidence.</p>
                         <div className="mt-3">
-                          <RecoveryContactSecurityControl key={accountScope} compact email={accountEmail || signInEmail} />
+                          <RecoveryContactSecurityControl key={accountScope} compact email={accountEmail || undefined} />
                         </div>
                         <p className="mt-2 text-slate-300">Recovery email verification proves mailbox control for password recovery; it does not certify your general account email or grant another role.</p>
                       </>}
