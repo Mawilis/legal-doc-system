@@ -325,6 +325,38 @@ describe('production People Overview source contracts', () => {
     expect(screen.getByText(/verified after readback/)).toBeInTheDocument();
   });
 
+  it('selects only source-approved departments for new positions and parent hierarchy', async () => {
+    mockState.apiGet.mockImplementation(path => {
+      if (path === '/hr/workforce/overview') return Promise.resolve(overviewResponse());
+      if (path === '/hr/workforce') return Promise.resolve(validPage('Tenant A Verified Employee'));
+      if (path === '/hr/workforce/structure') return Promise.resolve({data: {
+        schema: 'WILSY-HR-ORGANIZATION-REGISTRY/V1',
+        source: 'EOS_HR_ORGANIZATION_REGISTRY',
+        tenant_id: 'TENANT-HR-A',
+        count: 2,
+        items: [
+          {kind: 'DEPARTMENT', record_id: 'DEP-APPROVED', name: 'Approved operations',
+            status: 'APPROVED', revision: 3, effective_from: '2026-11-20'},
+          {kind: 'DEPARTMENT', record_id: 'DEP-DRAFT', name: 'Unapproved unit',
+            status: 'DRAFT', revision: 1, effective_from: '2026-11-25'},
+        ],
+      }});
+      return Promise.reject(Object.assign(new Error('unavailable'), {response: {status: 404}}));
+    });
+    renderDashboard();
+    fireEvent.click(await screen.findByRole('button', {name: 'Workforce', exact: true}));
+    fireEvent.click(screen.getByRole('button', {name: 'Organization', exact: true}));
+    fireEvent.click(await screen.findByRole('button', {name: 'Create position'}));
+    const form = screen.getByRole('form', {name: 'Organization draft form'});
+    const department = within(form).getByLabelText('Approved department code');
+    expect(within(department).getByRole('option', {name: /Approved operations/})).toHaveValue('DEP-APPROVED');
+    expect(within(department).queryByRole('option', {name: /Unapproved unit/})).not.toBeInTheDocument();
+    const parent = within(form).getByLabelText('Parent code (optional)');
+    expect(within(parent).queryByRole('option', {name: /Unapproved unit/})).not.toBeInTheDocument();
+    expect(within(form).getByLabelText('Effective from (YYYY-MM-DD)')).toHaveAttribute('type', 'date');
+    expect(within(form).getByLabelText('Planned capacity')).toHaveAttribute('type', 'number');
+  });
+
   it('does not display a successful organization record when write permission is denied',async () => {
     vi.stubGlobal('crypto',{randomUUID:()=>'org-command-unique-uuid-0002'});
     mockState.apiGet.mockImplementation(path => {
